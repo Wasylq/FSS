@@ -1,0 +1,21 @@
+[DEFAULT]
+; level of logging messages to show in log, possible values are
+;    DEBUG, INFO, WARNING, ERROR, CRITICAL
+log_level = INFO
+log_location = sparse.log
+csv_output_location = scenes.csv
+
+[connections]
+; wait_between_connections - set to 0 to disalbe and send requests one by oen
+; set to any number to wait between new connections, in seconds
+wait_between_connections = 10
+; wait_between_connections_random - if set to 'yes' 'wait_between_connections' 
+; acts as a maximum boundary for the time that can have to pass between connections.
+; if set to 'no' wait_between_connections is treated as a staic value
+wait_between_connections_random = yes
+; connection headers that will be used when performing requests
+user_agent = 'Mozilla/5.0 (X11; Linux x86_64; rv:109.0) Gecko/20100101 Firefox/115.0'
+; timeout when querying the scrapped scene urls for details
+timeout_scenes = 60
+; timeout for querying studio for more scenes
+timeout_studio_pages = 60
