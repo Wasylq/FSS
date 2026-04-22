@@ -18,9 +18,9 @@ import (
 )
 
 var scrapeCmd = &cobra.Command{
-	Use:   "scrape <studio-url>",
-	Short: "Scrape all scenes from a studio URL",
-	Args:  cobra.ExactArgs(1),
+	Use:   "scrape <studio-url> [studio-url ...]",
+	Short: "Scrape all scenes from one or more studio URLs",
+	Args:  cobra.MinimumNArgs(1),
 	RunE:  runScrape,
 }
 
@@ -38,8 +38,6 @@ func init() {
 }
 
 func runScrape(cmd *cobra.Command, args []string) error {
-	studioURL := args[0]
-
 	// --- resolve flags against config ---
 	full, _ := cmd.Flags().GetBool("full")
 	refresh, _ := cmd.Flags().GetBool("refresh")
@@ -70,6 +68,10 @@ func runScrape(cmd *cobra.Command, args []string) error {
 	}
 
 	name, _ := cmd.Flags().GetString("name")
+	if name != "" && len(args) > 1 {
+		fmt.Fprintln(os.Stderr, "warning: --name ignored when scraping multiple URLs")
+		name = ""
+	}
 	if name != "" && dbPath == "" {
 		fmt.Fprintln(os.Stderr, "warning: --name has no effect without --db (studio names are only stored in SQLite)")
 	}
@@ -81,7 +83,7 @@ func runScrape(cmd *cobra.Command, args []string) error {
 	}
 	delay := time.Duration(delayMS) * time.Millisecond
 
-	// --- pick store ---
+	// --- pick store (opened once, shared across all URLs) ---
 	var st store.Store
 	if dbPath != "" {
 		db, err := store.NewSQLite(dbPath)
@@ -94,17 +96,34 @@ func runScrape(cmd *cobra.Command, args []string) error {
 		st = store.NewFlat(outDir, formats)
 	}
 
-	// --- look up scraper ---
+	// --- graceful shutdown on Ctrl+C ---
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
+
+	var firstErr error
+	for i, studioURL := range args {
+		if i > 0 {
+			fmt.Println()
+		}
+		if err := scrapeOne(ctx, st, studioURL, name, dbPath, outDir, formats, full, refresh, workers, delay); err != nil {
+			fmt.Fprintf(os.Stderr, "error scraping %s: %v\n", studioURL, err)
+			if firstErr == nil {
+				firstErr = err
+			}
+		}
+		if ctx.Err() != nil {
+			break
+		}
+	}
+	return firstErr
+}
+
+func scrapeOne(ctx context.Context, st store.Store, studioURL, name, dbPath, outDir string, formats []string, full, refresh bool, workers int, delay time.Duration) error {
 	sc, err := scraper.ForURL(studioURL)
 	if err != nil {
 		return err
 	}
 
-	// --- graceful shutdown on Ctrl+C ---
-	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
-	defer stop()
-
-	// --- run selected mode ---
 	var scenes []models.Scene
 	switch {
 	case full:
@@ -121,17 +140,14 @@ func runScrape(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	// --- auto-populate studio name from scraped data if not provided ---
 	if name == "" && len(scenes) > 0 && scenes[0].Studio != "" {
 		name = scenes[0].Studio
 	}
 
-	// --- persist ---
 	if err := st.Save(studioURL, scenes); err != nil {
 		return fmt.Errorf("saving results: %w", err)
 	}
 
-	// For SQLite: export flat files if explicitly requested
 	if dbPath != "" {
 		slug := store.Slugify(studioURL)
 		for _, format := range formats {
@@ -142,7 +158,6 @@ func runScrape(cmd *cobra.Command, args []string) error {
 		}
 	}
 
-	// --- track studio ---
 	now := time.Now().UTC()
 	if uErr := st.UpsertStudio(models.Studio{
 		URL:           studioURL,
