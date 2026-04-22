@@ -13,25 +13,25 @@ go build -o fss .
 ## Quick start
 
 ```bash
-# Scrape a studio, output JSON (default)
+# Scrape a ManyVids studio, output JSON (default)
 fss scrape https://www.manyvids.com/Profile/590705/bettie-bondage/Store/Videos
 
-# Only fetch scenes you don't have yet (default behaviour — no flag needed)
+# Default behaviour: only fetch scenes not already in the output file
 fss scrape <url>
 
 # Re-scrape everything from scratch
 fss scrape --full <url>
 
-# Re-fetch metadata for all known scenes, soft-delete any that have disappeared
+# Re-fetch metadata for all known scenes; soft-delete any that have disappeared
 fss scrape --refresh <url>
 
-# Output both JSON and CSV, into a specific directory
-fss scrape --output json,csv --out ./data <url>
+# Output both JSON and CSV into a specific directory, with 10 parallel workers
+fss scrape --output json,csv --out ./data --workers 10 <url>
 
-# Use SQLite as the store (enables price history, incremental updates, easy querying)
+# Use SQLite as the store (enables price history tracking and easy querying)
 fss scrape --db ./fss.db <url>
 
-# See which sites are supported
+# See which sites are supported and their URL patterns
 fss list-scrapers
 ```
 

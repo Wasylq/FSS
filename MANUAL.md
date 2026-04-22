@@ -107,29 +107,172 @@ One entry is appended to `priceHistory` on each scrape run.
 
 ## Output formats
 
-_Documented in Phase 2._
+### File naming
+
+Output files are named by sanitising the studio URL into a slug:
+
+```
+https://www.manyvids.com/Profile/590705/bettie-bondage/Store/Videos
+→ manyvids.com-profile-590705-bettie-bondage-store-videos.json
+→ manyvids.com-profile-590705-bettie-bondage-store-videos.csv
+```
+
+### JSON
+
+The JSON file wraps the scene list with a small header:
+
+```json
+{
+  "studioUrl": "https://www.manyvids.com/Profile/590705/bettie-bondage/Store/Videos",
+  "scrapedAt": "2026-04-22T10:00:00Z",
+  "sceneCount": 700,
+  "scenes": [ ... ]
+}
+```
+
+Each scene is a JSON object with the fields listed in the [Data model](#data-model) section. Optional fields are omitted when empty.
+
+JSON is **always written** by the flat store — it is the backing format for incremental updates. Even if you request `--output csv` only, a JSON file is also created alongside it.
+
+### CSV
+
+One row per scene. Column order matches the table below exactly.
+
+Multi-value fields (`performers`, `tags`, `categories`) use `|` as a separator — e.g. `Alice|Bob`.
+
+`priceHistory` is serialised as a JSON string within its column. Use a JSON-aware tool (e.g. `jq`, DuckDB, Python) to query it; otherwise treat it as opaque.
+
+| Column | Type | Notes |
+|--------|------|-------|
+| `id` | string | Site-specific unique ID |
+| `siteId` | string | e.g. `manyvids` |
+| `studioUrl` | string | |
+| `title` | string | |
+| `url` | string | Full scene page URL |
+| `date` | RFC3339 | Release date |
+| `description` | string | |
+| `thumbnail` | string | URL |
+| `preview` | string | URL to preview clip |
+| `performers` | string | `\|`-separated |
+| `director` | string | |
+| `studio` | string | |
+| `tags` | string | `\|`-separated |
+| `categories` | string | `\|`-separated |
+| `series` | string | |
+| `seriesPart` | int | |
+| `duration` | int | Seconds |
+| `resolution` | string | e.g. `4K`, `HD` |
+| `width` | int | Pixels |
+| `height` | int | Pixels |
+| `format` | string | e.g. `MP4` |
+| `views` | int | At time of scrape |
+| `likes` | int | At time of scrape |
+| `comments` | int | At time of scrape |
+| `lowestPrice` | float | Lowest effective price seen |
+| `lowestPriceDate` | RFC3339 | When that price was recorded |
+| `priceHistory` | JSON string | Array of PriceSnapshot objects |
+| `scrapedAt` | RFC3339 | |
+| `deletedAt` | RFC3339 | Empty if active |
 
 ---
 
 ## Adding a scraper
 
-_Documented in Phase 3 — will use ManyVids as the fully worked example._
+### Steps
 
-**Short version:**
+1. Create `internal/scrapers/<site>/<site>.go` in package `<site>`
+2. Implement the four-method `scraper.StudioScraper` interface
+3. Register in `init()` so the binary picks it up automatically
+4. Add a blank import in `main.go`
+5. Write tests in `<site>_test.go` (same package)
 
-1. Create `internal/scrapers/<site>/<site>.go`
-2. Import `github.com/Wasylq/FSS/scraper` and `github.com/Wasylq/FSS/models` (both public)
-3. Implement the `scraper.StudioScraper` interface (4 methods: `ID`, `Patterns`, `MatchesURL`, `ListScenes`)
-4. Register in an `init()`: `scraper.Register(&Scraper{})`
-5. Add a blank import in `main.go` so `init()` runs: `_ "github.com/Wasylq/FSS/internal/scrapers/<site>"`
+### The interface
 
-Nothing else changes. External projects can also implement `scraper.StudioScraper` and register their own scrapers by importing the public `scraper` package.
+```go
+type StudioScraper interface {
+    ID()       string                 // stable lowercase key, e.g. "clips4sale"
+    Patterns() []string               // URL patterns — shown by `fss list-scrapers`
+    MatchesURL(url string) bool       // runtime URL lookup used by the registry
+    ListScenes(ctx context.Context, studioURL string, opts ListOpts) (<-chan SceneResult, error)
+}
+```
+
+`ListScenes` must close the returned channel when done and respect `ctx` cancellation.
+
+### Minimal template
+
+```go
+package mysite
+
+import (
+    "context"
+    "github.com/Wasylq/FSS/models"
+    "github.com/Wasylq/FSS/scraper"
+)
+
+type Scraper struct{ /* http client, base URLs */ }
+
+func init() { scraper.Register(&Scraper{}) }
+
+func (s *Scraper) ID() string       { return "mysite" }
+func (s *Scraper) Patterns() []string { return []string{"mysite.com/studio/*"} }
+func (s *Scraper) MatchesURL(u string) bool { return strings.Contains(u, "mysite.com/studio/") }
+
+func (s *Scraper) ListScenes(ctx context.Context, studioURL string, opts scraper.ListOpts) (<-chan scraper.SceneResult, error) {
+    out := make(chan scraper.SceneResult)
+    go func() {
+        defer close(out)
+        // paginate, fetch detail, map to models.Scene, send
+        out <- scraper.SceneResult{Scene: models.Scene{ /* ... */ }}
+    }()
+    return out, nil
+}
+```
+
+### ManyVids as a worked example
+
+ManyVids uses two API endpoints:
+
+| Purpose | Endpoint |
+|---------|----------|
+| List all scene IDs (paginated, 9/page) | `GET api.manyvids.com/store/videos/{creatorId}?sort=date&page=N` |
+| Full metadata for one scene | `GET api.manyvids.com/store/video/{id}` |
+
+The creator ID is extracted from the studio URL with a regex:
+`manyvids\.com/Profile/(\d+)/[^/]+/Store/Videos`
+
+**Worker pool pattern** — `ListScenes` runs a goroutine that:
+1. Paginates the list endpoint, sending IDs into a `work` channel
+2. N worker goroutines read from `work`, call `fetchDetail`, send `SceneResult` to the output channel
+3. When pagination is done, `work` is closed; workers drain and exit; output channel is closed
+
+The `apiBase` and `siteBase` fields on the scraper struct are overridable — tests inject an `httptest.Server` URL so no real network calls are made.
+
+### Wiring it up
+
+In `main.go`, add a blank import so the `init()` function runs:
+
+```go
+import _ "github.com/Wasylq/FSS/internal/scrapers/mysite"
+```
+
+Run `fss list-scrapers` to confirm registration.
 
 ---
 
 ## Modifying a scraper
 
-_Documented in Phase 3._
+### Adding a new field to `models.Scene`
+
+1. **`models/scene.go`** — add the field with JSON tag
+2. **The scraper** — populate the field in `toScene()` (or equivalent mapping function)
+3. **`internal/store/export_csv.go`** — add the column name to `csvHeaders` and the value to `sceneToRow()`
+4. **`MANUAL.md`** — add a row to the CSV column table and the data model table
+5. If using SQLite — add the column to the `CREATE TABLE` statement and the insert/select queries in `internal/store/sqlite.go`
+
+### Adding a new URL pattern to an existing scraper
+
+Update `Patterns()` to return the new pattern and update `MatchesURL()` to recognise it. Add a test case to `TestMatchesURL`. No other files change.
 
 ---
 

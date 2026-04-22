@@ -219,11 +219,11 @@ type Store interface {
 - [x] `internal/store/interface.go` → Store interface
 - [x] Restructured: `models/` and `scraper/` are public; scraper implementations go in `internal/scrapers/`
 
-### Phase 2 — Flat file store (default)
-- [ ] `internal/store/flat.go` → load/save scenes from JSON file keyed by studio URL
-- [ ] `internal/store/export_json.go` → write JSON output
-- [ ] `internal/store/export_csv.go` → write CSV with all Scene fields
-- [ ] `MANUAL.md` — output formats section: JSON structure with example, CSV column list, price history shape, all field descriptions
+### Phase 2 — Flat file store (default) ✓
+- [x] `internal/store/flat.go` → load/save scenes from JSON file keyed by studio URL
+- [x] `internal/store/export_json.go` → write JSON output
+- [x] `internal/store/export_csv.go` → write CSV with all Scene fields
+- [x] `MANUAL.md` — output formats section: JSON structure with example, CSV column list, price history shape, all field descriptions
 
 ### Phase 3 — ManyVids scraper
 > API confirmed. No auth required for public content.
@@ -274,14 +274,15 @@ type Store interface {
 | `price.onSale` | IsOnSale |
 | `price.discountedPrice` | DiscountedPrice |
 
-- [ ] `internal/scrapers/manyvids/manyvids.go`
-  - [ ] `Patterns()` — return ManyVids URL patterns
-  - [ ] `MatchesURL` — match `manyvids.com/Profile/*/Store/Videos`
-  - [ ] `fetchPage(ctx, creatorID, page int)` → IDs + totalPages
-  - [ ] `fetchDetail(ctx, id string)` → Scene
-  - [ ] `ListScenes` — paginate list, fan-out detail fetches via worker pool, send to channel
-  - [ ] Duration parser: "MM:SS" / "HH:MM:SS" → int seconds
-  - [ ] Register in `registry.go`
+- [x] `internal/scrapers/manyvids/manyvids.go`
+  - [x] `Patterns()` — return ManyVids URL patterns
+  - [x] `MatchesURL` — match `manyvids.com/Profile/*/Store/Videos`
+  - [x] `fetchPage(ctx, creatorID, page int)` → IDs + totalPages
+  - [x] `fetchDetail(ctx, id string)` → Scene
+  - [x] `ListScenes` — paginate list, fan-out detail fetches via worker pool, send to channel
+  - [x] Duration parser: "MM:SS" / "HH:MM:SS" → int seconds
+  - [x] Register via `init()`, blank-imported from `main.go`
+- [x] Tests: MatchesURL, creatorID, parseDuration, toScene (real fixture), AddPrice tracking, fetchPage (httptest), ListScenes (httptest) — all passing
 - [ ] Manual test: run against `https://www.manyvids.com/Profile/590705/bettie-bondage/Store/Videos`, verify output
 - [ ] `MANUAL.md` — "Adding a scraper" section: annotated ManyVids as worked example, minimal template, registration step
 - [ ] `MANUAL.md` — "Modifying a scraper" section: adding a field end-to-end (Scene struct → mapping → CSV/SQLite)
