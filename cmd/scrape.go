@@ -138,7 +138,11 @@ func runScrape(cmd *cobra.Command, args []string) error {
 		fmt.Fprintf(os.Stderr, "warning: could not update studio record: %v\n", uErr)
 	}
 
-	fmt.Printf("Done: %d scenes saved.\n", len(scenes))
+	if ctx.Err() != nil {
+		fmt.Printf("Partial save complete: %d scenes.\n", len(scenes))
+	} else {
+		fmt.Printf("Done: %d scenes saved.\n", len(scenes))
+	}
 	return nil
 }
 
@@ -232,22 +236,29 @@ func scrapeRefresh(ctx context.Context, sc scraper.StudioScraper, st store.Store
 	return result, nil
 }
 
-// collectScenes drains the scraper channel, printing warnings for per-scene errors.
+// collectScenes drains the scraper channel, printing a live count and warnings.
 func collectScenes(ctx context.Context, sc scraper.StudioScraper, studioURL string, opts scraper.ListOpts) ([]models.Scene, error) {
 	ch, err := sc.ListScenes(ctx, studioURL, opts)
 	if err != nil {
 		return nil, fmt.Errorf("starting scrape: %w", err)
 	}
 	var scenes []models.Scene
+	errCount := 0
 	for result := range ch {
 		if result.Err != nil {
-			fmt.Fprintf(os.Stderr, "warning: %v\n", result.Err)
+			errCount++
+			fmt.Fprintf(os.Stderr, "\rwarning: %v\n", result.Err)
 			continue
 		}
 		scenes = append(scenes, result.Scene)
+		fmt.Printf("\r  fetching: %d scenes", len(scenes))
+	}
+	fmt.Println() // end the progress line
+	if errCount > 0 {
+		fmt.Fprintf(os.Stderr, "  %d fetch error(s) — see warnings above\n", errCount)
 	}
 	if ctx.Err() != nil {
-		fmt.Fprintf(os.Stderr, "Interrupted — partial results: %d scenes collected\n", len(scenes))
+		fmt.Printf("Interrupted — saving %d partial results...\n", len(scenes))
 	}
 	return scenes, nil
 }

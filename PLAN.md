@@ -329,23 +329,23 @@ type Store interface {
 - [x] `cmd/scrape.go` — `--name` flag added
 - [x] `cmd/list_studios.go` — `fss list-studios --db <path>` command
 - [x] Tests: Save/Load round-trip, idempotent save, price history accumulation, MarkDeleted idempotency, studio upsert/list/name preservation — all passing
-- [ ] Wire up: `--db` → SQLite store + UpsertStudio called at scrape time (Phase 5)
+- [x] Wire up: `--db` → SQLite store + UpsertStudio called at scrape time (Phase 5)
 - [x] `MANUAL.md` — SQLite section: schema (scenes, price_history, studios), enabling, example queries
 
-### Phase 5 — Scrape logic + store wiring (in `cmd/scrape.go`)
-- [ ] Resolve flags against config (workers, output, out, db, name)
-- [ ] Select store: `--db` → SQLite, otherwise flat
-- [ ] Look up scraper via `scraper.ForURL(studioURL)`
-- [ ] Default run: load existing scene IDs, pass to scraper for early-stop, merge new scenes, save
-- [ ] `--full`: skip loading existing, scrape all pages, save
-- [ ] `--refresh`: scrape full list, re-fetch all metadata, soft-delete missing IDs, save
-- [ ] Call `store.UpsertStudio` at end of each successful scrape (update `last_scraped_at`)
-- [ ] `MANUAL.md` — resume/update behaviour section
+### Phase 5 — Scrape logic + store wiring (in `cmd/scrape.go`) ✓
+- [x] Resolve flags against config (workers, output, out, db, name)
+- [x] Select store: `--db` → SQLite, otherwise flat
+- [x] Look up scraper via `scraper.ForURL(studioURL)`
+- [x] Default run: load existing scene IDs, pass to scraper for early-stop, merge new scenes, save
+- [x] `--full`: skip loading existing, scrape all pages, save
+- [x] `--refresh`: scrape full list, re-fetch all metadata, soft-delete missing IDs, save
+- [x] Call `store.UpsertStudio` at end of each successful scrape (update `last_scraped_at`)
+- [x] `MANUAL.md` — resume/update behaviour section
 
-### Phase 6 — Polish
-- [ ] Progress output (scenes found / scraped / skipped / errors)
-- [ ] Graceful shutdown on Ctrl+C (flush partial results)
-- [ ] Final pass on both `README.md` and `MANUAL.md` — verify everything is current and consistent
+### Phase 6 — Polish ✓
+- [x] Progress output: live `\r` counter during fetch; per-mode summary; error count
+- [x] Graceful shutdown on Ctrl+C: context cancellation stops scraper, partial results saved, clear "Partial save" message
+- [x] Final pass on `README.md` and `MANUAL.md` — verified current and consistent
 
 ---
 
