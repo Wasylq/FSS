@@ -43,7 +43,6 @@ workers: 3        # int   — parallel metadata fetchers
 output: json      # str   — json | csv | json,csv
 out_dir: .        # str   — output directory path
 db: ""            # str   — SQLite path; empty string disables SQLite
-sort: date        # str   — date | featured
 ```
 
 CLI flags take precedence over config values. Config values take precedence over built-in defaults.
@@ -248,6 +247,49 @@ The creator ID is extracted from the studio URL with a regex:
 
 The `apiBase` and `siteBase` fields on the scraper struct are overridable — tests inject an `httptest.Server` URL so no real network calls are made.
 
+### Clips4Sale as a worked example
+
+Clips4Sale returns full scene metadata in the paginated list — no separate detail endpoint is needed.
+
+**List endpoint** (24 clips per page):
+
+```
+GET https://www.clips4sale.com/en/studio/{studioId}/{slug}/Cat0-AllCategories/Page{N}/C4SSort-recommended/Limit24/?onlyClips=true&storeSimilarClips=false&_data=routes/($lang).studio.$id_.$studioSlug.$
+```
+
+Returns `{"clips": [...], "onSaleClips": [...]}`. The `clips` array contains all scenes including on-sale ones.
+
+The studio ID and slug are extracted from the studio URL with a regex:
+`clips4sale\.com/studio/(\d+)/([a-zA-Z][^/?]*)` — the slug must start with a letter to distinguish studio URLs from individual clip URLs (which use a numeric clip ID as the second path segment).
+
+**Single-goroutine pattern** — `ListScenes` runs a single goroutine that paginates the list endpoint and emits one `SceneResult` per clip. No worker pool is needed.
+
+**Incremental mode caveat** — the default sort is `C4SSort-recommended`, not date order. Pagination cannot stop early when a known ID is encountered. Instead, known IDs are skipped per-clip; all pages are always enumerated in incremental mode.
+
+**Key field mappings:**
+
+| JSON field | Scene field | Notes |
+|-----------|-------------|-------|
+| `clipId` | `ID` | String |
+| `link` | `URL` | Relative; prepend `https://www.clips4sale.com` |
+| `date_display` | `Date` | Format `"1/2/06 3:04 PM"` |
+| `description` | `Description` | HTML — tags stripped, entities unescaped |
+| `cdn_previewlg_link` | `Thumbnail` | |
+| `customPreviewUrl` | `Preview` | |
+| `performers[].stage_name` | `Performers` | |
+| `studioTitle` | `Studio` | |
+| `category_name` | `Categories` | Primary C4S category |
+| `related_category_links[].category` + `keyword_links[].keyword` | `Tags` | Deduped |
+| `time_minutes × 60` | `Duration` | Seconds |
+| `resolution_text` (uppercased) | `Resolution` | e.g. `4K` |
+| `screen_size` | `Width` / `Height` | Split on `x` |
+| `format` (uppercased) | `Format` | e.g. `MP4` |
+| `price` | `PriceSnapshot.Regular` | |
+| `discounted_price` | `PriceSnapshot.Discounted` | null → 0 |
+| `onSale` | `PriceSnapshot.IsOnSale` | null → false |
+
+The `siteBase` and `pageLimit` fields are overridable for testing via `httptest.Server`.
+
 ### Wiring it up
 
 In `main.go`, add a blank import so the `init()` function runs:
@@ -294,6 +336,8 @@ The fastest option. Suitable for routine daily runs.
 ### `--full`
 
 Ignores all existing data. Fetches every page, fetches every scene. Overwrites the store.
+
+**Price history is not preserved** — all accumulated price snapshots are discarded and replaced with a single snapshot from this run. Use `--refresh` if you want to keep price history while re-fetching metadata.
 
 Use when you want a clean slate or after a schema change.
 

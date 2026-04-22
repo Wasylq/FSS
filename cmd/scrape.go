@@ -69,6 +69,9 @@ func runScrape(cmd *cobra.Command, args []string) error {
 	}
 
 	name, _ := cmd.Flags().GetString("name")
+	if name != "" && dbPath == "" {
+		fmt.Fprintln(os.Stderr, "warning: --name has no effect without --db (studio names are only stored in SQLite)")
+	}
 
 	// --- pick store ---
 	var st store.Store
@@ -151,8 +154,12 @@ func scrapeAll(ctx context.Context, sc scraper.StudioScraper, studioURL string, 
 	return collectScenes(ctx, sc, studioURL, scraper.ListOpts{Workers: workers})
 }
 
-// scrapeIncremental loads existing scene IDs, passes them to the scraper for
-// early-stop optimisation, then merges new scenes in front of existing ones.
+// scrapeIncremental loads existing scene IDs, passes them to the scraper as a
+// hint for early-stop optimisation (date-sorted sites), then merges results.
+//
+// Scrapers that cannot use early-stop (e.g. recommended-sorted sites) may emit
+// known scenes in correct site order. In that case fresh takes priority and
+// price history is carried forward so no history is lost.
 func scrapeIncremental(ctx context.Context, sc scraper.StudioScraper, st store.Store, studioURL string, workers int) ([]models.Scene, error) {
 	existing, err := st.Load(studioURL)
 	if err != nil {
@@ -160,8 +167,10 @@ func scrapeIncremental(ctx context.Context, sc scraper.StudioScraper, st store.S
 	}
 
 	knownIDs := make(map[string]bool, len(existing))
+	existingByID := make(map[string]models.Scene, len(existing))
 	for _, s := range existing {
 		knownIDs[s.ID] = true
+		existingByID[s.ID] = s
 	}
 
 	fresh, err := collectScenes(ctx, sc, studioURL, scraper.ListOpts{Workers: workers, KnownIDs: knownIDs})
@@ -169,20 +178,29 @@ func scrapeIncremental(ctx context.Context, sc scraper.StudioScraper, st store.S
 		return nil, err
 	}
 
-	// Merge: fresh new scenes at the front, existing scenes appended (no duplicates).
+	// Merge: emit fresh scenes first (preserving scraper order); carry price
+	// history when a fresh scene was already stored (happens when a scraper
+	// re-emits known IDs rather than skipping them). Append any existing scenes
+	// that were not re-emitted (older entries on date-sorted sites).
 	freshIDs := make(map[string]bool, len(fresh))
+	result := make([]models.Scene, 0, len(fresh)+len(existing))
+	newCount := 0
 	for _, s := range fresh {
 		freshIDs[s.ID] = true
+		if prev, ok := existingByID[s.ID]; ok {
+			s = carryOverPriceHistory(s, prev)
+		} else {
+			newCount++
+		}
+		result = append(result, s)
 	}
-	result := make([]models.Scene, 0, len(fresh)+len(existing))
-	result = append(result, fresh...)
 	for _, s := range existing {
 		if !freshIDs[s.ID] {
 			result = append(result, s)
 		}
 	}
 
-	fmt.Printf("  %d new, %d existing → %d total\n", len(fresh), len(existing), len(result))
+	fmt.Printf("  %d new, %d existing → %d total\n", newCount, len(existing), len(result))
 	return result, nil
 }
 

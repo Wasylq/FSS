@@ -16,6 +16,9 @@ go build -o fss .
 # Scrape a ManyVids studio, output JSON (default)
 fss scrape https://www.manyvids.com/Profile/590705/bettie-bondage/Store/Videos
 
+# Scrape a Clips4Sale studio
+fss scrape https://www.clips4sale.com/studio/27897/bettie-bondage
+
 # Default behaviour: only fetch scenes not already in the output file (incremental)
 fss scrape <url>
 
@@ -55,7 +58,6 @@ workers: 3        # parallel metadata fetchers
 output: json      # json | csv | json,csv
 out_dir: .        # output directory
 db: ""            # SQLite path — empty disables SQLite
-sort: date        # date | featured
 ```
 
 ## Output

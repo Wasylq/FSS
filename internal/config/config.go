@@ -13,7 +13,6 @@ type Config struct {
 	Output  string `yaml:"output"`
 	OutDir  string `yaml:"out_dir"`
 	DB      string `yaml:"db"`
-	Sort    string `yaml:"sort"`
 }
 
 func defaults() *Config {
@@ -22,7 +21,6 @@ func defaults() *Config {
 		Output:  "json",
 		OutDir:  ".",
 		DB:      "",
-		Sort:    "date",
 	}
 }
 
