@@ -25,11 +25,11 @@ func NewFlat(dir string, formats []string) *Flat {
 }
 
 func (f *Flat) jsonPath(studioURL string) string {
-	return filepath.Join(f.dir, slugify(studioURL)+".json")
+	return filepath.Join(f.dir, Slugify(studioURL)+".json")
 }
 
 func (f *Flat) csvPath(studioURL string) string {
-	return filepath.Join(f.dir, slugify(studioURL)+".csv")
+	return filepath.Join(f.dir, Slugify(studioURL)+".csv")
 }
 
 func (f *Flat) Load(studioURL string) ([]models.Scene, error) {
@@ -89,13 +89,19 @@ func (f *Flat) MarkDeleted(studioURL string, ids []string) error {
 }
 
 // Export is a no-op for the flat store — files are written directly by Save.
-func (f *Flat) Export(_, _ string) error { return nil }
+func (f *Flat) Export(_, _, _ string) error { return nil }
 
-// slugify turns a studio URL into a safe, human-readable filename stem.
+// UpsertStudio is a no-op for the flat store — studio tracking requires SQLite.
+func (f *Flat) UpsertStudio(_ models.Studio) error { return nil }
+
+// ListStudios is a no-op for the flat store.
+func (f *Flat) ListStudios() ([]models.Studio, error) { return nil, nil }
+
+// Slugify turns a studio URL into a safe, human-readable filename stem.
 // e.g. "https://www.manyvids.com/Profile/590705/bettie-bondage/Store/Videos"
 //
 //	→ "manyvids.com-profile-590705-bettie-bondage-store-videos"
-func slugify(rawURL string) string {
+func Slugify(rawURL string) string {
 	u, err := url.Parse(rawURL)
 	if err != nil {
 		return sanitize(rawURL)

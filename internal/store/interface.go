@@ -14,7 +14,13 @@ type Store interface {
 	// MarkDeleted soft-deletes scenes by ID — sets DeletedAt, does not remove records.
 	MarkDeleted(studioURL string, ids []string) error
 
-	// Export writes the store contents to a file in the given format ("json" or "csv").
+	// Export writes scenes for a studio URL to a file in the given format ("json" or "csv").
 	// Used when SQLite is the source of truth and flat files are requested as output.
-	Export(format, path string) error
+	Export(format, path, studioURL string) error
+
+	// UpsertStudio records or updates a studio entry. No-op for the flat store.
+	UpsertStudio(studio models.Studio) error
+
+	// ListStudios returns all known studios. Empty for the flat store.
+	ListStudios() ([]models.Studio, error)
 }

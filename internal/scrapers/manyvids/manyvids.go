@@ -61,12 +61,11 @@ func (s *Scraper) ListScenes(ctx context.Context, studioURL string, opts scraper
 	if err != nil {
 		return nil, err
 	}
-	workers := opts.Workers
-	if workers <= 0 {
-		workers = 3
+	if opts.Workers <= 0 {
+		opts.Workers = 3
 	}
 	out := make(chan scraper.SceneResult)
-	go s.run(ctx, studioURL, cid, workers, out)
+	go s.run(ctx, studioURL, cid, opts, out)
 	return out, nil
 }
 
@@ -79,13 +78,13 @@ type listEntry struct {
 
 // ---- worker orchestration ----
 
-func (s *Scraper) run(ctx context.Context, studioURL, cid string, workers int, out chan<- scraper.SceneResult) {
+func (s *Scraper) run(ctx context.Context, studioURL, cid string, opts scraper.ListOpts, out chan<- scraper.SceneResult) {
 	defer close(out)
 
-	work := make(chan listEntry, workers)
+	work := make(chan listEntry, opts.Workers)
 	var wg sync.WaitGroup
 
-	for i := 0; i < workers; i++ {
+	for i := 0; i < opts.Workers; i++ {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
@@ -113,7 +112,14 @@ func (s *Scraper) run(ctx context.Context, studioURL, cid string, workers int, o
 			break
 		}
 		cancelled := false
+		hitKnown := false
 		for _, e := range entries {
+			if len(opts.KnownIDs) > 0 && opts.KnownIDs[e.id] {
+				// Content is sorted newest-first; a known ID means everything
+				// from this point is already stored.
+				hitKnown = true
+				break
+			}
 			select {
 			case work <- e:
 			case <-ctx.Done():
@@ -123,7 +129,7 @@ func (s *Scraper) run(ctx context.Context, studioURL, cid string, workers int, o
 				break
 			}
 		}
-		if cancelled || page >= totalPages {
+		if cancelled || hitKnown || page >= totalPages {
 			break
 		}
 	}

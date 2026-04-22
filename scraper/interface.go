@@ -30,6 +30,10 @@ type StudioScraper interface {
 // ListOpts controls scraping behaviour passed in from the CLI/config.
 type ListOpts struct {
 	Workers int
+	// KnownIDs, when non-empty, signals the scraper to stop pagination as soon
+	// as it encounters an ID already in the set. Used for incremental runs where
+	// content is sorted newest-first and trailing pages are already stored.
+	KnownIDs map[string]bool
 }
 
 // SceneResult is a single item sent by ListScenes — either a scene or an error.

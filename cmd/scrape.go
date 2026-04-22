@@ -1,7 +1,20 @@
 package cmd
 
 import (
+	"context"
+	"fmt"
+	"os"
+	"os/signal"
+	"path/filepath"
+	"strings"
+	"syscall"
+	"time"
+
 	"github.com/spf13/cobra"
+
+	"github.com/Wasylq/FSS/internal/store"
+	"github.com/Wasylq/FSS/models"
+	"github.com/Wasylq/FSS/scraper"
 )
 
 var scrapeCmd = &cobra.Command{
@@ -20,9 +33,249 @@ func init() {
 	scrapeCmd.Flags().StringP("output", "o", "", "export formats: json, csv, or json,csv (default from config)")
 	scrapeCmd.Flags().String("out", "", "output directory (default from config)")
 	scrapeCmd.Flags().String("db", "", "enable SQLite store at this path")
+	scrapeCmd.Flags().String("name", "", "human-readable label for this studio (stored when --db is set)")
 }
 
 func runScrape(cmd *cobra.Command, args []string) error {
-	// TODO: Phase 2+ — resolve flags against cfg, pick store, pick scraper, run.
+	studioURL := args[0]
+
+	// --- resolve flags against config ---
+	full, _ := cmd.Flags().GetBool("full")
+	refresh, _ := cmd.Flags().GetBool("refresh")
+	if full && refresh {
+		return fmt.Errorf("--full and --refresh are mutually exclusive")
+	}
+
+	workers, _ := cmd.Flags().GetInt("workers")
+	if workers <= 0 {
+		workers = cfg.Workers
+	}
+
+	outputFlag, _ := cmd.Flags().GetString("output")
+	outputStr := cfg.Output
+	if outputFlag != "" {
+		outputStr = outputFlag
+	}
+	formats := parseFormats(outputStr)
+
+	outDir, _ := cmd.Flags().GetString("out")
+	if outDir == "" {
+		outDir = cfg.OutDir
+	}
+
+	dbPath, _ := cmd.Flags().GetString("db")
+	if dbPath == "" {
+		dbPath = cfg.DB
+	}
+
+	name, _ := cmd.Flags().GetString("name")
+
+	// --- pick store ---
+	var st store.Store
+	if dbPath != "" {
+		db, err := store.NewSQLite(dbPath)
+		if err != nil {
+			return fmt.Errorf("opening database: %w", err)
+		}
+		defer db.Close()
+		st = db
+	} else {
+		st = store.NewFlat(outDir, formats)
+	}
+
+	// --- look up scraper ---
+	sc, err := scraper.ForURL(studioURL)
+	if err != nil {
+		return err
+	}
+
+	// --- graceful shutdown on Ctrl+C ---
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
+
+	// --- run selected mode ---
+	var scenes []models.Scene
+	switch {
+	case full:
+		fmt.Printf("Full scrape: %s\n", studioURL)
+		scenes, err = scrapeAll(ctx, sc, studioURL, workers)
+	case refresh:
+		fmt.Printf("Refresh scrape: %s\n", studioURL)
+		scenes, err = scrapeRefresh(ctx, sc, st, studioURL, workers)
+	default:
+		fmt.Printf("Incremental scrape: %s\n", studioURL)
+		scenes, err = scrapeIncremental(ctx, sc, st, studioURL, workers)
+	}
+	if err != nil {
+		return err
+	}
+
+	// --- persist ---
+	if err := st.Save(studioURL, scenes); err != nil {
+		return fmt.Errorf("saving results: %w", err)
+	}
+
+	// For SQLite: export flat files if explicitly requested
+	if dbPath != "" {
+		slug := store.Slugify(studioURL)
+		for _, format := range formats {
+			path := filepath.Join(outDir, slug+"."+format)
+			if err := st.Export(format, path, studioURL); err != nil {
+				return fmt.Errorf("exporting %s: %w", format, err)
+			}
+		}
+	}
+
+	// --- track studio ---
+	now := time.Now().UTC()
+	if uErr := st.UpsertStudio(models.Studio{
+		URL:           studioURL,
+		SiteID:        sc.ID(),
+		Name:          name,
+		AddedAt:       now,
+		LastScrapedAt: &now,
+	}); uErr != nil {
+		fmt.Fprintf(os.Stderr, "warning: could not update studio record: %v\n", uErr)
+	}
+
+	fmt.Printf("Done: %d scenes saved.\n", len(scenes))
 	return nil
+}
+
+// scrapeAll fetches every scene from scratch, ignoring any existing data.
+func scrapeAll(ctx context.Context, sc scraper.StudioScraper, studioURL string, workers int) ([]models.Scene, error) {
+	return collectScenes(ctx, sc, studioURL, scraper.ListOpts{Workers: workers})
+}
+
+// scrapeIncremental loads existing scene IDs, passes them to the scraper for
+// early-stop optimisation, then merges new scenes in front of existing ones.
+func scrapeIncremental(ctx context.Context, sc scraper.StudioScraper, st store.Store, studioURL string, workers int) ([]models.Scene, error) {
+	existing, err := st.Load(studioURL)
+	if err != nil {
+		return nil, fmt.Errorf("loading existing scenes: %w", err)
+	}
+
+	knownIDs := make(map[string]bool, len(existing))
+	for _, s := range existing {
+		knownIDs[s.ID] = true
+	}
+
+	fresh, err := collectScenes(ctx, sc, studioURL, scraper.ListOpts{Workers: workers, KnownIDs: knownIDs})
+	if err != nil {
+		return nil, err
+	}
+
+	// Merge: fresh new scenes at the front, existing scenes appended (no duplicates).
+	freshIDs := make(map[string]bool, len(fresh))
+	for _, s := range fresh {
+		freshIDs[s.ID] = true
+	}
+	result := make([]models.Scene, 0, len(fresh)+len(existing))
+	result = append(result, fresh...)
+	for _, s := range existing {
+		if !freshIDs[s.ID] {
+			result = append(result, s)
+		}
+	}
+
+	fmt.Printf("  %d new, %d existing → %d total\n", len(fresh), len(existing), len(result))
+	return result, nil
+}
+
+// scrapeRefresh re-fetches all scenes and soft-deletes any that have disappeared.
+// Price history from prior scrapes is carried forward onto each re-fetched scene.
+func scrapeRefresh(ctx context.Context, sc scraper.StudioScraper, st store.Store, studioURL string, workers int) ([]models.Scene, error) {
+	existing, err := st.Load(studioURL)
+	if err != nil {
+		return nil, fmt.Errorf("loading existing scenes: %w", err)
+	}
+	existingByID := make(map[string]models.Scene, len(existing))
+	for _, s := range existing {
+		existingByID[s.ID] = s
+	}
+
+	// Full traversal — no KnownIDs
+	fresh, err := collectScenes(ctx, sc, studioURL, scraper.ListOpts{Workers: workers})
+	if err != nil {
+		return nil, err
+	}
+
+	// Build result: fresh scenes with accumulated price history.
+	scrapedIDs := make(map[string]bool, len(fresh))
+	result := make([]models.Scene, 0, len(existing))
+	for _, s := range fresh {
+		scrapedIDs[s.ID] = true
+		if prev, ok := existingByID[s.ID]; ok {
+			s = carryOverPriceHistory(s, prev)
+		}
+		result = append(result, s)
+	}
+
+	// Carry forward previously-deleted scenes; mark newly-missing ones as deleted.
+	now := time.Now().UTC()
+	newlyDeleted := 0
+	for _, s := range existing {
+		if scrapedIDs[s.ID] {
+			continue
+		}
+		if s.DeletedAt == nil {
+			s.DeletedAt = &now
+			newlyDeleted++
+		}
+		result = append(result, s)
+	}
+
+	if newlyDeleted > 0 {
+		fmt.Printf("  %d scenes no longer found, marked deleted\n", newlyDeleted)
+	}
+	fmt.Printf("  %d scraped, %d total\n", len(fresh), len(result))
+	return result, nil
+}
+
+// collectScenes drains the scraper channel, printing warnings for per-scene errors.
+func collectScenes(ctx context.Context, sc scraper.StudioScraper, studioURL string, opts scraper.ListOpts) ([]models.Scene, error) {
+	ch, err := sc.ListScenes(ctx, studioURL, opts)
+	if err != nil {
+		return nil, fmt.Errorf("starting scrape: %w", err)
+	}
+	var scenes []models.Scene
+	for result := range ch {
+		if result.Err != nil {
+			fmt.Fprintf(os.Stderr, "warning: %v\n", result.Err)
+			continue
+		}
+		scenes = append(scenes, result.Scene)
+	}
+	if ctx.Err() != nil {
+		fmt.Fprintf(os.Stderr, "Interrupted — partial results: %d scenes collected\n", len(scenes))
+	}
+	return scenes, nil
+}
+
+// carryOverPriceHistory prepends the existing scene's price history onto a
+// freshly scraped scene, then appends the new snapshot so LowestPrice is correct.
+func carryOverPriceHistory(fresh, existing models.Scene) models.Scene {
+	if len(fresh.PriceHistory) == 0 {
+		return fresh
+	}
+	newSnap := fresh.PriceHistory[len(fresh.PriceHistory)-1]
+	fresh.PriceHistory = existing.PriceHistory
+	fresh.LowestPrice = existing.LowestPrice
+	fresh.LowestPriceDate = existing.LowestPriceDate
+	fresh.AddPrice(newSnap)
+	return fresh
+}
+
+// parseFormats splits "json,csv" into ["json","csv"], trimming spaces and deduplicating.
+func parseFormats(s string) []string {
+	seen := map[string]bool{}
+	var out []string
+	for _, f := range strings.Split(s, ",") {
+		f = strings.TrimSpace(f)
+		if f != "" && !seen[f] {
+			seen[f] = true
+			out = append(out, f)
+		}
+	}
+	return out
 }

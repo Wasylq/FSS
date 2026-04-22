@@ -5,6 +5,24 @@ Easily expandable to new sites. Outputs JSON/CSV per studio, with optional SQLit
 
 ---
 
+## Core concepts
+
+**Studio** — the unit of work. You pass a studio URL; FSS fetches every scene that studio has published. A studio maps 1:1 to a creator page on a site (e.g. a ManyVids profile). Studios are tracked so you can:
+- Know what you've scraped and when
+- Label URLs with human-readable names (`--name "Bettie Bondage"`)
+- Query across multiple studios in SQLite (`SELECT * FROM scenes JOIN studios ...`)
+- Lay the groundwork for scraping many studios in one run (future feature — not in scope yet)
+
+**Scene** — the atomic record. Every video/clip with its full metadata, price history, and scraper housekeeping fields.
+
+**Price history** — every time you scrape, a new `PriceSnapshot` is appended. `LowestPrice` / `LowestPriceDate` are maintained automatically. Prices are never deleted — they reflect what was true at the time of each scrape.
+
+**Soft-delete** — scenes are never removed from the store. If a scene disappears from the site on a `--refresh` run, `DeletedAt` is set. This preserves your data even if content is taken down.
+
+**Incremental by default** — a plain `fss scrape <url>` only fetches what you don't already have, stopping pagination as soon as it hits a known scene ID. `--full` and `--refresh` override this.
+
+---
+
 ## Data Model
 
 ```go
@@ -67,13 +85,23 @@ type Scene struct {
     Comments int // MV: comments
 
     // Pricing history
-    PriceHistory    []PriceSnapshot `json:"priceHistory"`
-    LowestPrice     float64         `json:"lowestPrice"`     // lowest effective price seen across all scrapes
-    LowestPriceDate time.Time       `json:"lowestPriceDate"` // date of that scrape
+    PriceHistory    []PriceSnapshot
+    LowestPrice     float64    // lowest effective price seen across all scrapes
+    LowestPriceDate *time.Time // when that price was recorded
 
     // Scraper housekeeping
     ScrapedAt time.Time
     DeletedAt *time.Time // nil = active; non-nil = soft-deleted (not found on re-scrape)
+}
+
+// Studio tracks a registered studio URL and scrape history.
+// One Studio = one creator/store page on one site.
+type Studio struct {
+    URL           string
+    SiteID        string
+    Name          string     // user-supplied label via --name; never cleared by a scrape without --name
+    AddedAt       time.Time
+    LastScrapedAt *time.Time
 }
 ```
 
@@ -82,7 +110,7 @@ type Scene struct {
 **Storage notes:**
 - JSON: `PriceHistory` serialises naturally as an array
 - CSV: serialise `PriceHistory` as a JSON string in one column; `LowestPrice` / `LowestPriceDate` as regular columns
-- SQLite: separate `price_history` table with `scene_id` foreign key; `LowestPrice` / `LowestPriceDate` stay on the `scenes` table
+- SQLite: separate `price_history` table with `scene_id` foreign key; separate `studios` table
 
 ---
 
@@ -120,8 +148,10 @@ Flags:
   --output   string  Export formats: json, csv, or json,csv (default: json)
   --out      string  Output directory (default: current dir)
   --db       string  Enable SQLite and set path (e.g. --db ./fss.db)
+  --name     string  Human-readable label for this studio (stored in DB if --db is set)
 
-fss list-scrapers    Print all registered scrapers and their URL patterns
+fss list-scrapers              Print all registered scrapers and their URL patterns
+fss list-studios --db <path>   List all studios tracked in the SQLite database
 ```
 
 Behaviour:
@@ -130,6 +160,7 @@ Behaviour:
 - `--refresh`: re-fetch metadata for all scenes, mark missing ones as deleted (soft-delete)
 - `--db`: enables SQLite as source of truth; JSON/CSV become exports from it
 - Without `--db`: JSON/CSV are the primary store (loaded on start, saved on finish)
+- `--name`: stored on first scrape; subsequent scrapes without `--name` do not clear it
 
 ---
 
@@ -140,7 +171,8 @@ fss/
   main.go
   go.mod
   models/                   ← PUBLIC: importable by external projects
-    scene.go                ← Scene + PriceSnapshot structs
+    scene.go                ← Scene + PriceSnapshot structs, AddPrice()
+    studio.go               ← Studio struct
   scraper/                  ← PUBLIC: importable by external projects
     interface.go            ← StudioScraper interface, ListOpts, SceneResult
     registry.go             ← Register(), All(), ForURL()
@@ -148,18 +180,22 @@ fss/
     root.go                 ← cobra root, loads config, sets global flags
     scrape.go               ← `fss scrape` subcommand
     list_scrapers.go        ← `fss list-scrapers` subcommand
+    list_studios.go         ← `fss list-studios` subcommand (SQLite only)
   internal/                 ← private: app logic, not importable externally
     config/
       config.go             ← Config struct, Load() via adrg/xdg
     scrapers/               ← site implementations (internal — interface is the public contract)
       manyvids/
         manyvids.go
+        manyvids_test.go
+        integration_test.go ← live API test (build tag: integration)
     store/
       interface.go          ← Store interface
       flat.go               ← JSON/CSV flat-file store (default)
       sqlite.go             ← SQLite store (optional, --db flag)
       export_json.go
       export_csv.go
+      sqlite_test.go
 ```
 
 **Public vs internal rationale:**
@@ -195,7 +231,9 @@ type Store interface {
     Load(studioURL string) ([]models.Scene, error)
     Save(studioURL string, scenes []models.Scene) error
     MarkDeleted(studioURL string, ids []string) error
-    Export(format string, path string) error  // used when --db is active
+    Export(format, path, studioURL string) error // no-op for flat store
+    UpsertStudio(studio models.Studio) error     // no-op for flat store
+    ListStudios() ([]models.Studio, error)       // empty for flat store
 }
 ```
 
@@ -225,7 +263,7 @@ type Store interface {
 - [x] `internal/store/export_csv.go` → write CSV with all Scene fields
 - [x] `MANUAL.md` — output formats section: JSON structure with example, CSV column list, price history shape, all field descriptions
 
-### Phase 3 — ManyVids scraper
+### Phase 3 — ManyVids scraper ✓
 > API confirmed. No auth required for public content.
 
 **API endpoints:**
@@ -262,50 +300,60 @@ type Store interface {
 | `model.displayName` | Studio |
 | `tagList[].label` | Tags |
 | `videoDuration` ("MM:SS") | Duration (seconds) |
-| `description` | Description |
+| `description` (HTML-unescaped) | Description |
 | `resolution` | Resolution |
 | `width` / `height` | Width / Height |
 | `extension` | Format |
 | `viewsRaw` | Views |
 | `likesRaw` | Likes |
 | `comments` | Comments |
-| `price.regular` | Price |
-| `price.free` | IsFree |
-| `price.onSale` | IsOnSale |
-| `price.discountedPrice` | DiscountedPrice |
+| `price.regular` | PriceHistory[n].Regular |
+| `price.free` | PriceHistory[n].IsFree |
+| `price.onSale` | PriceHistory[n].IsOnSale |
+| `price.discountedPrice` | PriceHistory[n].Discounted |
+| `price.promoRate` | PriceHistory[n].DiscountPercent |
 
-- [x] `internal/scrapers/manyvids/manyvids.go`
-  - [x] `Patterns()` — return ManyVids URL patterns
-  - [x] `MatchesURL` — match `manyvids.com/Profile/*/Store/Videos`
-  - [x] `fetchPage(ctx, creatorID, page int)` → IDs + totalPages
-  - [x] `fetchDetail(ctx, id string)` → Scene
-  - [x] `ListScenes` — paginate list, fan-out detail fetches via worker pool, send to channel
-  - [x] Duration parser: "MM:SS" / "HH:MM:SS" → int seconds
-  - [x] Register via `init()`, blank-imported from `main.go`
-- [x] Tests: MatchesURL, creatorID, parseDuration, toScene (real fixture), AddPrice tracking, fetchPage (httptest), ListScenes (httptest) — all passing
-- [ ] Manual test: run against `https://www.manyvids.com/Profile/590705/bettie-bondage/Store/Videos`, verify output
-- [ ] `MANUAL.md` — "Adding a scraper" section: annotated ManyVids as worked example, minimal template, registration step
-- [ ] `MANUAL.md` — "Modifying a scraper" section: adding a field end-to-end (Scene struct → mapping → CSV/SQLite)
-- [ ] `README.md` — usage section with real example commands
+- [x] `internal/scrapers/manyvids/manyvids.go` — full implementation
+- [x] `internal/scrapers/manyvids/manyvids_test.go` — unit + httptest tests, all passing
+- [x] `internal/scrapers/manyvids/integration_test.go` — live API test (build tag: integration)
+- [x] Live test passed: 5 scenes, 0.7s, all fields correct, HTML entities stripped from description
+- [x] `MANUAL.md` — "Adding a scraper" and "Modifying a scraper" sections (ManyVids as worked example)
+- [x] `README.md` — usage section with real example commands
 
-### Phase 4 — SQLite store (optional)
-- [ ] `internal/store/sqlite.go`
-  - [ ] Schema: `scenes` table matching Scene struct
-  - [ ] `Load` / `Save` / `MarkDeleted`
-  - [ ] `Export` → delegate to JSON/CSV exporters
-- [ ] Wire up: if `--db` flag set (or config `db` non-empty), use SQLite store
-- [ ] `MANUAL.md` — SQLite section: schema, how to enable, example queries
+### Phase 4 — SQLite store + studio tracking ✓
+- [x] `internal/store/sqlite.go` — `scenes` + `price_history` + `studios` tables, full CRUD
+- [x] `Export(format, path, studioURL)` — updated signature on interface + flat store
+- [x] `models/studio.go` — Studio struct
+- [x] `UpsertStudio` / `ListStudios` on Store interface; SQLite full implementation; flat store no-op
+- [x] Studio upsert: `--name` value sets/updates the label; omitting `--name` never clears an existing name
+- [x] `cmd/scrape.go` — `--name` flag added
+- [x] `cmd/list_studios.go` — `fss list-studios --db <path>` command
+- [x] Tests: Save/Load round-trip, idempotent save, price history accumulation, MarkDeleted idempotency, studio upsert/list/name preservation — all passing
+- [ ] Wire up: `--db` → SQLite store + UpsertStudio called at scrape time (Phase 5)
+- [x] `MANUAL.md` — SQLite section: schema (scenes, price_history, studios), enabling, example queries
 
-### Phase 5 — Resume / update logic (in `cmd/scrape.go`)
-- [ ] Default (no flags): load existing scene IDs from store, skip already-scraped; early-stop list pagination on known ID
-- [ ] `--full`: skip loading existing, scrape all pages
-- [ ] `--refresh`: scrape full list, re-fetch metadata for all, soft-delete missing
-- [ ] `MANUAL.md` — resume/update behaviour section: what default / --full / --refresh each do to the store, soft-delete explained
+### Phase 5 — Scrape logic + store wiring (in `cmd/scrape.go`)
+- [ ] Resolve flags against config (workers, output, out, db, name)
+- [ ] Select store: `--db` → SQLite, otherwise flat
+- [ ] Look up scraper via `scraper.ForURL(studioURL)`
+- [ ] Default run: load existing scene IDs, pass to scraper for early-stop, merge new scenes, save
+- [ ] `--full`: skip loading existing, scrape all pages, save
+- [ ] `--refresh`: scrape full list, re-fetch all metadata, soft-delete missing IDs, save
+- [ ] Call `store.UpsertStudio` at end of each successful scrape (update `last_scraped_at`)
+- [ ] `MANUAL.md` — resume/update behaviour section
 
 ### Phase 6 — Polish
 - [ ] Progress output (scenes found / scraped / skipped / errors)
 - [ ] Graceful shutdown on Ctrl+C (flush partial results)
 - [ ] Final pass on both `README.md` and `MANUAL.md` — verify everything is current and consistent
+
+---
+
+## Future / out of scope for now
+
+- **Multi-studio in one command** — `fss scrape url1 url2 url3` or `fss scrape-all --db ./fss.db`. The data model and store already support it; it's a CLI orchestration addition.
+- **Stash integration** — separate script/phase at the very end, not part of core.
+- **Auth / paywalled content** — currently public content only; session handling deferred.
 
 ---
 
@@ -317,7 +365,7 @@ type Store interface {
 - [x] **Config format** — YAML via `gopkg.in/yaml.v3`, path via `adrg/xdg`
 - [x] **Multi-pattern scrapers** — `Patterns() []string` added to interface
 - [x] **Scene struct** — fat struct with all fields; Price/Preview/Series/Resolution all included
-- [ ] **Stash integration** — deferred; will be a separate script/phase at the very end, not part of core
+- [x] **Studio tracking** — `studios` table in SQLite; `--name` flag; `fss list-studios`; flat store is no-op
 
 ---
 
@@ -330,7 +378,7 @@ Quick-start focused. Someone clones the repo and can be running in 5 minutes.
 
 - Project description and install
 - Config file location and format
-- Common usage examples (`scrape`, `list-scrapers`)
+- Common usage examples (`scrape`, `list-scrapers`, `list-studios`)
 - Output file overview (what you get and where)
 - Pointer to `MANUAL.md` for deeper reference
 
@@ -338,7 +386,7 @@ Quick-start focused. Someone clones the repo and can be running in 5 minutes.
 Full technical reference. Never needs to be read end-to-end — written to be searched.
 
 - **All CLI flags** — every flag, its default, its interaction with config
-- **Data model reference** — every `Scene` field, its type, which sites populate it, what it means
+- **Data model reference** — every `Scene` and `Studio` field, its type, which sites populate it, what it means
 - **Output formats in depth** — JSON structure with example, CSV column list, price history shape, SQLite schema + example queries
 - **Adding a scraper** — step-by-step with a minimal annotated template; what each interface method must do; how to register; how to test
 - **Modifying a scraper** — how to add a field to `models.Scene` and what else must change (CSV headers, SQLite schema, existing scraper mapping)
@@ -361,5 +409,6 @@ Full technical reference. Never needs to be read end-to-end — written to be se
 - `Patterns()` lets a scraper claim multiple URL formats or shared-platform URLs without duplicating the implementation.
 - Soft-delete: `DeletedAt` is set when a scene is no longer found on re-scrape. Never removed automatically.
 - SQLite is off by default. Without `--db`, the JSON file is the source of truth (loaded at start, diffed, saved at end).
+- Studio tracking is SQLite-only. The flat store silently ignores `UpsertStudio` / `ListStudios`.
 - CommunityScrapers can be referenced for ManyVids field mapping but this project always targets the full studio list, not a single scene.
 - Price fields reflect the price at time of scrape — they will go stale and that is expected.

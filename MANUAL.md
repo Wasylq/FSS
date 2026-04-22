@@ -278,10 +278,146 @@ Update `Patterns()` to return the new pattern and update `MatchesURL()` to recog
 
 ## Resume and update behaviour
 
-_Documented in Phase 5._
+FSS supports three modes, selected by flags on `fss scrape`.
+
+### Default — incremental (no flag)
+
+The fastest option. Suitable for routine daily runs.
+
+1. Load all scene IDs already stored for this studio.
+2. Paginate the site's scene list (newest-first). As soon as an already-known ID appears, stop — everything behind it is already in the store.
+3. Fetch full metadata only for the newly discovered scenes.
+4. Merge new scenes in front of the existing set and save.
+
+**Trade-off:** if the site re-orders or back-fills scenes you may miss them. Use `--refresh` periodically to catch that.
+
+### `--full`
+
+Ignores all existing data. Fetches every page, fetches every scene. Overwrites the store.
+
+Use when you want a clean slate or after a schema change.
+
+### `--refresh`
+
+Full traversal (every page, every scene) but preserves history:
+
+- **Price history** from prior scrapes is carried forward — each re-fetched scene gets the new price snapshot appended to its existing history.
+- **Soft-delete** — any scene that was in the store but is no longer returned by the site has its `deletedAt` timestamp set. It is never removed from the store.
+
+Use periodically (e.g. weekly) to catch deletions and accumulate accurate price history.
 
 ---
 
 ## SQLite
 
-_Documented in Phase 4._
+### Enabling
+
+Pass `--db <path>` to any scrape command, or set `db` in your config file:
+
+```bash
+fss scrape --db ./fss.db <studio-url>
+```
+
+When `--db` is set, SQLite is the source of truth. JSON/CSV files are exported from it if `--output` requests them.
+
+### Schema
+
+Two tables. Inspect with any SQLite client (`sqlite3`, DBeaver, TablePlus, etc.).
+
+**`scenes`** — one row per scene:
+
+| Column | Type | Notes |
+|--------|------|-------|
+| `id` | TEXT | Site-specific ID (primary key with `site_id`) |
+| `site_id` | TEXT | e.g. `manyvids` |
+| `studio_url` | TEXT | Indexed |
+| `title` | TEXT | |
+| `url` | TEXT | |
+| `date` | TEXT | RFC3339 |
+| `description` | TEXT | |
+| `thumbnail` | TEXT | |
+| `preview` | TEXT | |
+| `performers` | TEXT | JSON array |
+| `director` | TEXT | |
+| `studio` | TEXT | |
+| `tags` | TEXT | JSON array |
+| `categories` | TEXT | JSON array |
+| `series` | TEXT | |
+| `series_part` | INTEGER | |
+| `duration` | INTEGER | Seconds |
+| `resolution` | TEXT | |
+| `width` | INTEGER | |
+| `height` | INTEGER | |
+| `format` | TEXT | |
+| `views` | INTEGER | |
+| `likes` | INTEGER | |
+| `comments` | INTEGER | |
+| `lowest_price` | REAL | |
+| `lowest_price_date` | TEXT | RFC3339, nullable |
+| `scraped_at` | TEXT | RFC3339 |
+| `deleted_at` | TEXT | RFC3339, nullable — NULL means active |
+
+**`price_history`** — one row per price snapshot per scene:
+
+| Column | Type |
+|--------|------|
+| `id` | INTEGER (autoincrement) |
+| `scene_id` | TEXT |
+| `site_id` | TEXT |
+| `date` | TEXT |
+| `regular` | REAL |
+| `discounted` | REAL |
+| `is_free` | INTEGER (0/1) |
+| `is_on_sale` | INTEGER (0/1) |
+| `discount_percent` | INTEGER |
+
+**`studios`** — one row per studio URL:
+
+| Column | Type | Notes |
+|--------|------|-------|
+| `url` | TEXT | Primary key |
+| `site_id` | TEXT | e.g. `manyvids` |
+| `name` | TEXT | User-supplied label via `--name`; never cleared by a scrape that omits `--name` |
+| `added_at` | TEXT | RFC3339 — when first scraped |
+| `last_scraped_at` | TEXT | RFC3339, nullable |
+
+### Listing studios
+
+```bash
+fss list-studios --db ./fss.db
+```
+
+### Example queries
+
+```sql
+-- All active scenes for a studio
+SELECT title, date, duration, lowest_price
+FROM scenes
+WHERE studio_url = 'https://www.manyvids.com/Profile/590705/bettie-bondage/Store/Videos'
+  AND deleted_at IS NULL
+ORDER BY date DESC;
+
+-- Scenes that have ever been on sale
+SELECT s.title, ph.regular, ph.discounted, ph.date
+FROM scenes s
+JOIN price_history ph ON ph.scene_id = s.id AND ph.site_id = s.site_id
+WHERE ph.is_on_sale = 1
+ORDER BY ph.date DESC;
+
+-- Price history for one scene
+SELECT date, regular, discounted, is_on_sale, discount_percent
+FROM price_history
+WHERE scene_id = '7342578' AND site_id = 'manyvids'
+ORDER BY date ASC;
+
+-- All studios and their scene counts
+SELECT st.name, st.site_id, st.last_scraped_at, COUNT(sc.id) AS scenes
+FROM studios st
+LEFT JOIN scenes sc ON sc.studio_url = st.url AND sc.deleted_at IS NULL
+GROUP BY st.url;
+
+-- Scenes with a specific tag (SQLite JSON extension)
+SELECT title FROM scenes, json_each(tags)
+WHERE json_each.value = 'MILF'
+  AND deleted_at IS NULL;
+```
