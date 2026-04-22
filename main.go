@@ -6,6 +6,7 @@ import (
 	_ "github.com/Wasylq/FSS/internal/scrapers/manyvids"
 	_ "github.com/Wasylq/FSS/internal/scrapers/iwantclips"
 	_ "github.com/Wasylq/FSS/internal/scrapers/mydirtyhobby"
+	_ "github.com/Wasylq/FSS/internal/scrapers/pornhub"
 )
 
 // Set by -ldflags at release build time.
