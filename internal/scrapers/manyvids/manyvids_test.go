@@ -235,7 +235,7 @@ func TestFetchPage(t *testing.T) {
 
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(want)
+		_ = json.NewEncoder(w).Encode(want)
 	}))
 	defer ts.Close()
 
@@ -295,7 +295,7 @@ func TestListScenes(t *testing.T) {
 				http.NotFound(w, r)
 				return
 			}
-			json.NewEncoder(w).Encode(resp)
+			_ = json.NewEncoder(w).Encode(resp)
 			return
 		}
 
@@ -307,7 +307,7 @@ func TestListScenes(t *testing.T) {
 			http.NotFound(w, r)
 			return
 		}
-		json.NewEncoder(w).Encode(detailResponse{StatusCode: 200, Data: item})
+		_ = json.NewEncoder(w).Encode(detailResponse{StatusCode: 200, Data: item})
 	}))
 	defer ts.Close()
 

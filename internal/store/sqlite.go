@@ -24,7 +24,7 @@ func NewSQLite(path string) (*SQLite, error) {
 	db.SetMaxOpenConns(1) // SQLite does not support concurrent writes
 	s := &SQLite{db: db}
 	if err := s.migrate(); err != nil {
-		db.Close()
+		_ = db.Close()
 		return nil, fmt.Errorf("migrating schema: %w", err)
 	}
 	return s, nil
@@ -110,7 +110,7 @@ func (s *SQLite) Load(studioURL string) ([]models.Scene, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	var scenes []models.Scene
 	for rows.Next() {
@@ -135,7 +135,7 @@ func (s *SQLite) Save(studioURL string, scenes []models.Scene) error {
 	if err != nil {
 		return err
 	}
-	defer tx.Rollback()
+	defer func() { _ = tx.Rollback() }()
 	for _, sc := range scenes {
 		if err := upsertScene(tx, sc); err != nil {
 			return err
@@ -150,7 +150,7 @@ func (s *SQLite) MarkDeleted(studioURL string, ids []string) error {
 	if err != nil {
 		return err
 	}
-	defer tx.Rollback()
+	defer func() { _ = tx.Rollback() }()
 	for _, id := range ids {
 		if _, err := tx.Exec(
 			`UPDATE scenes SET deleted_at = ? WHERE id = ? AND studio_url = ? AND deleted_at IS NULL`,
@@ -182,7 +182,7 @@ func (s *SQLite) ListStudios() ([]models.Studio, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	var studios []models.Studio
 	for rows.Next() {
@@ -282,7 +282,7 @@ func (s *SQLite) loadPriceHistory(studioURL string, scenes []models.Scene) error
 	if err != nil {
 		return err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	for rows.Next() {
 		var sceneID, siteID, dateStr string
@@ -329,9 +329,15 @@ func scanScene(rows *sql.Rows) (models.Scene, error) {
 	sc.ScrapedAt = parseStr(scrapedAt)
 	sc.LowestPriceDate = parseStrPtr(lowestPriceDate)
 	sc.DeletedAt = parseStrPtr(deletedAt)
-	json.Unmarshal([]byte(performers), &sc.Performers)
-	json.Unmarshal([]byte(tags), &sc.Tags)
-	json.Unmarshal([]byte(categories), &sc.Categories)
+	if err := json.Unmarshal([]byte(performers), &sc.Performers); err != nil {
+		return sc, fmt.Errorf("unmarshalling performers: %w", err)
+	}
+	if err := json.Unmarshal([]byte(tags), &sc.Tags); err != nil {
+		return sc, fmt.Errorf("unmarshalling tags: %w", err)
+	}
+	if err := json.Unmarshal([]byte(categories), &sc.Categories); err != nil {
+		return sc, fmt.Errorf("unmarshalling categories: %w", err)
+	}
 	return sc, nil
 }
 

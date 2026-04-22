@@ -19,7 +19,9 @@ var listStudiosDB string
 func init() {
 	rootCmd.AddCommand(listStudiosCmd)
 	listStudiosCmd.Flags().StringVar(&listStudiosDB, "db", "", "path to SQLite database (required)")
-	listStudiosCmd.MarkFlagRequired("db")
+	if err := listStudiosCmd.MarkFlagRequired("db"); err != nil {
+		panic(err)
+	}
 }
 
 func runListStudios(cmd *cobra.Command, _ []string) error {
@@ -27,7 +29,7 @@ func runListStudios(cmd *cobra.Command, _ []string) error {
 	if err != nil {
 		return fmt.Errorf("opening db: %w", err)
 	}
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 
 	studios, err := db.ListStudios()
 	if err != nil {

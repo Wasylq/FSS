@@ -32,7 +32,7 @@ func WriteCSV(scenes []models.Scene, path string) error {
 	if err != nil {
 		return fmt.Errorf("creating %s: %w", path, err)
 	}
-	defer f.Close()
+	defer func() { _ = f.Close() }()
 
 	w := csv.NewWriter(f)
 	if err := w.Write(csvHeaders); err != nil {

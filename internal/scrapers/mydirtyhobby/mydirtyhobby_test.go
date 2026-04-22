@@ -157,9 +157,9 @@ func TestListScenes(t *testing.T) {
 		}
 		w.Header().Set("Content-Type", "application/json")
 		if req.Page == 1 {
-			w.Write(makeResponse(page1, 3, 1, 2))
+			_, _ = w.Write(makeResponse(page1, 3, 1, 2))
 		} else {
-			w.Write(makeResponse(page2, 3, 2, 2))
+			_, _ = w.Write(makeResponse(page2, 3, 2, 2))
 		}
 	}))
 	defer srv.Close()
@@ -207,7 +207,7 @@ func TestListScenesKnownIDs(t *testing.T) {
 
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		w.Write(makeResponse(items, 3, 1, 1))
+		_, _ = w.Write(makeResponse(items, 3, 1, 1))
 	}))
 	defer srv.Close()
 

@@ -144,7 +144,7 @@ func (s *Scraper) fetchPage(ctx context.Context, studioID, slug string, page int
 	if err != nil {
 		return nil, 0, err
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
@@ -204,7 +204,7 @@ func get(ctx context.Context, client *http.Client, url string, headers map[strin
 			continue
 		}
 		if resp.StatusCode == 429 || resp.StatusCode >= 500 {
-			resp.Body.Close()
+			_ = resp.Body.Close()
 			lastErr = fmt.Errorf("HTTP %d", resp.StatusCode)
 			continue
 		}

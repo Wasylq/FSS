@@ -281,7 +281,7 @@ func TestFetchPage(t *testing.T) {
 	}
 
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Write(pageHTML(clips))
+		_, _ = w.Write(pageHTML(clips))
 	}))
 	defer ts.Close()
 
@@ -314,11 +314,11 @@ func TestListScenes(t *testing.T) {
 		page++
 		switch page {
 		case 1:
-			w.Write(pageHTML(page1Clips))
+			_, _ = w.Write(pageHTML(page1Clips))
 		case 2:
-			w.Write(pageHTML(page2Clips))
+			_, _ = w.Write(pageHTML(page2Clips))
 		default:
-			w.Write(pageHTML(nil))
+			_, _ = w.Write(pageHTML(nil))
 		}
 	}))
 	defer ts.Close()
@@ -370,9 +370,9 @@ func TestListScenesEmitsKnownIDs(t *testing.T) {
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		callCount++
 		if callCount == 1 {
-			w.Write(pageHTML(clips))
+			_, _ = w.Write(pageHTML(clips))
 		} else {
-			w.Write(pageHTML(nil))
+			_, _ = w.Write(pageHTML(nil))
 		}
 	}))
 	defer ts.Close()
