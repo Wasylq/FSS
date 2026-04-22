@@ -21,6 +21,11 @@ var rootCmd = &cobra.Command{
 	},
 }
 
+// SetVersion is called from main with values injected by -ldflags at build time.
+func SetVersion(version, commit, date string) {
+	rootCmd.Version = version + " (" + commit + ", " + date + ")"
+}
+
 func Execute() {
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Fprintln(os.Stderr, err)

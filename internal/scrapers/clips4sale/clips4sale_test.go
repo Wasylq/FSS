@@ -153,7 +153,7 @@ func TestExtractClips(t *testing.T) {
 		{ClipID: "111", Title: "Clip One"},
 		{ClipID: "222", Title: "Clip Two"},
 	}
-	got, err := extractClips(pageHTML(clips))
+	got, count, err := extractClips(pageHTML(clips))
 	if err != nil {
 		t.Fatalf("extractClips: %v", err)
 	}
@@ -163,10 +163,13 @@ func TestExtractClips(t *testing.T) {
 	if got[0].ClipID != "111" || got[1].ClipID != "222" {
 		t.Errorf("IDs = %q %q", got[0].ClipID, got[1].ClipID)
 	}
+	if count != 2 {
+		t.Errorf("count = %d, want 2", count)
+	}
 }
 
 func TestExtractClipsNoMarker(t *testing.T) {
-	_, err := extractClips([]byte("<html>no remix here</html>"))
+	_, _, err := extractClips([]byte("<html>no remix here</html>"))
 	if err == nil {
 		t.Error("expected error for missing remixContext")
 	}
@@ -283,7 +286,7 @@ func TestFetchPage(t *testing.T) {
 	defer ts.Close()
 
 	s := &Scraper{client: ts.Client(), siteBase: ts.URL, pageLimit: defaultPageLimit}
-	got, err := s.fetchPage(context.Background(), "27897", "bettie-bondage", 1)
+	got, _, err := s.fetchPage(context.Background(), "27897", "bettie-bondage", 1)
 	if err != nil {
 		t.Fatalf("fetchPage: %v", err)
 	}
@@ -329,6 +332,9 @@ func TestListScenes(t *testing.T) {
 
 	got := map[string]string{}
 	for result := range ch {
+		if result.Total > 0 {
+			continue
+		}
 		if result.Err != nil {
 			t.Errorf("unexpected error: %v", result.Err)
 			continue
@@ -381,6 +387,9 @@ func TestListScenesEmitsKnownIDs(t *testing.T) {
 
 	got := map[string]string{}
 	for result := range ch {
+		if result.Total > 0 {
+			continue
+		}
 		if result.Err != nil {
 			t.Errorf("unexpected error: %v", result.Err)
 			continue

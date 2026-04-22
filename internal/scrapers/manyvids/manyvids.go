@@ -89,6 +89,13 @@ func (s *Scraper) run(ctx context.Context, studioURL, cid string, opts scraper.L
 		go func() {
 			defer wg.Done()
 			for entry := range work {
+				if opts.Delay > 0 {
+					select {
+					case <-time.After(opts.Delay):
+					case <-ctx.Done():
+						return
+					}
+				}
 				scene, err := s.fetchDetail(ctx, studioURL, entry.id, entry.previewURL)
 				select {
 				case out <- scraper.SceneResult{Scene: scene, Err: err}:
@@ -102,6 +109,13 @@ func (s *Scraper) run(ctx context.Context, studioURL, cid string, opts scraper.L
 	for page := 1; ; page++ {
 		if ctx.Err() != nil {
 			break
+		}
+		if page > 1 && opts.Delay > 0 {
+			select {
+			case <-time.After(opts.Delay):
+			case <-ctx.Done():
+				break
+			}
 		}
 		entries, totalPages, err := s.fetchPage(ctx, cid, page)
 		if err != nil {
@@ -142,13 +156,7 @@ func (s *Scraper) run(ctx context.Context, studioURL, cid string, opts scraper.L
 
 func (s *Scraper) fetchPage(ctx context.Context, cid string, page int) ([]listEntry, int, error) {
 	u := fmt.Sprintf("%s/store/videos/%s?sort=date&page=%d", s.apiBase, cid, page)
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, u, nil)
-	if err != nil {
-		return nil, 0, err
-	}
-	req.Header.Set("Accept", "application/json")
-
-	resp, err := s.client.Do(req)
+	resp, err := get(ctx, s.client, u, map[string]string{"Accept": "application/json"})
 	if err != nil {
 		return nil, 0, err
 	}
@@ -168,13 +176,7 @@ func (s *Scraper) fetchPage(ctx context.Context, cid string, page int) ([]listEn
 
 func (s *Scraper) fetchDetail(ctx context.Context, studioURL, id, previewURL string) (models.Scene, error) {
 	u := fmt.Sprintf("%s/store/video/%s", s.apiBase, id)
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, u, nil)
-	if err != nil {
-		return models.Scene{}, err
-	}
-	req.Header.Set("Accept", "application/json")
-
-	resp, err := s.client.Do(req)
+	resp, err := get(ctx, s.client, u, map[string]string{"Accept": "application/json"})
 	if err != nil {
 		return models.Scene{}, err
 	}
@@ -186,6 +188,39 @@ func (s *Scraper) fetchDetail(ctx context.Context, studioURL, id, previewURL str
 	}
 
 	return toScene(studioURL, s.siteBase, dr.Data, previewURL, time.Now().UTC())
+}
+
+// get performs a GET with up to 3 attempts, backing off 2s then 4s.
+func get(ctx context.Context, client *http.Client, url string, headers map[string]string) (*http.Response, error) {
+	var lastErr error
+	for attempt := 0; attempt < 3; attempt++ {
+		if attempt > 0 {
+			select {
+			case <-time.After(time.Duration(attempt) * 2 * time.Second):
+			case <-ctx.Done():
+				return nil, ctx.Err()
+			}
+		}
+		req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
+		if err != nil {
+			return nil, err
+		}
+		for k, v := range headers {
+			req.Header.Set(k, v)
+		}
+		resp, err := client.Do(req)
+		if err != nil {
+			lastErr = err
+			continue
+		}
+		if resp.StatusCode == 429 || resp.StatusCode >= 500 {
+			resp.Body.Close()
+			lastErr = fmt.Errorf("HTTP %d", resp.StatusCode)
+			continue
+		}
+		return resp, nil
+	}
+	return nil, lastErr
 }
 
 // ---- mapping ----

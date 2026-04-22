@@ -25,6 +25,7 @@ Full technical reference. Use the section links to jump to what you need.
 | `--output`, `-o` | string | `json` | Export format(s): `json`, `csv`, or `json,csv` |
 | `--out` | string | `.` | Output directory |
 | `--db` | string | _(disabled)_ | Path to SQLite database; enables SQLite store |
+| `--delay` | int | `0` | Milliseconds to sleep between page requests; applies per page fetch |
 
 `--full` and `--refresh` are mutually exclusive. `--full` ignores all existing data. `--refresh` traverses the full scene list but re-uses existing IDs to update metadata in place and detect deletions.
 
@@ -43,6 +44,7 @@ workers: 3        # int   — parallel metadata fetchers
 output: json      # str   — json | csv | json,csv
 out_dir: .        # str   — output directory path
 db: ""            # str   — SQLite path; empty string disables SQLite
+delay: 0          # int   — ms between page requests; 0 disables
 ```
 
 CLI flags take precedence over config values. Config values take precedence over built-in defaults.

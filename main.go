@@ -6,6 +6,14 @@ import (
 	_ "github.com/Wasylq/FSS/internal/scrapers/manyvids"
 )
 
+// Set by -ldflags at release build time.
+var (
+	version = "dev"
+	commit  = "none"
+	date    = "unknown"
+)
+
 func main() {
+	cmd.SetVersion(version, commit, date)
 	cmd.Execute()
 }

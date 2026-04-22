@@ -2,6 +2,7 @@ package scraper
 
 import (
 	"context"
+	"time"
 
 	"github.com/Wasylq/FSS/models"
 )
@@ -34,10 +35,17 @@ type ListOpts struct {
 	// as it encounters an ID already in the set. Used for incremental runs where
 	// content is sorted newest-first and trailing pages are already stored.
 	KnownIDs map[string]bool
+	// Delay is the duration to sleep between page fetches (and between detail
+	// fetches for scrapers that use a worker pool). Zero means no delay.
+	Delay time.Duration
 }
 
 // SceneResult is a single item sent by ListScenes — either a scene or an error.
 type SceneResult struct {
 	Scene models.Scene
 	Err   error
+	// Total, when > 0, carries a hint about the total number of scenes for the
+	// studio. Sent at most once (after the first page). Consumers should skip
+	// this result and use the value only for progress display.
+	Total int
 }

@@ -87,7 +87,14 @@ func (s *Scraper) run(ctx context.Context, studioURL, sid, slug string, opts scr
 		if ctx.Err() != nil {
 			return
 		}
-		clips, err := s.fetchPage(ctx, sid, slug, page)
+		if page > 1 && opts.Delay > 0 {
+			select {
+			case <-time.After(opts.Delay):
+			case <-ctx.Done():
+				return
+			}
+		}
+		clips, clipsCount, err := s.fetchPage(ctx, sid, slug, page)
 		if err != nil {
 			select {
 			case out <- scraper.SceneResult{Err: fmt.Errorf("page %d: %w", page, err)}:
@@ -97,6 +104,14 @@ func (s *Scraper) run(ctx context.Context, studioURL, sid, slug string, opts scr
 		}
 		if len(clips) == 0 {
 			return
+		}
+		// After the first page, send a total hint so the consumer can show progress.
+		if page == 1 && clipsCount > 0 {
+			select {
+			case out <- scraper.SceneResult{Total: clipsCount}:
+			case <-ctx.Done():
+				return
+			}
 		}
 		for _, clip := range clips {
 			// KnownIDs are not skipped: C4S uses recommended sort, not date order,
@@ -116,56 +131,86 @@ func (s *Scraper) run(ctx context.Context, studioURL, sid, slug string, opts scr
 
 // ---- page fetch ----
 
-func (s *Scraper) fetchPage(ctx context.Context, studioID, slug string, page int) ([]c4sClip, error) {
+func (s *Scraper) fetchPage(ctx context.Context, studioID, slug string, page int) ([]c4sClip, int, error) {
 	u := fmt.Sprintf(
 		"%s/studio/%s/%s/Cat0-AllCategories/Page%d/C4SSort-recommended/Limit%d/?onlyClips=true",
 		s.siteBase, studioID, slug, page, s.pageLimit,
 	)
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, u, nil)
-	if err != nil {
-		return nil, err
+	headers := map[string]string{
+		"User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+		"Accept":     "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
 	}
-	req.Header.Set("User-Agent", "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36")
-	req.Header.Set("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8")
-
-	resp, err := s.client.Do(req)
+	resp, err := get(ctx, s.client, u, headers)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 	defer resp.Body.Close()
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return nil, fmt.Errorf("reading response: %w", err)
+		return nil, 0, fmt.Errorf("reading response: %w", err)
 	}
 
 	return extractClips(body)
 }
 
 // extractClips finds window.__remixContext in page HTML and returns the clips
-// embedded in the route loader data.
-func extractClips(body []byte) ([]c4sClip, error) {
+// embedded in the route loader data, along with the total clip count.
+func extractClips(body []byte) ([]c4sClip, int, error) {
 	idx := bytes.Index(body, []byte(remixMarker))
 	if idx < 0 {
-		return nil, fmt.Errorf("remixContext not found in page")
+		return nil, 0, fmt.Errorf("remixContext not found in page")
 	}
 
 	var rctx remixContext
 	if err := json.NewDecoder(bytes.NewReader(body[idx+len(remixMarker):])).Decode(&rctx); err != nil {
-		return nil, fmt.Errorf("parsing remixContext: %w", err)
+		return nil, 0, fmt.Errorf("parsing remixContext: %w", err)
 	}
 
 	raw, ok := rctx.State.LoaderData[routeKey]
 	if !ok {
-		return nil, fmt.Errorf("route key %q not found in loaderData", routeKey)
+		return nil, 0, fmt.Errorf("route key %q not found in loaderData", routeKey)
 	}
 
 	var ld loaderData
 	if err := json.Unmarshal(raw, &ld); err != nil {
-		return nil, fmt.Errorf("parsing loader data: %w", err)
+		return nil, 0, fmt.Errorf("parsing loader data: %w", err)
 	}
 
-	return ld.Clips, nil
+	return ld.Clips, ld.ClipsCount, nil
+}
+
+// get performs a GET with up to 3 attempts, backing off 2s then 4s.
+func get(ctx context.Context, client *http.Client, url string, headers map[string]string) (*http.Response, error) {
+	var lastErr error
+	for attempt := 0; attempt < 3; attempt++ {
+		if attempt > 0 {
+			select {
+			case <-time.After(time.Duration(attempt) * 2 * time.Second):
+			case <-ctx.Done():
+				return nil, ctx.Err()
+			}
+		}
+		req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
+		if err != nil {
+			return nil, err
+		}
+		for k, v := range headers {
+			req.Header.Set(k, v)
+		}
+		resp, err := client.Do(req)
+		if err != nil {
+			lastErr = err
+			continue
+		}
+		if resp.StatusCode == 429 || resp.StatusCode >= 500 {
+			resp.Body.Close()
+			lastErr = fmt.Errorf("HTTP %d", resp.StatusCode)
+			continue
+		}
+		return resp, nil
+	}
+	return nil, lastErr
 }
 
 // ---- mapping ----

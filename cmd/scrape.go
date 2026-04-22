@@ -34,6 +34,7 @@ func init() {
 	scrapeCmd.Flags().String("out", "", "output directory (default from config)")
 	scrapeCmd.Flags().String("db", "", "enable SQLite store at this path")
 	scrapeCmd.Flags().String("name", "", "human-readable label for this studio (stored when --db is set)")
+	scrapeCmd.Flags().Int("delay", 0, "milliseconds between page requests (0 = no delay)")
 }
 
 func runScrape(cmd *cobra.Command, args []string) error {
@@ -73,6 +74,13 @@ func runScrape(cmd *cobra.Command, args []string) error {
 		fmt.Fprintln(os.Stderr, "warning: --name has no effect without --db (studio names are only stored in SQLite)")
 	}
 
+	delayFlag, _ := cmd.Flags().GetInt("delay")
+	delayMS := cfg.Delay
+	if delayFlag > 0 {
+		delayMS = delayFlag
+	}
+	delay := time.Duration(delayMS) * time.Millisecond
+
 	// --- pick store ---
 	var st store.Store
 	if dbPath != "" {
@@ -101,16 +109,21 @@ func runScrape(cmd *cobra.Command, args []string) error {
 	switch {
 	case full:
 		fmt.Printf("Full scrape: %s\n", studioURL)
-		scenes, err = scrapeAll(ctx, sc, studioURL, workers)
+		scenes, err = scrapeAll(ctx, sc, studioURL, workers, delay)
 	case refresh:
 		fmt.Printf("Refresh scrape: %s\n", studioURL)
-		scenes, err = scrapeRefresh(ctx, sc, st, studioURL, workers)
+		scenes, err = scrapeRefresh(ctx, sc, st, studioURL, workers, delay)
 	default:
 		fmt.Printf("Incremental scrape: %s\n", studioURL)
-		scenes, err = scrapeIncremental(ctx, sc, st, studioURL, workers)
+		scenes, err = scrapeIncremental(ctx, sc, st, studioURL, workers, delay)
 	}
 	if err != nil {
 		return err
+	}
+
+	// --- auto-populate studio name from scraped data if not provided ---
+	if name == "" && len(scenes) > 0 && scenes[0].Studio != "" {
+		name = scenes[0].Studio
 	}
 
 	// --- persist ---
@@ -150,8 +163,8 @@ func runScrape(cmd *cobra.Command, args []string) error {
 }
 
 // scrapeAll fetches every scene from scratch, ignoring any existing data.
-func scrapeAll(ctx context.Context, sc scraper.StudioScraper, studioURL string, workers int) ([]models.Scene, error) {
-	return collectScenes(ctx, sc, studioURL, scraper.ListOpts{Workers: workers})
+func scrapeAll(ctx context.Context, sc scraper.StudioScraper, studioURL string, workers int, delay time.Duration) ([]models.Scene, error) {
+	return collectScenes(ctx, sc, studioURL, scraper.ListOpts{Workers: workers, Delay: delay})
 }
 
 // scrapeIncremental loads existing scene IDs, passes them to the scraper as a
@@ -160,7 +173,7 @@ func scrapeAll(ctx context.Context, sc scraper.StudioScraper, studioURL string, 
 // Scrapers that cannot use early-stop (e.g. recommended-sorted sites) may emit
 // known scenes in correct site order. In that case fresh takes priority and
 // price history is carried forward so no history is lost.
-func scrapeIncremental(ctx context.Context, sc scraper.StudioScraper, st store.Store, studioURL string, workers int) ([]models.Scene, error) {
+func scrapeIncremental(ctx context.Context, sc scraper.StudioScraper, st store.Store, studioURL string, workers int, delay time.Duration) ([]models.Scene, error) {
 	existing, err := st.Load(studioURL)
 	if err != nil {
 		return nil, fmt.Errorf("loading existing scenes: %w", err)
@@ -173,7 +186,7 @@ func scrapeIncremental(ctx context.Context, sc scraper.StudioScraper, st store.S
 		existingByID[s.ID] = s
 	}
 
-	fresh, err := collectScenes(ctx, sc, studioURL, scraper.ListOpts{Workers: workers, KnownIDs: knownIDs})
+	fresh, err := collectScenes(ctx, sc, studioURL, scraper.ListOpts{Workers: workers, KnownIDs: knownIDs, Delay: delay})
 	if err != nil {
 		return nil, err
 	}
@@ -206,7 +219,7 @@ func scrapeIncremental(ctx context.Context, sc scraper.StudioScraper, st store.S
 
 // scrapeRefresh re-fetches all scenes and soft-deletes any that have disappeared.
 // Price history from prior scrapes is carried forward onto each re-fetched scene.
-func scrapeRefresh(ctx context.Context, sc scraper.StudioScraper, st store.Store, studioURL string, workers int) ([]models.Scene, error) {
+func scrapeRefresh(ctx context.Context, sc scraper.StudioScraper, st store.Store, studioURL string, workers int, delay time.Duration) ([]models.Scene, error) {
 	existing, err := st.Load(studioURL)
 	if err != nil {
 		return nil, fmt.Errorf("loading existing scenes: %w", err)
@@ -217,7 +230,7 @@ func scrapeRefresh(ctx context.Context, sc scraper.StudioScraper, st store.Store
 	}
 
 	// Full traversal — no KnownIDs
-	fresh, err := collectScenes(ctx, sc, studioURL, scraper.ListOpts{Workers: workers})
+	fresh, err := collectScenes(ctx, sc, studioURL, scraper.ListOpts{Workers: workers, Delay: delay})
 	if err != nil {
 		return nil, err
 	}
@@ -262,14 +275,23 @@ func collectScenes(ctx context.Context, sc scraper.StudioScraper, studioURL stri
 	}
 	var scenes []models.Scene
 	errCount := 0
+	total := 0
 	for result := range ch {
+		if result.Total > 0 {
+			total = result.Total
+			continue
+		}
 		if result.Err != nil {
 			errCount++
 			fmt.Fprintf(os.Stderr, "\rwarning: %v\n", result.Err)
 			continue
 		}
 		scenes = append(scenes, result.Scene)
-		fmt.Printf("\r  fetching: %d scenes", len(scenes))
+		if total > 0 {
+			fmt.Printf("\r  fetching: %d / %d scenes", len(scenes), total)
+		} else {
+			fmt.Printf("\r  fetching: %d scenes", len(scenes))
+		}
 	}
 	fmt.Println() // end the progress line
 	if errCount > 0 {

@@ -13,6 +13,7 @@ type Config struct {
 	Output  string `yaml:"output"`
 	OutDir  string `yaml:"out_dir"`
 	DB      string `yaml:"db"`
+	Delay   int    `yaml:"delay"`
 }
 
 func defaults() *Config {
@@ -21,6 +22,7 @@ func defaults() *Config {
 		Output:  "json",
 		OutDir:  ".",
 		DB:      "",
+		Delay:   0,
 	}
 }
 
