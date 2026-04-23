@@ -40,7 +40,7 @@ func (s *Scraper) Patterns() []string {
 	}
 }
 
-var matchRe = regexp.MustCompile(`://(?:www\.)?pornhub\.com/(?:pornstar|channels)/[\w-]+`)
+var matchRe = regexp.MustCompile(`^https?://(?:www\.)?pornhub\.com/(?:pornstar|channels)/[\w-]+`)
 var pornstarRe = regexp.MustCompile(`/pornstar/([\w-]+)`)
 var channelRe  = regexp.MustCompile(`/channels/([\w-]+)`)
 

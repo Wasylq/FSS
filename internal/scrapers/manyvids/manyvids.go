@@ -51,7 +51,7 @@ func (s *Scraper) Patterns() []string {
 	}
 }
 
-var profileRe = regexp.MustCompile(`://(?:www\.)?manyvids\.com/Profile/(\d+)/[^/]+/Store/Videos`)
+var profileRe = regexp.MustCompile(`^https?://(?:www\.)?manyvids\.com/Profile/(\d+)/[^/]+/Store/Videos`)
 
 func (s *Scraper) MatchesURL(u string) bool {
 	return profileRe.MatchString(u)
