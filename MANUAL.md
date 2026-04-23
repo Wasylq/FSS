@@ -597,7 +597,7 @@ fss stash import --dir ./data --top 50
 
 ### Matching strategy
 
-FSS matches Stash scenes to FSS scenes by comparing each Stash scene's filename (minus extension) against FSS scene titles. Both sides are normalized: lowercased, non-alphanumeric characters replaced with spaces, trimmed.
+FSS matches Stash scenes to FSS scenes by comparing each Stash scene's filename (minus extension) against FSS scene titles. Both sides are normalized: camelCase boundaries split into words (e.g. `SunnyDayAtTheBeach` → `sunny day at the beach`), format suffixes stripped (e.g. `(FULL HD)`, `(mp4)`, `(mov)`), lowercased, non-alphanumeric characters replaced with spaces, trimmed.
 
 **Two-pass matching:**
 
@@ -630,11 +630,14 @@ When the same scene title appears in multiple FSS JSON files (e.g. scraped from 
 | URLs | Union of all site URLs |
 | Date | Earliest non-zero date across all FSS sources AND the existing Stash date |
 | Title | First non-empty |
-| Description | Longest non-empty |
+| Description | Longest non-empty; runs of 3+ spaces are converted to newlines |
+| Cover image | First available thumbnail URL; downloaded and pushed as base64 |
 | Performers | Union (deduplicated) |
 | Tags | Union (deduplicated) |
 | Duration | Maximum |
 | Resolution | Highest available |
+
+Format suffix stripping means that Clips4Sale scenes listed as separate formats (e.g. `"Title (FULL HD)"`, `"Title (mp4)"`, `"Title (mov)"`) are merged together, combining tags from all versions.
 
 ### Tags
 
@@ -647,7 +650,7 @@ Every matched scene receives:
    - `Full HD Available` if width >= 1920 (and < 3840)
    - `HD Available` if width >= 1280 (and < 1920)
 
-All tags are **additive** — existing Stash tags are never removed.
+All tags are **additive** — existing Stash tags are never removed. Tag names are resolved against Stash aliases — e.g., if "Female Domination" is an alias for "Femdom" in your Stash instance, the existing "Femdom" tag is used instead of creating a duplicate.
 
 ### StashDB override tracking
 
