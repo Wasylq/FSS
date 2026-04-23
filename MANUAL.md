@@ -177,6 +177,8 @@ Each scene is a JSON object with the fields listed in the [Data model](#data-mod
 
 JSON is **always written** by the flat store — it is the backing format for incremental updates. Even if you request `--output csv` only, a JSON file is also created alongside it.
 
+**Important:** all scenes are collected in memory first, then the entire JSON file is written at the end of the scrape. If you cancel mid-scrape (Ctrl+C), no output file is produced. For large sites (e.g. ~1750 pages), a scrape can take several minutes — use `--delay` to throttle requests and avoid being blocked.
+
 ### CSV
 
 One row per scene. Column order matches the table below exactly.
@@ -335,6 +337,32 @@ The studio ID and slug are extracted from the studio URL with a regex:
 | `onSale` | `PriceSnapshot.IsOnSale` | null → false |
 
 The `siteBase` and `pageLimit` fields are overridable for testing via `httptest.Server`.
+
+### Tara Tainton as a worked example
+
+Tara Tainton is a WordPress site — no API, no pagination endpoint. Discovery uses XML sitemaps instead.
+
+**Sitemap-driven discovery** — the site publishes WordPress Yoast sitemaps at `/post-sitemap.xml` and `/post-sitemap2.xml`. Each contains `<url><loc>` entries for every post. The scraper fetches both sitemaps, collects all URLs, then uses a worker pool to fetch and parse each page in parallel.
+
+**Page classification** — not every post is a video. Blog posts, announcements, and other content are mixed in. The scraper distinguishes video pages by the presence of a `Price: $X  Length: MM:SS` pattern in the body text. Pages without this pattern are silently skipped.
+
+**Metadata extraction** — all metadata comes from standard HTML elements:
+
+| Source | Scene field |
+|--------|-------------|
+| `<title>` minus ` - Tara Tainton` suffix | `Title` |
+| `<meta property="article:published_time">` | `Date` |
+| `<meta property="og:description">` | `Description` |
+| `<meta property="og:image">` | `Thumbnail` |
+| `<link rel='shortlink' href='...?p=1241'>` | `ID` (WordPress post ID) |
+| Body text `Price: $X` | `PriceSnapshot.Regular` |
+| Body text `Length: MM:SS` | `Duration` |
+| Body text `1080p` / `4K` etc. | `Resolution`, `Width`, `Height` |
+| `<a href=".../tag/..." rel="tag">` links | `Tags` |
+
+**ID strategy** — the WordPress post ID from the shortlink is preferred (stable, numeric). If no shortlink exists, the URL slug is used as fallback.
+
+**Incremental mode caveat** — sitemaps are not date-sorted, so the scraper cannot stop early when it encounters a known ID. Instead, all pages are enumerated and known IDs are skipped per-page in the worker pool.
 
 ### Wiring it up
 

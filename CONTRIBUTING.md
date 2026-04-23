@@ -225,3 +225,4 @@ go build -o fss . && ./fss list-scrapers # new scraper appears
 | `clips4sale` | Medium | Multi-page HTML, categories, pricing |
 | `iwantclips` | Medium | JSON API, double HTML-unescaping |
 | `mydirtyhobby` | Medium | JSON API with auth headers |
+| `taratainton` | Medium | WordPress/sitemap-driven discovery, HTML meta parsing, worker pool |
