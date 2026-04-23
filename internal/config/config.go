@@ -14,6 +14,16 @@ type Config struct {
 	OutDir  string `yaml:"out_dir"`
 	DB      string `yaml:"db"`
 	Delay   int    `yaml:"delay"`
+	Stash   StashConfig `yaml:"stash"`
+}
+
+type StashConfig struct {
+	URL            string `yaml:"url"`
+	APIKey         string `yaml:"api_key"`
+	Tag            string `yaml:"tag"`
+	StashboxTag    string `yaml:"stashbox_tag"`
+	ResolutionTags bool   `yaml:"resolution_tags"`
+	Scrape         bool   `yaml:"scrape"`
 }
 
 func defaults() *Config {
@@ -23,6 +33,12 @@ func defaults() *Config {
 		OutDir:  ".",
 		DB:      "",
 		Delay:   0,
+		Stash: StashConfig{
+			URL:            "http://localhost:9999",
+			Tag:            "fss_import",
+			StashboxTag:    "fss_stashbox_override",
+			ResolutionTags: true,
+		},
 	}
 }
 

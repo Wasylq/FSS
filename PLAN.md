@@ -352,7 +352,7 @@ type Store interface {
 ## Future / out of scope for now
 
 - **Multi-studio in one command** — `fss scrape url1 url2 url3` or `fss scrape-all --db ./fss.db`. The data model and store already support it; it's a CLI orchestration addition.
-- **Stash integration** — separate script/phase at the very end, not part of core.
+- **Stash integration** — Phase 7 (see below).
 - **Auth / paywalled content** — currently public content only; session handling deferred.
 
 ---
@@ -412,3 +412,230 @@ Full technical reference. Never needs to be read end-to-end — written to be se
 - Studio tracking is SQLite-only. The flat store silently ignores `UpsertStudio` / `ListStudios`.
 - CommunityScrapers can be referenced for ManyVids field mapping but this project always targets the full studio list, not a single scene.
 - Price fields reflect the price at time of scrape — they will go stale and that is expected.
+
+---
+
+## Phase 7 — Stash Integration
+
+### Context
+
+FSS scrapes studio catalogs into JSON/CSV/SQLite. The downstream workflow is: scrape → download videos → organize in Stash. Currently there's no bridge — metadata from FSS must be manually entered into Stash. This phase adds `fss stash` subcommands that connect to a Stash instance, find unmatched scenes, match them by filename against FSS JSON output, and push merged metadata back.
+
+### Commands
+
+#### `fss stash unmatched`
+
+List scenes in Stash that have no metadata yet (no StashDB IDs).
+
+```
+fss stash unmatched [--url localhost:9999] [--api-key KEY]
+                     [--performer "Name"] [--studio "Name"]
+```
+
+Queries `findScenes` with `stash_id_count == 0`. Optional performer/studio filters narrow results. Prints a table: `ID | Filename | Title | Performers`.
+
+#### `fss stash import`
+
+Match FSS JSON scenes against Stash scenes by filename, then push metadata.
+
+```
+fss stash import [--url localhost:9999] [--api-key KEY]
+                  [--dir .] [--json file.json ...]
+                  [--tag fss_import] [--resolution-tags]
+                  [--organized] [--scrape]
+                  [--include-stashbox] [--stashbox-tag fss_stashbox_override]
+                  [--apply]
+```
+
+**Default is dry-run** — shows what would change. Pass `--apply` to actually write to Stash.
+
+- `--include-stashbox`: also process scenes that already have StashDB IDs. These scenes get an extra tracking tag (`fss_stashbox_override` by default, configurable via `--stashbox-tag`) so overrides are easy to find and revert in Stash.
+
+### New Packages & Files
+
+```
+internal/stash/
+  client.go      — GraphQL client (FindScenes, SceneUpdate, FindTags, TagCreate, etc.)
+  match.go       — Load FSS JSONs, build title index, match against Stash filenames
+  merge.go       — Cross-site scene merging (combine URLs, earliest date, union tags)
+
+cmd/
+  stash.go           — parent "stash" command group + shared flags (--url, --api-key)
+  stash_unmatched.go — "stash unmatched" subcommand
+  stash_import.go    — "stash import" subcommand
+```
+
+### Stash GraphQL Client (`internal/stash/client.go`)
+
+Thin wrapper using `httpx.Do` for HTTP + JSON encoding of GraphQL requests.
+
+```go
+type Client struct {
+    url    string       // e.g. "http://localhost:9999/graphql"
+    apiKey string       // sent as ApiKey header, empty = no auth
+    http   *http.Client
+}
+```
+
+Methods needed:
+- `FindScenes(ctx, filter) → []StashScene`
+- `FindTagByName(ctx, name) → (id string, found bool)`
+- `CreateTag(ctx, name) → id string`
+- `FindPerformerByName(ctx, name) → (id string, found bool)`
+- `CreatePerformer(ctx, name) → id string`
+- `FindStudioByName(ctx, name) → (id string, found bool)`
+- `CreateStudio(ctx, name) → id string`
+- `UpdateScene(ctx, input SceneUpdateInput) → error`
+- `ScrapeSceneURL(ctx, url) → ScrapedScene` (for optional --scrape)
+
+All find-or-create pairs can be a single helper: `EnsureTag(ctx, name) → id`.
+
+### Matching Strategy (`internal/stash/match.go`)
+
+Files are typically named after the scene title but sometimes garbled. Matching defaults to filename-to-title comparison.
+
+#### Loading FSS data
+
+Read all `*.json` files from `--dir` (or specific `--json` files). Parse each as `store.studioFile`. Build a dual index:
+
+```go
+type SceneIndex struct {
+    byTitle map[string][]models.Scene  // normalized title → scenes from multiple sites
+    all     []models.Scene             // flat list for substring/fuzzy search
+}
+```
+
+Normalization: lowercase, strip all non-alphanumeric, collapse whitespace, trim.
+E.g. `"MILF JOI Countdown!!!"` → `"milf joi countdown"`
+
+#### Matching against Stash scenes
+
+For each Stash scene's `files[].basename`:
+1. Strip extension → raw filename
+2. Normalize the same way
+3. **Pass 1 — exact**: normalized filename == normalized title → `[exact]`
+4. **Pass 2 — substring**: normalized title is a substring of normalized filename → `[substring]`
+5. **Pass 3 — best substring**: if multiple substring matches, pick the longest title
+6. No match → `[skip]`
+
+Ambiguous matches (multiple different titles match the same filename) are flagged as `[ambiguous]` in dry-run and skipped in apply mode.
+
+#### Confidence display in dry-run
+
+```
+EXACT      scene.mp4           →  "Fostering the Bully" (manyvids + clips4sale)
+SUBSTR     studio-title.mp4    →  "JOI Countdown" (iwantclips)
+AMBIGUOUS  vague-name.mp4      →  2 candidates, skipped
+SKIP       random_file.mp4     →  no match
+```
+
+### Cross-Site Merging (`internal/stash/merge.go`)
+
+When a scene title appears in multiple FSS JSONs (e.g., scraped from both ManyVids and C4S):
+
+| Field | Strategy |
+|-------|----------|
+| URLs | Union — all site URLs |
+| Date | Earliest non-zero across ALL sources (FSS sites + existing Stash date) |
+| Title | First non-empty (prefer site with more detail) |
+| Description | Longest non-empty |
+| Performers | Union (deduplicated) |
+| Tags | Union (deduplicated) |
+| Duration | Maximum (highest quality source) |
+| Resolution/Width/Height | Highest resolution available |
+
+### Tag Strategy
+
+Tags applied to each matched Stash scene:
+
+1. **Import marker tag**: configurable via `--tag` (default `"fss_import"`). Created once, reused for all imports.
+
+2. **Stashbox override tag**: `"fss_stashbox_override"` (configurable via `--stashbox-tag`). Only applied when `--include-stashbox` is used and a scene with existing StashDB data is modified. Makes it trivial to filter in Stash UI and revert if needed.
+
+   **Changelog**: When `--include-stashbox` modifies a scene, a structured JSON log entry is appended to `fss-stashbox-changelog.json` (in output dir). Each entry records:
+   ```json
+   {
+     "stash_scene_id": "42",
+     "timestamp": "2026-04-23T...",
+     "filename": "scene.mp4",
+     "matched_to": "Fostering the Bully",
+     "changes": {
+       "date":  {"from": "2026-02-01", "to": "2026-01-01"},
+       "urls":  {"added": ["https://manyvids.com/..."]},
+       "tags":  {"added": ["JOI", "4K Available"]},
+       "title": {"from": "Old Title", "to": "Fostering the Bully"}
+     }
+   }
+   ```
+   This allows reverting individual fields if StashDB data was better. The file is append-only — multiple import runs accumulate history.
+
+3. **Scene tags from FSS**: All tags from the merged scene. Find-or-create each in Stash.
+
+4. **Resolution tags** (when `--resolution-tags` is set):
+   - `"4K Available"` if width ≥ 3840
+   - `"Full HD Available"` if width ≥ 1920
+   - `"HD Available"` if width ≥ 1280
+
+5. All tags are **additive** — existing tags on the Stash scene are preserved.
+
+### Import Flow (`cmd/stash_import.go`)
+
+```
+1. Connect to Stash (validate connection with a simple query)
+2. Load FSS JSON files → build SceneIndex
+3. Ensure import tag exists in Stash (find-or-create)
+4. Query Stash for target scenes:
+   - Default: stash_id_count == 0 (skip anything with StashDB data entirely)
+   - With --include-stashbox: also process scenes that have StashDB IDs
+     → these get an extra tag "fss_stashbox_override" (configurable) so
+       changes are easy to find and revert in Stash
+   - Optional performer/studio filters applied on top
+5. For each Stash scene:
+   a. Extract basename from files[0].path
+   b. Look up in SceneIndex
+   c. If no match → skip
+   d. Merge cross-site FSS scenes
+   e. Compare with existing Stash scene data:
+      - Date: use earliest across FSS + existing Stash date
+      - URLs: union of FSS URLs + existing Stash URLs
+      - Tags: additive (existing + new)
+   f. Dry-run: print what would change
+   g. Apply mode:
+      - EnsurePerformer for each performer → get IDs
+      - EnsureStudio → get ID
+      - EnsureTags for all tags → get IDs
+      - SceneUpdate with: title, details, date, urls, performer_ids,
+        studio_id, tag_ids (merged)
+      - If --organized: set organized: true
+      - If --scrape: call Stash's scrapeSceneURL with first URL for extra data
+6. Print summary: N matched, M updated, K skipped, J already up-to-date
+```
+
+### Config Additions (`internal/config/config.go`)
+
+```go
+type StashConfig struct {
+    URL            string `yaml:"url"`              // default "http://localhost:9999"
+    APIKey         string `yaml:"api_key"`           // default ""
+    Tag            string `yaml:"tag"`               // default "fss_import"
+    StashboxTag    string `yaml:"stashbox_tag"`      // default "fss_stashbox_override"
+    ResolutionTags bool   `yaml:"resolution_tags"`   // default true
+    Scrape         bool   `yaml:"scrape"`            // default false
+}
+```
+
+CLI flags override config. The API key can also be set via `FSS_STASH_API_KEY` env var.
+
+### Files Modified
+
+- `internal/config/config.go` — add `Stash StashConfig` field
+- `cmd/root.go` — no change (config loading is inherited)
+- `main.go` — no change
+
+### Verification
+
+1. `go build ./... && go test ./...` — compilation and unit tests
+2. `fss stash unmatched` against a running Stash instance — should list scenes
+3. `fss stash import` (dry-run) — should show matches without modifying Stash
+4. `fss stash import --apply` — should update scenes, verify in Stash UI
+5. Verify cross-site merge: scrape same performer from two sites, import, check that Stash scene gets both URLs and earliest date

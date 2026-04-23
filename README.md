@@ -1,6 +1,6 @@
 # FSS — FullStudioScraper
 
-Scrapes all scenes and metadata from a studio URL. Currently supports ManyVids; designed to be easily extended to other sites.
+Scrapes all scenes and metadata from a studio URL. Supports ManyVids, Clips4Sale, IWantClips, MyDirtyHobby, and Pornhub. Designed to be easily extended to other sites. Can push scraped metadata into a local [Stash](https://stashapp.cc/) instance.
 
 ## Install
 
@@ -39,6 +39,20 @@ fss list-studios --db ./fss.db
 
 # See which sites are supported and their URL patterns
 fss list-scrapers
+
+# --- Stash integration ---
+
+# List scenes in Stash that have no StashDB metadata
+fss stash unmatched
+
+# Dry-run: show what would be imported from FSS JSONs into Stash
+fss stash import --dir ./data
+
+# Actually apply the import
+fss stash import --dir ./data --apply
+
+# Filter by performer, connect to a remote Stash instance
+fss stash import --url http://192.168.1.50:9999 --performer "Bettie Bondage" --apply
 ```
 
 ## Config file
@@ -58,6 +72,11 @@ workers: 3        # parallel metadata fetchers
 output: json      # json | csv | json,csv
 out_dir: .        # output directory
 db: ""            # SQLite path — empty disables SQLite
+
+stash:
+  url: "http://localhost:9999"
+  api_key: ""     # or set FSS_STASH_API_KEY env var
+  tag: "fss_import"
 ```
 
 ## Output
