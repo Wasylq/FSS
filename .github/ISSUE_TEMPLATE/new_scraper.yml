@@ -1,0 +1,37 @@
+name: New Scraper Request
+description: Request support for a new site
+labels: ["enhancement", "new-scraper"]
+body:
+  - type: input
+    id: site
+    attributes:
+      label: Site name
+      placeholder: "e.g. Fansly"
+    validations:
+      required: true
+
+  - type: input
+    id: url
+    attributes:
+      label: Example studio URL
+      description: A public studio/profile page URL on the site.
+      placeholder: "https://..."
+    validations:
+      required: true
+
+  - type: dropdown
+    id: content_type
+    attributes:
+      label: Content access
+      options:
+        - Free (no account needed)
+        - Free account required
+        - Paid subscription required
+    validations:
+      required: true
+
+  - type: textarea
+    id: notes
+    attributes:
+      label: Notes
+      description: Anything useful — does the site have an API? Pagination style? Anti-scraping measures?

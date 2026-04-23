@@ -1,0 +1,48 @@
+name: Bug Report
+description: Report a bug or unexpected behavior
+labels: ["bug"]
+body:
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: What happened? What did you expect instead?
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Steps to reproduce
+      description: Minimal command or steps to trigger the bug.
+      placeholder: |
+        1. Run `fss scrape https://...`
+        2. Observe error
+    validations:
+      required: true
+
+  - type: textarea
+    id: output
+    attributes:
+      label: Output / error message
+      description: Paste the relevant output. Use a code block.
+      render: text
+
+  - type: input
+    id: version
+    attributes:
+      label: FSS version
+      description: Output of `fss --version`
+      placeholder: "v0.1.0"
+
+  - type: input
+    id: os
+    attributes:
+      label: OS
+      placeholder: "Linux / macOS / Windows"
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional context
+      description: Config excerpts, screenshots, related issues, etc.
