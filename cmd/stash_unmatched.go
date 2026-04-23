@@ -70,8 +70,8 @@ func runStashUnmatched(cmd *cobra.Command, _ []string) error {
 	}
 
 	w := tabwriter.NewWriter(os.Stdout, 0, 4, 2, ' ', 0)
-	fmt.Fprintln(w, "ID\tFilename\tTitle\tPerformers")
-	fmt.Fprintln(w, "--\t--------\t-----\t----------")
+	_, _ = fmt.Fprintln(w, "ID\tFilename\tTitle\tPerformers")
+	_, _ = fmt.Fprintln(w, "--\t--------\t-----\t----------")
 	for _, s := range scenes {
 		filename := ""
 		if len(s.Files) > 0 {
@@ -81,7 +81,7 @@ func runStashUnmatched(cmd *cobra.Command, _ []string) error {
 		for i, p := range s.Performers {
 			perfs[i] = p.Name
 		}
-		fmt.Fprintf(w, "%s\t%s\t%s\t%s\n", s.ID, filename, s.Title, strings.Join(perfs, ", "))
+		_, _ = fmt.Fprintf(w, "%s\t%s\t%s\t%s\n", s.ID, filename, s.Title, strings.Join(perfs, ", "))
 	}
 	_ = w.Flush()
 

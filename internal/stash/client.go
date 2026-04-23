@@ -139,7 +139,7 @@ func (c *Client) do(ctx context.Context, gql graphqlRequest) (json.RawMessage, e
 	if err != nil {
 		return nil, fmt.Errorf("stash graphql: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	respBody, err := io.ReadAll(resp.Body)
 	if err != nil {
