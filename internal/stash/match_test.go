@@ -17,7 +17,7 @@ func TestNormalize(t *testing.T) {
 	}{
 		{"MILF JOI Countdown!!!", "milf joi countdown"},
 		{"Fostering the Bully", "fostering the bully"},
-		{"Scene - Title (4K)", "scene title 4k"},
+		{"Scene - Title (4K)", "scene title"},
 		{"  spaces  everywhere  ", "spaces everywhere"},
 		{"already clean", "already clean"},
 		{"", ""},
@@ -26,6 +26,11 @@ func TestNormalize(t *testing.T) {
 		{"camelCaseWords", "camel case words"},
 		{"ALLCAPSword", "allcap sword"},
 		{"Scene4KVersion", "scene4k version"},
+		{"Some Title (FULL HD)", "some title"},
+		{"Some Title (mp4)", "some title"},
+		{"Some Title (mov)", "some title"},
+		{"Some Title (wmv)", "some title"},
+		{"Title With (Real Parens)", "title with real parens"},
 	}
 	for _, c := range cases {
 		got := Normalize(c.input)

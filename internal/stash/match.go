@@ -58,14 +58,26 @@ var (
 	nonAlphanumeric  = regexp.MustCompile(`[^a-z0-9]+`)
 	camelLowerUpper  = regexp.MustCompile(`([a-z])([A-Z])`)
 	camelUpperSeries = regexp.MustCompile(`([A-Z]+)([A-Z][a-z])`)
+	formatSuffixRe   = regexp.MustCompile(`(?i)\s*\(\s*(?:full\s+hd|4k|hd|mp4|mov|wmv|avi|mkv|1080p|720p|480p|sd)\s*\)\s*$`)
 )
 
 func Normalize(s string) string {
+	s = stripFormatSuffix(s)
 	s = camelLowerUpper.ReplaceAllString(s, "${1} ${2}")
 	s = camelUpperSeries.ReplaceAllString(s, "${1} ${2}")
 	lower := strings.ToLower(s)
 	clean := nonAlphanumeric.ReplaceAllString(lower, " ")
 	return strings.TrimSpace(clean)
+}
+
+func stripFormatSuffix(s string) string {
+	for {
+		stripped := formatSuffixRe.ReplaceAllString(s, "")
+		if stripped == s {
+			return s
+		}
+		s = stripped
+	}
 }
 
 func stripExtension(filename string) string {

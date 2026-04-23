@@ -313,6 +313,14 @@ func runStashImport(cmd *cobra.Command, _ []string) error {
 		if organized {
 			input.Organized = &organized
 		}
+		if merged.Thumbnail != "" {
+			coverData, coverErr := client.DownloadCoverImage(ctx, merged.Thumbnail)
+			if coverErr != nil {
+				fmt.Fprintf(os.Stderr, "warning: could not download cover image: %v\n", coverErr)
+			} else {
+				input.CoverImage = &coverData
+			}
+		}
 
 		if err := client.UpdateScene(ctx, input); err != nil {
 			fmt.Fprintf(os.Stderr, "error updating scene %s: %v\n", ss.ID, err)
@@ -377,6 +385,10 @@ func buildChanges(ss stash.StashScene, merged stash.MergedScene, mergedURLs []st
 	addedURLs := diffStrings(ss.URLs, mergedURLs)
 	if len(addedURLs) > 0 {
 		changes["urls"] = changelogFieldDiff{Added: addedURLs}
+	}
+
+	if merged.Thumbnail != "" {
+		changes["cover"] = changelogFieldDiff{To: truncate(merged.Thumbnail, 60)}
 	}
 
 	existingTagNames := make(map[string]bool, len(ss.Tags))

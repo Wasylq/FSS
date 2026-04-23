@@ -2,6 +2,7 @@ package stash
 
 import (
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -68,15 +69,16 @@ type StashID struct {
 }
 
 type SceneUpdateInput struct {
-	ID          string   `json:"id"`
-	Title       *string  `json:"title,omitempty"`
-	Details     *string  `json:"details,omitempty"`
-	Date        *string  `json:"date,omitempty"`
-	URLs        []string `json:"urls,omitempty"`
-	TagIDs      []string `json:"tag_ids,omitempty"`
+	ID           string   `json:"id"`
+	Title        *string  `json:"title,omitempty"`
+	Details      *string  `json:"details,omitempty"`
+	Date         *string  `json:"date,omitempty"`
+	URLs         []string `json:"urls,omitempty"`
+	TagIDs       []string `json:"tag_ids,omitempty"`
 	PerformerIDs []string `json:"performer_ids,omitempty"`
-	StudioID    *string  `json:"studio_id,omitempty"`
-	Organized   *bool    `json:"organized,omitempty"`
+	StudioID     *string  `json:"studio_id,omitempty"`
+	CoverImage   *string  `json:"cover_image,omitempty"`
+	Organized    *bool    `json:"organized,omitempty"`
 }
 
 type ScrapedScene struct {
@@ -330,8 +332,37 @@ func (c *Client) CreateTag(ctx context.Context, name string) (string, error) {
 	return result.TagCreate.ID, nil
 }
 
+func (c *Client) FindTagByAlias(ctx context.Context, alias string) (string, bool, error) {
+	data, err := c.do(ctx, graphqlRequest{
+		Query:     `query($alias: String!) { findTags(tag_filter: { aliases: { value: $alias, modifier: EQUALS } }) { tags { id name } } }`,
+		Variables: map[string]any{"alias": alias},
+	})
+	if err != nil {
+		return "", false, err
+	}
+	var result struct {
+		FindTags struct {
+			Tags []StashTag `json:"tags"`
+		} `json:"findTags"`
+	}
+	if err := json.Unmarshal(data, &result); err != nil {
+		return "", false, err
+	}
+	if len(result.FindTags.Tags) == 0 {
+		return "", false, nil
+	}
+	return result.FindTags.Tags[0].ID, true, nil
+}
+
 func (c *Client) EnsureTag(ctx context.Context, name string) (string, error) {
 	id, found, err := c.FindTagByName(ctx, name)
+	if err != nil {
+		return "", err
+	}
+	if found {
+		return id, nil
+	}
+	id, found, err = c.FindTagByAlias(ctx, name)
 	if err != nil {
 		return "", err
 	}
@@ -469,4 +500,28 @@ func (c *Client) ScrapeSceneURL(ctx context.Context, url string) (*ScrapedScene,
 		return nil, err
 	}
 	return result.ScrapeURL, nil
+}
+
+// DownloadCoverImage fetches an image URL and returns it as a base64 data URL
+// suitable for the Stash cover_image field.
+func (c *Client) DownloadCoverImage(ctx context.Context, imageURL string) (string, error) {
+	resp, err := httpx.Do(ctx, c.http, httpx.Request{
+		URL:     imageURL,
+		Headers: map[string]string{"User-Agent": httpx.UserAgentFirefox},
+	})
+	if err != nil {
+		return "", fmt.Errorf("downloading cover image: %w", err)
+	}
+	defer func() { _ = resp.Body.Close() }()
+
+	data, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return "", fmt.Errorf("reading cover image: %w", err)
+	}
+
+	contentType := resp.Header.Get("Content-Type")
+	if contentType == "" {
+		contentType = http.DetectContentType(data)
+	}
+	return "data:" + contentType + ";base64," + base64.StdEncoding.EncodeToString(data), nil
 }

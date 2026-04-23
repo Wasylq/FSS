@@ -17,6 +17,7 @@ type MergedScene struct {
 	Categories  []string
 	Performers  []string
 	Studio      string
+	Thumbnail   string
 	Duration    int
 	Width       int
 	Height      int
@@ -76,6 +77,10 @@ func MergeScenes(scenes []models.Scene, existingDate time.Time) MergedScene {
 
 		if m.Studio == "" && s.Studio != "" {
 			m.Studio = s.Studio
+		}
+
+		if m.Thumbnail == "" && s.Thumbnail != "" {
+			m.Thumbnail = s.Thumbnail
 		}
 
 		if s.Duration > m.Duration {
