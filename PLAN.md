@@ -415,7 +415,7 @@ Full technical reference. Never needs to be read end-to-end — written to be se
 
 ---
 
-## Phase 7 — Stash Integration
+## Phase 7 — Stash Integration ✓
 
 ### Context
 
@@ -513,12 +513,15 @@ E.g. `"MILF JOI Countdown!!!"` → `"milf joi countdown"`
 For each Stash scene's `files[].basename`:
 1. Strip extension → raw filename
 2. Normalize the same way
-3. **Pass 1 — exact**: normalized filename == normalized title → `[exact]`
-4. **Pass 2 — substring**: normalized title is a substring of normalized filename → `[substring]`
-5. **Pass 3 — best substring**: if multiple substring matches, pick the longest title
-6. No match → `[skip]`
+3. **Pass 1 — primary index**: exact match, then substring (whole-word, ≥50% overlap ratio)
+4. **Pass 2 — sanitized index**: strip noise words ("step") from both filename and titles, retry exact + substring
+5. **Duration filtering**: if file duration is known, reject matches where scene duration differs by more than `max(10% of file duration, 30s)`
+6. **Disambiguation**: multiple substring matches → pick longest title; tied length → `[ambiguous]`
+7. No match → `[skip]`
 
-Ambiguous matches (multiple different titles match the same filename) are flagged as `[ambiguous]` in dry-run and skipped in apply mode.
+Substring matching uses whole-word boundaries (not character-level substring) and requires the title to cover ≥50% of the filename's words. This prevents short titles from matching long unrelated filenames.
+
+Ambiguous matches are flagged in dry-run and skipped in apply mode.
 
 #### Confidence display in dry-run
 
@@ -571,10 +574,10 @@ Tags applied to each matched Stash scene:
 
 3. **Scene tags from FSS**: All tags from the merged scene. Find-or-create each in Stash.
 
-4. **Resolution tags** (when `--resolution-tags` is set):
+4. **Resolution tag** (when `--resolution-tags` is set) — only the single highest applicable tag:
    - `"4K Available"` if width ≥ 3840
-   - `"Full HD Available"` if width ≥ 1920
-   - `"HD Available"` if width ≥ 1280
+   - `"Full HD Available"` if width ≥ 1920 (and < 3840)
+   - `"HD Available"` if width ≥ 1280 (and < 1920)
 
 5. All tags are **additive** — existing tags on the Stash scene are preserved.
 

@@ -88,4 +88,5 @@ Without `--db`, each run produces one file per studio in the output directory:
 
 With `--db`, SQLite is the source of truth. JSON/CSV are exported from it on request.
 
-See [MANUAL.md](MANUAL.md) for the full field reference, output format details, and how to add a new scraper.
+See [MANUAL.md](MANUAL.md) for the full field reference, output format details, and advanced usage.
+See [CONTRIBUTING.md](CONTRIBUTING.md) for how to add a new scraper.
