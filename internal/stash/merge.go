@@ -1,10 +1,23 @@
 package stash
 
 import (
+	"regexp"
+	"strings"
 	"time"
 
 	"github.com/Wasylq/FSS/models"
 )
+
+var (
+	mergeMultiSpaceRe = regexp.MustCompile(`[ \t]{3,}`)
+	mergeBlankLinesRe = regexp.MustCompile(`\n{3,}`)
+)
+
+func cleanDescription(s string) string {
+	s = mergeMultiSpaceRe.ReplaceAllString(s, "\n")
+	s = mergeBlankLinesRe.ReplaceAllString(s, "\n\n")
+	return strings.TrimSpace(s)
+}
 
 // MergedScene holds the combined metadata from one or more FSS scenes,
 // ready to be applied to a Stash scene.
@@ -41,8 +54,8 @@ func MergeScenes(scenes []models.Scene, existingDate time.Time) MergedScene {
 		if m.Title == "" && s.Title != "" {
 			m.Title = s.Title
 		}
-		if len(s.Description) > len(m.Description) {
-			m.Description = s.Description
+		if desc := cleanDescription(s.Description); len(desc) > len(m.Description) {
+			m.Description = desc
 		}
 
 		if !s.Date.IsZero() && (m.Date.IsZero() || s.Date.Before(m.Date)) {

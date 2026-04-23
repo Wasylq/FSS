@@ -123,6 +123,7 @@ func BuildIndex(scenes []models.Scene) *SceneIndex {
 }
 
 // LoadJSONFiles reads FSS JSON files and returns all scenes.
+// Files that don't match the expected format are silently skipped.
 func LoadJSONFiles(paths []string) ([]models.Scene, error) {
 	var all []models.Scene
 	for _, p := range paths {
@@ -132,7 +133,10 @@ func LoadJSONFiles(paths []string) ([]models.Scene, error) {
 		}
 		var sf studioFile
 		if err := json.Unmarshal(data, &sf); err != nil {
-			return nil, fmt.Errorf("parsing %s: %w", p, err)
+			continue
+		}
+		if len(sf.Scenes) == 0 {
+			continue
 		}
 		all = append(all, sf.Scenes...)
 	}

@@ -278,11 +278,20 @@ func parseDate(s string) time.Time {
 	return t.UTC()
 }
 
-var htmlTagRe = regexp.MustCompile(`<[^>]+>`)
+var (
+	htmlBlockRe    = regexp.MustCompile(`(?i)\s*<\s*(?:br\s*/?\s*|/?p|/?div|/?li)\s*>\s*`)
+	htmlTagRe      = regexp.MustCompile(`<[^>]+>`)
+	multiSpaceRe   = regexp.MustCompile(`[ \t]{3,}`)
+	blankLinesRe   = regexp.MustCompile(`\n{3,}`)
+)
 
 func stripHTML(s string) string {
+	s = html.UnescapeString(s)
+	s = htmlBlockRe.ReplaceAllString(s, "\n")
 	s = htmlTagRe.ReplaceAllString(s, "")
-	return strings.TrimSpace(html.UnescapeString(s))
+	s = multiSpaceRe.ReplaceAllString(s, "\n")
+	s = blankLinesRe.ReplaceAllString(s, "\n\n")
+	return strings.TrimSpace(s)
 }
 
 func parseScreenSize(s string) (width, height int) {
