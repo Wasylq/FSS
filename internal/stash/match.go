@@ -54,9 +54,15 @@ type MatchResult struct {
 	Candidates int            // for ambiguous: how many distinct titles matched
 }
 
-var nonAlphanumeric = regexp.MustCompile(`[^a-z0-9]+`)
+var (
+	nonAlphanumeric  = regexp.MustCompile(`[^a-z0-9]+`)
+	camelLowerUpper  = regexp.MustCompile(`([a-z])([A-Z])`)
+	camelUpperSeries = regexp.MustCompile(`([A-Z]+)([A-Z][a-z])`)
+)
 
 func Normalize(s string) string {
+	s = camelLowerUpper.ReplaceAllString(s, "${1} ${2}")
+	s = camelUpperSeries.ReplaceAllString(s, "${1} ${2}")
 	lower := strings.ToLower(s)
 	clean := nonAlphanumeric.ReplaceAllString(lower, " ")
 	return strings.TrimSpace(clean)

@@ -22,6 +22,10 @@ func TestNormalize(t *testing.T) {
 		{"already clean", "already clean"},
 		{"", ""},
 		{"123-numbers_and-stuff", "123 numbers and stuff"},
+		{"SunnyDayAtTheBeach_1080p", "sunny day at the beach 1080p"},
+		{"camelCaseWords", "camel case words"},
+		{"ALLCAPSword", "allcap sword"},
+		{"Scene4KVersion", "scene4k version"},
 	}
 	for _, c := range cases {
 		got := Normalize(c.input)
@@ -219,6 +223,17 @@ func TestMatchStepInTitleNotFilename(t *testing.T) {
 	}
 	if len(r.Scenes) != 1 || r.Scenes[0].ID != "1" {
 		t.Errorf("scenes = %v, want [id=1]", r.Scenes)
+	}
+}
+
+func TestMatchCamelCaseFilename(t *testing.T) {
+	idx := BuildIndex([]models.Scene{scene("1", "tt", "Sunny Day at the Beach")})
+	r := idx.Match("SunnyDayAtTheBeach_1080p.mp4", 0)
+	if r.Confidence != MatchSubstring {
+		t.Errorf("confidence = %v, want SUBSTR", r.Confidence)
+	}
+	if r.Scenes[0].Title != "Sunny Day at the Beach" {
+		t.Errorf("title = %q", r.Scenes[0].Title)
 	}
 }
 
