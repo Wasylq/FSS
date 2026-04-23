@@ -19,6 +19,8 @@ var listStudiosDB string
 func init() {
 	rootCmd.AddCommand(listStudiosCmd)
 	listStudiosCmd.Flags().StringVar(&listStudiosDB, "db", "", "path to SQLite database (required)")
+	// MarkFlagRequired only errors if the flag is unregistered — a programming
+	// bug we want to surface at startup, not silently swallow.
 	if err := listStudiosCmd.MarkFlagRequired("db"); err != nil {
 		panic(err)
 	}

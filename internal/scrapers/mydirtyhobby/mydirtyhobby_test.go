@@ -233,13 +233,21 @@ func TestListScenesKnownIDs(t *testing.T) {
 
 	// Only Total hint + scene 201 should appear; 202 triggers early stop.
 	scenesOnly := make([]scraper.SceneResult, 0)
+	sawStoppedEarly := false
 	for _, r := range results {
+		if r.StoppedEarly {
+			sawStoppedEarly = true
+			continue
+		}
 		if r.Total == 0 {
 			scenesOnly = append(scenesOnly, r)
 		}
 	}
 	if len(scenesOnly) != 1 {
 		t.Errorf("got %d scenes, want 1 (early stop at known ID)", len(scenesOnly))
+	}
+	if !sawStoppedEarly {
+		t.Error("expected StoppedEarly signal, got none")
 	}
 	if len(scenesOnly) > 0 && scenesOnly[0].Scene.ID != "201" {
 		t.Errorf("scene ID = %q, want %q", scenesOnly[0].Scene.ID, "201")

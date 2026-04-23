@@ -12,6 +12,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/Wasylq/FSS/internal/httpx"
 	"github.com/Wasylq/FSS/models"
 	"github.com/Wasylq/FSS/scraper"
 )
@@ -22,7 +23,7 @@ type Scraper struct {
 
 func New() *Scraper {
 	return &Scraper{
-		client: &http.Client{Timeout: 30 * time.Second},
+		client: httpx.NewClient(30 * time.Second),
 	}
 }
 
@@ -95,6 +96,10 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 		now := time.Now().UTC()
 		for _, item := range items {
 			if len(opts.KnownIDs) > 0 && opts.KnownIDs[item.vkey] {
+				select {
+				case out <- scraper.SceneResult{StoppedEarly: true}:
+				case <-ctx.Done():
+				}
 				return
 			}
 			scene := toScene(studioURL, item, now)
@@ -133,7 +138,13 @@ func buildPageURL(studioURL string, page int) (string, error) {
 var liRe = regexp.MustCompile(`(?s)<li[^>]*pcVideoListItem[^>]*>.*?</li>`)
 
 func (s *Scraper) fetchPage(ctx context.Context, rawURL string) ([]phItem, error) {
-	resp, err := get(ctx, s.client, rawURL)
+	resp, err := httpx.Do(ctx, s.client, httpx.Request{
+		URL: rawURL,
+		Headers: map[string]string{
+			"User-Agent": httpx.UserAgentFirefox,
+			"Cookie":     "platform=pc; ageVerified=1; accessAgeDisclaimerPH=1",
+		},
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -229,39 +240,6 @@ func toScene(studioURL string, item phItem, now time.Time) models.Scene {
 		IsFree: true,
 	})
 	return scene
-}
-
-// ---- HTTP ----
-
-func get(ctx context.Context, client *http.Client, rawURL string) (*http.Response, error) {
-	var lastErr error
-	for attempt := 0; attempt < 3; attempt++ {
-		if attempt > 0 {
-			select {
-			case <-time.After(time.Duration(attempt) * 2 * time.Second):
-			case <-ctx.Done():
-				return nil, ctx.Err()
-			}
-		}
-		req, err := http.NewRequestWithContext(ctx, http.MethodGet, rawURL, nil)
-		if err != nil {
-			return nil, err
-		}
-		req.Header.Set("User-Agent", "Mozilla/5.0 (X11; Linux x86_64; rv:124.0) Gecko/20100101 Firefox/124.0")
-		req.Header.Set("Cookie", "platform=pc; ageVerified=1; accessAgeDisclaimerPH=1")
-		resp, err := client.Do(req)
-		if err != nil {
-			lastErr = err
-			continue
-		}
-		if resp.StatusCode == 429 || resp.StatusCode >= 500 {
-			_ = resp.Body.Close()
-			lastErr = fmt.Errorf("HTTP %d", resp.StatusCode)
-			continue
-		}
-		return resp, nil
-	}
-	return nil, lastErr
 }
 
 // parseDuration converts "MM:SS" or "HH:MM:SS" to seconds.

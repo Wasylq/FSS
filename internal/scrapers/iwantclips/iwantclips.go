@@ -3,6 +3,7 @@ package iwantclips
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"html"
 	"io"
@@ -13,6 +14,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/Wasylq/FSS/internal/httpx"
 	"github.com/Wasylq/FSS/models"
 	"github.com/Wasylq/FSS/scraper"
 )
@@ -35,7 +37,7 @@ type Scraper struct {
 
 func New() *Scraper {
 	return &Scraper{
-		client:     &http.Client{Timeout: 30 * time.Second},
+		client:     httpx.NewClient(30 * time.Second),
 		siteBase:   defaultSiteBase,
 		tsBase:     defaultTypesense,
 		collection: defaultCollection,
@@ -103,11 +105,23 @@ func (s *Scraper) run(ctx context.Context, studioURL, memberID string, opts scra
 
 		docs, total, err := s.fetchPage(ctx, apiKey, tsBase, memberID, page)
 		if err != nil {
-			select {
-			case out <- scraper.SceneResult{Err: fmt.Errorf("page %d: %w", page, err)}:
-			case <-ctx.Done():
+			// Typesense keys are ephemeral — refresh once on 401 and retry.
+			var se *httpx.StatusError
+			if errors.As(err, &se) && se.StatusCode == http.StatusUnauthorized {
+				apiKey, tsBase, err = s.fetchAPIKey(ctx, studioURL)
+				if err == nil {
+					docs, total, err = s.fetchPage(ctx, apiKey, tsBase, memberID, page)
+				} else {
+					err = fmt.Errorf("refreshing api key: %w", err)
+				}
 			}
-			return
+			if err != nil {
+				select {
+				case out <- scraper.SceneResult{Err: fmt.Errorf("page %d: %w", page, err)}:
+				case <-ctx.Done():
+				}
+				return
+			}
 		}
 
 		if page == 1 && total > 0 {
@@ -135,6 +149,12 @@ func (s *Scraper) run(ctx context.Context, studioURL, memberID string, opts scra
 
 		totalPages := (total + s.perPage - 1) / s.perPage
 		if hitKnown || page >= totalPages || len(docs) == 0 {
+			if hitKnown {
+				select {
+				case out <- scraper.SceneResult{StoppedEarly: true}:
+				case <-ctx.Done():
+				}
+			}
 			return
 		}
 	}
@@ -147,7 +167,10 @@ var tsHostRe  = regexp.MustCompile(`host:\s*'([^']+)'`)
 var tsProtoRe = regexp.MustCompile(`protocol:\s*'([^']+)'`)
 
 func (s *Scraper) fetchAPIKey(ctx context.Context, studioURL string) (apiKey, tsBase string, err error) {
-	resp, err := get(ctx, s.client, studioURL, nil)
+	resp, err := httpx.Do(ctx, s.client, httpx.Request{
+		URL:     studioURL,
+		Headers: iwcDefaultHeaders(),
+	})
 	if err != nil {
 		return "", "", err
 	}
@@ -212,8 +235,11 @@ func (s *Scraper) fetchPage(ctx context.Context, apiKey, tsBase, memberID string
 	}
 	u += "?" + params.Encode()
 
-	resp, err := get(ctx, s.client, u, map[string]string{
-		"X-TYPESENSE-API-KEY": apiKey,
+	headers := iwcDefaultHeaders()
+	headers["X-TYPESENSE-API-KEY"] = apiKey
+	resp, err := httpx.Do(ctx, s.client, httpx.Request{
+		URL:     u,
+		Headers: headers,
 	})
 	if err != nil {
 		return nil, 0, err
@@ -232,38 +258,10 @@ func (s *Scraper) fetchPage(ctx context.Context, apiKey, tsBase, memberID string
 	return docs, ts.Found, nil
 }
 
-// get performs a GET with up to 3 attempts, backing off 2s then 4s.
-func get(ctx context.Context, client *http.Client, rawURL string, headers map[string]string) (*http.Response, error) {
-	var lastErr error
-	for attempt := 0; attempt < 3; attempt++ {
-		if attempt > 0 {
-			select {
-			case <-time.After(time.Duration(attempt) * 2 * time.Second):
-			case <-ctx.Done():
-				return nil, ctx.Err()
-			}
-		}
-		req, err := http.NewRequestWithContext(ctx, http.MethodGet, rawURL, nil)
-		if err != nil {
-			return nil, err
-		}
-		req.Header.Set("User-Agent", "Mozilla/5.0 (X11; Linux x86_64; rv:124.0) Gecko/20100101 Firefox/124.0")
-		for k, v := range headers {
-			req.Header.Set(k, v)
-		}
-		resp, err := client.Do(req)
-		if err != nil {
-			lastErr = err
-			continue
-		}
-		if resp.StatusCode == 429 || resp.StatusCode >= 500 {
-			_ = resp.Body.Close()
-			lastErr = fmt.Errorf("HTTP %d", resp.StatusCode)
-			continue
-		}
-		return resp, nil
+func iwcDefaultHeaders() map[string]string {
+	return map[string]string{
+		"User-Agent": httpx.UserAgentFirefox,
 	}
-	return nil, lastErr
 }
 
 // ---- mapping ----
@@ -276,6 +274,8 @@ func toScene(studioURL string, doc iwcDoc, now time.Time) models.Scene {
 		Title:       html.UnescapeString(doc.Title),
 		URL:         doc.ContentURL,
 		Date:        time.Unix(doc.PublishTime, 0).UTC(),
+		// IWantClips ships descriptions double-encoded (e.g. `&amp;quot;` for `"`),
+		// so two passes are intentional.
 		Description: html.UnescapeString(html.UnescapeString(doc.Description)),
 		Thumbnail:   doc.ThumbnailURL,
 		Preview:     doc.PreviewURL,

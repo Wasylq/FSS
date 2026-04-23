@@ -192,8 +192,12 @@ func (s *SQLite) ListStudios() ([]models.Studio, error) {
 		if err := rows.Scan(&st.URL, &st.SiteID, &st.Name, &addedAt, &lastScrapedAt); err != nil {
 			return nil, err
 		}
-		st.AddedAt = parseStr(addedAt)
-		st.LastScrapedAt = parseStrPtr(lastScrapedAt)
+		if st.AddedAt, err = parseStr(addedAt); err != nil {
+			return nil, fmt.Errorf("parsing added_at for %s: %w", st.URL, err)
+		}
+		if st.LastScrapedAt, err = parseStrPtr(lastScrapedAt); err != nil {
+			return nil, fmt.Errorf("parsing last_scraped_at for %s: %w", st.URL, err)
+		}
 		studios = append(studios, st)
 	}
 	return studios, rows.Err()
@@ -223,7 +227,19 @@ func (s *SQLite) Export(format, path, studioURL string) error {
 // ---- helpers ----
 
 func upsertScene(tx *sql.Tx, sc models.Scene) error {
-	_, err := tx.Exec(`
+	performers, err := jsonStr(sc.Performers)
+	if err != nil {
+		return fmt.Errorf("encoding performers for %s: %w", sc.ID, err)
+	}
+	tags, err := jsonStr(sc.Tags)
+	if err != nil {
+		return fmt.Errorf("encoding tags for %s: %w", sc.ID, err)
+	}
+	categories, err := jsonStr(sc.Categories)
+	if err != nil {
+		return fmt.Errorf("encoding categories for %s: %w", sc.ID, err)
+	}
+	_, err = tx.Exec(`
 		INSERT OR REPLACE INTO scenes (
 		    id, site_id, studio_url, title, url, date, description,
 		    thumbnail, preview, performers, director, studio,
@@ -234,8 +250,8 @@ func upsertScene(tx *sql.Tx, sc models.Scene) error {
 		) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
 		sc.ID, sc.SiteID, sc.StudioURL, sc.Title, sc.URL,
 		timeStr(sc.Date), sc.Description, sc.Thumbnail, sc.Preview,
-		jsonStr(sc.Performers), sc.Director, sc.Studio,
-		jsonStr(sc.Tags), jsonStr(sc.Categories),
+		performers, sc.Director, sc.Studio,
+		tags, categories,
 		sc.Series, sc.SeriesPart,
 		sc.Duration, sc.Resolution, sc.Width, sc.Height, sc.Format,
 		sc.Views, sc.Likes, sc.Comments,
@@ -292,7 +308,10 @@ func (s *SQLite) loadPriceHistory(studioURL string, scenes []models.Scene) error
 			&p.Regular, &p.Discounted, &isFree, &isOnSale, &p.DiscountPercent); err != nil {
 			return err
 		}
-		p.Date = parseStr(dateStr)
+		p.Date, err = parseStr(dateStr)
+		if err != nil {
+			return fmt.Errorf("parsing price_history date for %s: %w", sceneID, err)
+		}
 		p.IsFree = isFree != 0
 		p.IsOnSale = isOnSale != 0
 		if i, ok := idx[siteID+":"+sceneID]; ok {
@@ -325,10 +344,18 @@ func scanScene(rows *sql.Rows) (models.Scene, error) {
 	if err != nil {
 		return sc, err
 	}
-	sc.Date = parseStr(dateStr)
-	sc.ScrapedAt = parseStr(scrapedAt)
-	sc.LowestPriceDate = parseStrPtr(lowestPriceDate)
-	sc.DeletedAt = parseStrPtr(deletedAt)
+	if sc.Date, err = parseStr(dateStr); err != nil {
+		return sc, fmt.Errorf("parsing date for %s: %w", sc.ID, err)
+	}
+	if sc.ScrapedAt, err = parseStr(scrapedAt); err != nil {
+		return sc, fmt.Errorf("parsing scraped_at for %s: %w", sc.ID, err)
+	}
+	if sc.LowestPriceDate, err = parseStrPtr(lowestPriceDate); err != nil {
+		return sc, fmt.Errorf("parsing lowest_price_date for %s: %w", sc.ID, err)
+	}
+	if sc.DeletedAt, err = parseStrPtr(deletedAt); err != nil {
+		return sc, fmt.Errorf("parsing deleted_at for %s: %w", sc.ID, err)
+	}
 	if err := json.Unmarshal([]byte(performers), &sc.Performers); err != nil {
 		return sc, fmt.Errorf("unmarshalling performers: %w", err)
 	}
@@ -357,25 +384,30 @@ func timePtrStr(t *time.Time) any {
 	return t.UTC().Format(time.RFC3339)
 }
 
-func parseStr(s string) time.Time {
+func parseStr(s string) (time.Time, error) {
 	if s == "" {
-		return time.Time{}
+		return time.Time{}, nil
 	}
-	t, _ := time.Parse(time.RFC3339, s)
-	return t
+	return time.Parse(time.RFC3339, s)
 }
 
-func parseStrPtr(s sql.NullString) *time.Time {
+func parseStrPtr(s sql.NullString) (*time.Time, error) {
 	if !s.Valid || s.String == "" {
-		return nil
+		return nil, nil
 	}
-	t, _ := time.Parse(time.RFC3339, s.String)
-	return &t
+	t, err := time.Parse(time.RFC3339, s.String)
+	if err != nil {
+		return nil, err
+	}
+	return &t, nil
 }
 
-func jsonStr(v any) string {
-	b, _ := json.Marshal(v)
-	return string(b)
+func jsonStr(v any) (string, error) {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return "", err
+	}
+	return string(b), nil
 }
 
 func boolInt(b bool) int {

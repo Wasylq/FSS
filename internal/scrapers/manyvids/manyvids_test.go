@@ -336,3 +336,76 @@ func TestListScenes(t *testing.T) {
 		}
 	}
 }
+
+// ---- ListScenes early-stop on KnownIDs ----
+
+func TestListScenesKnownIDs(t *testing.T) {
+	detailFixtures := map[string]detailItem{
+		"111": {ID: "111", Title: "Fresh", VideoDuration: "10:00",
+			Model: mvModel{DisplayName: "Alice"}, Price: mvPrice{Regular: "9.99"},
+			LaunchDate: "2026-01-03T00:00:00Z"},
+		"222": {ID: "222", Title: "Known", VideoDuration: "20:00",
+			Model: mvModel{DisplayName: "Alice"}, Price: mvPrice{Regular: "14.99"},
+			LaunchDate: "2026-01-02T00:00:00Z"},
+		"333": {ID: "333", Title: "Older known", VideoDuration: "30:00",
+			Model: mvModel{DisplayName: "Alice"}, Price: mvPrice{Regular: "19.99"},
+			LaunchDate: "2026-01-01T00:00:00Z"},
+	}
+
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		if strings.Contains(r.URL.Path, "/store/videos/") {
+			resp := listResponse{
+				StatusCode: 200,
+				Data:       []listItem{{ID: "111"}, {ID: "222"}, {ID: "333"}},
+				Pagination: pagination{TotalPages: 1, CurrentPage: 1},
+			}
+			_ = json.NewEncoder(w).Encode(resp)
+			return
+		}
+		parts := strings.Split(strings.TrimSuffix(r.URL.Path, "/"), "/")
+		id := parts[len(parts)-1]
+		item, ok := detailFixtures[id]
+		if !ok {
+			http.NotFound(w, r)
+			return
+		}
+		_ = json.NewEncoder(w).Encode(detailResponse{StatusCode: 200, Data: item})
+	}))
+	defer ts.Close()
+
+	s := &Scraper{client: ts.Client(), apiBase: ts.URL, siteBase: defaultSiteBase}
+	// Workers: 1 keeps detail-fetch order deterministic so we can verify that
+	// only the fresh scene was fetched, not the ones past the known marker.
+	ch, err := s.ListScenes(context.Background(), testStudioURL, scraper.ListOpts{
+		Workers:  1,
+		KnownIDs: map[string]bool{"222": true},
+	})
+	if err != nil {
+		t.Fatalf("ListScenes: %v", err)
+	}
+
+	var scenes []scraper.SceneResult
+	sawStoppedEarly := false
+	for r := range ch {
+		if r.StoppedEarly {
+			sawStoppedEarly = true
+			continue
+		}
+		if r.Err != nil {
+			t.Errorf("unexpected error: %v", r.Err)
+			continue
+		}
+		scenes = append(scenes, r)
+	}
+
+	if len(scenes) != 1 {
+		t.Fatalf("got %d scenes, want 1 (early stop at known ID)", len(scenes))
+	}
+	if scenes[0].Scene.ID != "111" {
+		t.Errorf("scene ID = %q, want %q", scenes[0].Scene.ID, "111")
+	}
+	if !sawStoppedEarly {
+		t.Error("expected StoppedEarly signal, got none")
+	}
+}

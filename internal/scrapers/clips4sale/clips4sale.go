@@ -13,6 +13,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/Wasylq/FSS/internal/httpx"
 	"github.com/Wasylq/FSS/models"
 	"github.com/Wasylq/FSS/scraper"
 )
@@ -35,7 +36,7 @@ type Scraper struct {
 
 func New() *Scraper {
 	return &Scraper{
-		client:    &http.Client{Timeout: 30 * time.Second},
+		client:    httpx.NewClient(30 * time.Second),
 		siteBase:  defaultSiteBase,
 		pageLimit: defaultPageLimit,
 	}
@@ -136,11 +137,13 @@ func (s *Scraper) fetchPage(ctx context.Context, studioID, slug string, page int
 		"%s/studio/%s/%s/Cat0-AllCategories/Page%d/C4SSort-recommended/Limit%d/?onlyClips=true",
 		s.siteBase, studioID, slug, page, s.pageLimit,
 	)
-	headers := map[string]string{
-		"User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
-		"Accept":     "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-	}
-	resp, err := get(ctx, s.client, u, headers)
+	resp, err := httpx.Do(ctx, s.client, httpx.Request{
+		URL: u,
+		Headers: map[string]string{
+			"User-Agent": httpx.UserAgentChrome,
+			"Accept":     "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+		},
+	})
 	if err != nil {
 		return nil, 0, err
 	}
@@ -178,39 +181,6 @@ func extractClips(body []byte) ([]c4sClip, int, error) {
 	}
 
 	return ld.Clips, ld.ClipsCount, nil
-}
-
-// get performs a GET with up to 3 attempts, backing off 2s then 4s.
-func get(ctx context.Context, client *http.Client, url string, headers map[string]string) (*http.Response, error) {
-	var lastErr error
-	for attempt := 0; attempt < 3; attempt++ {
-		if attempt > 0 {
-			select {
-			case <-time.After(time.Duration(attempt) * 2 * time.Second):
-			case <-ctx.Done():
-				return nil, ctx.Err()
-			}
-		}
-		req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
-		if err != nil {
-			return nil, err
-		}
-		for k, v := range headers {
-			req.Header.Set(k, v)
-		}
-		resp, err := client.Do(req)
-		if err != nil {
-			lastErr = err
-			continue
-		}
-		if resp.StatusCode == 429 || resp.StatusCode >= 500 {
-			_ = resp.Body.Close()
-			lastErr = fmt.Errorf("HTTP %d", resp.StatusCode)
-			continue
-		}
-		return resp, nil
-	}
-	return nil, lastErr
 }
 
 // ---- mapping ----

@@ -12,6 +12,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/Wasylq/FSS/internal/httpx"
 	"github.com/Wasylq/FSS/models"
 	"github.com/Wasylq/FSS/scraper"
 )
@@ -30,7 +31,7 @@ type Scraper struct {
 
 func New() *Scraper {
 	return &Scraper{
-		client:   &http.Client{Timeout: 30 * time.Second},
+		client:   httpx.NewClient(30 * time.Second),
 		apiBase:  defaultAPIBase,
 		siteBase: defaultSiteBase,
 	}
@@ -144,6 +145,12 @@ func (s *Scraper) run(ctx context.Context, studioURL, cid string, opts scraper.L
 			}
 		}
 		if cancelled || hitKnown || page >= totalPages {
+			if hitKnown {
+				select {
+				case out <- scraper.SceneResult{StoppedEarly: true}:
+				case <-ctx.Done():
+				}
+			}
 			break
 		}
 	}
@@ -156,7 +163,10 @@ func (s *Scraper) run(ctx context.Context, studioURL, cid string, opts scraper.L
 
 func (s *Scraper) fetchPage(ctx context.Context, cid string, page int) ([]listEntry, int, error) {
 	u := fmt.Sprintf("%s/store/videos/%s?sort=date&page=%d", s.apiBase, cid, page)
-	resp, err := get(ctx, s.client, u, map[string]string{"Accept": "application/json"})
+	resp, err := httpx.Do(ctx, s.client, httpx.Request{
+		URL:     u,
+		Headers: map[string]string{"Accept": "application/json"},
+	})
 	if err != nil {
 		return nil, 0, err
 	}
@@ -176,7 +186,10 @@ func (s *Scraper) fetchPage(ctx context.Context, cid string, page int) ([]listEn
 
 func (s *Scraper) fetchDetail(ctx context.Context, studioURL, id, previewURL string) (models.Scene, error) {
 	u := fmt.Sprintf("%s/store/video/%s", s.apiBase, id)
-	resp, err := get(ctx, s.client, u, map[string]string{"Accept": "application/json"})
+	resp, err := httpx.Do(ctx, s.client, httpx.Request{
+		URL:     u,
+		Headers: map[string]string{"Accept": "application/json"},
+	})
 	if err != nil {
 		return models.Scene{}, err
 	}
@@ -188,39 +201,6 @@ func (s *Scraper) fetchDetail(ctx context.Context, studioURL, id, previewURL str
 	}
 
 	return toScene(studioURL, s.siteBase, dr.Data, previewURL, time.Now().UTC())
-}
-
-// get performs a GET with up to 3 attempts, backing off 2s then 4s.
-func get(ctx context.Context, client *http.Client, url string, headers map[string]string) (*http.Response, error) {
-	var lastErr error
-	for attempt := 0; attempt < 3; attempt++ {
-		if attempt > 0 {
-			select {
-			case <-time.After(time.Duration(attempt) * 2 * time.Second):
-			case <-ctx.Done():
-				return nil, ctx.Err()
-			}
-		}
-		req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
-		if err != nil {
-			return nil, err
-		}
-		for k, v := range headers {
-			req.Header.Set(k, v)
-		}
-		resp, err := client.Do(req)
-		if err != nil {
-			lastErr = err
-			continue
-		}
-		if resp.StatusCode == 429 || resp.StatusCode >= 500 {
-			_ = resp.Body.Close()
-			lastErr = fmt.Errorf("HTTP %d", resp.StatusCode)
-			continue
-		}
-		return resp, nil
-	}
-	return nil, lastErr
 }
 
 // ---- mapping ----

@@ -273,13 +273,21 @@ func TestListScenesKnownIDs(t *testing.T) {
 	}
 
 	var scenesOnly []scraper.SceneResult
+	sawStoppedEarly := false
 	for r := range ch {
+		if r.StoppedEarly {
+			sawStoppedEarly = true
+			continue
+		}
 		if r.Total == 0 && r.Err == nil {
 			scenesOnly = append(scenesOnly, r)
 		}
 	}
 	if len(scenesOnly) != 1 {
 		t.Errorf("got %d scenes, want 1 (early stop at known ID)", len(scenesOnly))
+	}
+	if !sawStoppedEarly {
+		t.Error("expected StoppedEarly signal, got none")
 	}
 	if len(scenesOnly) > 0 && scenesOnly[0].Scene.ID != "201" {
 		t.Errorf("scene ID = %q, want %q", scenesOnly[0].Scene.ID, "201")

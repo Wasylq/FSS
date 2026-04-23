@@ -69,8 +69,7 @@ func runScrape(cmd *cobra.Command, args []string) error {
 
 	name, _ := cmd.Flags().GetString("name")
 	if name != "" && len(args) > 1 {
-		fmt.Fprintln(os.Stderr, "warning: --name ignored when scraping multiple URLs")
-		name = ""
+		return fmt.Errorf("--name cannot be used when scraping multiple URLs")
 	}
 	if name != "" && dbPath == "" {
 		fmt.Fprintln(os.Stderr, "warning: --name has no effect without --db (studio names are only stored in SQLite)")
@@ -291,9 +290,14 @@ func collectScenes(ctx context.Context, sc scraper.StudioScraper, studioURL stri
 	var scenes []models.Scene
 	errCount := 0
 	total := 0
+	stoppedEarly := false
 	for result := range ch {
 		if result.Total > 0 {
 			total = result.Total
+			continue
+		}
+		if result.StoppedEarly {
+			stoppedEarly = true
 			continue
 		}
 		if result.Err != nil {
@@ -309,6 +313,9 @@ func collectScenes(ctx context.Context, sc scraper.StudioScraper, studioURL stri
 		}
 	}
 	fmt.Println() // end the progress line
+	if stoppedEarly {
+		fmt.Println("  stopped early at known ID — remaining scenes already stored")
+	}
 	if errCount > 0 {
 		fmt.Fprintf(os.Stderr, "  %d fetch error(s) — see warnings above\n", errCount)
 	}

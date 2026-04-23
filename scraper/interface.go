@@ -48,4 +48,9 @@ type SceneResult struct {
 	// studio. Sent at most once (after the first page). Consumers should skip
 	// this result and use the value only for progress display.
 	Total int
+	// StoppedEarly, when true, signals the scraper halted pagination because it
+	// hit an ID from opts.KnownIDs. Older scenes beyond that point already exist
+	// in storage. Sent once immediately before the channel is closed, instead
+	// of a Scene.
+	StoppedEarly bool
 }

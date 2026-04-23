@@ -1,16 +1,17 @@
 package mydirtyhobby
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"net/url"
 	"regexp"
 	"strconv"
 	"strings"
 	"time"
 
+	"github.com/Wasylq/FSS/internal/httpx"
 	"github.com/Wasylq/FSS/models"
 	"github.com/Wasylq/FSS/scraper"
 )
@@ -32,7 +33,7 @@ type Scraper struct {
 
 func New() *Scraper {
 	return &Scraper{
-		client:      &http.Client{Timeout: 30 * time.Second},
+		client:      httpx.NewClient(30 * time.Second),
 		siteBase:    defaultSiteBase,
 		contentBase: defaultContentBase,
 		pageSize:    defaultPageSize,
@@ -130,6 +131,12 @@ func (s *Scraper) run(ctx context.Context, studioURL string, uid int, nick strin
 		}
 
 		if hitKnown || page >= totalPages || len(items) == 0 {
+			if hitKnown {
+				select {
+				case out <- scraper.SceneResult{StoppedEarly: true}:
+				case <-ctx.Done():
+				}
+			}
 			return
 		}
 	}
@@ -180,7 +187,16 @@ func (s *Scraper) fetchPage(ctx context.Context, uid, page int) ([]mdhItem, int,
 	}
 
 	u := s.contentBase + "/content/api/v2/videos"
-	resp, err := post(ctx, s.client, u, body)
+	resp, err := httpx.Do(ctx, s.client, httpx.Request{
+		URL:  u,
+		Body: body,
+		Headers: map[string]string{
+			"Content-Type": "application/json",
+			"Accept":       "application/json",
+			"Cookie":       "AGEGATEPASSED=1",
+			"User-Agent":   httpx.UserAgentFirefox,
+		},
+	})
 	if err != nil {
 		return nil, 0, 0, err
 	}
@@ -191,40 +207,6 @@ func (s *Scraper) fetchPage(ctx context.Context, uid, page int) ([]mdhItem, int,
 		return nil, 0, 0, fmt.Errorf("decoding response: %w", err)
 	}
 	return lr.Items, lr.Total, lr.TotalPages, nil
-}
-
-// post performs a POST with up to 3 attempts, backing off 2s then 4s.
-func post(ctx context.Context, client *http.Client, url string, body []byte) (*http.Response, error) {
-	var lastErr error
-	for attempt := 0; attempt < 3; attempt++ {
-		if attempt > 0 {
-			select {
-			case <-time.After(time.Duration(attempt) * 2 * time.Second):
-			case <-ctx.Done():
-				return nil, ctx.Err()
-			}
-		}
-		req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewReader(body))
-		if err != nil {
-			return nil, err
-		}
-		req.Header.Set("Content-Type", "application/json")
-		req.Header.Set("Accept", "application/json")
-		req.Header.Set("Cookie", "AGEGATEPASSED=1")
-		req.Header.Set("User-Agent", "Mozilla/5.0 (X11; Linux x86_64; rv:124.0) Gecko/20100101 Firefox/124.0")
-		resp, err := client.Do(req)
-		if err != nil {
-			lastErr = err
-			continue
-		}
-		if resp.StatusCode == 429 || resp.StatusCode >= 500 {
-			_ = resp.Body.Close()
-			lastErr = fmt.Errorf("HTTP %d", resp.StatusCode)
-			continue
-		}
-		return resp, nil
-	}
-	return nil, lastErr
 }
 
 // ---- mapping ----
@@ -245,7 +227,7 @@ func toScene(studioURL, siteBase string, uid int, nick string, item mdhItem, now
 		SiteID:      "mydirtyhobby",
 		StudioURL:   studioURL,
 		Title:       item.Title,
-		URL:         fmt.Sprintf("%s/profil/%d-%s/videos/%d", siteBase, uid, nick, item.UVID),
+		URL:         fmt.Sprintf("%s/profil/%d-%s/videos/%d", siteBase, uid, url.PathEscape(nick), item.UVID),
 		Date:        parseDate(item.LatestPictureChange),
 		Description: item.Description,
 		Thumbnail:   item.Thumbnail,
