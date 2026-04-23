@@ -30,7 +30,7 @@ func init() {
 	stashImportCmd.Flags().StringSlice("json", nil, "specific JSON files to load")
 	stashImportCmd.Flags().String("tag", "", "import marker tag (default from config)")
 	stashImportCmd.Flags().Bool("resolution-tags", false, "add resolution tags (4K/FHD/HD Available)")
-	stashImportCmd.Flags().Bool("organized", true, "set organized flag on imported scenes")
+	stashImportCmd.Flags().Bool("organized", false, "set organized flag on imported scenes")
 	stashImportCmd.Flags().Bool("scrape", false, "call Stash scraper on first URL after import")
 	stashImportCmd.Flags().Bool("include-stashbox", false, "also process scenes that have StashDB data")
 	stashImportCmd.Flags().String("stashbox-tag", "", "tag for stashbox overrides (default from config)")
