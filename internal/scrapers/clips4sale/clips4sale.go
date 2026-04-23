@@ -58,7 +58,7 @@ func (s *Scraper) Patterns() []string {
 
 // studioRe matches studio URLs but not individual clip URLs.
 // Studio slugs start with a letter; clip IDs are purely numeric.
-var studioRe = regexp.MustCompile(`clips4sale\.com/studio/(\d+)/([a-zA-Z][^/?]*)`)
+var studioRe = regexp.MustCompile(`://(?:www\.)?clips4sale\.com/studio/(\d+)/([a-zA-Z][^/?]*)`)
 
 func (s *Scraper) MatchesURL(u string) bool {
 	return studioRe.MatchString(u)

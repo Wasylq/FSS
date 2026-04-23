@@ -59,7 +59,7 @@ func (s *Scraper) Patterns() []string {
 	}
 }
 
-var matchRe = regexp.MustCompile(`iwantclips\.com/store/\d+/`)
+var matchRe = regexp.MustCompile(`://(?:www\.)?iwantclips\.com/store/\d+/`)
 var storeRe = regexp.MustCompile(`/store/(\d+)/([^/?]+)`)
 
 func (s *Scraper) MatchesURL(u string) bool {

@@ -56,7 +56,7 @@ func (s *Scraper) Patterns() []string {
 }
 
 // matchRe gates MatchesURL to only mydirtyhobby.com URLs.
-var matchRe = regexp.MustCompile(`mydirtyhobby\.com/profil/\d+-`)
+var matchRe = regexp.MustCompile(`://(?:www\.)?mydirtyhobby\.com/profil/\d+-`)
 
 // profileRe extracts the user ID and nick from any URL containing /profil/{id}-{nick}.
 var profileRe = regexp.MustCompile(`/profil/(\d+)-([^/?]+)`)
