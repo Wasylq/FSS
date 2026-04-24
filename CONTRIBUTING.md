@@ -220,7 +220,11 @@ func TestLive(t *testing.T) { ... }
 
 Run with: `go test -tags integration -v -timeout 120s ./internal/scrapers/<site>/...`
 
-### 9. Verify
+### 9. Update docs
+
+Add a row to [docs/scrapers.md](docs/scrapers.md) with the site name, URL pattern, platform, and notes.
+
+### 10. Verify
 
 ```bash
 go build ./...                           # compiles
@@ -233,8 +237,10 @@ go build -o fss . && ./fss list-scrapers # new scraper appears
 
 | Scraper | Complexity | Good example of |
 |---------|-----------|-----------------|
-| `apovstory` | Medium | PHP tour site, HTML listing + detail pages, category extraction |
 | `pornhub` | Simple | HTML scraping, minimal fields, free content |
+| `momcomesfirst` | Simple | WordPress site using `wputil` shared package, JSON-LD VideoObject |
+| `tabooheat` | Simple | Thin wrapper around `gammautil` for a Gamma Entertainment site |
+| `apovstory` | Medium | PHP tour site, HTML listing + detail pages, category extraction |
 | `manyvids` | Medium | JSON API, pricing, detail-page worker pool |
 | `clips4sale` | Medium | Multi-page HTML, categories, pricing |
 | `iwantclips` | Medium | JSON API, double HTML-unescaping |
@@ -242,6 +248,4 @@ go build -o fss . && ./fss list-scrapers # new scraper appears
 | `taratainton` | Medium | WordPress/sitemap-driven discovery, HTML meta parsing, worker pool, uses `wputil` |
 | `missax` | Medium | HTML scraping, listing + detail page worker pool, no API |
 | `puretaboo` | Medium | Algolia search API, session API key extraction, rich structured JSON, uses `gammautil` |
-| `tabooheat` | Simple | Thin wrapper around `gammautil` for a second Gamma Entertainment site |
 | `rachelsteele` | Medium | MyMember.site SaaS platform, JSON list API + HTML detail pages, JSON-LD keywords parsing |
-| `momcomesfirst` | Simple | WordPress site using `wputil` shared package, JSON-LD VideoObject |

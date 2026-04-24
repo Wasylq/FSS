@@ -3,7 +3,26 @@
 [![CI](https://github.com/Wasylq/FSS/actions/workflows/ci.yml/badge.svg)](https://github.com/Wasylq/FSS/actions/workflows/ci.yml)
 [![codecov](https://codecov.io/gh/Wasylq/FSS/graph/badge.svg)](https://codecov.io/gh/Wasylq/FSS)
 
-Scrapes all scenes and metadata from a studio URL. Supports A POV Story, ManyVids, Clips4Sale, IWantClips, MyDirtyHobby, MissaX, Pornhub, Pure Taboo, Rachel Steele, Taboo Heat, Tara Tainton, and Mom Comes First. Designed to be easily extended to other sites. Can push scraped metadata into a local [Stash](https://stashapp.cc/) instance.
+Scrapes all scenes and metadata from a studio URL. Designed to be easily extended to new sites. Can push scraped metadata into a local [Stash](https://stashapp.cc/) instance.
+
+## Supported sites
+
+| Site | Platform |
+|------|----------|
+| A POV Story | PHP tour site |
+| Clips4Sale | Clips4Sale |
+| IWantClips | IWantClips |
+| ManyVids | ManyVids |
+| MissaX | Custom |
+| Mom Comes First | WordPress |
+| MyDirtyHobby | MyDirtyHobby |
+| Pornhub | Pornhub |
+| Pure Taboo | Gamma/Algolia |
+| Rachel Steele | MyMember.site |
+| Taboo Heat | Gamma/Algolia |
+| Tara Tainton | WordPress |
+
+See [docs/scrapers.md](docs/scrapers.md) for URL patterns and details.
 
 ## Install
 
@@ -16,51 +35,44 @@ go build -o fss .
 ## Quick start
 
 ```bash
-# Scrape a ManyVids studio, output JSON (default)
+# Scrape a studio — outputs JSON by default
 fss scrape https://www.manyvids.com/Profile/590705/bettie-bondage/Store/Videos
 
-# Scrape a Clips4Sale studio
-fss scrape https://www.clips4sale.com/studio/27897/bettie-bondage
-
-# Default behaviour: only fetch scenes not already in the output file (incremental)
+# Incremental mode (default): only fetches new scenes
 fss scrape <url>
 
-# Re-scrape everything from scratch
+# Full re-scrape from scratch
 fss scrape --full <url>
 
-# Re-fetch metadata for all known scenes; soft-delete any that have disappeared
+# Re-fetch all metadata, soft-delete removed scenes
 fss scrape --refresh <url>
 
-# Output both JSON and CSV into a specific directory, with 10 parallel workers
-fss scrape --output json,csv --out ./data --workers 10 <url>
+# Output both JSON and CSV
+fss scrape --output json,csv --out ./data <url>
 
-# Use SQLite as the store — enables price history tracking across scrapes and SQL queries
+# Use SQLite as the store
 fss scrape --db ./fss.db --name "Bettie Bondage" <url>
 
-# List all studios tracked in the database
-fss list-studios --db ./fss.db
-
-# See which sites are supported and their URL patterns
+# See supported sites
 fss list-scrapers
+```
 
-# --- Stash integration ---
+### Stash integration
 
-# List scenes in Stash that have no StashDB metadata
+```bash
+# List unmatched scenes in Stash
 fss stash unmatched
 
-# Dry-run: show what would be imported from FSS JSONs into Stash
+# Dry-run: show what would be imported
 fss stash import --dir ./data
 
-# Actually apply the import
+# Apply changes
 fss stash import --dir ./data --apply
-
-# Filter by performer, connect to a remote Stash instance
-fss stash import --url http://192.168.1.50:9999 --performer "Bettie Bondage" --apply
 ```
 
 ## Config file
 
-An optional YAML config file sets defaults for all flags. Its location follows platform conventions:
+Optional YAML config at the platform-specific path:
 
 | Platform | Path |
 |----------|------|
@@ -68,28 +80,27 @@ An optional YAML config file sets defaults for all flags. Its location follows p
 | macOS    | `~/Library/Application Support/fss/config.yaml` |
 | Windows  | `%APPDATA%\fss\config.yaml` |
 
-CLI flags always override config values.
-
 ```yaml
-workers: 3        # parallel metadata fetchers
-output: json      # json | csv | json,csv
-out_dir: .        # output directory
-db: ""            # SQLite path — empty disables SQLite
+workers: 3
+output: json
+out_dir: .
+db: ""
 
 stash:
   url: "http://localhost:9999"
-  api_key: ""     # or set FSS_STASH_API_KEY env var
+  api_key: ""
   tag: "fss_import"
 ```
 
-## Output
+CLI flags always override config values.
 
-Without `--db`, each run produces one file per studio in the output directory:
+## Documentation
 
-- `<studio-slug>.json` — all scenes with full metadata
-- `<studio-slug>.csv`  — same data in tabular form (if `--output csv`)
-
-With `--db`, SQLite is the source of truth. JSON/CSV are exported from it on request.
-
-See [MANUAL.md](MANUAL.md) for the full field reference, output format details, and advanced usage.
-See [CONTRIBUTING.md](CONTRIBUTING.md) for how to add a new scraper.
+| Document | Contents |
+|----------|----------|
+| [docs/scrapers.md](docs/scrapers.md) | Supported sites, URL patterns, shared packages |
+| [docs/usage.md](docs/usage.md) | CLI reference, data model, output formats, SQLite |
+| [docs/stash.md](docs/stash.md) | Stash integration: matching, merging, import workflow |
+| [docs/architecture.md](docs/architecture.md) | System design, plugin registry, streaming model, store abstraction |
+| [CONTRIBUTING.md](CONTRIBUTING.md) | How to add a new scraper, reference implementations |
+| [SECURITY.md](SECURITY.md) | Credential handling, network policy, vulnerability reporting |
