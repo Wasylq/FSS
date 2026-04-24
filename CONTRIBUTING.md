@@ -155,7 +155,20 @@ For free sites (e.g. Pornhub):
 scene.AddPrice(models.PriceSnapshot{Date: now, IsFree: true})
 ```
 
-### 6. Use the shared HTTP layer
+### 6. WordPress sites — use wputil
+
+For WordPress-based sites, the `internal/scrapers/wputil` package provides shared helpers:
+
+- `wputil.BrowserHeaders()` — common browser headers to avoid WAF blocks
+- `wputil.FetchSitemap()` / `wputil.FetchAllSitemaps()` — XML sitemap parsing
+- `wputil.FetchPage()` — fetch a single page
+- `wputil.ParseMeta(body, titleSuffix)` — extract OpenGraph, `article:tag`, `article:published_time`, shortlink post ID, JSON-LD `VideoObject` width/height, and `articleSection` categories
+- `wputil.RunWorkerPool()` — sitemap discovery + parallel page fetching with a `PageParser` callback
+- `wputil.SlugFromURL()`, `wputil.ParseDuration()`, `wputil.VideoWidth()` — utility helpers
+
+See `taratainton` and `momcomesfirst` for examples. Your scraper only needs to implement the site-specific `parsePage` callback and registration.
+
+### 7. Use the shared HTTP layer
 
 All scrapers should use the shared HTTP client:
 
@@ -176,7 +189,7 @@ resp, err := httpx.Do(ctx, s.client, httpx.Request{
 
 This gives you connection pooling, automatic retries with backoff (0s/2s/4s), and fail-fast on non-retryable 4xx errors.
 
-### 7. Write tests
+### 8. Write tests
 
 Create `internal/scrapers/<site>/<site>_test.go`. Tests should be offline — use `httptest.NewServer` to serve fixture HTML/JSON responses:
 
@@ -207,7 +220,7 @@ func TestLive(t *testing.T) { ... }
 
 Run with: `go test -tags integration -v -timeout 120s ./internal/scrapers/<site>/...`
 
-### 8. Verify
+### 9. Verify
 
 ```bash
 go build ./...                           # compiles
@@ -225,4 +238,5 @@ go build -o fss . && ./fss list-scrapers # new scraper appears
 | `clips4sale` | Medium | Multi-page HTML, categories, pricing |
 | `iwantclips` | Medium | JSON API, double HTML-unescaping |
 | `mydirtyhobby` | Medium | JSON API with auth headers |
-| `taratainton` | Medium | WordPress/sitemap-driven discovery, HTML meta parsing, worker pool |
+| `taratainton` | Medium | WordPress/sitemap-driven discovery, HTML meta parsing, worker pool, uses `wputil` |
+| `momcomesfirst` | Simple | WordPress site using `wputil` shared package, JSON-LD VideoObject |

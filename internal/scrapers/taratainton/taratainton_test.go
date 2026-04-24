@@ -9,6 +9,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/Wasylq/FSS/internal/scrapers/wputil"
 	"github.com/Wasylq/FSS/scraper"
 )
 
@@ -40,8 +41,8 @@ func TestParseDuration(t *testing.T) {
 		{"0:45", 45},
 	}
 	for _, c := range cases {
-		if got := parseDuration(c.input); got != c.want {
-			t.Errorf("parseDuration(%q) = %d, want %d", c.input, got, c.want)
+		if got := wputil.ParseDuration(c.input); got != c.want {
+			t.Errorf("ParseDuration(%q) = %d, want %d", c.input, got, c.want)
 		}
 	}
 }
@@ -56,8 +57,8 @@ func TestSlugFromURL(t *testing.T) {
 		{"https://www.taratainton.com/foo", "foo"},
 	}
 	for _, c := range cases {
-		if got := slugFromURL(c.url); got != c.want {
-			t.Errorf("slugFromURL(%q) = %q, want %q", c.url, got, c.want)
+		if got := wputil.SlugFromURL(c.url); got != c.want {
+			t.Errorf("SlugFromURL(%q) = %q, want %q", c.url, got, c.want)
 		}
 	}
 }
@@ -74,8 +75,8 @@ func TestVideoWidth(t *testing.T) {
 		{360, 0},
 	}
 	for _, c := range cases {
-		if got := videoWidth(c.height); got != c.want {
-			t.Errorf("videoWidth(%d) = %d, want %d", c.height, got, c.want)
+		if got := wputil.VideoWidth(c.height); got != c.want {
+			t.Errorf("VideoWidth(%d) = %d, want %d", c.height, got, c.want)
 		}
 	}
 }
@@ -207,8 +208,7 @@ func TestFetchSitemap(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	s := New()
-	urls, err := s.fetchSitemap(context.Background(), ts.URL+"/sitemap.xml")
+	urls, err := wputil.FetchSitemap(context.Background(), ts.Client(), ts.URL+"/sitemap.xml", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -258,6 +258,7 @@ func TestListScenes(t *testing.T) {
 	s := &Scraper{
 		client:   ts.Client(),
 		siteBase: ts.URL,
+		headers:  map[string]string{},
 	}
 
 	ch, err := s.ListScenes(context.Background(), ts.URL, scraper.ListOpts{Workers: 1})
@@ -315,7 +316,7 @@ func TestListScenesKnownIDs(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	s := &Scraper{client: ts.Client(), siteBase: ts.URL}
+	s := &Scraper{client: ts.Client(), siteBase: ts.URL, headers: map[string]string{}}
 	ch, err := s.ListScenes(context.Background(), ts.URL, scraper.ListOpts{
 		Workers:  1,
 		KnownIDs: map[string]bool{"100": true},
