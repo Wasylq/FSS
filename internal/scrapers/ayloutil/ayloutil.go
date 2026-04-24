@@ -1,0 +1,486 @@
+package ayloutil
+
+import (
+	"bytes"
+	"context"
+	"encoding/json"
+	"fmt"
+	"net/http"
+	"net/url"
+	"regexp"
+	"strconv"
+	"strings"
+	"time"
+
+	"github.com/Wasylq/FSS/internal/httpx"
+	"github.com/Wasylq/FSS/models"
+	"github.com/Wasylq/FSS/scraper"
+)
+
+const (
+	DefaultAPIHost = "https://site-api.project1service.com"
+	HitsPerPage    = 100
+)
+
+type SiteConfig struct {
+	SiteID     string
+	SiteBase   string
+	StudioName string
+	APIHost    string
+}
+
+type Scraper struct {
+	Client  *http.Client
+	Config  SiteConfig
+	APIHost string
+}
+
+func NewScraper(cfg SiteConfig) *Scraper {
+	host := DefaultAPIHost
+	if cfg.APIHost != "" {
+		host = cfg.APIHost
+	}
+	return &Scraper{
+		Client:  httpx.NewClient(30 * time.Second),
+		Config:  cfg,
+		APIHost: host,
+	}
+}
+
+type FilterType int
+
+const (
+	FilterAll FilterType = iota
+	FilterActor
+	FilterCollection
+	FilterTag
+	FilterSeries
+)
+
+type Filter struct {
+	Type FilterType
+	ID   int
+}
+
+var (
+	pornstarRe = regexp.MustCompile(`/pornstar/(\d+)`)
+	categoryRe = regexp.MustCompile(`/category/(\d+)`)
+	siteRe     = regexp.MustCompile(`/site/(\d+)`)
+	seriesRe   = regexp.MustCompile(`/series/(\d+)`)
+)
+
+func ParseFilter(rawURL string) Filter {
+	if m := pornstarRe.FindStringSubmatch(rawURL); m != nil {
+		id, _ := strconv.Atoi(m[1])
+		return Filter{Type: FilterActor, ID: id}
+	}
+	if m := categoryRe.FindStringSubmatch(rawURL); m != nil {
+		id, _ := strconv.Atoi(m[1])
+		return Filter{Type: FilterTag, ID: id}
+	}
+	if m := siteRe.FindStringSubmatch(rawURL); m != nil {
+		id, _ := strconv.Atoi(m[1])
+		return Filter{Type: FilterCollection, ID: id}
+	}
+	if m := seriesRe.FindStringSubmatch(rawURL); m != nil {
+		id, _ := strconv.Atoi(m[1])
+		return Filter{Type: FilterSeries, ID: id}
+	}
+	return Filter{Type: FilterAll}
+}
+
+func (s *Scraper) FetchToken(ctx context.Context) (string, error) {
+	resp, err := httpx.Do(ctx, s.Client, httpx.Request{
+		URL: s.Config.SiteBase,
+		Headers: map[string]string{
+			"User-Agent": httpx.UserAgentFirefox,
+			"Accept":     "text/html",
+		},
+	})
+	if err != nil {
+		return "", fmt.Errorf("fetching instance token: %w", err)
+	}
+	defer func() { _ = resp.Body.Close() }()
+
+	for _, c := range resp.Cookies() {
+		if c.Name == "instance_token" {
+			return c.Value, nil
+		}
+	}
+	return "", fmt.Errorf("instance_token cookie not found")
+}
+
+func (s *Scraper) FetchPage(ctx context.Context, token string, filter Filter, page int) ([]Release, int, error) {
+	params := url.Values{}
+	params.Set("type", "scene")
+	params.Set("limit", strconv.Itoa(HitsPerPage))
+	params.Set("offset", strconv.Itoa(page*HitsPerPage))
+	params.Set("orderby", "dateReleased")
+
+	switch filter.Type {
+	case FilterActor:
+		params.Set("actorId", strconv.Itoa(filter.ID))
+	case FilterCollection:
+		params.Set("collectionId", strconv.Itoa(filter.ID))
+	case FilterTag:
+		params.Set("tagId", strconv.Itoa(filter.ID))
+	}
+
+	apiURL := fmt.Sprintf("%s/v2/releases?%s", s.APIHost, params.Encode())
+
+	resp, err := httpx.Do(ctx, s.Client, httpx.Request{
+		URL: apiURL,
+		Headers: map[string]string{
+			"Instance": token,
+			"Accept":   "application/json",
+		},
+	})
+	if err != nil {
+		return nil, 0, err
+	}
+	defer func() { _ = resp.Body.Close() }()
+
+	var result ReleasesResponse
+	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+		return nil, 0, fmt.Errorf("decoding releases: %w", err)
+	}
+	return result.Result, result.Meta.Total, nil
+}
+
+func (s *Scraper) fetchSeries(ctx context.Context, token string, seriesID int) ([]Release, int, error) {
+	params := url.Values{}
+	params.Set("type", "serie")
+	params.Set("limit", "100")
+	params.Set("offset", "0")
+
+	apiURL := fmt.Sprintf("%s/v2/releases?%s", s.APIHost, params.Encode())
+
+	resp, err := httpx.Do(ctx, s.Client, httpx.Request{
+		URL: apiURL,
+		Headers: map[string]string{
+			"Instance": token,
+			"Accept":   "application/json",
+		},
+	})
+	if err != nil {
+		return nil, 0, err
+	}
+	defer func() { _ = resp.Body.Close() }()
+
+	var result ReleasesResponse
+	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+		return nil, 0, fmt.Errorf("decoding series: %w", err)
+	}
+
+	for _, sr := range result.Result {
+		if sr.ID != seriesID {
+			continue
+		}
+		enriched := make([]Release, 0, len(sr.Children))
+		for _, child := range sr.Children {
+			if child.Type != "scene" {
+				continue
+			}
+			if len(child.Actors) == 0 {
+				child.Actors = sr.Actors
+			}
+			if child.DateReleased == "" {
+				child.DateReleased = sr.DateReleased
+			}
+			if child.Description == "" {
+				child.Description = sr.Description
+			}
+			if isEmptyJSON(child.RawImages) {
+				child.RawImages = sr.RawImages
+			}
+			if len(child.Collections) == 0 {
+				child.Collections = sr.Collections
+			}
+			if len(child.Tags) == 0 {
+				child.Tags = sr.Tags
+			}
+			enriched = append(enriched, child)
+		}
+		return enriched, len(enriched), nil
+	}
+	return nil, 0, fmt.Errorf("series %d not found", seriesID)
+}
+
+func isEmptyJSON(raw json.RawMessage) bool {
+	trimmed := bytes.TrimSpace(raw)
+	return len(trimmed) == 0 || bytes.Equal(trimmed, []byte("[]")) || bytes.Equal(trimmed, []byte("{}")) || bytes.Equal(trimmed, []byte("null"))
+}
+
+func (s *Scraper) Run(ctx context.Context, studioURL string, opts scraper.ListOpts, out chan<- scraper.SceneResult) {
+	defer close(out)
+
+	token, err := s.FetchToken(ctx)
+	if err != nil {
+		select {
+		case out <- scraper.SceneResult{Err: err}:
+		case <-ctx.Done():
+		}
+		return
+	}
+
+	filter := ParseFilter(studioURL)
+
+	if filter.Type == FilterSeries {
+		s.runSeries(ctx, studioURL, opts, out, token, filter.ID)
+		return
+	}
+
+	for page := 0; ; page++ {
+		if ctx.Err() != nil {
+			return
+		}
+
+		if page > 0 && opts.Delay > 0 {
+			select {
+			case <-time.After(opts.Delay):
+			case <-ctx.Done():
+				return
+			}
+		}
+
+		releases, total, err := s.FetchPage(ctx, token, filter, page)
+		if err != nil {
+			select {
+			case out <- scraper.SceneResult{Err: fmt.Errorf("page %d: %w", page, err)}:
+			case <-ctx.Done():
+			}
+			return
+		}
+
+		if len(releases) == 0 {
+			return
+		}
+
+		if page == 0 && total > 0 {
+			select {
+			case out <- scraper.SceneResult{Total: total}:
+			case <-ctx.Done():
+				return
+			}
+		}
+
+		now := time.Now().UTC()
+		for _, rel := range releases {
+			id := strconv.Itoa(rel.ID)
+			if len(opts.KnownIDs) > 0 && opts.KnownIDs[id] {
+				select {
+				case out <- scraper.SceneResult{StoppedEarly: true}:
+				case <-ctx.Done():
+				}
+				return
+			}
+
+			scene := ToScene(s.Config, studioURL, rel, now)
+			select {
+			case out <- scraper.SceneResult{Scene: scene}:
+			case <-ctx.Done():
+				return
+			}
+		}
+
+		if (page+1)*HitsPerPage >= total {
+			return
+		}
+	}
+}
+
+func (s *Scraper) runSeries(ctx context.Context, studioURL string, opts scraper.ListOpts, out chan<- scraper.SceneResult, token string, seriesID int) {
+	releases, total, err := s.fetchSeries(ctx, token, seriesID)
+	if err != nil {
+		select {
+		case out <- scraper.SceneResult{Err: err}:
+		case <-ctx.Done():
+		}
+		return
+	}
+
+	if total > 0 {
+		select {
+		case out <- scraper.SceneResult{Total: total}:
+		case <-ctx.Done():
+			return
+		}
+	}
+
+	now := time.Now().UTC()
+	for _, rel := range releases {
+		id := strconv.Itoa(rel.ID)
+		if len(opts.KnownIDs) > 0 && opts.KnownIDs[id] {
+			select {
+			case out <- scraper.SceneResult{StoppedEarly: true}:
+			case <-ctx.Done():
+			}
+			return
+		}
+
+		scene := ToScene(s.Config, studioURL, rel, now)
+		select {
+		case out <- scraper.SceneResult{Scene: scene}:
+		case <-ctx.Done():
+			return
+		}
+	}
+}
+
+func ToScene(cfg SiteConfig, studioURL string, rel Release, now time.Time) models.Scene {
+	performers := make([]string, 0, len(rel.Actors))
+	for _, a := range rel.Actors {
+		performers = append(performers, a.Name)
+	}
+
+	tags := make([]string, 0, len(rel.Tags))
+	for _, t := range rel.Tags {
+		tags = append(tags, t.Name)
+	}
+
+	var series string
+	if len(rel.Collections) > 0 {
+		series = rel.Collections[0].Name
+	}
+
+	sceneURL := fmt.Sprintf("%s/video/%d/%s", cfg.SiteBase, rel.ID, Slugify(rel.Title))
+
+	return models.Scene{
+		ID:          strconv.Itoa(rel.ID),
+		SiteID:      cfg.SiteID,
+		StudioURL:   studioURL,
+		Title:       rel.Title,
+		URL:         sceneURL,
+		Date:        ParseDate(rel.DateReleased),
+		Description: rel.Description,
+		Thumbnail:   ThumbnailURL(rel.RawImages),
+		Preview:     PreviewURL(rel.RawVideos),
+		Performers:  performers,
+		Studio:      cfg.StudioName,
+		Tags:        tags,
+		Series:      series,
+		Duration:    MediaDuration(rel.RawVideos),
+		Likes:       rel.Stats.Likes,
+		Views:       rel.Stats.Views,
+		ScrapedAt:   now,
+	}
+}
+
+func ParseDate(s string) time.Time {
+	if s == "" {
+		return time.Time{}
+	}
+	t, err := time.Parse(time.RFC3339, s)
+	if err != nil {
+		return time.Time{}
+	}
+	return t.UTC()
+}
+
+var slugRe = regexp.MustCompile(`[^a-z0-9]+`)
+
+func Slugify(title string) string {
+	s := strings.ToLower(title)
+	s = slugRe.ReplaceAllString(s, "-")
+	s = strings.Trim(s, "-")
+	return s
+}
+
+func ThumbnailURL(raw json.RawMessage) string {
+	if isEmptyJSON(raw) {
+		return ""
+	}
+
+	var images map[string]json.RawMessage
+	if json.Unmarshal(raw, &images) != nil {
+		return ""
+	}
+
+	posterRaw, ok := images["poster"]
+	if !ok {
+		return ""
+	}
+
+	var poster map[string]json.RawMessage
+	if json.Unmarshal(posterRaw, &poster) != nil {
+		return ""
+	}
+
+	variantRaw, ok := poster["0"]
+	if !ok {
+		return ""
+	}
+
+	var variant map[string]json.RawMessage
+	if json.Unmarshal(variantRaw, &variant) != nil {
+		return ""
+	}
+
+	for _, size := range []string{"xx", "xl", "lg", "md", "sm", "xs"} {
+		sizeRaw, ok := variant[size]
+		if !ok {
+			continue
+		}
+		var img struct {
+			URLs struct {
+				Default string `json:"default"`
+			} `json:"urls"`
+		}
+		if json.Unmarshal(sizeRaw, &img) == nil && img.URLs.Default != "" {
+			return img.URLs.Default
+		}
+	}
+	return ""
+}
+
+func PreviewURL(raw json.RawMessage) string {
+	if isEmptyJSON(raw) || bytes.HasPrefix(bytes.TrimSpace(raw), []byte("[")) {
+		return ""
+	}
+
+	var videos struct {
+		Mediabook *struct {
+			Files map[string]struct {
+				URLs struct {
+					View string `json:"view"`
+				} `json:"urls"`
+			} `json:"files"`
+		} `json:"mediabook"`
+	}
+	if json.Unmarshal(raw, &videos) != nil || videos.Mediabook == nil {
+		return ""
+	}
+
+	best := 0
+	var result string
+	for format, f := range videos.Mediabook.Files {
+		h := parseHeight(format)
+		if h > best && f.URLs.View != "" {
+			best = h
+			result = f.URLs.View
+		}
+	}
+	return result
+}
+
+func MediaDuration(raw json.RawMessage) int {
+	if isEmptyJSON(raw) || bytes.HasPrefix(bytes.TrimSpace(raw), []byte("[")) {
+		return 0
+	}
+
+	var videos struct {
+		Mediabook *struct {
+			Length int `json:"length"`
+		} `json:"mediabook"`
+	}
+	if json.Unmarshal(raw, &videos) != nil || videos.Mediabook == nil {
+		return 0
+	}
+	return videos.Mediabook.Length
+}
+
+func parseHeight(s string) int {
+	s = strings.TrimSuffix(s, "p")
+	n, _ := strconv.Atoi(s)
+	return n
+}

@@ -239,7 +239,12 @@ go build -o fss . && ./fss list-scrapers # new scraper appears
 |---------|-----------|-----------------|
 | `pornhub` | Simple | HTML scraping, minimal fields, free content |
 | `momcomesfirst` | Simple | WordPress site using `wputil` shared package, JSON-LD VideoObject |
+| `babes` | Simple | Thin wrapper around `ayloutil` for an Aylo/Juan site |
+| `digitalplayground` | Simple | Thin wrapper around `ayloutil` for an Aylo/Juan site |
+| `mofos` | Simple | Thin wrapper around `ayloutil` for an Aylo/Juan site |
+| `realitykings` | Simple | Thin wrapper around `ayloutil` for an Aylo/Juan site |
 | `tabooheat` | Simple | Thin wrapper around `gammautil` for a Gamma Entertainment site |
+| `brazzers` | Medium | Aylo/Juan REST API, instance token auth, multi-filter URL parsing, series support, uses `ayloutil` |
 | `apovstory` | Medium | PHP tour site, HTML listing + detail pages, category extraction |
 | `manyvids` | Medium | JSON API, pricing, detail-page worker pool |
 | `clips4sale` | Medium | Multi-page HTML, categories, pricing |

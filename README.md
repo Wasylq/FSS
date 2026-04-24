@@ -10,15 +10,20 @@ Scrapes all scenes and metadata from a studio URL. Designed to be easily extende
 | Site | Platform |
 |------|----------|
 | A POV Story | PHP tour site |
+| Babes | Aylo/Juan |
+| Brazzers | Aylo/Juan |
 | Clips4Sale | Clips4Sale |
+| Digital Playground | Aylo/Juan |
 | IWantClips | IWantClips |
 | ManyVids | ManyVids |
 | MissaX | Custom |
+| Mofos | Aylo/Juan |
 | Mom Comes First | WordPress |
 | MyDirtyHobby | MyDirtyHobby |
 | Pornhub | Pornhub |
 | Pure Taboo | Gamma/Algolia |
 | Rachel Steele | MyMember.site |
+| Reality Kings | Aylo/Juan |
 | Taboo Heat | Gamma/Algolia |
 | Tara Tainton | WordPress |
 
