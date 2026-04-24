@@ -10,6 +10,7 @@ import (
 	_ "github.com/Wasylq/FSS/internal/scrapers/mydirtyhobby"
 	_ "github.com/Wasylq/FSS/internal/scrapers/pornhub"
 	_ "github.com/Wasylq/FSS/internal/scrapers/puretaboo"
+	_ "github.com/Wasylq/FSS/internal/scrapers/rachelsteele"
 	_ "github.com/Wasylq/FSS/internal/scrapers/taratainton"
 )
 
