@@ -241,6 +241,7 @@ go build -o fss . && ./fss list-scrapers # new scraper appears
 | `mydirtyhobby` | Medium | JSON API with auth headers |
 | `taratainton` | Medium | WordPress/sitemap-driven discovery, HTML meta parsing, worker pool, uses `wputil` |
 | `missax` | Medium | HTML scraping, listing + detail page worker pool, no API |
-| `puretaboo` | Medium | Algolia search API, session API key extraction, rich structured JSON |
+| `puretaboo` | Medium | Algolia search API, session API key extraction, rich structured JSON, uses `gammautil` |
+| `tabooheat` | Simple | Thin wrapper around `gammautil` for a second Gamma Entertainment site |
 | `rachelsteele` | Medium | MyMember.site SaaS platform, JSON list API + HTML detail pages, JSON-LD keywords parsing |
 | `momcomesfirst` | Simple | WordPress site using `wputil` shared package, JSON-LD VideoObject |

@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/Wasylq/FSS/internal/scrapers/gammautil"
 	"github.com/Wasylq/FSS/scraper"
 )
 
@@ -31,7 +32,7 @@ func TestMatchesURL(t *testing.T) {
 }
 
 func TestToScene(t *testing.T) {
-	hit := algoliaHit{
+	hit := gammautil.AlgoliaHit{
 		ClipID:      285913,
 		Title:       "Under My Roof",
 		Description: "A college girl is desperate.</br>She accepts an offer.",
@@ -40,23 +41,23 @@ func TestToScene(t *testing.T) {
 		URLTitle:    "Under-My-Roof",
 		StudioName:  "Pure Taboo",
 		SerieName:   "Pure Taboo",
-		Actors: []actor{
+		Actors: []gammautil.Actor{
 			{ActorID: "50055", Name: "Charles Dera", Gender: "male"},
 			{ActorID: "58057", Name: "Lexi Lore", Gender: "female"},
 		},
-		Directors: []director{
+		Directors: []gammautil.Director{
 			{Name: "Seth Gamble"},
 		},
-		Categories: []category{
+		Categories: []gammautil.Category{
 			{Name: "Blonde"},
 			{Name: "Threesome"},
 		},
-		VideoFormats: []videoFormat{
+		VideoFormats: []gammautil.VideoFormat{
 			{Format: "720p", TrailerURL: "https://trailers.example.com/720p.mp4"},
 			{Format: "1080p", TrailerURL: "https://trailers.example.com/1080p.mp4"},
 			{Format: "2160p", TrailerURL: "https://trailers.example.com/4k.mp4"},
 		},
-		Pictures: pictures{
+		Pictures: gammautil.Pictures{
 			Full1920: "/160696/160696_01/previews/2/239/top_1_1920x1080/160696_01_01.jpg",
 		},
 		MasterCategories: []string{"4k"},
@@ -64,7 +65,7 @@ func TestToScene(t *testing.T) {
 	}
 
 	now := time.Date(2026, 4, 24, 12, 0, 0, 0, time.UTC)
-	scene := toScene("https://www.puretaboo.com", hit, now)
+	scene := gammautil.ToScene(config, "https://www.puretaboo.com", hit, now)
 
 	if scene.ID != "285913" {
 		t.Errorf("ID = %q, want 285913", scene.ID)
@@ -84,7 +85,7 @@ func TestToScene(t *testing.T) {
 	if scene.Description != "A college girl is desperate.\nShe accepts an offer." {
 		t.Errorf("Description = %q", scene.Description)
 	}
-	if scene.Thumbnail != imageCDN+"/160696/160696_01/previews/2/239/top_1_1920x1080/160696_01_01.jpg" {
+	if scene.Thumbnail != gammautil.ImageCDN+"/160696/160696_01/previews/2/239/top_1_1920x1080/160696_01_01.jpg" {
 		t.Errorf("Thumbnail = %q", scene.Thumbnail)
 	}
 	if scene.Preview != "https://trailers.example.com/4k.mp4" {
@@ -122,7 +123,7 @@ func TestToScene(t *testing.T) {
 func TestBestResolution(t *testing.T) {
 	cases := []struct {
 		name       string
-		formats    []videoFormat
+		formats    []gammautil.VideoFormat
 		masterCats []string
 		wantW      int
 		wantH      int
@@ -130,19 +131,19 @@ func TestBestResolution(t *testing.T) {
 	}{
 		{
 			name:       "4k master category",
-			formats:    []videoFormat{{Format: "1080p"}},
+			formats:    []gammautil.VideoFormat{{Format: "1080p"}},
 			masterCats: []string{"4k"},
 			wantW:      3840, wantH: 2160, wantRes: "2160p",
 		},
 		{
 			name:       "1080p from formats",
-			formats:    []videoFormat{{Format: "720p"}, {Format: "1080p"}},
+			formats:    []gammautil.VideoFormat{{Format: "720p"}, {Format: "1080p"}},
 			masterCats: nil,
 			wantW:      1920, wantH: 1080, wantRes: "1080p",
 		},
 		{
 			name:       "720p only",
-			formats:    []videoFormat{{Format: "720p"}},
+			formats:    []gammautil.VideoFormat{{Format: "720p"}},
 			masterCats: nil,
 			wantW:      1280, wantH: 720, wantRes: "720p",
 		},
@@ -154,7 +155,7 @@ func TestBestResolution(t *testing.T) {
 		},
 	}
 	for _, c := range cases {
-		w, h, res := bestResolution(c.formats, c.masterCats)
+		w, h, res := gammautil.BestResolution(c.formats, c.masterCats)
 		if w != c.wantW || h != c.wantH || res != c.wantRes {
 			t.Errorf("%s: got %dx%d %q, want %dx%d %q", c.name, w, h, res, c.wantW, c.wantH, c.wantRes)
 		}
@@ -173,7 +174,7 @@ func TestParseDate(t *testing.T) {
 		{"", 1, 1, 1},
 	}
 	for _, c := range cases {
-		d := parseDate(c.input)
+		d := gammautil.ParseDate(c.input)
 		if c.input == "" {
 			if !d.IsZero() {
 				t.Errorf("parseDate(%q) should be zero", c.input)
@@ -189,34 +190,34 @@ func TestParseDate(t *testing.T) {
 func TestThumbnailURL(t *testing.T) {
 	cases := []struct {
 		name string
-		pics pictures
+		pics gammautil.Pictures
 		want string
 	}{
 		{
 			name: "full 1920",
-			pics: pictures{Full1920: "/path/to/img.jpg"},
-			want: imageCDN + "/path/to/img.jpg",
+			pics: gammautil.Pictures{Full1920: "/path/to/img.jpg"},
+			want: gammautil.ImageCDN + "/path/to/img.jpg",
 		},
 		{
 			name: "fallback to 638",
-			pics: pictures{Res638: "/path/to/small.jpg"},
-			want: imageCDN + "/path/to/small.jpg",
+			pics: gammautil.Pictures{Res638: "/path/to/small.jpg"},
+			want: gammautil.ImageCDN + "/path/to/small.jpg",
 		},
 		{
 			name: "empty",
-			pics: pictures{},
+			pics: gammautil.Pictures{},
 			want: "",
 		},
 	}
 	for _, c := range cases {
-		if got := thumbnailURL(c.pics); got != c.want {
+		if got := gammautil.ThumbnailURL(c.pics); got != c.want {
 			t.Errorf("%s: got %q, want %q", c.name, got, c.want)
 		}
 	}
 }
 
 func TestDescriptionCleaning(t *testing.T) {
-	hit := algoliaHit{
+	hit := gammautil.AlgoliaHit{
 		ClipID:      999,
 		Title:       "Test",
 		Description: "Line one.</br>Line two.<br>Line three.<br/>Line four.",
@@ -224,7 +225,7 @@ func TestDescriptionCleaning(t *testing.T) {
 		URLTitle:    "Test",
 	}
 	now := time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC)
-	scene := toScene("https://www.puretaboo.com", hit, now)
+	scene := gammautil.ToScene(config, "https://www.puretaboo.com", hit, now)
 
 	want := "Line one.\nLine two.\nLine three.\nLine four."
 	if scene.Description != want {
@@ -232,7 +233,7 @@ func TestDescriptionCleaning(t *testing.T) {
 	}
 }
 
-func newTestServer(hits []algoliaHit) *httptest.Server {
+func newTestServer(hits []gammautil.AlgoliaHit) *httptest.Server {
 	homePage := `<html><body>
 <script>window.env={"api":{"algolia":{"applicationID":"TEST","apiKey":"testkey"}}}</script>
 </body></html>`
@@ -242,7 +243,7 @@ func newTestServer(hits []algoliaHit) *httptest.Server {
 		case "/en/videos":
 			_, _ = w.Write([]byte(homePage))
 		case "/1/indexes/all_scenes_latest_desc/query":
-			resp := algoliaResponse{Hits: hits, NbHits: len(hits), NbPages: 1}
+			resp := gammautil.AlgoliaResponse{Hits: hits, NbHits: len(hits), NbPages: 1}
 			w.Header().Set("Content-Type", "application/json")
 			_ = json.NewEncoder(w).Encode(resp)
 		default:
@@ -252,7 +253,7 @@ func newTestServer(hits []algoliaHit) *httptest.Server {
 }
 
 func TestListScenes(t *testing.T) {
-	hits := []algoliaHit{
+	hits := []gammautil.AlgoliaHit{
 		{
 			ClipID:      1001,
 			Title:       "Scene One",
@@ -260,9 +261,9 @@ func TestListScenes(t *testing.T) {
 			Length:      600,
 			ReleaseDate: "2026-01-15",
 			URLTitle:    "Scene-One",
-			Actors:      []actor{{Name: "Actor A"}},
-			Categories:  []category{{Name: "Tag1"}},
-			Pictures:    pictures{Res638: "/img/1.jpg"},
+			Actors:      []gammautil.Actor{{Name: "Actor A"}},
+			Categories:  []gammautil.Category{{Name: "Tag1"}},
+			Pictures:    gammautil.Pictures{Res638: "/img/1.jpg"},
 		},
 		{
 			ClipID:      1002,
@@ -271,16 +272,19 @@ func TestListScenes(t *testing.T) {
 			Length:      900,
 			ReleaseDate: "2026-01-10",
 			URLTitle:    "Scene-Two",
-			Actors:      []actor{{Name: "Actor B"}},
-			Categories:  []category{{Name: "Tag2"}},
-			Pictures:    pictures{Res638: "/img/2.jpg"},
+			Actors:      []gammautil.Actor{{Name: "Actor B"}},
+			Categories:  []gammautil.Category{{Name: "Tag2"}},
+			Pictures:    gammautil.Pictures{Res638: "/img/2.jpg"},
 		},
 	}
 
 	ts := newTestServer(hits)
 	defer ts.Close()
 
-	s := &Scraper{client: ts.Client(), siteBase: ts.URL, algoliaHost: ts.URL}
+	cfg := gammautil.SiteConfig{
+		SiteID: "puretaboo", SiteBase: ts.URL, StudioName: "Pure Taboo", SiteName: "puretaboo",
+	}
+	s := &Scraper{gamma: &gammautil.Scraper{Client: ts.Client(), Config: cfg, AlgoliaHost: ts.URL}}
 
 	ch, err := s.ListScenes(context.Background(), ts.URL, scraper.ListOpts{})
 	if err != nil {
@@ -308,7 +312,7 @@ func TestListScenes(t *testing.T) {
 }
 
 func TestListScenesKnownIDs(t *testing.T) {
-	hits := []algoliaHit{
+	hits := []gammautil.AlgoliaHit{
 		{ClipID: 2001, Title: "New Scene", ReleaseDate: "2026-02-01", URLTitle: "New-Scene"},
 		{ClipID: 2002, Title: "Known Scene", ReleaseDate: "2026-01-01", URLTitle: "Known-Scene"},
 	}
@@ -316,7 +320,10 @@ func TestListScenesKnownIDs(t *testing.T) {
 	ts := newTestServer(hits)
 	defer ts.Close()
 
-	s := &Scraper{client: ts.Client(), siteBase: ts.URL, algoliaHost: ts.URL}
+	cfg := gammautil.SiteConfig{
+		SiteID: "puretaboo", SiteBase: ts.URL, StudioName: "Pure Taboo", SiteName: "puretaboo",
+	}
+	s := &Scraper{gamma: &gammautil.Scraper{Client: ts.Client(), Config: cfg, AlgoliaHost: ts.URL}}
 
 	ch, err := s.ListScenes(context.Background(), ts.URL, scraper.ListOpts{
 		KnownIDs: map[string]bool{"2002": true},
@@ -354,9 +361,12 @@ func TestFetchAPIKey(t *testing.T) {
 	ts := newTestServer(nil)
 	defer ts.Close()
 
-	s := &Scraper{client: ts.Client(), siteBase: ts.URL, algoliaHost: ts.URL}
+	cfg := gammautil.SiteConfig{
+		SiteID: "puretaboo", SiteBase: ts.URL, StudioName: "Pure Taboo", SiteName: "puretaboo",
+	}
+	g := &gammautil.Scraper{Client: ts.Client(), Config: cfg, AlgoliaHost: ts.URL}
 
-	key, err := s.fetchAPIKey(context.Background())
+	key, err := g.FetchAPIKey(context.Background())
 	if err != nil {
 		t.Fatal(err)
 	}

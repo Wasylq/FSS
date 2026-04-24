@@ -1,4 +1,4 @@
-package puretaboo
+package tabooheat
 
 import (
 	"context"
@@ -9,10 +9,10 @@ import (
 )
 
 var config = gammautil.SiteConfig{
-	SiteID:     "puretaboo",
-	SiteBase:   "https://www.puretaboo.com",
-	StudioName: "Pure Taboo",
-	SiteName:   "puretaboo",
+	SiteID:     "tabooheat",
+	SiteBase:   "https://www.tabooheat.com",
+	StudioName: "Taboo Heat",
+	SiteName:   "tabooheat",
 }
 
 type Scraper struct {
@@ -30,10 +30,10 @@ func init() {
 func (s *Scraper) ID() string { return config.SiteID }
 
 func (s *Scraper) Patterns() []string {
-	return []string{"puretaboo.com"}
+	return []string{"tabooheat.com"}
 }
 
-var matchRe = regexp.MustCompile(`^https?://(?:www\.)?puretaboo\.com`)
+var matchRe = regexp.MustCompile(`^https?://(?:www\.)?tabooheat\.com`)
 
 func (s *Scraper) MatchesURL(u string) bool {
 	return matchRe.MatchString(u)
