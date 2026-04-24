@@ -50,6 +50,7 @@ Matches FSS JSON scenes against Stash scenes by filename and pushes metadata. **
 | `--scrape` | bool | from config | Call Stash's built-in scraper on the first URL after import |
 | `--include-stashbox` | bool | `false` | Also process scenes that already have StashDB data |
 | `--stashbox-tag` | string | `fss_stashbox_override` | Tag applied to modified StashDB scenes for tracking |
+| `--cover` | bool | `false` | Download and set cover image from FSS thumbnail |
 | `--apply` | bool | `false` | Actually write changes to Stash |
 | `--performer` | string | _(none)_ | Filter Stash scenes by performer name |
 | `--studio` | string | _(none)_ | Filter Stash scenes by studio name |
@@ -76,6 +77,9 @@ fss stash import --dir ./data --apply
 
 # Load specific JSON files instead of a directory
 fss stash import --json studio-a.json --json studio-b.json --apply
+
+# Import with cover images from FSS thumbnails
+fss stash import --dir ./data --cover --apply
 
 # Filter by performer and add resolution tags
 fss stash import --dir ./data --performer "Bettie Bondage" --resolution-tags --apply
@@ -122,7 +126,7 @@ When the same scene title appears in multiple FSS JSON files (e.g. scraped from 
 | Date | Earliest non-zero date across all FSS sources AND the existing Stash date |
 | Title | First non-empty |
 | Description | Longest non-empty; runs of 3+ spaces are converted to newlines |
-| Cover image | First available thumbnail URL; downloaded and pushed as base64 |
+| Cover image | First available thumbnail URL; downloaded and pushed as base64 (only when `--cover` is passed) |
 | Performers | Union (deduplicated) |
 | Tags | Union (deduplicated) |
 | Duration | Maximum |

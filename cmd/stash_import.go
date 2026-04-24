@@ -34,6 +34,7 @@ func init() {
 	stashImportCmd.Flags().Bool("scrape", false, "call Stash scraper on first URL after import")
 	stashImportCmd.Flags().Bool("include-stashbox", false, "also process scenes that have StashDB data")
 	stashImportCmd.Flags().String("stashbox-tag", "", "tag for stashbox overrides (default from config)")
+	stashImportCmd.Flags().Bool("cover", false, "set cover image from FSS thumbnail")
 	stashImportCmd.Flags().Bool("apply", false, "actually write changes (default is dry-run)")
 	stashImportCmd.Flags().String("performer", "", "filter Stash scenes by performer name")
 	stashImportCmd.Flags().String("studio", "", "filter Stash scenes by studio name")
@@ -102,6 +103,7 @@ func runStashImport(cmd *cobra.Command, _ []string) error {
 
 	// --- resolve flags ---
 	apply, _ := cmd.Flags().GetBool("apply")
+	setCover, _ := cmd.Flags().GetBool("cover")
 	includeStashbox, _ := cmd.Flags().GetBool("include-stashbox")
 	organized, _ := cmd.Flags().GetBool("organized")
 	scrapeFlag, _ := cmd.Flags().GetBool("scrape")
@@ -229,7 +231,7 @@ func runStashImport(cmd *cobra.Command, _ []string) error {
 		mergedURLs := stash.MergeURLs(existingURLs, merged.URLs)
 
 		// Check if there's anything to change.
-		changes := buildChanges(ss, merged, mergedURLs, allTags)
+		changes := buildChanges(ss, merged, mergedURLs, allTags, setCover)
 		if len(changes) == 0 {
 			stats.upToDate++
 			continue
@@ -313,7 +315,7 @@ func runStashImport(cmd *cobra.Command, _ []string) error {
 		if organized {
 			input.Organized = &organized
 		}
-		if merged.Thumbnail != "" {
+		if setCover && merged.Thumbnail != "" {
 			coverData, coverErr := client.DownloadCoverImage(ctx, merged.Thumbnail)
 			if coverErr != nil {
 				fmt.Fprintf(os.Stderr, "warning: could not download cover image: %v\n", coverErr)
@@ -365,7 +367,7 @@ func runStashImport(cmd *cobra.Command, _ []string) error {
 	return nil
 }
 
-func buildChanges(ss stash.StashScene, merged stash.MergedScene, mergedURLs []string, newTags []string) map[string]changelogFieldDiff {
+func buildChanges(ss stash.StashScene, merged stash.MergedScene, mergedURLs []string, newTags []string, setCover bool) map[string]changelogFieldDiff {
 	changes := map[string]changelogFieldDiff{}
 
 	if merged.Title != "" && merged.Title != ss.Title {
@@ -387,7 +389,7 @@ func buildChanges(ss stash.StashScene, merged stash.MergedScene, mergedURLs []st
 		changes["urls"] = changelogFieldDiff{Added: addedURLs}
 	}
 
-	if merged.Thumbnail != "" {
+	if setCover && merged.Thumbnail != "" {
 		changes["cover"] = changelogFieldDiff{To: truncate(merged.Thumbnail, 60)}
 	}
 
