@@ -19,6 +19,7 @@ Scrapes all scenes and metadata from a studio URL. Designed to be easily extende
 | MissaX | Custom |
 | Mofos | Aylo/Juan |
 | Mom Comes First | WordPress |
+| Naughty America | Naughty America |
 | MyDirtyHobby | MyDirtyHobby |
 | Pornhub | Pornhub |
 | Pure Taboo | Gamma/Algolia |
