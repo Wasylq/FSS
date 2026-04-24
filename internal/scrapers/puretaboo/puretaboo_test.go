@@ -238,10 +238,10 @@ func newTestServer(hits []algoliaHit) *httptest.Server {
 </body></html>`
 
 	return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		switch {
-		case r.URL.Path == "/en/videos":
+		switch r.URL.Path {
+		case "/en/videos":
 			_, _ = w.Write([]byte(homePage))
-		case r.URL.Path == "/1/indexes/all_scenes_latest_desc/query":
+		case "/1/indexes/all_scenes_latest_desc/query":
 			resp := algoliaResponse{Hits: hits, NbHits: len(hits), NbPages: 1}
 			w.Header().Set("Content-Type", "application/json")
 			_ = json.NewEncoder(w).Encode(resp)
