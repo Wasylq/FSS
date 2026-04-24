@@ -21,8 +21,13 @@ var rootCmd = &cobra.Command{
 	},
 }
 
+var buildVersion, buildCommit, buildDate string
+
 // SetVersion is called from main with values injected by -ldflags at build time.
 func SetVersion(version, commit, date string) {
+	buildVersion = version
+	buildCommit = commit
+	buildDate = date
 	rootCmd.Version = version + " (" + commit + ", " + date + ")"
 }
 
