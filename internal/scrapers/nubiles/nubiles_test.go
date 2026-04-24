@@ -152,7 +152,7 @@ const detailHTML = `<html><head>
 
 func TestFetchListing(t *testing.T) {
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprint(w, listingHTML)
+		_, _ = fmt.Fprint(w, listingHTML)
 	}))
 	defer ts.Close()
 
@@ -195,7 +195,7 @@ func TestFetchListing(t *testing.T) {
 
 func TestFetchDetail(t *testing.T) {
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprint(w, detailHTML)
+		_, _ = fmt.Fprint(w, detailHTML)
 	}))
 	defer ts.Close()
 
@@ -234,9 +234,9 @@ func TestListScenes(t *testing.T) {
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case "/video/gallery":
-			fmt.Fprint(w, listingHTML)
+			_, _ = fmt.Fprint(w, listingHTML)
 		default:
-			fmt.Fprint(w, detailHTML)
+			_, _ = fmt.Fprint(w, detailHTML)
 		}
 	}))
 	defer ts.Close()
@@ -268,9 +268,9 @@ func TestListScenesKnownIDs(t *testing.T) {
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case "/video/gallery":
-			fmt.Fprint(w, listingHTML)
+			_, _ = fmt.Fprint(w, listingHTML)
 		default:
-			fmt.Fprint(w, detailHTML)
+			_, _ = fmt.Fprint(w, detailHTML)
 		}
 	}))
 	defer ts.Close()
