@@ -27,12 +27,43 @@ jobs:
       - name: Build
         run: go build ./...
 
-      - name: Test
-        run: go test -race -count=1 ./...
+      - name: Test with coverage
+        run: go test -race -count=1 -coverprofile=coverage.out -covermode=atomic ./... 2>&1 | tee test-output.txt
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v5
+        with:
+          files: coverage.out
+          fail_ci_if_error: false
+          token: ${{ secrets.CODECOV_TOKEN }}
+
+      - name: Generate coverage summary
+        if: always()
+        run: |
+          total=$(go tool cover -func=coverage.out | tail -1 | awk '{print $NF}')
+
+          {
+            echo "## Test Results"
+            echo ""
+            echo "**Total coverage: ${total}**"
+            echo ""
+            echo "| Package | Coverage |"
+            echo "|---------|----------|"
+            grep 'coverage:' test-output.txt | sed 's/ok  \t//' | while IFS=$'\t' read -r pkg _ cov; do
+              cov=$(echo "$cov" | sed 's/coverage: //' | sed 's/ of statements//')
+              echo "| \`${pkg}\` | ${cov} |"
+            done
+            grep '\[no test files\]' test-output.txt | sed 's/\?\s*\t//' | while IFS=$'\t' read -r pkg _; do
+              echo "| \`${pkg}\` | — |"
+            done
+          } >> $GITHUB_STEP_SUMMARY
 
   lint:
     name: Lint
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      checks: write
     steps:
       - uses: actions/checkout@v4
 
@@ -53,17 +84,6 @@ jobs:
   cross-build:
     name: Cross-build
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        include:
-          - goos: linux
-            goarch: arm64
-          - goos: darwin
-            goarch: amd64
-          - goos: darwin
-            goarch: arm64
-          - goos: windows
-            goarch: amd64
     steps:
       - uses: actions/checkout@v4
 
@@ -80,3 +100,14 @@ jobs:
           binary="fss"
           if [ "$GOOS" = "windows" ]; then binary="fss.exe"; fi
           go build -o "$binary" .
+    strategy:
+      matrix:
+        include:
+          - goos: linux
+            goarch: arm64
+          - goos: darwin
+            goarch: amd64
+          - goos: darwin
+            goarch: arm64
+          - goos: windows
+            goarch: amd64

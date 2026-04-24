@@ -1,5 +1,9 @@
 # FSS — FullStudioScraper
 
+[![CI](https://github.com/Wasylq/FSS/actions/workflows/ci.yml/badge.svg)](https://github.com/Wasylq/FSS/actions/workflows/ci.yml)
+[![codecov](https://codecov.io/gh/Wasylq/FSS/graph/badge.svg)](https://codecov.io/gh/Wasylq/FSS)
+[![Go Report Card](https://goreportcard.com/badge/github.com/Wasylq/FSS)](https://goreportcard.com/report/github.com/Wasylq/FSS)
+
 Scrapes all scenes and metadata from a studio URL. Supports ManyVids, Clips4Sale, IWantClips, MyDirtyHobby, MissaX, Pornhub, Pure Taboo, Tara Tainton, and Mom Comes First. Designed to be easily extended to other sites. Can push scraped metadata into a local [Stash](https://stashapp.cc/) instance.
 
 ## Install
