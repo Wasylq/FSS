@@ -233,6 +233,7 @@ go build -o fss . && ./fss list-scrapers # new scraper appears
 
 | Scraper | Complexity | Good example of |
 |---------|-----------|-----------------|
+| `apovstory` | Medium | PHP tour site, HTML listing + detail pages, category extraction |
 | `pornhub` | Simple | HTML scraping, minimal fields, free content |
 | `manyvids` | Medium | JSON API, pricing, detail-page worker pool |
 | `clips4sale` | Medium | Multi-page HTML, categories, pricing |

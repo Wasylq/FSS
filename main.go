@@ -2,6 +2,7 @@ package main
 
 import (
 	"github.com/Wasylq/FSS/cmd"
+	_ "github.com/Wasylq/FSS/internal/scrapers/apovstory"
 	_ "github.com/Wasylq/FSS/internal/scrapers/clips4sale"
 	_ "github.com/Wasylq/FSS/internal/scrapers/manyvids"
 	_ "github.com/Wasylq/FSS/internal/scrapers/missax"
