@@ -1,6 +1,6 @@
 # FSS — FullStudioScraper
 
-Scrapes all scenes and metadata from a studio URL. Supports ManyVids, Clips4Sale, IWantClips, MyDirtyHobby, Pornhub, Tara Tainton, and Mom Comes First. Designed to be easily extended to other sites. Can push scraped metadata into a local [Stash](https://stashapp.cc/) instance.
+Scrapes all scenes and metadata from a studio URL. Supports ManyVids, Clips4Sale, IWantClips, MyDirtyHobby, Pornhub, Pure Taboo, Tara Tainton, and Mom Comes First. Designed to be easily extended to other sites. Can push scraped metadata into a local [Stash](https://stashapp.cc/) instance.
 
 ## Install
 

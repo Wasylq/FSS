@@ -239,4 +239,5 @@ go build -o fss . && ./fss list-scrapers # new scraper appears
 | `iwantclips` | Medium | JSON API, double HTML-unescaping |
 | `mydirtyhobby` | Medium | JSON API with auth headers |
 | `taratainton` | Medium | WordPress/sitemap-driven discovery, HTML meta parsing, worker pool, uses `wputil` |
+| `puretaboo` | Medium | Algolia search API, session API key extraction, rich structured JSON |
 | `momcomesfirst` | Simple | WordPress site using `wputil` shared package, JSON-LD VideoObject |

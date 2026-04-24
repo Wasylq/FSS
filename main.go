@@ -8,6 +8,7 @@ import (
 	_ "github.com/Wasylq/FSS/internal/scrapers/momcomesfirst"
 	_ "github.com/Wasylq/FSS/internal/scrapers/mydirtyhobby"
 	_ "github.com/Wasylq/FSS/internal/scrapers/pornhub"
+	_ "github.com/Wasylq/FSS/internal/scrapers/puretaboo"
 	_ "github.com/Wasylq/FSS/internal/scrapers/taratainton"
 )
 
