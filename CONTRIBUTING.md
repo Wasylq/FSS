@@ -245,6 +245,7 @@ go build -o fss . && ./fss list-scrapers # new scraper appears
 | `realitykings` | Simple | Thin wrapper around `ayloutil` for an Aylo/Juan site |
 | `tabooheat` | Simple | Thin wrapper around `gammautil` for a Gamma Entertainment site |
 | `naughtyamerica` | Medium | Open JSON API, paginated, multi-domain (6 sister sites), VR support, thumbnail URL construction from trailer paths |
+| `nubiles` | Medium | EdgeCms HTML scraping, 20+ network domains, detail page worker pool, model/category URL filtering |
 | `brazzers` | Medium | Aylo/Juan REST API, instance token auth, multi-filter URL parsing, series support, uses `ayloutil` |
 | `apovstory` | Medium | PHP tour site, HTML listing + detail pages, category extraction |
 | `manyvids` | Medium | JSON API, pricing, detail-page worker pool |

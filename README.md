@@ -20,6 +20,7 @@ Scrapes all scenes and metadata from a studio URL. Designed to be easily extende
 | Mofos | Aylo/Juan |
 | Mom Comes First | WordPress |
 | Naughty America | Naughty America |
+| Nubiles Network | EdgeCms |
 | MyDirtyHobby | MyDirtyHobby |
 | Pornhub | Pornhub |
 | Pure Taboo | Gamma/Algolia |
