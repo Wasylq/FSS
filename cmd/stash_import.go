@@ -2,7 +2,9 @@ package cmd
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"strings"
@@ -456,8 +458,20 @@ func appendChangelog(dir string, entries []changelogEntry) error {
 
 	var existing []changelogEntry
 	data, err := os.ReadFile(path)
-	if err == nil {
-		_ = json.Unmarshal(data, &existing)
+	switch {
+	case errors.Is(err, fs.ErrNotExist):
+		// First run — no existing changelog, start fresh.
+	case err != nil:
+		return fmt.Errorf("reading changelog %s: %w", path, err)
+	default:
+		if err := json.Unmarshal(data, &existing); err != nil {
+			backup := filepath.Join(dir, fmt.Sprintf("fss-stashbox-changelog.corrupt-%s.json", time.Now().UTC().Format("20060102-150405")))
+			if renameErr := os.Rename(path, backup); renameErr != nil {
+				return fmt.Errorf("changelog %s is corrupt and could not be backed up to %s: %w", path, backup, renameErr)
+			}
+			fmt.Fprintf(os.Stderr, "warning: changelog %s was corrupt (%v); backed up to %s and starting fresh\n", path, err, backup)
+			existing = nil
+		}
 	}
 
 	existing = append(existing, entries...)
