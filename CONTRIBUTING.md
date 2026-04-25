@@ -256,3 +256,39 @@ go build -o fss . && ./fss list-scrapers # new scraper appears
 | `missax` | Medium | HTML scraping, listing + detail page worker pool, no API |
 | `puretaboo` | Medium | Algolia search API, session API key extraction, rich structured JSON, uses `gammautil` |
 | `rachelsteele` | Medium | MyMember.site SaaS platform, JSON list API + HTML detail pages, JSON-LD keywords parsing |
+
+---
+
+## Cutting a release
+
+Releases are tagged with `vMAJOR.MINOR.PATCH`. Pushing the tag triggers `.github/workflows/release.yml`, which builds the cross-platform binaries automatically and then **pauses for manual approval** before publishing.
+
+### Steps
+
+```bash
+git tag -a v1.6.0 -m "v1.6.0"
+git push origin v1.6.0
+```
+
+Then go to the **Actions → Release** run on GitHub, click *Review deployments*, tick `release-gate`, and approve. The release is published and the Docker image picks up `latest` + `v1.6.0` tags shortly after.
+
+### Approver checklist
+
+Before clicking approve, confirm:
+
+- [ ] `make smoke` (or equivalent integration tests against a few live scrapers) passed locally — CI cannot run these because Cloudflare blocks shared GitHub runner IP ranges.
+- [ ] `CHANGELOG`/release notes accurately describe user-visible changes.
+- [ ] No known regressions in any of the high-severity checks you track.
+- [ ] The new binary's `fss version` shows the expected tag when run locally.
+
+The gate is a **trust-me** check — nothing verifies that you actually ran the smoke tests. Its only job is to force a pause-and-think before a release goes public.
+
+### One-time setup (per maintainer / per fork)
+
+The `release-gate` environment must exist in the GitHub repository before the workflow can pause on it. To create it:
+
+1. Repository → **Settings → Environments → New environment**, name it `release-gate`.
+2. Under **Deployment protection rules**, tick *Required reviewers* and add yourself (and any co-maintainers).
+3. Save. No environment secrets are needed.
+
+Without this, the release workflow will fail with `Environment "release-gate" not found` on the first tag push. Environment protection rules with required reviewers are free for public repositories.
