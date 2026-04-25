@@ -1,7 +1,12 @@
 package ayloutil
 
 import (
+	"bytes"
 	"encoding/json"
+	"io"
+	"os"
+	"strings"
+	"sync"
 	"testing"
 	"time"
 )
@@ -308,5 +313,76 @@ func TestToScene_emptyCollections(t *testing.T) {
 	}
 	if got.Thumbnail != "" || got.Preview != "" || got.Duration != 0 {
 		t.Errorf("expected empty media fields, got thumb=%q preview=%q dur=%d", got.Thumbnail, got.Preview, got.Duration)
+	}
+}
+
+func captureStderr(t *testing.T, fn func()) string {
+	t.Helper()
+	orig := os.Stderr
+	r, w, err := os.Pipe()
+	if err != nil {
+		t.Fatal(err)
+	}
+	os.Stderr = w
+	defer func() { os.Stderr = orig }()
+
+	fn()
+
+	if err := w.Close(); err != nil {
+		t.Fatal(err)
+	}
+	data, err := io.ReadAll(r)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return string(data)
+}
+
+func TestWarnParseFailure_logsOncePerOnce(t *testing.T) {
+	var once sync.Once
+	out := captureStderr(t, func() {
+		warnParseFailure(&once, "test-site", json.RawMessage(`first-payload`))
+		warnParseFailure(&once, "test-site", json.RawMessage(`second-payload`))
+		warnParseFailure(&once, "test-site", json.RawMessage(`third-payload`))
+	})
+
+	if got := strings.Count(out, "warning: ayloutil"); got != 1 {
+		t.Errorf("expected exactly one warning, got %d:\n%s", got, out)
+	}
+	if !strings.Contains(out, "first-payload") {
+		t.Errorf("expected first payload to be sampled, got: %s", out)
+	}
+	if strings.Contains(out, "second-payload") || strings.Contains(out, "third-payload") {
+		t.Errorf("subsequent payloads must not be logged, got: %s", out)
+	}
+	if !strings.Contains(out, "test-site") {
+		t.Errorf("expected location label in warning, got: %s", out)
+	}
+}
+
+func TestWarnParseFailure_truncatesLongPayload(t *testing.T) {
+	var once sync.Once
+	big := bytes.Repeat([]byte("x"), 500)
+	out := captureStderr(t, func() {
+		warnParseFailure(&once, "big-site", json.RawMessage(big))
+	})
+
+	if !strings.Contains(out, "...(truncated)") {
+		t.Errorf("expected truncation marker, got: %s", out)
+	}
+	// We sample 200 chars; the marker adds 14. Total stderr line is small.
+	if len(out) > 600 {
+		t.Errorf("warning line should be truncated, got %d bytes:\n%s", len(out), out)
+	}
+}
+
+func TestWarnParseFailure_independentOnces(t *testing.T) {
+	var a, b sync.Once
+	out := captureStderr(t, func() {
+		warnParseFailure(&a, "site-A", json.RawMessage(`{"a":1}`))
+		warnParseFailure(&b, "site-B", json.RawMessage(`{"b":2}`))
+	})
+	if !strings.Contains(out, "site-A") || !strings.Contains(out, "site-B") {
+		t.Errorf("each Once should fire independently, got: %s", out)
 	}
 }

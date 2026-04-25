@@ -7,9 +7,11 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"os"
 	"regexp"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/Wasylq/FSS/internal/httpx"
@@ -399,6 +401,7 @@ func ThumbnailURL(raw json.RawMessage) string {
 
 	var images map[string]json.RawMessage
 	if json.Unmarshal(raw, &images) != nil {
+		warnParseFailure(&warnImagesOnce, "images", raw)
 		return ""
 	}
 
@@ -409,6 +412,7 @@ func ThumbnailURL(raw json.RawMessage) string {
 
 	var poster map[string]json.RawMessage
 	if json.Unmarshal(posterRaw, &poster) != nil {
+		warnParseFailure(&warnPosterOnce, "images.poster", posterRaw)
 		return ""
 	}
 
@@ -419,6 +423,7 @@ func ThumbnailURL(raw json.RawMessage) string {
 
 	var variant map[string]json.RawMessage
 	if json.Unmarshal(variantRaw, &variant) != nil {
+		warnParseFailure(&warnVariantOnce, "images.poster[0]", variantRaw)
 		return ""
 	}
 
@@ -453,7 +458,12 @@ func PreviewURL(raw json.RawMessage) string {
 			} `json:"files"`
 		} `json:"mediabook"`
 	}
-	if json.Unmarshal(raw, &videos) != nil || videos.Mediabook == nil {
+	if err := json.Unmarshal(raw, &videos); err != nil {
+		warnParseFailure(&warnVideosPreviewOnce, "videos (preview)", raw)
+		return ""
+	}
+	if videos.Mediabook == nil {
+		// Legitimate: not every release has a mediabook preview.
 		return ""
 	}
 
@@ -479,7 +489,11 @@ func MediaDuration(raw json.RawMessage) int {
 			Length int `json:"length"`
 		} `json:"mediabook"`
 	}
-	if json.Unmarshal(raw, &videos) != nil || videos.Mediabook == nil {
+	if err := json.Unmarshal(raw, &videos); err != nil {
+		warnParseFailure(&warnVideosDurationOnce, "videos (duration)", raw)
+		return 0
+	}
+	if videos.Mediabook == nil {
 		return 0
 	}
 	return videos.Mediabook.Length
@@ -489,4 +503,31 @@ func parseHeight(s string) int {
 	s = strings.TrimSuffix(s, "p")
 	n, _ := strconv.Atoi(s)
 	return n
+}
+
+// One sync.Once per silent-unmarshal site so we surface schema breaks
+// without spamming stderr (one warning per process per site, not per scene).
+// If you add a new unmarshal site that should warn, add a new Once here.
+var (
+	warnImagesOnce         sync.Once
+	warnPosterOnce         sync.Once
+	warnVariantOnce        sync.Once
+	warnVideosPreviewOnce  sync.Once
+	warnVideosDurationOnce sync.Once
+)
+
+// warnParseFailure logs at most once per Once that an Aylo JSON payload
+// failed to unmarshal. Includes a truncated sample so you can diff against
+// the expected shape.
+func warnParseFailure(once *sync.Once, where string, raw json.RawMessage) {
+	once.Do(func() {
+		const maxSample = 200
+		sample := string(raw)
+		if len(sample) > maxSample {
+			sample = sample[:maxSample] + "...(truncated)"
+		}
+		fmt.Fprintf(os.Stderr,
+			"warning: ayloutil: failed to parse %s JSON; affected fields will be missing for this and subsequent scenes. First failed payload: %s\n",
+			where, sample)
+	})
 }
