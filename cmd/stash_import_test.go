@@ -327,7 +327,7 @@ func TestPrintFailureSummary_preservesInsertionOrder(t *testing.T) {
 	idxC := strings.Index(out, "scene C")
 	idxA := strings.Index(out, "scene A")
 	idxB := strings.Index(out, "scene B")
-	if !(idxC < idxA && idxA < idxB) {
+	if idxC >= idxA || idxA >= idxB {
 		t.Errorf("expected insertion order C → A → B, got positions C=%d A=%d B=%d\noutput: %s", idxC, idxA, idxB, out)
 	}
 }
