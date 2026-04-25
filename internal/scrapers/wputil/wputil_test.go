@@ -16,6 +16,8 @@ func TestSlugFromURL(t *testing.T) {
 		{"https://example.com/post/my-scene/", "my-scene"},
 		{"https://example.com/post/my-scene", "my-scene"},
 		{"https://example.com/post/my-scene.html", "my-scene"},
+		{"https://example.com/post/my-scene.html/", "my-scene"},
+		{"https://example.com/post/my-scene.html///", "my-scene"},
 		{"single-segment", "single-segment"},
 	}
 	for _, c := range cases {

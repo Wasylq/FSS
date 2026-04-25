@@ -178,9 +178,12 @@ func ParseMeta(body []byte, titleSuffix string) Meta {
 }
 
 // SlugFromURL extracts the last path segment, stripping .html extension.
+// Trailing slashes are removed before .html stripping so inputs like
+// "https://x/post.html/" still resolve to "post".
 func SlugFromURL(pageURL string) string {
+	pageURL = strings.TrimRight(pageURL, "/")
 	pageURL = strings.TrimSuffix(pageURL, ".html")
-	parts := strings.Split(strings.TrimRight(pageURL, "/"), "/")
+	parts := strings.Split(pageURL, "/")
 	if len(parts) > 0 {
 		return parts[len(parts)-1]
 	}
