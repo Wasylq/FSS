@@ -34,11 +34,12 @@ func runVersion(_ *cobra.Command, _ []string) error {
 	current := strings.TrimPrefix(buildVersion, "v")
 	remote := strings.TrimPrefix(latest, "v")
 
-	if current == "dev" {
+	switch current {
+	case "dev":
 		fmt.Printf("Latest release: %s (running dev build)\n", latest)
-	} else if current == remote {
+	case remote:
 		fmt.Println("You are running the latest version.")
-	} else {
+	default:
 		fmt.Printf("Update available: %s → %s\n", buildVersion, latest)
 		fmt.Println("https://github.com/Wasylq/FSS/releases/latest")
 	}
