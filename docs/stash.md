@@ -51,6 +51,7 @@ Matches FSS JSON scenes against Stash scenes by filename and pushes metadata. **
 | `--include-stashbox` | bool | `false` | Also process scenes that already have StashDB data |
 | `--stashbox-tag` | string | `fss_stashbox_override` | Tag applied to modified StashDB scenes for tracking |
 | `--cover` | bool | `false` | Download and set cover image from FSS thumbnail |
+| `--cover-allow-private` | bool | `false` | Allow cover URLs that resolve to private/loopback IPs (for personal media servers) |
 | `--fields` | []string | _(all)_ | Only update these fields: `title`,`details`,`date`,`urls`,`tags`,`performers`,`studio`,`cover` |
 | `--apply` | bool | `false` | Actually write changes to Stash |
 | `--performer` | string | _(none)_ | Filter Stash scenes by performer name |
@@ -142,6 +143,18 @@ When the same scene title appears in multiple FSS JSON files (e.g. scraped from 
 | Resolution | Highest available |
 
 Format suffix stripping means that Clips4Sale scenes listed as separate formats (e.g. `"Title (FULL HD)"`, `"Title (mp4)"`, `"Title (mov)"`) are merged together, combining tags from all versions.
+
+## Cover image fetching
+
+When `--cover` is set, FSS downloads each scene's `thumbnail` URL from the FSS JSON and pushes it to Stash as base64. To prevent SSRF when importing third-party JSON dumps, the URL is validated:
+
+- Scheme must be `http` or `https`. `file://`, `gopher://`, `data:`, etc. are rejected.
+- Host must not resolve to a private (RFC1918), loopback, link-local, or unspecified address. This stops a malicious JSON from coercing FSS to fetch from `localhost`, cloud metadata services (`169.254.169.254`), or your internal network.
+- Response body is capped at 10 MiB.
+
+If you legitimately host cover images on your own LAN (e.g. a media server at `192.168.1.50`), pass `--cover-allow-private` to bypass the IP check. The scheme and size cap still apply.
+
+> Note: your local Stash URL (`--url http://localhost:9999`) is *not* affected by these checks — they apply only to the cover image fetch, not to the GraphQL endpoint.
 
 ## Tags
 

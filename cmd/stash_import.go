@@ -37,6 +37,7 @@ func init() {
 	stashImportCmd.Flags().Bool("include-stashbox", false, "also process scenes that have StashDB data")
 	stashImportCmd.Flags().String("stashbox-tag", "", "tag for stashbox overrides (default from config)")
 	stashImportCmd.Flags().Bool("cover", false, "set cover image from FSS thumbnail")
+	stashImportCmd.Flags().Bool("cover-allow-private", false, "allow cover URLs that resolve to private/loopback IPs (for local media servers); disabled by default to prevent SSRF when importing third-party JSON")
 	stashImportCmd.Flags().Bool("apply", false, "actually write changes (default is dry-run)")
 	stashImportCmd.Flags().String("performer", "", "filter Stash scenes by performer name")
 	stashImportCmd.Flags().String("studio", "", "filter Stash scenes by studio name")
@@ -107,6 +108,7 @@ func runStashImport(cmd *cobra.Command, _ []string) error {
 	// --- resolve flags ---
 	apply, _ := cmd.Flags().GetBool("apply")
 	setCover, _ := cmd.Flags().GetBool("cover")
+	coverAllowPrivate, _ := cmd.Flags().GetBool("cover-allow-private")
 	includeStashbox, _ := cmd.Flags().GetBool("include-stashbox")
 	organized, _ := cmd.Flags().GetBool("organized")
 	scrapeFlag, _ := cmd.Flags().GetBool("scrape")
@@ -331,7 +333,7 @@ func runStashImport(cmd *cobra.Command, _ []string) error {
 			input.Organized = &organized
 		}
 		if fieldAllowed(allowedFields, "cover") && setCover && merged.Thumbnail != "" {
-			coverData, coverErr := client.DownloadCoverImage(ctx, merged.Thumbnail)
+			coverData, coverErr := client.DownloadCoverImage(ctx, merged.Thumbnail, coverAllowPrivate)
 			if coverErr != nil {
 				fmt.Fprintf(os.Stderr, "warning: could not download cover image: %v\n", coverErr)
 			} else {
