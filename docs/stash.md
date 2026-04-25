@@ -169,6 +169,32 @@ Every matched scene receives:
 
 All tags are **additive** — existing Stash tags are never removed. Tag names are resolved against Stash aliases — e.g., if "Female Domination" is an alias for "Femdom" in your Stash instance, the existing "Femdom" tag is used instead of creating a duplicate.
 
+## Failure handling in apply mode
+
+When `--apply` runs, per-scene operations can fail in two distinct ways:
+
+- **Update failed:** the underlying `sceneUpdate` GraphQL mutation errored — nothing was written for that scene. Counted as `failed` in the summary.
+- **Partial:** the scene was updated, but one or more `EnsureTag` / `EnsurePerformer` / `EnsureStudio` calls or the cover image download failed mid-way. The scene has the fields that did succeed; missing pieces are reported. Counted as `partial`.
+
+After the loop a grouped failure summary is written to **stderr** (so it stays out of the way of pipes). Each scene appears once with a list of which operations failed and why:
+
+```
+Failures (3 operations across 2 scenes):
+  scene 42 (mom-fucks-daughters-ex.mp4):
+    - tag "Female Domination": stash api: timeout reading from upstream
+    - performer "Bettie Bondage": alias collision
+  scene 87 (joi-countdown.mp4):
+    - cover "https://cdn.example/cover.jpg": rejecting cover URL: host "cdn.example" is a private/loopback IP
+```
+
+The final stats line includes both new counters:
+
+```
+Done: 102 matched, 100 updated, 2 partial, 0 failed, 38 already up-to-date, 5 skipped, 0 ambiguous
+```
+
+Re-running the import after fixing the underlying issue (e.g. transient Stash hiccup) will reach those scenes again because `buildChanges` still detects the missing fields.
+
 ## StashDB override tracking
 
 By default, scenes with existing StashDB metadata are skipped entirely. Pass `--include-stashbox` to also process them.

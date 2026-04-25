@@ -52,6 +52,19 @@ type importStats struct {
 	skipped   int
 	ambiguous int
 	upToDate  int
+	partial   int // UpdateScene succeeded but one or more Ensure*/cover calls failed
+	failed    int // UpdateScene itself failed
+}
+
+// importFailure records a per-scene operation that did not complete.
+// Ensure* failures inside a scene that still updates result in a "partial"
+// stat; UpdateScene failures result in a "failed" stat.
+type importFailure struct {
+	SceneID  string
+	Filename string
+	Op       string // e.g. "tag", "performer", "studio", "cover", "update"
+	Name     string // the name that failed (tag name, performer name, etc.); empty for "update"
+	Err      error
 }
 
 type changelogEntry struct {
@@ -184,6 +197,7 @@ func runStashImport(cmd *cobra.Command, _ []string) error {
 	}
 
 	var changelog []changelogEntry
+	var failures []importFailure
 	stats := importStats{total: len(stashScenes)}
 
 	for _, ss := range stashScenes {
@@ -275,6 +289,7 @@ func runStashImport(cmd *cobra.Command, _ []string) error {
 
 		// --- apply mode ---
 		input := stash.SceneUpdateInput{ID: ss.ID}
+		var sceneFailures []importFailure
 
 		if fieldAllowed(allowedFields, "title") {
 			input.Title = strPtr(merged.Title)
@@ -295,14 +310,19 @@ func runStashImport(cmd *cobra.Command, _ []string) error {
 			if hasStashbox {
 				sbTagID, tagErr := client.EnsureTag(ctx, stashboxTag)
 				if tagErr != nil {
-					return fmt.Errorf("ensuring stashbox override tag: %w", tagErr)
+					sceneFailures = append(sceneFailures, importFailure{
+						SceneID: ss.ID, Filename: filename, Op: "tag (stashbox)", Name: stashboxTag, Err: tagErr,
+					})
+				} else {
+					tagIDs = append(tagIDs, sbTagID)
 				}
-				tagIDs = append(tagIDs, sbTagID)
 			}
 			for _, t := range allTags {
 				tid, tagErr := client.EnsureTag(ctx, t)
 				if tagErr != nil {
-					fmt.Fprintf(os.Stderr, "warning: could not ensure tag %q: %v\n", t, tagErr)
+					sceneFailures = append(sceneFailures, importFailure{
+						SceneID: ss.ID, Filename: filename, Op: "tag", Name: t, Err: tagErr,
+					})
 					continue
 				}
 				tagIDs = append(tagIDs, tid)
@@ -314,7 +334,9 @@ func runStashImport(cmd *cobra.Command, _ []string) error {
 			for _, p := range merged.Performers {
 				pid, perfErr := client.EnsurePerformer(ctx, p)
 				if perfErr != nil {
-					fmt.Fprintf(os.Stderr, "warning: could not ensure performer %q: %v\n", p, perfErr)
+					sceneFailures = append(sceneFailures, importFailure{
+						SceneID: ss.ID, Filename: filename, Op: "performer", Name: p, Err: perfErr,
+					})
 					continue
 				}
 				perfIDs = append(perfIDs, pid)
@@ -324,7 +346,9 @@ func runStashImport(cmd *cobra.Command, _ []string) error {
 		if fieldAllowed(allowedFields, "studio") && merged.Studio != "" {
 			sid, studioErr := client.EnsureStudio(ctx, merged.Studio)
 			if studioErr != nil {
-				fmt.Fprintf(os.Stderr, "warning: could not ensure studio %q: %v\n", merged.Studio, studioErr)
+				sceneFailures = append(sceneFailures, importFailure{
+					SceneID: ss.ID, Filename: filename, Op: "studio", Name: merged.Studio, Err: studioErr,
+				})
 			} else {
 				input.StudioID = &sid
 			}
@@ -335,15 +359,27 @@ func runStashImport(cmd *cobra.Command, _ []string) error {
 		if fieldAllowed(allowedFields, "cover") && setCover && merged.Thumbnail != "" {
 			coverData, coverErr := client.DownloadCoverImage(ctx, merged.Thumbnail, coverAllowPrivate)
 			if coverErr != nil {
-				fmt.Fprintf(os.Stderr, "warning: could not download cover image: %v\n", coverErr)
+				sceneFailures = append(sceneFailures, importFailure{
+					SceneID: ss.ID, Filename: filename, Op: "cover", Name: merged.Thumbnail, Err: coverErr,
+				})
 			} else {
 				input.CoverImage = &coverData
 			}
 		}
 
 		if err := client.UpdateScene(ctx, input); err != nil {
-			fmt.Fprintf(os.Stderr, "error updating scene %s: %v\n", ss.ID, err)
+			stats.failed++
+			failures = append(failures, importFailure{
+				SceneID: ss.ID, Filename: filename, Op: "update", Err: err,
+			})
+			// Drop any sceneFailures collected before the failed update — the
+			// scene wasn't written, so per-field ensure failures don't matter.
 			continue
+		}
+
+		if len(sceneFailures) > 0 {
+			stats.partial++
+			failures = append(failures, sceneFailures...)
 		}
 
 		// Optional scrape from first URL.
@@ -372,16 +408,50 @@ func runStashImport(cmd *cobra.Command, _ []string) error {
 		}
 	}
 
+	printFailureSummary(failures)
+
 	// Summary.
 	fmt.Println()
 	if apply {
-		fmt.Printf("Done: %d matched, %d updated, %d already up-to-date, %d skipped, %d ambiguous\n",
-			stats.matched, stats.updated, stats.upToDate, stats.skipped, stats.ambiguous)
+		fmt.Printf("Done: %d matched, %d updated, %d partial, %d failed, %d already up-to-date, %d skipped, %d ambiguous\n",
+			stats.matched, stats.updated, stats.partial, stats.failed, stats.upToDate, stats.skipped, stats.ambiguous)
 	} else {
 		fmt.Printf("Dry-run: %d would match, %d already up-to-date, %d skipped, %d ambiguous\n",
 			stats.matched, stats.upToDate, stats.skipped, stats.ambiguous)
 	}
 	return nil
+}
+
+// printFailureSummary writes a grouped, scene-by-scene report of all per-scene
+// failures collected during apply mode. No-op if there are no failures.
+// Output goes to stderr so it stays out of the way when piping.
+func printFailureSummary(failures []importFailure) {
+	if len(failures) == 0 {
+		return
+	}
+
+	bySceneID := make(map[string][]importFailure)
+	var sceneOrder []string
+	for _, f := range failures {
+		if _, seen := bySceneID[f.SceneID]; !seen {
+			sceneOrder = append(sceneOrder, f.SceneID)
+		}
+		bySceneID[f.SceneID] = append(bySceneID[f.SceneID], f)
+	}
+
+	fmt.Fprintln(os.Stderr)
+	fmt.Fprintf(os.Stderr, "Failures (%d operations across %d scenes):\n", len(failures), len(bySceneID))
+	for _, id := range sceneOrder {
+		fs := bySceneID[id]
+		fmt.Fprintf(os.Stderr, "  scene %s (%s):\n", id, fs[0].Filename)
+		for _, f := range fs {
+			if f.Name != "" {
+				fmt.Fprintf(os.Stderr, "    - %s %q: %v\n", f.Op, f.Name, f.Err)
+			} else {
+				fmt.Fprintf(os.Stderr, "    - %s: %v\n", f.Op, f.Err)
+			}
+		}
+	}
 }
 
 func buildChanges(ss stash.StashScene, merged stash.MergedScene, mergedURLs []string, newTags []string, setCover bool) map[string]changelogFieldDiff {
