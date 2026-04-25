@@ -39,6 +39,15 @@ cd FSS
 go build -o fss .
 ```
 
+Or via Docker (multi-arch image on GHCR):
+
+```bash
+docker pull ghcr.io/wasylq/fss:latest
+docker run --rm ghcr.io/wasylq/fss:latest list-scrapers
+```
+
+See [docs/docker.md](docs/docker.md) for volume conventions and a `docker compose` example.
+
 ## Quick start
 
 ```bash
@@ -108,6 +117,7 @@ CLI flags always override config values.
 | [docs/scrapers.md](docs/scrapers.md) | Supported sites, URL patterns, shared packages |
 | [docs/usage.md](docs/usage.md) | CLI reference, data model, output formats, SQLite |
 | [docs/stash.md](docs/stash.md) | Stash integration: matching, merging, import workflow |
+| [docs/docker.md](docs/docker.md) | Running FSS in Docker — image tags, volumes, compose examples |
 | [docs/architecture.md](docs/architecture.md) | System design, plugin registry, streaming model, store abstraction |
 | [CONTRIBUTING.md](CONTRIBUTING.md) | How to add a new scraper, reference implementations |
 | [SECURITY.md](SECURITY.md) | Credential handling, network policy, vulnerability reporting |
