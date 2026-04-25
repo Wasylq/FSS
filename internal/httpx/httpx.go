@@ -6,6 +6,7 @@ package httpx
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -72,13 +73,17 @@ func Do(ctx context.Context, client *http.Client, r Request) (*http.Response, er
 		maxAttempts = 3
 	}
 
-	var lastErr error
+	// Collect every retry attempt's error so a flaky-network failure mode
+	// shows the full chronology, not just the last error. Joined via
+	// errors.Join at the end (or on ctx cancellation mid-backoff).
+	var attemptErrs []error
 	for attempt := 0; attempt < maxAttempts; attempt++ {
 		if attempt > 0 {
 			select {
 			case <-time.After(time.Duration(attempt) * 2 * time.Second):
 			case <-ctx.Done():
-				return nil, ctx.Err()
+				attemptErrs = append(attemptErrs, ctx.Err())
+				return nil, errors.Join(attemptErrs...)
 			}
 		}
 
@@ -96,12 +101,12 @@ func Do(ctx context.Context, client *http.Client, r Request) (*http.Response, er
 
 		resp, err := client.Do(req)
 		if err != nil {
-			lastErr = err
+			attemptErrs = append(attemptErrs, fmt.Errorf("attempt %d: %w", attempt+1, err))
 			continue
 		}
 		if resp.StatusCode == http.StatusTooManyRequests || resp.StatusCode >= 500 {
 			_ = resp.Body.Close()
-			lastErr = &StatusError{StatusCode: resp.StatusCode}
+			attemptErrs = append(attemptErrs, fmt.Errorf("attempt %d: %w", attempt+1, &StatusError{StatusCode: resp.StatusCode}))
 			continue
 		}
 		if resp.StatusCode >= 400 {
@@ -110,5 +115,5 @@ func Do(ctx context.Context, client *http.Client, r Request) (*http.Response, er
 		}
 		return resp, nil
 	}
-	return nil, lastErr
+	return nil, errors.Join(attemptErrs...)
 }
