@@ -70,14 +70,14 @@ func Normalize(s string) string {
 	return strings.TrimSpace(clean)
 }
 
+// stripFormatSuffix removes a single trailing format-tag suffix like " (4K)"
+// or " (mp4)". One pass only — nested suffixes like "Title (HD) (4K)" are
+// not produced by any FSS scraper in practice (Clips4Sale emits one row per
+// format, each with a single suffix), so handling that case isn't worth the
+// loop. If a nested case ever shows up, the inner suffix bleeds into the
+// normalized title as an extra word, which is acceptable for matching.
 func stripFormatSuffix(s string) string {
-	for {
-		stripped := formatSuffixRe.ReplaceAllString(s, "")
-		if stripped == s {
-			return s
-		}
-		s = stripped
-	}
+	return formatSuffixRe.ReplaceAllString(s, "")
 }
 
 func stripExtension(filename string) string {

@@ -31,6 +31,10 @@ func TestNormalize(t *testing.T) {
 		{"Some Title (mov)", "some title"},
 		{"Some Title (wmv)", "some title"},
 		{"Title With (Real Parens)", "title with real parens"},
+		// Single-pass contract: only the outermost suffix is stripped. Nested
+		// suffixes don't occur in real FSS data; if they did, the inner one
+		// bleeds into the normalized title as an extra word.
+		{"Title (HD) (4K)", "title hd"},
 	}
 	for _, c := range cases {
 		got := Normalize(c.input)
