@@ -55,7 +55,6 @@ stash:
   tag: "fss_import"               # str   — import marker tag
   stashbox_tag: "fss_stashbox_override"  # str — tag for StashDB override tracking
   resolution_tags: true           # bool  — add 4K/FHD/HD Available tags
-  scrape: false                   # bool  — invoke Stash scraper after import
 ```
 
 CLI flags take precedence over config values. Config values take precedence over built-in defaults.

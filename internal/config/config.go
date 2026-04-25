@@ -23,7 +23,6 @@ type StashConfig struct {
 	Tag            string `yaml:"tag"`
 	StashboxTag    string `yaml:"stashbox_tag"`
 	ResolutionTags bool   `yaml:"resolution_tags"`
-	Scrape         bool   `yaml:"scrape"`
 }
 
 func defaults() *Config {

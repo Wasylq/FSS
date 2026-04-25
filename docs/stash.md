@@ -47,7 +47,6 @@ Matches FSS JSON scenes against Stash scenes by filename and pushes metadata. **
 | `--tag` | string | `fss_import` | Import marker tag applied to every matched scene |
 | `--resolution-tags` | bool | from config | Add resolution tags (`4K Available`, `Full HD Available`, `HD Available`) |
 | `--organized` | bool | `false` | Set the organized flag on imported scenes |
-| `--scrape` | bool | from config | Call Stash's built-in scraper on the first URL after import |
 | `--include-stashbox` | bool | `false` | Also process scenes that already have StashDB data |
 | `--stashbox-tag` | string | `fss_stashbox_override` | Tag applied to modified StashDB scenes for tracking |
 | `--cover` | bool | `false` | Download and set cover image from FSS thumbnail (also implicitly enabled when `cover` is in `--fields`) |
@@ -242,6 +241,3 @@ The changelog is append-only — multiple import runs accumulate history. Exampl
 }
 ```
 
-## Optional Stash scraper
-
-Pass `--scrape` to invoke Stash's built-in `scrapeSceneURL` on the first URL of each matched scene after import. This can pull additional metadata (performer images, etc.) from Stash's community scrapers. Off by default.

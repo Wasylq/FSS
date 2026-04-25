@@ -35,7 +35,6 @@ func init() {
 	stashImportCmd.Flags().String("tag", "", "import marker tag (default from config)")
 	stashImportCmd.Flags().Bool("resolution-tags", false, "add resolution tags (4K/FHD/HD Available)")
 	stashImportCmd.Flags().Bool("organized", false, "set organized flag on imported scenes")
-	stashImportCmd.Flags().Bool("scrape", false, "call Stash scraper on first URL after import")
 	stashImportCmd.Flags().Bool("include-stashbox", false, "also process scenes that have StashDB data")
 	stashImportCmd.Flags().String("stashbox-tag", "", "tag for stashbox overrides (default from config)")
 	stashImportCmd.Flags().Bool("cover", false, "set cover image from FSS thumbnail (also implicitly enabled when 'cover' is in --fields)")
@@ -126,10 +125,6 @@ func runStashImport(cmd *cobra.Command, _ []string) error {
 	coverAllowPrivate, _ := cmd.Flags().GetBool("cover-allow-private")
 	includeStashbox, _ := cmd.Flags().GetBool("include-stashbox")
 	organized, _ := cmd.Flags().GetBool("organized")
-	scrapeFlag, _ := cmd.Flags().GetBool("scrape")
-	if !cmd.Flags().Changed("scrape") {
-		scrapeFlag = cfg.Stash.Scrape
-	}
 
 	resolutionTags, _ := cmd.Flags().GetBool("resolution-tags")
 	if !cmd.Flags().Changed("resolution-tags") {
@@ -404,11 +399,6 @@ func runStashImport(cmd *cobra.Command, _ []string) error {
 		if len(sceneFailures) > 0 {
 			stats.partial++
 			failures = append(failures, sceneFailures...)
-		}
-
-		// Optional scrape from first URL.
-		if scrapeFlag && len(merged.URLs) > 0 {
-			_, _ = client.ScrapeSceneURL(ctx, merged.URLs[0])
 		}
 
 		// Changelog for stashbox overrides.

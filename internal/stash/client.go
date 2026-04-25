@@ -87,28 +87,6 @@ type SceneUpdateInput struct {
 	Organized    *bool    `json:"organized,omitempty"`
 }
 
-type ScrapedScene struct {
-	Title       *string   `json:"title"`
-	Details     *string   `json:"details"`
-	Date        *string   `json:"date"`
-	URLs        []string  `json:"urls"`
-	Tags        []ScrapedTag `json:"tags"`
-	Performers  []ScrapedPerf `json:"performers"`
-	Studio      *ScrapedStudio `json:"studio"`
-}
-
-type ScrapedTag struct {
-	Name string `json:"name"`
-}
-
-type ScrapedPerf struct {
-	Name string `json:"name"`
-}
-
-type ScrapedStudio struct {
-	Name string `json:"name"`
-}
-
 type FindScenesFilter struct {
 	Organized       *bool   `json:"organized,omitempty"`
 	PerformerName   string  `json:"-"`
@@ -505,23 +483,6 @@ func (c *Client) UpdateScene(ctx context.Context, input SceneUpdateInput) error 
 		return fmt.Errorf("updating scene %s: %w", input.ID, err)
 	}
 	return nil
-}
-
-func (c *Client) ScrapeSceneURL(ctx context.Context, url string) (*ScrapedScene, error) {
-	data, err := c.do(ctx, graphqlRequest{
-		Query: `query($url: String!) { scrapeURL(url: $url, ty: SCENE) { ... on ScrapedScene { title details date urls tags { name } performers { name } studio { name } } } }`,
-		Variables: map[string]any{"url": url},
-	})
-	if err != nil {
-		return nil, fmt.Errorf("scraping URL %q: %w", url, err)
-	}
-	var result struct {
-		ScrapeURL *ScrapedScene `json:"scrapeURL"`
-	}
-	if err := json.Unmarshal(data, &result); err != nil {
-		return nil, fmt.Errorf("decoding scrapeURL response for %q: %w", url, err)
-	}
-	return result.ScrapeURL, nil
 }
 
 // DownloadCoverImage fetches an image URL and returns it as a base64 data URL
