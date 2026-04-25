@@ -1,12 +1,14 @@
 package cmd
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io/fs"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 	"time"
 
@@ -198,6 +200,7 @@ func runStashImport(cmd *cobra.Command, _ []string) error {
 
 	var changelog []changelogEntry
 	var failures []importFailure
+	lookup := newEntityLookup(ctx, client)
 	stats := importStats{total: len(stashScenes)}
 
 	for _, ss := range stashScenes {
@@ -282,6 +285,21 @@ func runStashImport(cmd *cobra.Command, _ []string) error {
 				} else {
 					fmt.Printf("    %s: %v → %v\n", field, diff.From, diff.To)
 				}
+			}
+			// Probe Stash for any entities this scene would add but that don't
+			// yet exist. Cached across scenes so the same tag isn't queried twice.
+			if fieldAllowed(allowedFields, "tags") {
+				for _, t := range allTags {
+					lookup.checkTag(t)
+				}
+			}
+			if fieldAllowed(allowedFields, "performers") {
+				for _, p := range merged.Performers {
+					lookup.checkPerformer(p)
+				}
+			}
+			if fieldAllowed(allowedFields, "studio") && merged.Studio != "" {
+				lookup.checkStudio(merged.Studio)
 			}
 			fmt.Println()
 			continue
@@ -408,7 +426,11 @@ func runStashImport(cmd *cobra.Command, _ []string) error {
 		}
 	}
 
-	printFailureSummary(failures)
+	if apply {
+		printFailureSummary(failures)
+	} else {
+		printWouldCreateSummary(lookup)
+	}
 
 	// Summary.
 	fmt.Println()
@@ -420,6 +442,108 @@ func runStashImport(cmd *cobra.Command, _ []string) error {
 			stats.matched, stats.upToDate, stats.skipped, stats.ambiguous)
 	}
 	return nil
+}
+
+// entityLookup caches Stash existence checks across scenes so the same tag /
+// performer / studio name isn't queried multiple times during a dry run. Used
+// to populate the "would create on apply" summary.
+//
+// Map values: true = exists in Stash, false = does not exist (would be created).
+// A name is absent from the map until checkX is called for it.
+type entityLookup struct {
+	ctx    context.Context
+	client *stash.Client
+
+	tags       map[string]bool
+	performers map[string]bool
+	studios    map[string]bool
+}
+
+func newEntityLookup(ctx context.Context, c *stash.Client) *entityLookup {
+	return &entityLookup{
+		ctx:        ctx,
+		client:     c,
+		tags:       map[string]bool{},
+		performers: map[string]bool{},
+		studios:    map[string]bool{},
+	}
+}
+
+func (l *entityLookup) checkTag(name string) {
+	if _, seen := l.tags[name]; seen {
+		return
+	}
+	_, found, err := l.client.FindTagByName(l.ctx, name)
+	if err == nil && !found {
+		_, found, err = l.client.FindTagByAlias(l.ctx, name)
+	}
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "warning: looking up tag %q: %v\n", name, err)
+		l.tags[name] = true // treat as existing so it doesn't appear in the would-create list
+		return
+	}
+	l.tags[name] = found
+}
+
+func (l *entityLookup) checkPerformer(name string) {
+	if _, seen := l.performers[name]; seen {
+		return
+	}
+	_, found, err := l.client.FindPerformerByName(l.ctx, name)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "warning: looking up performer %q: %v\n", name, err)
+		l.performers[name] = true
+		return
+	}
+	l.performers[name] = found
+}
+
+func (l *entityLookup) checkStudio(name string) {
+	if _, seen := l.studios[name]; seen {
+		return
+	}
+	_, found, err := l.client.FindStudioByName(l.ctx, name)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "warning: looking up studio %q: %v\n", name, err)
+		l.studios[name] = true
+		return
+	}
+	l.studios[name] = found
+}
+
+// printWouldCreateSummary writes a sorted, grouped list of entities that
+// would be created in Stash on `--apply`. No-op if nothing would be created.
+func printWouldCreateSummary(l *entityLookup) {
+	tags := wouldCreateNames(l.tags)
+	perfs := wouldCreateNames(l.performers)
+	studios := wouldCreateNames(l.studios)
+
+	if len(tags) == 0 && len(perfs) == 0 && len(studios) == 0 {
+		return
+	}
+
+	fmt.Println()
+	fmt.Println("Would create on apply:")
+	for _, t := range tags {
+		fmt.Printf("  + tag       %q\n", t)
+	}
+	for _, p := range perfs {
+		fmt.Printf("  + performer %q\n", p)
+	}
+	for _, s := range studios {
+		fmt.Printf("  + studio    %q\n", s)
+	}
+}
+
+func wouldCreateNames(m map[string]bool) []string {
+	var out []string
+	for name, exists := range m {
+		if !exists {
+			out = append(out, name)
+		}
+	}
+	sort.Strings(out)
+	return out
 }
 
 // printFailureSummary writes a grouped, scene-by-scene report of all per-scene

@@ -197,6 +197,101 @@ func TestPrintFailureSummary_groupsByScene(t *testing.T) {
 	}
 }
 
+func captureStdout(t *testing.T, fn func()) string {
+	t.Helper()
+	orig := os.Stdout
+	r, w, err := os.Pipe()
+	if err != nil {
+		t.Fatal(err)
+	}
+	os.Stdout = w
+	defer func() { os.Stdout = orig }()
+
+	fn()
+
+	if err := w.Close(); err != nil {
+		t.Fatal(err)
+	}
+	data, err := io.ReadAll(r)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return string(data)
+}
+
+func TestPrintWouldCreateSummary_emptyIsNoOp(t *testing.T) {
+	l := &entityLookup{
+		tags:       map[string]bool{},
+		performers: map[string]bool{},
+		studios:    map[string]bool{},
+	}
+	out := captureStdout(t, func() { printWouldCreateSummary(l) })
+	if out != "" {
+		t.Errorf("expected no output, got: %q", out)
+	}
+}
+
+func TestPrintWouldCreateSummary_skipsExistingShowsMissing(t *testing.T) {
+	l := &entityLookup{
+		tags: map[string]bool{
+			"POV":            true,  // exists, should not appear
+			"Female Domination": false, // would create
+			"4K Available":   false, // would create
+		},
+		performers: map[string]bool{
+			"Alice": false,
+			"Bob":   true,
+		},
+		studios: map[string]bool{
+			"NewStudio":      false,
+			"ExistingStudio": true,
+		},
+	}
+	out := captureStdout(t, func() { printWouldCreateSummary(l) })
+
+	// Sections present.
+	if !strings.Contains(out, "Would create on apply:") {
+		t.Errorf("missing header: %s", out)
+	}
+
+	// Sorted alphabetically — "4K Available" comes before "Female Domination".
+	idx4K := strings.Index(out, "4K Available")
+	idxFD := strings.Index(out, "Female Domination")
+	if idx4K == -1 || idxFD == -1 || idx4K > idxFD {
+		t.Errorf("tags should be sorted alphabetically: %s", out)
+	}
+
+	// Existing entries do not appear.
+	for _, banned := range []string{"POV", "Bob", "ExistingStudio"} {
+		if strings.Contains(out, banned) {
+			t.Errorf("existing entity %q should not appear: %s", banned, out)
+		}
+	}
+
+	// Each type prefixed correctly.
+	if !strings.Contains(out, `+ tag       "4K Available"`) {
+		t.Errorf("missing tag line: %s", out)
+	}
+	if !strings.Contains(out, `+ performer "Alice"`) {
+		t.Errorf("missing performer line: %s", out)
+	}
+	if !strings.Contains(out, `+ studio    "NewStudio"`) {
+		t.Errorf("missing studio line: %s", out)
+	}
+}
+
+func TestPrintWouldCreateSummary_onlyExistingIsNoOp(t *testing.T) {
+	l := &entityLookup{
+		tags:       map[string]bool{"POV": true, "MILF": true},
+		performers: map[string]bool{"Alice": true},
+		studios:    map[string]bool{"S": true},
+	}
+	out := captureStdout(t, func() { printWouldCreateSummary(l) })
+	if out != "" {
+		t.Errorf("expected no output when nothing would be created, got: %q", out)
+	}
+}
+
 func TestPrintFailureSummary_preservesInsertionOrder(t *testing.T) {
 	failures := []importFailure{
 		{SceneID: "C", Filename: "c.mp4", Op: "tag", Name: "x", Err: errors.New("e1")},

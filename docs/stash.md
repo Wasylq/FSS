@@ -100,6 +100,18 @@ fss stash import --dir ./data --top 50
 
 **`--fields`:** By default, all detected changes are applied. Pass `--fields` with a comma-separated list to restrict which fields are updated. Unselected fields are left untouched in Stash, and changes to unselected fields are hidden from dry-run output. For example, `--fields date,tags,urls` will only update the release date (which already uses earliest-date logic, so it only changes when a earlier date is found), add new tags, and add new URLs — title, details, performers, studio, and cover are left as-is.
 
+**Dry-run preview of new entities:** at the end of a dry-run, FSS prints a deduplicated, alphabetically-sorted list of every tag, performer, and studio that would be *created* in Stash on `--apply` (i.e. doesn't yet exist by name or alias). This catches the "fresh Stash silently grows 80 new tags" surprise. Existence checks are cached across scenes — the same tag is never queried twice. Example tail of a dry-run:
+
+```
+Would create on apply:
+  + tag       "4K Available"
+  + tag       "Female Domination"
+  + performer "New Performer Name"
+  + studio    "Some Studio"
+
+Dry-run: 12 would match, 38 already up-to-date, 5 skipped, 0 ambiguous
+```
+
 ## Matching strategy
 
 FSS matches Stash scenes to FSS scenes by comparing each Stash scene's filename (minus extension) against FSS scene titles. Both sides are normalized: camelCase boundaries split into words (e.g. `SunnyDayAtTheBeach` → `sunny day at the beach`), format suffixes stripped (e.g. `(FULL HD)`, `(mp4)`, `(mov)`), lowercased, non-alphanumeric characters replaced with spaces, trimmed.
