@@ -26,9 +26,12 @@ For Stash integration, see [stash.md](stash.md).
 | `--output`, `-o` | string | `json` | Export format(s): `json`, `csv`, or `json,csv` |
 | `--out` | string | `.` | Output directory |
 | `--db` | string | _(disabled)_ | Path to SQLite database; enables SQLite store |
-| `--delay` | int | `0` | Milliseconds to sleep between page requests; applies per page fetch |
+| `--delay` | int | `0` | Milliseconds to sleep between page requests (applies to sites without a `--site-delay` override) |
+| `--site-delay` | []string | _(none)_ | Per-scraper delay overrides as `name=ms` pairs, e.g. `--site-delay manyvids=0,pornhub=2000` |
 
-`--full` and `--refresh` are mutually exclusive. `--full` ignores all existing data. `--refresh` traverses the full scene list but re-uses existing IDs to update metadata in place and detect deletions.
+`--full` and `--refresh` are mutually exclusive.
+
+**Per-site delay precedence:** `--site-delay <id>=N` (CLI) > `site_delays.<id>: N` (config) > `--delay`/`delay` (global). A site explicitly set to `0` disables delay even when the global default is non-zero. `--full` ignores all existing data. `--refresh` traverses the full scene list but re-uses existing IDs to update metadata in place and detect deletions.
 
 ### `fss list-scrapers`
 
@@ -48,6 +51,11 @@ output: json      # str   — json | csv | json,csv
 out_dir: .        # str   — output directory path
 db: ""            # str   — SQLite path; empty string disables SQLite
 delay: 0          # int   — ms between page requests; 0 disables
+
+site_delays:      # map[string]int — per-scraper delay overrides (overrides `delay` for matching sites)
+  # manyvids: 0
+  # pornhub: 2000
+  # brazzers: 500
 
 stash:
   url: "http://localhost:9999"    # str   — Stash server URL

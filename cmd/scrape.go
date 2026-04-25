@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/signal"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"syscall"
 	"time"
@@ -34,7 +35,8 @@ func init() {
 	scrapeCmd.Flags().String("out", "", "output directory (default from config)")
 	scrapeCmd.Flags().String("db", "", "enable SQLite store at this path")
 	scrapeCmd.Flags().String("name", "", "human-readable label for this studio (stored when --db is set)")
-	scrapeCmd.Flags().Int("delay", 0, "milliseconds between page requests (0 = no delay)")
+	scrapeCmd.Flags().Int("delay", 0, "milliseconds between page requests (0 = no delay; applies to sites without a --site-delay override)")
+	scrapeCmd.Flags().StringSlice("site-delay", nil, "per-scraper delay override, e.g. --site-delay manyvids=0,pornhub=2000 (overrides --delay for matching sites)")
 }
 
 func runScrape(cmd *cobra.Command, args []string) error {
@@ -80,7 +82,14 @@ func runScrape(cmd *cobra.Command, args []string) error {
 	if delayFlag > 0 {
 		delayMS = delayFlag
 	}
-	delay := time.Duration(delayMS) * time.Millisecond
+	defaultDelay := time.Duration(delayMS) * time.Millisecond
+
+	// Per-site delay overrides: config file first, then CLI --site-delay merged on top.
+	siteDelayPairs, _ := cmd.Flags().GetStringSlice("site-delay")
+	siteDelays, err := mergeSiteDelays(cfg.SiteDelays, siteDelayPairs)
+	if err != nil {
+		return err
+	}
 
 	// --- pick store (opened once, shared across all URLs) ---
 	var st store.Store
@@ -107,7 +116,7 @@ func runScrape(cmd *cobra.Command, args []string) error {
 		if i > 0 {
 			fmt.Println()
 		}
-		if err := scrapeOne(ctx, st, studioURL, name, dbPath, outDir, formats, full, refresh, workers, delay); err != nil {
+		if err := scrapeOne(ctx, st, studioURL, name, dbPath, outDir, formats, full, refresh, workers, defaultDelay, siteDelays); err != nil {
 			fmt.Fprintf(os.Stderr, "error scraping %s: %v\n", studioURL, err)
 			if firstErr == nil {
 				firstErr = err
@@ -120,11 +129,13 @@ func runScrape(cmd *cobra.Command, args []string) error {
 	return firstErr
 }
 
-func scrapeOne(ctx context.Context, st store.Store, studioURL, name, dbPath, outDir string, formats []string, full, refresh bool, workers int, delay time.Duration) error {
+func scrapeOne(ctx context.Context, st store.Store, studioURL, name, dbPath, outDir string, formats []string, full, refresh bool, workers int, defaultDelay time.Duration, siteDelays map[string]int) error {
 	sc, err := scraper.ForURL(studioURL)
 	if err != nil {
 		return err
 	}
+
+	delay := resolveSiteDelay(sc.ID(), defaultDelay, siteDelays)
 
 	var scenes []models.Scene
 	switch {
@@ -354,4 +365,44 @@ func parseFormats(s string) []string {
 		}
 	}
 	return out
+}
+
+// mergeSiteDelays returns a single map of scraper-ID → delay-ms by overlaying
+// CLI --site-delay entries (`name=ms` pairs) on top of the config map. Returns
+// an error if any CLI entry is malformed.
+func mergeSiteDelays(fromConfig map[string]int, cliPairs []string) (map[string]int, error) {
+	out := make(map[string]int, len(fromConfig)+len(cliPairs))
+	for k, v := range fromConfig {
+		out[k] = v
+	}
+	for _, p := range cliPairs {
+		p = strings.TrimSpace(p)
+		if p == "" {
+			continue
+		}
+		eq := strings.IndexByte(p, '=')
+		if eq < 1 || eq == len(p)-1 {
+			return nil, fmt.Errorf("--site-delay: %q is not in name=ms form", p)
+		}
+		name := strings.TrimSpace(p[:eq])
+		ms, err := strconv.Atoi(strings.TrimSpace(p[eq+1:]))
+		if err != nil {
+			return nil, fmt.Errorf("--site-delay %q: ms must be an integer: %w", p, err)
+		}
+		if ms < 0 {
+			return nil, fmt.Errorf("--site-delay %q: ms must not be negative", p)
+		}
+		out[name] = ms
+	}
+	return out, nil
+}
+
+// resolveSiteDelay returns the per-site delay for siteID, falling back to
+// defaultDelay when the site has no override. A site explicitly set to 0
+// disables delay even when the global default is non-zero.
+func resolveSiteDelay(siteID string, defaultDelay time.Duration, perSite map[string]int) time.Duration {
+	if ms, ok := perSite[siteID]; ok {
+		return time.Duration(ms) * time.Millisecond
+	}
+	return defaultDelay
 }

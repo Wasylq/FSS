@@ -14,7 +14,10 @@ type Config struct {
 	OutDir  string `yaml:"out_dir"`
 	DB      string `yaml:"db"`
 	Delay   int    `yaml:"delay"`
-	Stash   StashConfig `yaml:"stash"`
+	// SiteDelays overrides Delay per scraper ID (e.g. "manyvids", "pornhub").
+	// Sites without an entry fall back to Delay.
+	SiteDelays map[string]int `yaml:"site_delays"`
+	Stash      StashConfig    `yaml:"stash"`
 }
 
 type StashConfig struct {
