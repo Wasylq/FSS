@@ -12,7 +12,9 @@ func TestParseFilter(t *testing.T) {
 		url  string
 		want Filter
 	}{
-		{"actor", "https://www.babes.com/pornstar/12345/some-star", Filter{Type: FilterActor, ID: 12345}},
+		{"actor-pornstar", "https://www.babes.com/pornstar/12345/some-star", Filter{Type: FilterActor, ID: 12345}},
+		{"actor-model", "https://www.babes.com/model/3911/alexis-fawx", Filter{Type: FilterActor, ID: 3911}},
+		{"actor-modelprofile", "https://www.digitalplayground.com/modelprofile/153/anya-olsen", Filter{Type: FilterActor, ID: 153}},
 		{"category", "https://www.babes.com/category/79/milf", Filter{Type: FilterTag, ID: 79}},
 		{"site", "https://www.brazzers.com/site/12/brazzers-exxtra", Filter{Type: FilterCollection, ID: 12}},
 		{"series", "https://www.brazzers.com/series/4567/something", Filter{Type: FilterSeries, ID: 4567}},

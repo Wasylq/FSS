@@ -63,7 +63,13 @@ type Filter struct {
 }
 
 var (
-	pornstarRe = regexp.MustCompile(`/pornstar/(\d+)`)
+	// Actor (performer) URL paths used across Aylo siblings:
+	//   /pornstar/<id>/<slug>      — historical, still used on Brazzers
+	//   /model/<id>/<slug>         — current on Babes, Mofos, RealityKings
+	//   /modelprofile/<id>/<slug>  — current on DigitalPlayground
+	// Order matters: longer alternatives first so the regex engine prefers
+	// /modelprofile/ over /model/.
+	pornstarRe = regexp.MustCompile(`/(?:modelprofile|pornstar|model)/(\d+)`)
 	categoryRe = regexp.MustCompile(`/category/(\d+)`)
 	siteRe     = regexp.MustCompile(`/site/(\d+)`)
 	seriesRe   = regexp.MustCompile(`/series/(\d+)`)

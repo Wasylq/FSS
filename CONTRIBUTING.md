@@ -210,15 +210,37 @@ What to test:
 - Pagination (multi-page responses, empty last page)
 - `KnownIDs` early stopping
 
-For optional live integration tests that hit the real site API, use a build tag:
+For live integration smoke tests that hit the real site, use the shared `testutil` helper. Each scraper has an `integration_test.go` like:
 
 ```go
 //go:build integration
 
-func TestLive(t *testing.T) { ... }
+package <site>
+
+import (
+    "testing"
+    "github.com/Wasylq/FSS/internal/scrapers/testutil"
+)
+
+// liveStudioURL — pick a stable studio. Update if it 404s.
+const liveStudioURL = "https://example.com/profile/123/some-name"
+
+func TestLive<Site>(t *testing.T) {
+    testutil.SkipIfPlaceholder(t, liveStudioURL)
+    testutil.RunLiveScrape(t, New(), liveStudioURL, 2)
+}
 ```
 
-Run with: `go test -tags integration -v -timeout 120s ./internal/scrapers/<site>/...`
+`testutil.RunLiveScrape` fetches the first 2 scenes, validates each via `testutil.ValidateScene` (non-empty `ID`/`Title`/`URL`/`Date`, plausible `Duration`, etc.), and logs the first scene's full struct so you can eyeball field mappings on `-v`. `SkipIfPlaceholder` skips cleanly when `liveStudioURL` still contains `REPLACE-ME` — use it for new scrapers until you find a stable URL.
+
+Run all of them:
+
+```bash
+make smoke              # all scrapers
+make smoke-one SCRAPER=<site>   # one scraper
+```
+
+These are **never run in CI** (Cloudflare blocks shared GitHub-runner IP ranges, and they hit live sites). They're a manual pre-release check.
 
 ### 9. Update docs
 

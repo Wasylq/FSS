@@ -31,6 +31,7 @@ func (s *Scraper) ID() string { return config.SiteID }
 func (s *Scraper) Patterns() []string {
 	return []string{
 		"realitykings.com",
+		"realitykings.com/model/{id}/{slug}",
 		"realitykings.com/pornstar/{id}/{slug}",
 		"realitykings.com/category/{id}/{slug}",
 		"realitykings.com/site/{id}/{slug}",
