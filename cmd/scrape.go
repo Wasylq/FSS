@@ -99,6 +99,9 @@ func runScrape(cmd *cobra.Command, args []string) error {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
+	// URLs are scraped sequentially. --workers controls intra-scrape concurrency
+	// only; we deliberately do NOT run multiple URLs in parallel so the worker
+	// cap is the global cap (no N×workers explosion against unrelated hosts).
 	var firstErr error
 	for i, studioURL := range args {
 		if i > 0 {

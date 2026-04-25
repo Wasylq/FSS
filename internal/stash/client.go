@@ -166,8 +166,10 @@ func (c *Client) do(ctx context.Context, gql graphqlRequest) (json.RawMessage, e
 
 // Ping validates the connection to Stash.
 func (c *Client) Ping(ctx context.Context) error {
-	_, err := c.do(ctx, graphqlRequest{Query: `{ systemStatus { status } }`})
-	return err
+	if _, err := c.do(ctx, graphqlRequest{Query: `{ systemStatus { status } }`}); err != nil {
+		return fmt.Errorf("ping: %w", err)
+	}
+	return nil
 }
 
 const findScenesQuery = `
@@ -217,7 +219,7 @@ func (c *Client) FindScenes(ctx context.Context, filter FindScenesFilter, page, 
 		}
 		perfID, found, err := c.FindPerformerByName(ctx, filter.PerformerName)
 		if err != nil {
-			return nil, 0, fmt.Errorf("looking up performer %q: %w", filter.PerformerName, err)
+			return nil, 0, fmt.Errorf("finding performer %q: %w", filter.PerformerName, err)
 		}
 		if !found {
 			return nil, 0, nil
@@ -231,7 +233,7 @@ func (c *Client) FindScenes(ctx context.Context, filter FindScenesFilter, page, 
 	if filter.StudioName != "" {
 		studioID, found, err := c.FindStudioByName(ctx, filter.StudioName)
 		if err != nil {
-			return nil, 0, fmt.Errorf("looking up studio %q: %w", filter.StudioName, err)
+			return nil, 0, fmt.Errorf("finding studio %q: %w", filter.StudioName, err)
 		}
 		if !found {
 			return nil, 0, nil
@@ -253,7 +255,7 @@ func (c *Client) FindScenes(ctx context.Context, filter FindScenesFilter, page, 
 		Variables: vars,
 	})
 	if err != nil {
-		return nil, 0, err
+		return nil, 0, fmt.Errorf("finding scenes (page %d): %w", page, err)
 	}
 
 	var result struct {
@@ -263,7 +265,7 @@ func (c *Client) FindScenes(ctx context.Context, filter FindScenesFilter, page, 
 		} `json:"findScenes"`
 	}
 	if err := json.Unmarshal(data, &result); err != nil {
-		return nil, 0, fmt.Errorf("parsing findScenes: %w", err)
+		return nil, 0, fmt.Errorf("decoding findScenes response: %w", err)
 	}
 	return result.FindScenes.Scenes, result.FindScenes.Count, nil
 }
@@ -282,7 +284,7 @@ func (c *Client) FindAllScenes(ctx context.Context, filter FindScenesFilter, pro
 	for {
 		scenes, count, err := c.FindScenes(ctx, filter, page, perPage)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("paginating scenes: %w", err)
 		}
 		if page == 1 {
 			total = count
@@ -305,7 +307,7 @@ func (c *Client) FindTagByName(ctx context.Context, name string) (string, bool, 
 		Variables: map[string]any{"name": name},
 	})
 	if err != nil {
-		return "", false, err
+		return "", false, fmt.Errorf("finding tag %q: %w", name, err)
 	}
 	var result struct {
 		FindTags struct {
@@ -313,7 +315,7 @@ func (c *Client) FindTagByName(ctx context.Context, name string) (string, bool, 
 		} `json:"findTags"`
 	}
 	if err := json.Unmarshal(data, &result); err != nil {
-		return "", false, err
+		return "", false, fmt.Errorf("decoding findTags response for %q: %w", name, err)
 	}
 	if len(result.FindTags.Tags) == 0 {
 		return "", false, nil
@@ -327,13 +329,13 @@ func (c *Client) CreateTag(ctx context.Context, name string) (string, error) {
 		Variables: map[string]any{"input": map[string]any{"name": name}},
 	})
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("creating tag %q: %w", name, err)
 	}
 	var result struct {
 		TagCreate struct{ ID string `json:"id"` } `json:"tagCreate"`
 	}
 	if err := json.Unmarshal(data, &result); err != nil {
-		return "", err
+		return "", fmt.Errorf("decoding tagCreate response for %q: %w", name, err)
 	}
 	return result.TagCreate.ID, nil
 }
@@ -344,7 +346,7 @@ func (c *Client) FindTagByAlias(ctx context.Context, alias string) (string, bool
 		Variables: map[string]any{"alias": alias},
 	})
 	if err != nil {
-		return "", false, err
+		return "", false, fmt.Errorf("finding tag by alias %q: %w", alias, err)
 	}
 	var result struct {
 		FindTags struct {
@@ -352,7 +354,7 @@ func (c *Client) FindTagByAlias(ctx context.Context, alias string) (string, bool
 		} `json:"findTags"`
 	}
 	if err := json.Unmarshal(data, &result); err != nil {
-		return "", false, err
+		return "", false, fmt.Errorf("decoding findTags-alias response for %q: %w", alias, err)
 	}
 	if len(result.FindTags.Tags) == 0 {
 		return "", false, nil
@@ -363,19 +365,23 @@ func (c *Client) FindTagByAlias(ctx context.Context, alias string) (string, bool
 func (c *Client) EnsureTag(ctx context.Context, name string) (string, error) {
 	id, found, err := c.FindTagByName(ctx, name)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("ensuring tag %q: %w", name, err)
 	}
 	if found {
 		return id, nil
 	}
 	id, found, err = c.FindTagByAlias(ctx, name)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("ensuring tag %q: %w", name, err)
 	}
 	if found {
 		return id, nil
 	}
-	return c.CreateTag(ctx, name)
+	id, err = c.CreateTag(ctx, name)
+	if err != nil {
+		return "", fmt.Errorf("ensuring tag %q: %w", name, err)
+	}
+	return id, nil
 }
 
 func (c *Client) FindPerformerByName(ctx context.Context, name string) (string, bool, error) {
@@ -384,7 +390,7 @@ func (c *Client) FindPerformerByName(ctx context.Context, name string) (string, 
 		Variables: map[string]any{"name": name},
 	})
 	if err != nil {
-		return "", false, err
+		return "", false, fmt.Errorf("finding performer %q: %w", name, err)
 	}
 	var result struct {
 		FindPerformers struct {
@@ -392,7 +398,7 @@ func (c *Client) FindPerformerByName(ctx context.Context, name string) (string, 
 		} `json:"findPerformers"`
 	}
 	if err := json.Unmarshal(data, &result); err != nil {
-		return "", false, err
+		return "", false, fmt.Errorf("decoding findPerformers response for %q: %w", name, err)
 	}
 	if len(result.FindPerformers.Performers) == 0 {
 		return "", false, nil
@@ -406,13 +412,13 @@ func (c *Client) CreatePerformer(ctx context.Context, name string) (string, erro
 		Variables: map[string]any{"input": map[string]any{"name": name}},
 	})
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("creating performer %q: %w", name, err)
 	}
 	var result struct {
 		PerformerCreate struct{ ID string `json:"id"` } `json:"performerCreate"`
 	}
 	if err := json.Unmarshal(data, &result); err != nil {
-		return "", err
+		return "", fmt.Errorf("decoding performerCreate response for %q: %w", name, err)
 	}
 	return result.PerformerCreate.ID, nil
 }
@@ -420,12 +426,16 @@ func (c *Client) CreatePerformer(ctx context.Context, name string) (string, erro
 func (c *Client) EnsurePerformer(ctx context.Context, name string) (string, error) {
 	id, found, err := c.FindPerformerByName(ctx, name)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("ensuring performer %q: %w", name, err)
 	}
 	if found {
 		return id, nil
 	}
-	return c.CreatePerformer(ctx, name)
+	id, err = c.CreatePerformer(ctx, name)
+	if err != nil {
+		return "", fmt.Errorf("ensuring performer %q: %w", name, err)
+	}
+	return id, nil
 }
 
 func (c *Client) FindStudioByName(ctx context.Context, name string) (string, bool, error) {
@@ -434,7 +444,7 @@ func (c *Client) FindStudioByName(ctx context.Context, name string) (string, boo
 		Variables: map[string]any{"name": name},
 	})
 	if err != nil {
-		return "", false, err
+		return "", false, fmt.Errorf("finding studio %q: %w", name, err)
 	}
 	var result struct {
 		FindStudios struct {
@@ -442,7 +452,7 @@ func (c *Client) FindStudioByName(ctx context.Context, name string) (string, boo
 		} `json:"findStudios"`
 	}
 	if err := json.Unmarshal(data, &result); err != nil {
-		return "", false, err
+		return "", false, fmt.Errorf("decoding findStudios response for %q: %w", name, err)
 	}
 	if len(result.FindStudios.Studios) == 0 {
 		return "", false, nil
@@ -456,13 +466,13 @@ func (c *Client) CreateStudio(ctx context.Context, name string) (string, error) 
 		Variables: map[string]any{"input": map[string]any{"name": name}},
 	})
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("creating studio %q: %w", name, err)
 	}
 	var result struct {
 		StudioCreate struct{ ID string `json:"id"` } `json:"studioCreate"`
 	}
 	if err := json.Unmarshal(data, &result); err != nil {
-		return "", err
+		return "", fmt.Errorf("decoding studioCreate response for %q: %w", name, err)
 	}
 	return result.StudioCreate.ID, nil
 }
@@ -470,12 +480,16 @@ func (c *Client) CreateStudio(ctx context.Context, name string) (string, error) 
 func (c *Client) EnsureStudio(ctx context.Context, name string) (string, error) {
 	id, found, err := c.FindStudioByName(ctx, name)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("ensuring studio %q: %w", name, err)
 	}
 	if found {
 		return id, nil
 	}
-	return c.CreateStudio(ctx, name)
+	id, err = c.CreateStudio(ctx, name)
+	if err != nil {
+		return "", fmt.Errorf("ensuring studio %q: %w", name, err)
+	}
+	return id, nil
 }
 
 const sceneUpdateMutation = `
@@ -484,11 +498,13 @@ mutation SceneUpdate($input: SceneUpdateInput!) {
 }`
 
 func (c *Client) UpdateScene(ctx context.Context, input SceneUpdateInput) error {
-	_, err := c.do(ctx, graphqlRequest{
+	if _, err := c.do(ctx, graphqlRequest{
 		Query:     sceneUpdateMutation,
 		Variables: map[string]any{"input": input},
-	})
-	return err
+	}); err != nil {
+		return fmt.Errorf("updating scene %s: %w", input.ID, err)
+	}
+	return nil
 }
 
 func (c *Client) ScrapeSceneURL(ctx context.Context, url string) (*ScrapedScene, error) {
@@ -497,13 +513,13 @@ func (c *Client) ScrapeSceneURL(ctx context.Context, url string) (*ScrapedScene,
 		Variables: map[string]any{"url": url},
 	})
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("scraping URL %q: %w", url, err)
 	}
 	var result struct {
 		ScrapeURL *ScrapedScene `json:"scrapeURL"`
 	}
 	if err := json.Unmarshal(data, &result); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("decoding scrapeURL response for %q: %w", url, err)
 	}
 	return result.ScrapeURL, nil
 }
