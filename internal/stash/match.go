@@ -237,6 +237,12 @@ func matchAgainst(titleMap map[string][]models.Scene, norm string, fileDurationS
 		return MatchResult{Confidence: MatchSubstring, Scenes: allScenes}
 	}
 
+	// Pick the longest matching title as the most-specific match (more
+	// characters = more discriminating). Length is in Unicode codepoints,
+	// not bytes — `len(s)` would over-count multi-byte titles like "Café"
+	// (5 bytes / 4 chars) and bias the tie-break against ASCII titles.
+	// Two titles of equal codepoint length but different content stays
+	// ambiguous (we can't pick one over the other without more signal).
 	best := candidates[0]
 	tied := false
 	for _, c := range candidates[1:] {
@@ -310,6 +316,10 @@ func isSubstring(title, filename string) bool {
 	return float64(len(titleWords)) >= float64(len(filenameWords))*0.5
 }
 
+// countCodepoints returns the number of Unicode codepoints (runes) in s.
+// `range string` walks runes, so this avoids the allocation of `len([]rune(s))`
+// while still being correct for non-ASCII input where `len(s)` (byte count)
+// would be wrong.
 func countCodepoints(s string) int {
 	n := 0
 	for range s {
