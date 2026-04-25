@@ -39,6 +39,7 @@ func init() {
 	stashImportCmd.Flags().String("performer", "", "filter Stash scenes by performer name")
 	stashImportCmd.Flags().String("studio", "", "filter Stash scenes by studio name")
 	stashImportCmd.Flags().Int("top", 0, "limit number of Stash scenes to process (0 = all)")
+	stashImportCmd.Flags().StringSlice("fields", nil, "only update these fields (title,details,date,urls,tags,performers,studio,cover); default: all")
 }
 
 type importStats struct {
@@ -126,6 +127,12 @@ func runStashImport(cmd *cobra.Command, _ []string) error {
 		stashboxTag = cfg.Stash.StashboxTag
 	}
 
+	fieldsList, _ := cmd.Flags().GetStringSlice("fields")
+	allowedFields, err := parseFieldsFlag(fieldsList)
+	if err != nil {
+		return err
+	}
+
 	performer, _ := cmd.Flags().GetString("performer")
 	studio, _ := cmd.Flags().GetString("studio")
 	top, _ := cmd.Flags().GetInt("top")
@@ -156,12 +163,16 @@ func runStashImport(cmd *cobra.Command, _ []string) error {
 	fmt.Printf("Found %d Stash scenes to process\n", len(stashScenes))
 
 	if !apply {
-		fmt.Print("\n--- DRY RUN (pass --apply to write changes) ---\n\n")
+		fmt.Print("\n--- DRY RUN (pass --apply to write changes) ---\n")
+		if allowedFields != nil {
+			fmt.Printf("Fields: %s\n", strings.Join(fieldsList, ", "))
+		}
+		fmt.Println()
 	}
 
 	// --- ensure import tag ---
 	var importTagID string
-	if apply {
+	if apply && fieldAllowed(allowedFields, "tags") {
 		importTagID, err = client.EnsureTag(ctx, tagName)
 		if err != nil {
 			return fmt.Errorf("ensuring import tag %q: %w", tagName, err)
@@ -232,6 +243,13 @@ func runStashImport(cmd *cobra.Command, _ []string) error {
 
 		// Check if there's anything to change.
 		changes := buildChanges(ss, merged, mergedURLs, allTags, setCover)
+		if allowedFields != nil {
+			for field := range changes {
+				if !allowedFields[field] {
+					delete(changes, field)
+				}
+			}
+		}
 		if len(changes) == 0 {
 			stats.upToDate++
 			continue
@@ -252,70 +270,65 @@ func runStashImport(cmd *cobra.Command, _ []string) error {
 		}
 
 		// --- apply mode ---
+		input := stash.SceneUpdateInput{ID: ss.ID}
 
-		// Resolve tag IDs.
-		tagIDs := extractTagIDs(ss.Tags)
-		tagIDs = append(tagIDs, importTagID)
-		if hasStashbox {
-			sbTagID, tagErr := client.EnsureTag(ctx, stashboxTag)
-			if tagErr != nil {
-				return fmt.Errorf("ensuring stashbox override tag: %w", tagErr)
-			}
-			tagIDs = append(tagIDs, sbTagID)
+		if fieldAllowed(allowedFields, "title") {
+			input.Title = strPtr(merged.Title)
 		}
-		for _, t := range allTags {
-			tid, tagErr := client.EnsureTag(ctx, t)
-			if tagErr != nil {
-				fmt.Fprintf(os.Stderr, "warning: could not ensure tag %q: %v\n", t, tagErr)
-				continue
-			}
-			tagIDs = append(tagIDs, tid)
+		if fieldAllowed(allowedFields, "details") && merged.Description != "" {
+			input.Details = strPtr(merged.Description)
 		}
-		tagIDs = dedup(tagIDs)
-
-		// Resolve performer IDs.
-		perfIDs := extractPerfIDs(ss.Performers)
-		for _, p := range merged.Performers {
-			pid, perfErr := client.EnsurePerformer(ctx, p)
-			if perfErr != nil {
-				fmt.Fprintf(os.Stderr, "warning: could not ensure performer %q: %v\n", p, perfErr)
-				continue
-			}
-			perfIDs = append(perfIDs, pid)
+		if fieldAllowed(allowedFields, "date") && !merged.Date.IsZero() {
+			d := merged.Date.Format("2006-01-02")
+			input.Date = &d
 		}
-		perfIDs = dedup(perfIDs)
-
-		// Resolve studio ID.
-		var studioID *string
-		if merged.Studio != "" {
+		if fieldAllowed(allowedFields, "urls") {
+			input.URLs = mergedURLs
+		}
+		if fieldAllowed(allowedFields, "tags") {
+			tagIDs := extractTagIDs(ss.Tags)
+			tagIDs = append(tagIDs, importTagID)
+			if hasStashbox {
+				sbTagID, tagErr := client.EnsureTag(ctx, stashboxTag)
+				if tagErr != nil {
+					return fmt.Errorf("ensuring stashbox override tag: %w", tagErr)
+				}
+				tagIDs = append(tagIDs, sbTagID)
+			}
+			for _, t := range allTags {
+				tid, tagErr := client.EnsureTag(ctx, t)
+				if tagErr != nil {
+					fmt.Fprintf(os.Stderr, "warning: could not ensure tag %q: %v\n", t, tagErr)
+					continue
+				}
+				tagIDs = append(tagIDs, tid)
+			}
+			input.TagIDs = dedup(tagIDs)
+		}
+		if fieldAllowed(allowedFields, "performers") {
+			perfIDs := extractPerfIDs(ss.Performers)
+			for _, p := range merged.Performers {
+				pid, perfErr := client.EnsurePerformer(ctx, p)
+				if perfErr != nil {
+					fmt.Fprintf(os.Stderr, "warning: could not ensure performer %q: %v\n", p, perfErr)
+					continue
+				}
+				perfIDs = append(perfIDs, pid)
+			}
+			input.PerformerIDs = dedup(perfIDs)
+		}
+		if fieldAllowed(allowedFields, "studio") && merged.Studio != "" {
 			sid, studioErr := client.EnsureStudio(ctx, merged.Studio)
 			if studioErr != nil {
 				fmt.Fprintf(os.Stderr, "warning: could not ensure studio %q: %v\n", merged.Studio, studioErr)
 			} else {
-				studioID = &sid
+				input.StudioID = &sid
 			}
-		}
-
-		// Build update input.
-		input := stash.SceneUpdateInput{
-			ID:           ss.ID,
-			Title:        strPtr(merged.Title),
-			URLs:         mergedURLs,
-			TagIDs:       tagIDs,
-			PerformerIDs: perfIDs,
-			StudioID:     studioID,
-		}
-		if merged.Description != "" {
-			input.Details = strPtr(merged.Description)
-		}
-		if !merged.Date.IsZero() {
-			d := merged.Date.Format("2006-01-02")
-			input.Date = &d
 		}
 		if organized {
 			input.Organized = &organized
 		}
-		if setCover && merged.Thumbnail != "" {
+		if fieldAllowed(allowedFields, "cover") && setCover && merged.Thumbnail != "" {
 			coverData, coverErr := client.DownloadCoverImage(ctx, merged.Thumbnail)
 			if coverErr != nil {
 				fmt.Fprintf(os.Stderr, "warning: could not download cover image: %v\n", coverErr)
@@ -490,4 +503,28 @@ func truncate(s string, max int) string {
 		return s
 	}
 	return s[:max-3] + "..."
+}
+
+var validImportFields = map[string]bool{
+	"title": true, "details": true, "date": true, "urls": true,
+	"tags": true, "performers": true, "studio": true, "cover": true,
+}
+
+func parseFieldsFlag(fields []string) (map[string]bool, error) {
+	if len(fields) == 0 {
+		return nil, nil
+	}
+	m := make(map[string]bool, len(fields))
+	for _, f := range fields {
+		f = strings.TrimSpace(f)
+		if !validImportFields[f] {
+			return nil, fmt.Errorf("unknown field %q (valid: title,details,date,urls,tags,performers,studio,cover)", f)
+		}
+		m[f] = true
+	}
+	return m, nil
+}
+
+func fieldAllowed(allowed map[string]bool, field string) bool {
+	return allowed == nil || allowed[field]
 }

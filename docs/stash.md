@@ -51,6 +51,7 @@ Matches FSS JSON scenes against Stash scenes by filename and pushes metadata. **
 | `--include-stashbox` | bool | `false` | Also process scenes that already have StashDB data |
 | `--stashbox-tag` | string | `fss_stashbox_override` | Tag applied to modified StashDB scenes for tracking |
 | `--cover` | bool | `false` | Download and set cover image from FSS thumbnail |
+| `--fields` | []string | _(all)_ | Only update these fields: `title`,`details`,`date`,`urls`,`tags`,`performers`,`studio`,`cover` |
 | `--apply` | bool | `false` | Actually write changes to Stash |
 | `--performer` | string | _(none)_ | Filter Stash scenes by performer name |
 | `--studio` | string | _(none)_ | Filter Stash scenes by studio name |
@@ -84,11 +85,19 @@ fss stash import --dir ./data --cover --apply
 # Filter by performer and add resolution tags
 fss stash import --dir ./data --performer "Bettie Bondage" --resolution-tags --apply
 
+# Only update tags, URLs, and date (only if earlier)
+fss stash import --dir ./data --fields tags,urls,date --apply
+
+# Only add tags and URLs, leave everything else untouched
+fss stash import --dir ./data --fields tags,urls --apply
+
 # Only process the first 50 Stash scenes (useful for testing)
 fss stash import --dir ./data --top 50
 ```
 
 **`--dir` vs `--json`:** By default, `--dir` loads every `*.json` file in the directory — all studios get pooled into one index. This is what you want when you've scraped a performer from multiple sites (e.g. ManyVids + Clips4Sale) and want cross-site merging. Use `--json` when you only want to import from specific files, for example a single studio.
+
+**`--fields`:** By default, all detected changes are applied. Pass `--fields` with a comma-separated list to restrict which fields are updated. Unselected fields are left untouched in Stash, and changes to unselected fields are hidden from dry-run output. For example, `--fields date,tags,urls` will only update the release date (which already uses earliest-date logic, so it only changes when a earlier date is found), add new tags, and add new URLs — title, details, performers, studio, and cover are left as-is.
 
 ## Matching strategy
 
