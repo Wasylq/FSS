@@ -38,7 +38,7 @@ func init() {
 	stashImportCmd.Flags().Bool("scrape", false, "call Stash scraper on first URL after import")
 	stashImportCmd.Flags().Bool("include-stashbox", false, "also process scenes that have StashDB data")
 	stashImportCmd.Flags().String("stashbox-tag", "", "tag for stashbox overrides (default from config)")
-	stashImportCmd.Flags().Bool("cover", false, "set cover image from FSS thumbnail")
+	stashImportCmd.Flags().Bool("cover", false, "set cover image from FSS thumbnail (also implicitly enabled when 'cover' is in --fields)")
 	stashImportCmd.Flags().Bool("cover-allow-private", false, "allow cover URLs that resolve to private/loopback IPs (for local media servers); disabled by default to prevent SSRF when importing third-party JSON")
 	stashImportCmd.Flags().Bool("apply", false, "actually write changes (default is dry-run)")
 	stashImportCmd.Flags().String("performer", "", "filter Stash scenes by performer name")
@@ -151,6 +151,12 @@ func runStashImport(cmd *cobra.Command, _ []string) error {
 	if err != nil {
 		return err
 	}
+
+	// Listing "cover" in --fields explicitly opts in to cover updates, so
+	// don't also require --cover. The reverse (--cover with --fields not
+	// listing "cover") still skips cover, since the fields filter is a hard
+	// allowlist.
+	setCover = resolveCoverEnabled(setCover, allowedFields)
 
 	performer, _ := cmd.Flags().GetString("performer")
 	studio, _ := cmd.Flags().GetString("studio")
@@ -737,4 +743,16 @@ func parseFieldsFlag(fields []string) (map[string]bool, error) {
 
 func fieldAllowed(allowed map[string]bool, field string) bool {
 	return allowed == nil || allowed[field]
+}
+
+// resolveCoverEnabled returns the effective value for the cover-update toggle,
+// implicitly enabling it when --fields explicitly lists "cover" so the user
+// doesn't have to pass both --cover and --fields cover. The reverse case
+// (--cover with --fields not listing cover) still skips cover, because the
+// fields filter is a hard allowlist.
+func resolveCoverEnabled(setCoverFlag bool, allowedFields map[string]bool) bool {
+	if setCoverFlag {
+		return true
+	}
+	return allowedFields != nil && allowedFields["cover"]
 }

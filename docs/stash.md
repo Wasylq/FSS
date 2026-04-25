@@ -50,7 +50,7 @@ Matches FSS JSON scenes against Stash scenes by filename and pushes metadata. **
 | `--scrape` | bool | from config | Call Stash's built-in scraper on the first URL after import |
 | `--include-stashbox` | bool | `false` | Also process scenes that already have StashDB data |
 | `--stashbox-tag` | string | `fss_stashbox_override` | Tag applied to modified StashDB scenes for tracking |
-| `--cover` | bool | `false` | Download and set cover image from FSS thumbnail |
+| `--cover` | bool | `false` | Download and set cover image from FSS thumbnail (also implicitly enabled when `cover` is in `--fields`) |
 | `--cover-allow-private` | bool | `false` | Allow cover URLs that resolve to private/loopback IPs (for personal media servers) |
 | `--fields` | []string | _(all)_ | Only update these fields: `title`,`details`,`date`,`urls`,`tags`,`performers`,`studio`,`cover` |
 | `--apply` | bool | `false` | Actually write changes to Stash |
@@ -158,7 +158,14 @@ Format suffix stripping means that Clips4Sale scenes listed as separate formats 
 
 ## Cover image fetching
 
-When `--cover` is set, FSS downloads each scene's `thumbnail` URL from the FSS JSON and pushes it to Stash as base64. To prevent SSRF when importing third-party JSON dumps, the URL is validated:
+Cover updates are opt-in (they're expensive and replace existing covers). Two equivalent ways to enable them:
+
+- `--cover` — the original toggle.
+- `--fields cover` — listing `cover` explicitly in the field allowlist also implicitly enables it. So `--fields tags,urls,cover --apply` works without needing `--cover` too.
+
+The reverse (`--cover --fields title`) still skips cover, because `--fields` is a hard allowlist.
+
+When enabled, FSS downloads each scene's `thumbnail` URL from the FSS JSON and pushes it to Stash as base64. To prevent SSRF when importing third-party JSON dumps, the URL is validated:
 
 - Scheme must be `http` or `https`. `file://`, `gopher://`, `data:`, etc. are rejected.
 - Host must not resolve to a private (RFC1918), loopback, link-local, or unspecified address. This stops a malicious JSON from coercing FSS to fetch from `localhost`, cloud metadata services (`169.254.169.254`), or your internal network.

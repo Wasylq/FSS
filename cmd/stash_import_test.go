@@ -280,6 +280,30 @@ func TestPrintWouldCreateSummary_skipsExistingShowsMissing(t *testing.T) {
 	}
 }
 
+func TestResolveCoverEnabled(t *testing.T) {
+	cases := []struct {
+		name           string
+		flag           bool
+		allowedFields  map[string]bool
+		want           bool
+	}{
+		{"flag set, no fields filter", true, nil, true},
+		{"flag set, fields excludes cover", true, map[string]bool{"title": true}, true},
+		{"flag set, fields includes cover", true, map[string]bool{"cover": true}, true},
+		{"flag unset, no fields filter (legacy default)", false, nil, false},
+		{"flag unset, fields excludes cover", false, map[string]bool{"title": true}, false},
+		{"flag unset, fields includes cover (implicit enable)", false, map[string]bool{"cover": true}, true},
+		{"flag unset, fields includes cover plus others", false, map[string]bool{"cover": true, "tags": true}, true},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			if got := resolveCoverEnabled(c.flag, c.allowedFields); got != c.want {
+				t.Errorf("got %v, want %v", got, c.want)
+			}
+		})
+	}
+}
+
 func TestPrintWouldCreateSummary_onlyExistingIsNoOp(t *testing.T) {
 	l := &entityLookup{
 		tags:       map[string]bool{"POV": true, "MILF": true},
