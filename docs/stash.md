@@ -241,3 +241,44 @@ The changelog is append-only — multiple import runs accumulate history. Exampl
 }
 ```
 
+## Reverting an import
+
+`fss stash revert <scene-id>` undoes a previous `--include-stashbox` import using the changelog. Like `import`, it's dry-run by default — pass `--apply` to actually write.
+
+```bash
+# Show what would be reverted for scene 42
+fss stash revert 42
+
+# Actually undo the most recent changelog entry for scenes 42 and 87
+fss stash revert 42 87 --apply
+
+# Undo every entry for scene 42 (e.g. multiple imports re-applied to it)
+fss stash revert 42 --all --apply
+
+# Only revert tags and URLs, leave the title/date alone
+fss stash revert 42 --fields tags,urls --apply
+```
+
+| Flag | Type | Default | Description |
+|------|------|---------|-------------|
+| `--dir` | string | config `out_dir` | Directory containing `fss-stashbox-changelog.json` |
+| `--apply` | bool | `false` | Actually write changes (default is dry-run) |
+| `--all` | bool | `false` | Revert every changelog entry for each scene; default reverts only the most recent |
+| `--fields` | []string | _(all revertable)_ | Restrict to these fields: `title`, `date`, `urls`, `tags`, `performers` |
+
+**What can be reverted (and what can't):**
+
+| Field | Revertable? | How |
+|-------|-------------|-----|
+| `title` | ✓ | Restored to the original value recorded in the changelog |
+| `date` | ✓ | Restored to the original value |
+| `urls` | ✓ | The URLs added by the import are removed; URLs you added manually stay |
+| `tags` | ✓ | Tags added by the import are removed (looked up by name in Stash) |
+| `performers` | ✓ | Performers added by the import are removed (looked up by name) |
+| `details` | ✗ | The changelog only records a 60-char preview, so the full original can't be restored. Skipped with a warning. |
+| `cover` | ✗ | The original cover URL was never recorded. Skipped with a warning. |
+
+If a tag or performer was renamed or deleted in Stash since the import, the lookup silently no-ops for that name (nothing to remove). A revert never adds anything — only sets/restores values and removes additions.
+
+Re-running revert after a manual fix is safe; if the previous values are already in place, the corresponding changes simply don't apply.
+

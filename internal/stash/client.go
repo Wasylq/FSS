@@ -170,6 +170,37 @@ query FindScenes($filter: FindFilterType, $scene_filter: SceneFilterType) {
   }
 }`
 
+// FindSceneByID returns a single scene with its current Stash state, or
+// (nil, false, nil) if no scene with that ID exists.
+func (c *Client) FindSceneByID(ctx context.Context, id string) (*StashScene, bool, error) {
+	data, err := c.do(ctx, graphqlRequest{
+		Query: `query($id: ID!) {
+  findScene(id: $id) {
+    id title date details urls organized
+    files { basename path duration }
+    tags { id name }
+    performers { id name }
+    studio { id name }
+    stash_ids { endpoint stash_id }
+  }
+}`,
+		Variables: map[string]any{"id": id},
+	})
+	if err != nil {
+		return nil, false, fmt.Errorf("finding scene %s: %w", id, err)
+	}
+	var result struct {
+		FindScene *StashScene `json:"findScene"`
+	}
+	if err := json.Unmarshal(data, &result); err != nil {
+		return nil, false, fmt.Errorf("decoding findScene response for %s: %w", id, err)
+	}
+	if result.FindScene == nil {
+		return nil, false, nil
+	}
+	return result.FindScene, true, nil
+}
+
 func (c *Client) FindScenes(ctx context.Context, filter FindScenesFilter, page, perPage int) ([]StashScene, int, error) {
 	sceneFilter := map[string]any{}
 	findFilter := map[string]any{
