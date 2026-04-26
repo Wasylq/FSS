@@ -98,7 +98,7 @@ func TestParseMeta_full(t *testing.T) {
 }
 </script>
 <script type="application/ld+json">
-{ "articleSection": "Drama, Roleplay" }
+{ "articleSection": "18 &amp; 19 Years Old, Roleplay" }
 </script>
 </head>
 <body></body>
@@ -125,7 +125,7 @@ func TestParseMeta_full(t *testing.T) {
 	if len(m.Tags) != 2 || m.Tags[0] != "POV" || m.Tags[1] != "MILF" {
 		t.Errorf("Tags = %v (expected dedup)", m.Tags)
 	}
-	if len(m.Categories) != 2 || m.Categories[0] != "Drama" || m.Categories[1] != "Roleplay" {
+	if len(m.Categories) != 2 || m.Categories[0] != "18 & 19 Years Old" || m.Categories[1] != "Roleplay" {
 		t.Errorf("Categories = %v", m.Categories)
 	}
 	if m.Width != 1920 || m.Height != 1080 {
@@ -137,8 +137,40 @@ func TestParseMeta_empty(t *testing.T) {
 	m := ParseMeta([]byte(`<html><body>nothing here</body></html>`), "")
 	if m.Title != "" || !m.Date.IsZero() || m.Description != "" || m.Thumbnail != "" ||
 		m.PostID != "" || len(m.Tags) != 0 || len(m.Categories) != 0 ||
-		m.Width != 0 || m.Height != 0 {
+		m.Width != 0 || m.Height != 0 || m.HasVideo {
 		t.Errorf("expected zero-value Meta, got %+v", m)
+	}
+}
+
+func TestParseMeta_jsonLDFallback(t *testing.T) {
+	body := []byte(`<html><head>
+<title>Real Sex | Anal Therapy XXX</title>
+<link rel='shortlink' href='https://analtherapyxxx.com/?p=3100' />
+<script type="application/ld+json">
+{"@type":"VideoObject","name":"Real Sex","description":"A steamy encounter.","thumbnailUrl":"https://cdn.example/thumb.jpg","uploadDate":"2026-04-20T10:00:00+00:00","contentUrl":"https://cdn.example/video.mp4"}
+</script>
+</head><body></body></html>`)
+
+	m := ParseMeta(body, " | Anal Therapy XXX")
+
+	if m.Title != "Real Sex" {
+		t.Errorf("Title = %q", m.Title)
+	}
+	if m.PostID != "3100" {
+		t.Errorf("PostID = %q", m.PostID)
+	}
+	if !m.HasVideo {
+		t.Error("HasVideo = false, want true")
+	}
+	if m.Description != "A steamy encounter." {
+		t.Errorf("Description (JSON-LD fallback) = %q", m.Description)
+	}
+	if m.Thumbnail != "https://cdn.example/thumb.jpg" {
+		t.Errorf("Thumbnail (JSON-LD fallback) = %q", m.Thumbnail)
+	}
+	want := time.Date(2026, 4, 20, 10, 0, 0, 0, time.UTC)
+	if !m.Date.Equal(want) {
+		t.Errorf("Date (JSON-LD fallback) = %v, want %v", m.Date, want)
 	}
 }
 

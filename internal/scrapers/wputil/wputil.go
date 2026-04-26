@@ -29,6 +29,7 @@ type Meta struct {
 	Categories  []string // from articleSection in JSON-LD
 	Width       int      // from VideoObject JSON-LD
 	Height      int      // from VideoObject JSON-LD
+	HasVideo    bool     // true if a VideoObject JSON-LD block was found
 }
 
 // BrowserHeaders returns common browser headers to avoid WAF blocks.
@@ -118,6 +119,10 @@ var (
 	articleSectionRe = regexp.MustCompile(`"articleSection"\s*:\s*"([^"]*)"`)
 	videoWidthRe     = regexp.MustCompile(`"@type"\s*:\s*"VideoObject"[^}]*"width"\s*:\s*"(\d+)"`)
 	videoHeightRe    = regexp.MustCompile(`"@type"\s*:\s*"VideoObject"[^}]*"height"\s*:\s*"(\d+)"`)
+	hasVideoRe       = regexp.MustCompile(`"@type"\s*:\s*"VideoObject"`)
+	ldDescRe         = regexp.MustCompile(`"@type"\s*:\s*"VideoObject"[^}]*"description"\s*:\s*"([^"]*)"`)
+	ldThumbnailRe    = regexp.MustCompile(`"@type"\s*:\s*"VideoObject"[^}]*"thumbnailUrl"\s*:\s*"([^"]*)"`)
+	ldUploadDateRe   = regexp.MustCompile(`"@type"\s*:\s*"VideoObject"[^}]*"uploadDate"\s*:\s*"([^"]*)"`)
 )
 
 // ParseMeta extracts common WordPress metadata from raw HTML.
@@ -160,7 +165,7 @@ func ParseMeta(body []byte, titleSuffix string) Meta {
 
 	if match := articleSectionRe.FindSubmatch(body); match != nil {
 		for _, cat := range strings.Split(string(match[1]), ",") {
-			cat = strings.TrimSpace(cat)
+			cat = html.UnescapeString(strings.TrimSpace(cat))
 			if cat != "" {
 				m.Categories = append(m.Categories, cat)
 			}
@@ -172,6 +177,27 @@ func ParseMeta(body []byte, titleSuffix string) Meta {
 	}
 	if match := videoHeightRe.FindSubmatch(body); match != nil {
 		m.Height, _ = strconv.Atoi(string(match[1]))
+	}
+
+	m.HasVideo = hasVideoRe.Match(body)
+
+	// JSON-LD VideoObject fallbacks for sites without og: meta tags.
+	if m.Description == "" {
+		if match := ldDescRe.FindSubmatch(body); match != nil {
+			m.Description = html.UnescapeString(string(match[1]))
+		}
+	}
+	if m.Thumbnail == "" {
+		if match := ldThumbnailRe.FindSubmatch(body); match != nil {
+			m.Thumbnail = string(match[1])
+		}
+	}
+	if m.Date.IsZero() {
+		if match := ldUploadDateRe.FindSubmatch(body); match != nil {
+			if t, err := time.Parse(time.RFC3339, string(match[1])); err == nil {
+				m.Date = t.UTC()
+			}
+		}
 	}
 
 	return m

@@ -14,8 +14,10 @@ Scrapes all scenes and metadata from a studio URL. Designed to be easily extende
 | Babes | Aylo/Juan |
 | Brazzers | Aylo/Juan |
 | Clips4Sale | Clips4Sale |
+| Anal Therapy | WordPress |
 | Digital Playground | Aylo/Juan |
 | Fakings | Next.js RSC |
+| Family Therapy | WordPress |
 | IWantClips | IWantClips |
 | Kink | Kink |
 | ManyVids | ManyVids |
@@ -24,6 +26,7 @@ Scrapes all scenes and metadata from a studio URL. Designed to be easily extende
 | Mom Comes First | WordPress |
 | Naughty America | Naughty America |
 | Nubiles Network | EdgeCms |
+| Perfect Girlfriend | WordPress |
 | MyDirtyHobby | MyDirtyHobby |
 | Pornhub | Pornhub |
 | Pure Taboo | Gamma/Algolia |
