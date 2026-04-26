@@ -36,6 +36,19 @@ import (
 	_ "github.com/Wasylq/FSS/internal/scrapers/transqueens"
 	_ "github.com/Wasylq/FSS/internal/scrapers/tranzvr"
 	_ "github.com/Wasylq/FSS/internal/scrapers/yourvids"
+
+	_ "github.com/Wasylq/FSS/internal/scrapers/boyfriendsharing"
+	_ "github.com/Wasylq/FSS/internal/scrapers/brattyfamily"
+	_ "github.com/Wasylq/FSS/internal/scrapers/gostuckyourself"
+	_ "github.com/Wasylq/FSS/internal/scrapers/hugecockbreak"
+	_ "github.com/Wasylq/FSS/internal/scrapers/littlefromasia"
+	_ "github.com/Wasylq/FSS/internal/scrapers/mommysboy"
+	_ "github.com/Wasylq/FSS/internal/scrapers/momxxx"
+	_ "github.com/Wasylq/FSS/internal/scrapers/mybadmilfs"
+	_ "github.com/Wasylq/FSS/internal/scrapers/mydaughterswap"
+	_ "github.com/Wasylq/FSS/internal/scrapers/mypervmom"
+	_ "github.com/Wasylq/FSS/internal/scrapers/mysislovesme"
+	_ "github.com/Wasylq/FSS/internal/scrapers/youngerloverofmine"
 )
 
 // Set by -ldflags at release build time.

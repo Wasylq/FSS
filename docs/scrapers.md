@@ -36,6 +36,18 @@
 | [TranzVR](https://www.tranzvr.com) | `tranzvr.com` | POVR/WankzVR | No | Thin wrapper around `povrutil` |
 | [WankzVR](https://www.wankzvr.com) | `wankzvr.com` | POVR/WankzVR | No | Export JSON + listing page dates, uses `povrutil` |
 | [YourVids](https://yourvids.com) | `yourvids.com/creators/{slug}` | YourVids | Yes | JSON API, detail-page worker pool for tags/description, price tracking with sale detection |
+| [BoyfriendSharing](https://boyfriendsharing.com) | `boyfriendsharing.com` | WP video-elements | No | WP REST API, uses `veutil` |
+| [BrattyFamily](https://brattyfamily.com) | `brattyfamily.com` | WP video-elements | No | WP REST API, uses `veutil` |
+| [GoStuckYourself](https://gostuckyourself.net) | `gostuckyourself.net` | WP video-elements | No | WP REST API, uses `veutil` |
+| [HugeCockBreak](https://hugecockbreak.com) | `hugecockbreak.com` | WP video-elements | No | WP REST API, uses `veutil` |
+| [LittleFromAsia](https://littlefromasia.com) | `littlefromasia.com` | WP video-elements | No | WP REST API, uses `veutil` |
+| [MommysBoy](https://mommysboy.net) | `mommysboy.net` | WP video-elements | No | WP REST API, uses `veutil` |
+| [MomXXX](https://momxxx.org) | `momxxx.org` | WP video-elements | No | WP REST API, category 10, uses `veutil` |
+| [MyBadMILFs](https://mybadmilfs.com) | `mybadmilfs.com` | WP video-elements | No | WP REST API, uses `veutil` |
+| [DaughterSwap](https://mydaughterswap.com) | `mydaughterswap.com` | WP video-elements | No | WP REST API, uses `veutil` |
+| [PervMom](https://mypervmom.com) | `mypervmom.com` | WP video-elements | No | WP REST API, uses `veutil` |
+| [SisLovesMe](https://mysislovesme.com) | `mysislovesme.com` | WP video-elements | No | WP REST API, uses `veutil` |
+| [YoungerLoverOfMine](https://youngerloverofmine.com) | `youngerloverofmine.com` | WP video-elements | No | WP REST API, uses `veutil` |
 
 ## Shared scraper packages
 
@@ -47,6 +59,7 @@ Scrapers that share a platform use common utility packages to avoid duplication:
 | `gammautil` | Gamma Entertainment (Algolia search API) | Gloryhole Secrets, Pure Taboo, Taboo Heat |
 | `povrutil` | POVR/WankzVR (export JSON + HTML listing pages) | BrasilVR, MilfVR, TranzVR, WankzVR |
 | `sexmexutil` | SexMex Pro CMS (HTML scraping, pagination). **Quirk:** their CMS returns HTTP 500 with valid HTML on some pages (e.g. model pages), so `fetchPage` accepts 500 responses instead of using `httpx.Do`. | Exposed Latinas, SexMex, Trans Queens |
+| `veutil` | WordPress video-elements theme (WP REST API for posts + tags, poster extraction from content) | BoyfriendSharing, BrattyFamily, GoStuckYourself, HugeCockBreak, LittleFromAsia, MommysBoy, MomXXX, MyBadMILFs, DaughterSwap, PervMom, SisLovesMe, YoungerLoverOfMine |
 | `wputil` | WordPress (sitemap + HTML meta parsing) | Anal Therapy, Family Therapy, Mom Comes First, Perfect Girlfriend, Tara Tainton |
 
 ## Adding a new scraper
