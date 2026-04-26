@@ -34,6 +34,7 @@ Scrapes all scenes and metadata from a studio URL. Designed to be easily extende
 | Reality Kings | Aylo/Juan |
 | Taboo Heat | Gamma/Algolia |
 | Tara Tainton | WordPress |
+| YourVids | YourVids |
 
 See [docs/scrapers.md](docs/scrapers.md) for URL patterns and details.
 

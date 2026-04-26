@@ -26,6 +26,7 @@ import (
 	_ "github.com/Wasylq/FSS/internal/scrapers/realitykings"
 	_ "github.com/Wasylq/FSS/internal/scrapers/tabooheat"
 	_ "github.com/Wasylq/FSS/internal/scrapers/taratainton"
+	_ "github.com/Wasylq/FSS/internal/scrapers/yourvids"
 )
 
 // Set by -ldflags at release build time.
