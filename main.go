@@ -49,6 +49,8 @@ import (
 	_ "github.com/Wasylq/FSS/internal/scrapers/mypervmom"
 	_ "github.com/Wasylq/FSS/internal/scrapers/mysislovesme"
 	_ "github.com/Wasylq/FSS/internal/scrapers/youngerloverofmine"
+
+	_ "github.com/Wasylq/FSS/internal/scrapers/jerkoffinstructions"
 )
 
 // Set by -ldflags at release build time.

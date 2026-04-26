@@ -35,6 +35,7 @@
 | [Trans Queens](https://transqueens.com) | `transqueens.com/tour/updates`, `transqueens.com/tour/models/{slug}.html`, `transqueens.com/tour/categories/{slug}.html` | SexMex Pro CMS | No | Thin wrapper around `sexmexutil` |
 | [TranzVR](https://www.tranzvr.com) | `tranzvr.com` | POVR/WankzVR | No | Thin wrapper around `povrutil` |
 | [WankzVR](https://www.wankzvr.com) | `wankzvr.com` | POVR/WankzVR | No | Export JSON + listing page dates, uses `povrutil` |
+| [Jerk Off Instructions](https://jerkoffinstructions.com) | `jerkoffinstructions.com` | Custom PHP | No | HTML scraping, 302 redirect with body, listing-only (no detail pages needed), `free_adult` cookie for thumbnails |
 | [YourVids](https://yourvids.com) | `yourvids.com/creators/{slug}` | YourVids | Yes | JSON API, detail-page worker pool for tags/description, price tracking with sale detection |
 | [BoyfriendSharing](https://boyfriendsharing.com) | `boyfriendsharing.com` | WP video-elements | No | WP REST API, uses `veutil` |
 | [BrattyFamily](https://brattyfamily.com) | `brattyfamily.com` | WP video-elements | No | WP REST API, uses `veutil` |
