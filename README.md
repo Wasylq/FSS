@@ -32,6 +32,9 @@ Scrapes all scenes and metadata from a studio URL. Designed to be easily extende
 | Pure Taboo | Gamma/Algolia |
 | Rachel Steele | MyMember.site |
 | Reality Kings | Aylo/Juan |
+| SexMex | SexMex Pro CMS |
+| Exposed Latinas | SexMex Pro CMS |
+| Trans Queens | SexMex Pro CMS |
 | Taboo Heat | Gamma/Algolia |
 | Tara Tainton | WordPress |
 | YourVids | YourVids |

@@ -7,6 +7,7 @@ import (
 	_ "github.com/Wasylq/FSS/internal/scrapers/brazzers"
 	_ "github.com/Wasylq/FSS/internal/scrapers/clips4sale"
 	_ "github.com/Wasylq/FSS/internal/scrapers/analtherapy"
+	_ "github.com/Wasylq/FSS/internal/scrapers/exposedlatinas"
 	_ "github.com/Wasylq/FSS/internal/scrapers/digitalplayground"
 	_ "github.com/Wasylq/FSS/internal/scrapers/fakings"
 	_ "github.com/Wasylq/FSS/internal/scrapers/familytherapy"
@@ -24,8 +25,10 @@ import (
 	_ "github.com/Wasylq/FSS/internal/scrapers/puretaboo"
 	_ "github.com/Wasylq/FSS/internal/scrapers/rachelsteele"
 	_ "github.com/Wasylq/FSS/internal/scrapers/realitykings"
+	_ "github.com/Wasylq/FSS/internal/scrapers/sexmex"
 	_ "github.com/Wasylq/FSS/internal/scrapers/tabooheat"
 	_ "github.com/Wasylq/FSS/internal/scrapers/taratainton"
+	_ "github.com/Wasylq/FSS/internal/scrapers/transqueens"
 	_ "github.com/Wasylq/FSS/internal/scrapers/yourvids"
 )
 

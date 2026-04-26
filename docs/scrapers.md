@@ -26,6 +26,9 @@
 | [Reality Kings](https://www.realitykings.com) | `realitykings.com`, `realitykings.com/pornstar/{id}/{slug}`, `realitykings.com/category/{id}/{slug}`, `realitykings.com/site/{id}/{slug}`, `realitykings.com/series/{id}/{slug}` | Aylo/Juan | No | REST API, filter by performer/category/sub-site/series, uses `ayloutil` |
 | [Taboo Heat](https://www.tabooheat.com) | `tabooheat.com` | Gamma/Algolia | No | Thin wrapper around `gammautil` |
 | [Tara Tainton](https://taratainton.com) | `taratainton.com` | WordPress | Yes | Sitemap-driven, HTML meta parsing, uses `wputil` |
+| [Exposed Latinas](https://exposedlatinas.com) | `exposedlatinas.com/tour/updates`, `exposedlatinas.com/tour/models/{slug}.html`, `exposedlatinas.com/tour/categories/{slug}.html` | SexMex Pro CMS | No | Thin wrapper around `sexmexutil` |
+| [SexMex](https://sexmex.xxx) | `sexmex.xxx/tour/updates`, `sexmex.xxx/tour/models/{slug}.html`, `sexmex.xxx/tour/categories/{slug}.html` | SexMex Pro CMS | No | HTML scraping with regex, pagination, model/category/full-studio modes, uses `sexmexutil` |
+| [Trans Queens](https://transqueens.com) | `transqueens.com/tour/updates`, `transqueens.com/tour/models/{slug}.html`, `transqueens.com/tour/categories/{slug}.html` | SexMex Pro CMS | No | Thin wrapper around `sexmexutil` |
 | [YourVids](https://yourvids.com) | `yourvids.com/creators/{slug}` | YourVids | Yes | JSON API, detail-page worker pool for tags/description, price tracking with sale detection |
 
 ## Shared scraper packages
@@ -36,6 +39,7 @@ Scrapers that share a platform use common utility packages to avoid duplication:
 |---------|----------|---------|
 | `ayloutil` | Aylo/Juan (REST API, instance token auth) | Babes, Brazzers, Digital Playground, Mofos, Reality Kings |
 | `gammautil` | Gamma Entertainment (Algolia search API) | Pure Taboo, Taboo Heat |
+| `sexmexutil` | SexMex Pro CMS (HTML scraping, pagination). **Quirk:** their CMS returns HTTP 500 with valid HTML on some pages (e.g. model pages), so `fetchPage` accepts 500 responses instead of using `httpx.Do`. | Exposed Latinas, SexMex, Trans Queens |
 | `wputil` | WordPress (sitemap + HTML meta parsing) | Anal Therapy, Family Therapy, Mom Comes First, Perfect Girlfriend, Tara Tainton |
 
 ## Adding a new scraper
