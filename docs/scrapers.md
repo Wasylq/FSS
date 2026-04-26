@@ -19,6 +19,7 @@
 | [MissaX](https://www.missax.com) | `missax.com` | Custom | No | HTML scraping, listing + detail page worker pool |
 | [Mofos](https://www.mofos.com) | `mofos.com`, `mofos.com/pornstar/{id}/{slug}`, `mofos.com/category/{id}/{slug}`, `mofos.com/site/{id}/{slug}`, `mofos.com/series/{id}/{slug}` | Aylo/Juan | No | REST API, filter by performer/category/sub-site/series, uses `ayloutil` |
 | [Mom Comes First](https://momcomesfirst.com) | `momcomesfirst.com` | WordPress | No | Sitemap-driven, JSON-LD VideoObject, uses `wputil` |
+| [OopsFamily](https://oopsfamily.com) | `oopsfamily.com`, `oopsfamily.com/model/{slug}`, `oopsfamily.com/tag/{slug}` | FapHouse/Custom | No | HTML listing + detail page JSON-LD worker pool for dates/tags, model/tag filtering, 4K |
 | [Naughty America](https://www.naughtyamerica.com) | `naughtyamerica.com`, `naughtyamericavr.com`, `myfriendshotmom.com`, `mysistershotfriend.com`, `tonightsgirlfriend.com`, `thundercock.com` | Naughty America | No | Open JSON API at api.naughtyapi.com, ~15k scenes, 50+ sub-sites, VR support |
 | [Nubiles Network](https://nubiles-porn.com) | `nubiles-porn.com`, `nubiles.net`, `momsteachsex.com`, `stepsiblingscaught.com`, `myfamilypies.com`, `princesscum.com`, + 14 more | EdgeCms | No | HTML scraping, 20+ network sites, detail page worker pool for tags/description, filter by model or category |
 | [MyDirtyHobby](https://www.mydirtyhobby.com) | `mydirtyhobby.com/profil/{id}-{username}` | MyDirtyHobby | No | JSON API with auth headers |
