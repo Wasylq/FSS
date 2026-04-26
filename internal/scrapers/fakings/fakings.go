@@ -420,9 +420,10 @@ func extractJSONObject(data string, start int) string {
 		if inStr {
 			continue
 		}
-		if ch == '{' {
+		switch ch {
+		case '{':
 			depth++
-		} else if ch == '}' {
+		case '}':
 			depth--
 			if depth == 0 {
 				return data[start : i+1]
@@ -456,9 +457,10 @@ func extractJSONArray(data string, start int) string {
 		if inStr {
 			continue
 		}
-		if ch == '[' {
+		switch ch {
+		case '[':
 			depth++
-		} else if ch == ']' {
+		case ']':
 			depth--
 			if depth == 0 {
 				return data[start : i+1]
