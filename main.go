@@ -8,6 +8,7 @@ import (
 	_ "github.com/Wasylq/FSS/internal/scrapers/clips4sale"
 	_ "github.com/Wasylq/FSS/internal/scrapers/digitalplayground"
 	_ "github.com/Wasylq/FSS/internal/scrapers/iwantclips"
+	_ "github.com/Wasylq/FSS/internal/scrapers/kink"
 	_ "github.com/Wasylq/FSS/internal/scrapers/manyvids"
 	_ "github.com/Wasylq/FSS/internal/scrapers/missax"
 	_ "github.com/Wasylq/FSS/internal/scrapers/mofos"

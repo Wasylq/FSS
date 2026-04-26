@@ -16,6 +16,7 @@ Scrapes all scenes and metadata from a studio URL. Designed to be easily extende
 | Clips4Sale | Clips4Sale |
 | Digital Playground | Aylo/Juan |
 | IWantClips | IWantClips |
+| Kink | Kink |
 | ManyVids | ManyVids |
 | MissaX | Custom |
 | Mofos | Aylo/Juan |

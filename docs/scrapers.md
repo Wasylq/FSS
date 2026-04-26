@@ -8,6 +8,7 @@
 | [Clips4Sale](https://www.clips4sale.com) | `clips4sale.com/studio/{id}/{slug}` | Clips4Sale | Yes | Multi-page JSON, categories, all-page enumeration |
 | [Digital Playground](https://www.digitalplayground.com) | `digitalplayground.com`, `digitalplayground.com/pornstar/{id}/{slug}`, `digitalplayground.com/category/{id}/{slug}`, `digitalplayground.com/site/{id}/{slug}`, `digitalplayground.com/series/{id}/{slug}` | Aylo/Juan | No | REST API, filter by performer/category/sub-site/series, uses `ayloutil` |
 | [IWantClips](https://www.iwantclips.com) | `iwantclips.com/store/{id}/{username}` | IWantClips | Yes | JSON API, double HTML-unescaping |
+| [Kink](https://www.kink.com) | `kink.com`, `kink.com/channel/{slug}`, `kink.com/model/{id}/{slug}`, `kink.com/tag/{slug}`, `kink.com/series/{slug}` | Kink | No | HTML scraping, 51 channels, filter by channel/performer/tag/series, detail page worker pool for tags/description/duration, age gate cookie bypass, JSON-LD + data-setup parsing |
 | [ManyVids](https://www.manyvids.com) | `manyvids.com/Profile/{id}/{slug}/Store/Videos` | ManyVids | Yes | JSON API, detail-page worker pool |
 | [MissaX](https://www.missax.com) | `missax.com` | Custom | No | HTML scraping, listing + detail page worker pool |
 | [Mofos](https://www.mofos.com) | `mofos.com`, `mofos.com/pornstar/{id}/{slug}`, `mofos.com/category/{id}/{slug}`, `mofos.com/site/{id}/{slug}`, `mofos.com/series/{id}/{slug}` | Aylo/Juan | No | REST API, filter by performer/category/sub-site/series, uses `ayloutil` |
