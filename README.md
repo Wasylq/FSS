@@ -18,6 +18,7 @@ Scrapes all scenes and metadata from a studio URL. Designed to be easily extende
 | Digital Playground | Aylo/Juan |
 | Fakings | Next.js RSC |
 | Family Therapy | WordPress |
+| Gloryhole Secrets | Gamma/Algolia |
 | IWantClips | IWantClips |
 | Kink | Kink |
 | ManyVids | ManyVids |

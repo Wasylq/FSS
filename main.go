@@ -10,6 +10,7 @@ import (
 	_ "github.com/Wasylq/FSS/internal/scrapers/exposedlatinas"
 	_ "github.com/Wasylq/FSS/internal/scrapers/digitalplayground"
 	_ "github.com/Wasylq/FSS/internal/scrapers/fakings"
+	_ "github.com/Wasylq/FSS/internal/scrapers/gloryholesecrets"
 	_ "github.com/Wasylq/FSS/internal/scrapers/familytherapy"
 	_ "github.com/Wasylq/FSS/internal/scrapers/iwantclips"
 	_ "github.com/Wasylq/FSS/internal/scrapers/kink"

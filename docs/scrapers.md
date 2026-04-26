@@ -10,6 +10,7 @@
 | [Digital Playground](https://www.digitalplayground.com) | `digitalplayground.com`, `digitalplayground.com/pornstar/{id}/{slug}`, `digitalplayground.com/category/{id}/{slug}`, `digitalplayground.com/site/{id}/{slug}`, `digitalplayground.com/series/{id}/{slug}` | Aylo/Juan | No | REST API, filter by performer/category/sub-site/series, uses `ayloutil` |
 | [Fakings](https://fakings.com) | `fakings.com`, `fakings.com/serie/{slug}`, `fakings.com/actrices-porno/{slug}`, `fakings.com/categoria/{slug}` | Next.js RSC | No | React Server Component flight payload parsing, 5 sub-brands (fakings/pepeporn/nigged/morenolust/pornermates), pagination via `/f/pag:{N}`, actress pages load all videos at once |
 | [Family Therapy](https://familytherapyxxx.com) | `familytherapyxxx.com` | WordPress | No | Sitemap-driven, Rank Math SEO, performer extraction from title, uses `wputil` |
+| [Gloryhole Secrets](https://www.gloryholesecrets.com) | `gloryholesecrets.com` | Gamma/Algolia | No | Algolia search API, uses `gammautil` |
 | [IWantClips](https://www.iwantclips.com) | `iwantclips.com/store/{id}/{username}` | IWantClips | Yes | JSON API, double HTML-unescaping |
 | [Kink](https://www.kink.com) | `kink.com`, `kink.com/channel/{slug}`, `kink.com/model/{id}/{slug}`, `kink.com/tag/{slug}`, `kink.com/series/{slug}` | Kink | No | HTML scraping, 51 channels, filter by channel/performer/tag/series, detail page worker pool for tags/description/duration, age gate cookie bypass, JSON-LD + data-setup parsing |
 | [ManyVids](https://www.manyvids.com) | `manyvids.com/Profile/{id}/{slug}/Store/Videos` | ManyVids | Yes | JSON API, detail-page worker pool |
@@ -38,7 +39,7 @@ Scrapers that share a platform use common utility packages to avoid duplication:
 | Package | Platform | Used by |
 |---------|----------|---------|
 | `ayloutil` | Aylo/Juan (REST API, instance token auth) | Babes, Brazzers, Digital Playground, Mofos, Reality Kings |
-| `gammautil` | Gamma Entertainment (Algolia search API) | Pure Taboo, Taboo Heat |
+| `gammautil` | Gamma Entertainment (Algolia search API) | Gloryhole Secrets, Pure Taboo, Taboo Heat |
 | `sexmexutil` | SexMex Pro CMS (HTML scraping, pagination). **Quirk:** their CMS returns HTTP 500 with valid HTML on some pages (e.g. model pages), so `fetchPage` accepts 500 responses instead of using `httpx.Do`. | Exposed Latinas, SexMex, Trans Queens |
 | `wputil` | WordPress (sitemap + HTML meta parsing) | Anal Therapy, Family Therapy, Mom Comes First, Perfect Girlfriend, Tara Tainton |
 
