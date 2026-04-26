@@ -4,6 +4,7 @@ import (
 	"github.com/Wasylq/FSS/cmd"
 	_ "github.com/Wasylq/FSS/internal/scrapers/apovstory"
 	_ "github.com/Wasylq/FSS/internal/scrapers/babes"
+	_ "github.com/Wasylq/FSS/internal/scrapers/brasilvr"
 	_ "github.com/Wasylq/FSS/internal/scrapers/brazzers"
 	_ "github.com/Wasylq/FSS/internal/scrapers/clips4sale"
 	_ "github.com/Wasylq/FSS/internal/scrapers/analtherapy"
@@ -15,6 +16,7 @@ import (
 	_ "github.com/Wasylq/FSS/internal/scrapers/iwantclips"
 	_ "github.com/Wasylq/FSS/internal/scrapers/kink"
 	_ "github.com/Wasylq/FSS/internal/scrapers/manyvids"
+	_ "github.com/Wasylq/FSS/internal/scrapers/milfvr"
 	_ "github.com/Wasylq/FSS/internal/scrapers/missax"
 	_ "github.com/Wasylq/FSS/internal/scrapers/mofos"
 	_ "github.com/Wasylq/FSS/internal/scrapers/momcomesfirst"
@@ -29,7 +31,9 @@ import (
 	_ "github.com/Wasylq/FSS/internal/scrapers/sexmex"
 	_ "github.com/Wasylq/FSS/internal/scrapers/tabooheat"
 	_ "github.com/Wasylq/FSS/internal/scrapers/taratainton"
+	_ "github.com/Wasylq/FSS/internal/scrapers/wankzvr"
 	_ "github.com/Wasylq/FSS/internal/scrapers/transqueens"
+	_ "github.com/Wasylq/FSS/internal/scrapers/tranzvr"
 	_ "github.com/Wasylq/FSS/internal/scrapers/yourvids"
 )
 

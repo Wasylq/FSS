@@ -12,6 +12,7 @@ Scrapes all scenes and metadata from a studio URL. Designed to be easily extende
 |------|----------|
 | A POV Story | PHP tour site |
 | Babes | Aylo/Juan |
+| BrasilVR | POVR/WankzVR |
 | Brazzers | Aylo/Juan |
 | Clips4Sale | Clips4Sale |
 | Anal Therapy | WordPress |
@@ -22,6 +23,7 @@ Scrapes all scenes and metadata from a studio URL. Designed to be easily extende
 | IWantClips | IWantClips |
 | Kink | Kink |
 | ManyVids | ManyVids |
+| MilfVR | POVR/WankzVR |
 | MissaX | Custom |
 | Mofos | Aylo/Juan |
 | Mom Comes First | WordPress |
@@ -36,8 +38,10 @@ Scrapes all scenes and metadata from a studio URL. Designed to be easily extende
 | SexMex | SexMex Pro CMS |
 | Exposed Latinas | SexMex Pro CMS |
 | Trans Queens | SexMex Pro CMS |
+| TranzVR | POVR/WankzVR |
 | Taboo Heat | Gamma/Algolia |
 | Tara Tainton | WordPress |
+| WankzVR | POVR/WankzVR |
 | YourVids | YourVids |
 
 See [docs/scrapers.md](docs/scrapers.md) for URL patterns and details.
