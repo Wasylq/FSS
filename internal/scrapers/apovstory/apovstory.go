@@ -166,15 +166,15 @@ func estimateTotal(firstPageCount int) int {
 
 var (
 	latestSectionRe = regexp.MustCompile(`(?s)Latest Updates(.*?)Most Popular Updates`)
-	videoBlockRe     = regexp.MustCompile(`(?s)<div class="videoBlock" data-setid="(\d+)">(.*?)</div><!--//updateDetails-->\s*</div>`)
-	sceneLinkRe      = regexp.MustCompile(`href="(https?://[^"]*?/trailers/[^"]+\.html)"`)
-	sceneTitleRe     = regexp.MustCompile(`title="([^"]+)"`)
-	thumbURLRe       = regexp.MustCompile(`src="(/content/[^"]+)"`)
-	previewRe        = regexp.MustCompile(`src='(/videothumbs/[^']+)'`)
-	modelsBlockRe    = regexp.MustCompile(`(?s)updateDetails_models">(.*?)</div>`)
-	performerRe      = regexp.MustCompile(`>([^<]+)</a>`)
-	ratingDurRe      = regexp.MustCompile(`star-o"></i>\s*([\d.]+)\s*\|\s*([\d:]+)`)
-	dateRe           = regexp.MustCompile(`(?s)updateDetails_date">\s*([^<]+)`)
+	videoBlockRe    = regexp.MustCompile(`(?s)<div class="videoBlock" data-setid="(\d+)">(.*?)</div><!--//updateDetails-->\s*</div>`)
+	sceneLinkRe     = regexp.MustCompile(`href="(https?://[^"]*?/trailers/[^"]+\.html)"`)
+	sceneTitleRe    = regexp.MustCompile(`title="([^"]+)"`)
+	thumbURLRe      = regexp.MustCompile(`src="(/content/[^"]+)"`)
+	previewRe       = regexp.MustCompile(`src='(/videothumbs/[^']+)'`)
+	modelsBlockRe   = regexp.MustCompile(`(?s)updateDetails_models">(.*?)</div>`)
+	performerRe     = regexp.MustCompile(`>([^<]+)</a>`)
+	ratingDurRe     = regexp.MustCompile(`star-o"></i>\s*([\d.]+)\s*\|\s*([\d:]+)`)
+	dateRe          = regexp.MustCompile(`(?s)updateDetails_date">\s*([^<]+)`)
 )
 
 func (s *Scraper) fetchPage(ctx context.Context, page int) ([]listEntry, error) {
@@ -244,7 +244,7 @@ func (s *Scraper) fetchPage(ctx context.Context, page int) ([]listEntry, error) 
 }
 
 var (
-	ogDescRe     = regexp.MustCompile(`og:description"\s+content="([^"]+)"`)
+	ogDescRe       = regexp.MustCompile(`og:description"\s+content="([^"]+)"`)
 	categoryLinkRe = regexp.MustCompile(`categories/\w+_1_d\.html">([^<]+)</a>`)
 )
 

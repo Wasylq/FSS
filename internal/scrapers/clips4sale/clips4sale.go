@@ -19,7 +19,7 @@ import (
 )
 
 const (
-	defaultSiteBase = "https://www.clips4sale.com"
+	defaultSiteBase  = "https://www.clips4sale.com"
 	defaultPageLimit = 24
 	// routeKey is the Remix loader data key embedded in the page HTML.
 	routeKey = `routes/($lang).studio.$id_.$studioSlug.$`
@@ -279,10 +279,10 @@ func parseDate(s string) time.Time {
 }
 
 var (
-	htmlBlockRe    = regexp.MustCompile(`(?i)\s*<\s*(?:br\s*/?\s*|/?p|/?div|/?li)\s*>\s*`)
-	htmlTagRe      = regexp.MustCompile(`<[^>]+>`)
-	multiSpaceRe   = regexp.MustCompile(`[ \t]{3,}`)
-	blankLinesRe   = regexp.MustCompile(`\n{3,}`)
+	htmlBlockRe  = regexp.MustCompile(`(?i)\s*<\s*(?:br\s*/?\s*|/?p|/?div|/?li)\s*>\s*`)
+	htmlTagRe    = regexp.MustCompile(`<[^>]+>`)
+	multiSpaceRe = regexp.MustCompile(`[ \t]{3,}`)
+	blankLinesRe = regexp.MustCompile(`\n{3,}`)
 )
 
 func stripHTML(s string) string {

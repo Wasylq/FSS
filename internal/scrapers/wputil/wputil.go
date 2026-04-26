@@ -25,10 +25,10 @@ type Meta struct {
 	Description string
 	Thumbnail   string
 	PostID      string
-	Tags        []string   // from <meta property="article:tag">
-	Categories  []string   // from articleSection in JSON-LD
-	Width       int        // from VideoObject JSON-LD
-	Height      int        // from VideoObject JSON-LD
+	Tags        []string // from <meta property="article:tag">
+	Categories  []string // from articleSection in JSON-LD
+	Width       int      // from VideoObject JSON-LD
+	Height      int      // from VideoObject JSON-LD
 }
 
 // BrowserHeaders returns common browser headers to avoid WAF blocks.

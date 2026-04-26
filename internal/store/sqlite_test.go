@@ -139,14 +139,14 @@ func TestSQLiteSaveLoad(t *testing.T) {
 			ScrapedAt:   now,
 		},
 		{
-			ID:        "2",
-			SiteID:    "manyvids",
-			StudioURL: testStudioURL,
-			Title:     "Scene Two",
-			URL:       "https://www.manyvids.com/Video/2/scene-two",
-			Date:      now.Add(-24 * time.Hour),
+			ID:         "2",
+			SiteID:     "manyvids",
+			StudioURL:  testStudioURL,
+			Title:      "Scene Two",
+			URL:        "https://www.manyvids.com/Video/2/scene-two",
+			Date:       now.Add(-24 * time.Hour),
 			Performers: []string{"Alice"},
-			ScrapedAt: now,
+			ScrapedAt:  now,
 		},
 	}
 	scenes[0].AddPrice(models.PriceSnapshot{

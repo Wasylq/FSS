@@ -324,13 +324,13 @@ func (s *SQLite) loadPriceHistory(studioURL string, scenes []models.Scene) error
 func scanScene(rows *sql.Rows) (models.Scene, error) {
 	var sc models.Scene
 	var (
-		dateStr          string
-		performers       string
-		tags             string
-		categories       string
-		lowestPriceDate  sql.NullString
-		scrapedAt        string
-		deletedAt        sql.NullString
+		dateStr         string
+		performers      string
+		tags            string
+		categories      string
+		lowestPriceDate sql.NullString
+		scrapedAt       string
+		deletedAt       sql.NullString
 	)
 	err := rows.Scan(
 		&sc.ID, &sc.SiteID, &sc.StudioURL, &sc.Title, &sc.URL,

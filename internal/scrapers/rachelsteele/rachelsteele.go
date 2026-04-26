@@ -77,20 +77,20 @@ type videosPage struct {
 }
 
 type apiVideo struct {
-	ID                         int     `json:"id"`
-	Title                      string  `json:"title"`
-	IsPublished                bool    `json:"is_published"`
-	PublishDate                string  `json:"publish_date"`
-	Duration                   int     `json:"duration"`
-	ContentMappingID           int     `json:"content_mapping_id"`
-	ViewsCount                 int     `json:"views_count"`
-	LikesCount                 int     `json:"likes_count"`
-	CommentsCount              int     `json:"comments_count"`
-	StreamPrice                any     `json:"stream_price"`
-	PosterSrc                  string  `json:"poster_src"`
-	SystemPreviewVideoFullSrc  string  `json:"system_preview_video_full_src"`
-	Has4K                      bool    `json:"has_4k"`
-	IsVRVideo                  bool    `json:"is_vr_video"`
+	ID                        int    `json:"id"`
+	Title                     string `json:"title"`
+	IsPublished               bool   `json:"is_published"`
+	PublishDate               string `json:"publish_date"`
+	Duration                  int    `json:"duration"`
+	ContentMappingID          int    `json:"content_mapping_id"`
+	ViewsCount                int    `json:"views_count"`
+	LikesCount                int    `json:"likes_count"`
+	CommentsCount             int    `json:"comments_count"`
+	StreamPrice               any    `json:"stream_price"`
+	PosterSrc                 string `json:"poster_src"`
+	SystemPreviewVideoFullSrc string `json:"system_preview_video_full_src"`
+	Has4K                     bool   `json:"has_4k"`
+	IsVRVideo                 bool   `json:"is_vr_video"`
 }
 
 func (v apiVideo) price() float64 {
@@ -300,9 +300,9 @@ type sceneDetail struct {
 }
 
 var (
-	ogDescRe     = regexp.MustCompile(`og:description["\s]+content="([^"]+)"`)
-	ogImageRe    = regexp.MustCompile(`og:image["\s]+content="([^"]+)"`)
-	keywordsRe   = regexp.MustCompile(`keywords\\":\\"([^\\]+)\\`)
+	ogDescRe   = regexp.MustCompile(`og:description["\s]+content="([^"]+)"`)
+	ogImageRe  = regexp.MustCompile(`og:image["\s]+content="([^"]+)"`)
+	keywordsRe = regexp.MustCompile(`keywords\\":\\"([^\\]+)\\`)
 )
 
 func (s *Scraper) fetchDetail(ctx context.Context, pageURL string) (sceneDetail, error) {
@@ -343,37 +343,37 @@ func (s *Scraper) fetchDetail(ctx context.Context, pageURL string) (sceneDetail,
 // knownPerformers is the list of performer names from the /models page.
 // Keywords matching these are classified as performers; the rest are tags.
 var knownPerformers = map[string]bool{
-	"ophelia fae":          true,
-	"lily starfire":        true,
-	"reya lovenlight":      true,
-	"mia simone":           true,
-	"mindi mink":           true,
-	"leo malonee":          true,
-	"pixie smalls":         true,
-	"cherie deville":       true,
-	"danni jones":          true,
-	"ryan keely":           true,
-	"josh rivers":          true,
-	"anthony pierce":       true,
-	"karen fisher":         true,
-	"mellanie monroe":      true,
-	"richard glaze":        true,
-	"damson jenkins":       true,
-	"rachael cavalli":      true,
-	"london river":         true,
-	"max fills":            true,
-	"hailey rose":          true,
-	"slave marcelo":        true,
-	"tyler cruise":         true,
-	"honey heston":         true,
-	"ares":                 true,
-	"dallas diamondz":      true,
-	"kenny koxx":           true,
-	"brycen ward":          true,
-	"leihla":               true,
-	"keri lynn":            true,
-	"arianna labarbara":    true,
-	"rachel steele":        true,
+	"ophelia fae":       true,
+	"lily starfire":     true,
+	"reya lovenlight":   true,
+	"mia simone":        true,
+	"mindi mink":        true,
+	"leo malonee":       true,
+	"pixie smalls":      true,
+	"cherie deville":    true,
+	"danni jones":       true,
+	"ryan keely":        true,
+	"josh rivers":       true,
+	"anthony pierce":    true,
+	"karen fisher":      true,
+	"mellanie monroe":   true,
+	"richard glaze":     true,
+	"damson jenkins":    true,
+	"rachael cavalli":   true,
+	"london river":      true,
+	"max fills":         true,
+	"hailey rose":       true,
+	"slave marcelo":     true,
+	"tyler cruise":      true,
+	"honey heston":      true,
+	"ares":              true,
+	"dallas diamondz":   true,
+	"kenny koxx":        true,
+	"brycen ward":       true,
+	"leihla":            true,
+	"keri lynn":         true,
+	"arianna labarbara": true,
+	"rachel steele":     true,
 }
 
 func splitKeywords(keywords string) (performers, tags []string) {

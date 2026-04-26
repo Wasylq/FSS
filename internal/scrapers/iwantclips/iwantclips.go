@@ -20,10 +20,10 @@ import (
 )
 
 const (
-	defaultSiteBase    = "https://iwantclips.com"
-	defaultTypesense   = "https://bajc2td3pou5fs7mp.a1.typesense.net"
-	defaultCollection  = "prod_content"
-	defaultPerPage     = 250
+	defaultSiteBase   = "https://iwantclips.com"
+	defaultTypesense  = "https://bajc2td3pou5fs7mp.a1.typesense.net"
+	defaultCollection = "prod_content"
+	defaultPerPage    = 250
 )
 
 // Scraper implements scraper.StudioScraper for IWantClips.
@@ -162,8 +162,8 @@ func (s *Scraper) run(ctx context.Context, studioURL, memberID string, opts scra
 
 // ---- page fetch (store HTML → Typesense key) ----
 
-var apiKeyRe  = regexp.MustCompile(`apiKey:\s*'([^']+)'`)
-var tsHostRe  = regexp.MustCompile(`host:\s*'([^']+)'`)
+var apiKeyRe = regexp.MustCompile(`apiKey:\s*'([^']+)'`)
+var tsHostRe = regexp.MustCompile(`host:\s*'([^']+)'`)
 var tsProtoRe = regexp.MustCompile(`protocol:\s*'([^']+)'`)
 
 func (s *Scraper) fetchAPIKey(ctx context.Context, studioURL string) (apiKey, tsBase string, err error) {
@@ -201,7 +201,7 @@ func (s *Scraper) fetchAPIKey(ctx context.Context, studioURL string) (apiKey, ts
 // ---- Typesense query ----
 
 type tsResponse struct {
-	Found int    `json:"found"`
+	Found int     `json:"found"`
 	Hits  []tsHit `json:"hits"`
 }
 
@@ -210,18 +210,18 @@ type tsHit struct {
 }
 
 type iwcDoc struct {
-	ContentID    string   `json:"content_id"`
-	Title        string   `json:"title"`
-	Description  string   `json:"description"`
-	ContentURL   string   `json:"content_url"`
-	ThumbnailURL string   `json:"thumbnail_url"`
-	PreviewURL   string   `json:"preview_url"`
-	Price        float64  `json:"price"`
-	PublishTime  int64    `json:"publish_time"`
-	VideoLength  string   `json:"video_length"`
-	Categories   []string `json:"categories"`
-	Keywords     []string `json:"keywords"`
-	ModelUsername string  `json:"model_username"`
+	ContentID     string   `json:"content_id"`
+	Title         string   `json:"title"`
+	Description   string   `json:"description"`
+	ContentURL    string   `json:"content_url"`
+	ThumbnailURL  string   `json:"thumbnail_url"`
+	PreviewURL    string   `json:"preview_url"`
+	Price         float64  `json:"price"`
+	PublishTime   int64    `json:"publish_time"`
+	VideoLength   string   `json:"video_length"`
+	Categories    []string `json:"categories"`
+	Keywords      []string `json:"keywords"`
+	ModelUsername string   `json:"model_username"`
 }
 
 func (s *Scraper) fetchPage(ctx context.Context, apiKey, tsBase, memberID string, page int) ([]iwcDoc, int, error) {
@@ -268,12 +268,12 @@ func iwcDefaultHeaders() map[string]string {
 
 func toScene(studioURL string, doc iwcDoc, now time.Time) models.Scene {
 	scene := models.Scene{
-		ID:          doc.ContentID,
-		SiteID:      "iwantclips",
-		StudioURL:   studioURL,
-		Title:       html.UnescapeString(doc.Title),
-		URL:         doc.ContentURL,
-		Date:        time.Unix(doc.PublishTime, 0).UTC(),
+		ID:        doc.ContentID,
+		SiteID:    "iwantclips",
+		StudioURL: studioURL,
+		Title:     html.UnescapeString(doc.Title),
+		URL:       doc.ContentURL,
+		Date:      time.Unix(doc.PublishTime, 0).UTC(),
 		// IWantClips ships descriptions double-encoded (e.g. `&amp;quot;` for `"`),
 		// so two passes are intentional.
 		Description: html.UnescapeString(html.UnescapeString(doc.Description)),

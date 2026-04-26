@@ -159,20 +159,20 @@ type listResponse struct {
 }
 
 type mdhItem struct {
-	UID                int     `json:"u_id"`
-	UVID               int     `json:"uv_id"`
-	Nick               string  `json:"nick"`
-	Title              string  `json:"title"`
-	Description        string  `json:"description"`
-	Thumbnail          string  `json:"thumbnail"`
-	Price              string  `json:"price"`
-	HasDiscount        bool    `json:"hasDiscount"`
-	ReducedPercent     *int    `json:"reducedPercent"`
-	VotesAverage       float64 `json:"votesAverage"`
-	VotesCount         int     `json:"votesCount"`
-	Duration           string  `json:"duration"`
-	LatestPictureChange string `json:"latestPictureChange"`
-	Language           string  `json:"language"`
+	UID                 int     `json:"u_id"`
+	UVID                int     `json:"uv_id"`
+	Nick                string  `json:"nick"`
+	Title               string  `json:"title"`
+	Description         string  `json:"description"`
+	Thumbnail           string  `json:"thumbnail"`
+	Price               string  `json:"price"`
+	HasDiscount         bool    `json:"hasDiscount"`
+	ReducedPercent      *int    `json:"reducedPercent"`
+	VotesAverage        float64 `json:"votesAverage"`
+	VotesCount          int     `json:"votesCount"`
+	Duration            string  `json:"duration"`
+	LatestPictureChange string  `json:"latestPictureChange"`
+	Language            string  `json:"language"`
 }
 
 func (s *Scraper) fetchPage(ctx context.Context, uid, page int) ([]mdhItem, int, int, error) {

@@ -50,7 +50,7 @@ func TestValidateCoverURL_rejectsPrivateAndLocalIPs(t *testing.T) {
 		"http://172.16.0.1/",
 		"http://169.254.169.254/latest/meta-data/", // cloud metadata
 		"http://0.0.0.0/",
-		"http://[::1]/",   // ipv6 loopback
+		"http://[::1]/",     // ipv6 loopback
 		"http://[fe80::1]/", // ipv6 link-local
 	}
 	for _, c := range cases {
@@ -76,8 +76,8 @@ func TestValidateCoverURL_allowPrivateNetworksBypass(t *testing.T) {
 func TestValidateCoverURL_rejectsMalformed(t *testing.T) {
 	cases := []string{
 		"://no-scheme",
-		"http://",      // no host
-		"https://",     // no host
+		"http://",  // no host
+		"https://", // no host
 		"not a url at all",
 	}
 	for _, c := range cases {

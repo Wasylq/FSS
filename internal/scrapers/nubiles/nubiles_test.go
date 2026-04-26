@@ -202,8 +202,8 @@ func TestFetchDetail(t *testing.T) {
 	s := &Scraper{client: ts.Client()}
 	entry := listEntry{
 		id: "12345", title: "Test Scene - S1:E1",
-		url: "/video/watch/12345/test-scene-s1e1",
-		thumbnail: "https://images.example.com/cover960.jpg",
+		url:        "/video/watch/12345/test-scene-s1e1",
+		thumbnail:  "https://images.example.com/cover960.jpg",
 		performers: []string{"Alice"}, subSite: "MomsTeachSex",
 		date: "Apr 20, 2026",
 	}

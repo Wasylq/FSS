@@ -234,9 +234,9 @@ func TestPrintWouldCreateSummary_emptyIsNoOp(t *testing.T) {
 func TestPrintWouldCreateSummary_skipsExistingShowsMissing(t *testing.T) {
 	l := &entityLookup{
 		tags: map[string]bool{
-			"POV":            true,  // exists, should not appear
+			"POV":               true,  // exists, should not appear
 			"Female Domination": false, // would create
-			"4K Available":   false, // would create
+			"4K Available":      false, // would create
 		},
 		performers: map[string]bool{
 			"Alice": false,
@@ -282,10 +282,10 @@ func TestPrintWouldCreateSummary_skipsExistingShowsMissing(t *testing.T) {
 
 func TestResolveCoverEnabled(t *testing.T) {
 	cases := []struct {
-		name           string
-		flag           bool
-		allowedFields  map[string]bool
-		want           bool
+		name          string
+		flag          bool
+		allowedFields map[string]bool
+		want          bool
 	}{
 		{"flag set, no fields filter", true, nil, true},
 		{"flag set, fields excludes cover", true, map[string]bool{"title": true}, true},

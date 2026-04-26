@@ -299,15 +299,15 @@ func TestDurationClose(t *testing.T) {
 		file float64
 		want bool
 	}{
-		{600, 605, true},   // diff=5, tol=max(60.5,30)=60.5 → ok
-		{600, 660, true},   // diff=60, tol=max(66,30)=66 → ok
-		{600, 900, false},  // diff=300, tol=max(90,30)=90 → too far
-		{100, 125, true},   // diff=25, tol=max(12.5,30)=30 → ok
-		{100, 135, false},  // diff=35, tol=max(13.5,30)=30 → too far
-		{60, 85, true},     // diff=25, tol=max(8.5,30)=30 → ok
-		{60, 95, false},    // diff=35, tol=max(9.5,30)=30 → too far
-		{0, 600, true},     // FSS unknown → pass
-		{600, 0, true},     // file unknown → pass
+		{600, 605, true},  // diff=5, tol=max(60.5,30)=60.5 → ok
+		{600, 660, true},  // diff=60, tol=max(66,30)=66 → ok
+		{600, 900, false}, // diff=300, tol=max(90,30)=90 → too far
+		{100, 125, true},  // diff=25, tol=max(12.5,30)=30 → ok
+		{100, 135, false}, // diff=35, tol=max(13.5,30)=30 → too far
+		{60, 85, true},    // diff=25, tol=max(8.5,30)=30 → ok
+		{60, 95, false},   // diff=35, tol=max(9.5,30)=30 → too far
+		{0, 600, true},    // FSS unknown → pass
+		{600, 0, true},    // file unknown → pass
 	}
 	for _, c := range cases {
 		got := durationClose(c.fss, c.file)

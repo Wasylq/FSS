@@ -231,11 +231,11 @@ func (s *Scraper) fetchPage(ctx context.Context, page int) ([]listEntry, error) 
 }
 
 var (
-	runtimeRe    = regexp.MustCompile(`Runtime:\s*(\d+:\d+(?::\d+)?)`)
-	addedRe      = regexp.MustCompile(`Added:\s*(\d{2}/\d{2}/\d{4})`)
-	categoriesRe = regexp.MustCompile(`(?s)Categories:\s*(.*?)</p>`)
-	categoryRe   = regexp.MustCompile(`>([^<]+)</a>`)
-	videoSrcRe   = regexp.MustCompile(`<video\s+src="([^"]+)"`)
+	runtimeRe     = regexp.MustCompile(`Runtime:\s*(\d+:\d+(?::\d+)?)`)
+	addedRe       = regexp.MustCompile(`Added:\s*(\d{2}/\d{2}/\d{4})`)
+	categoriesRe  = regexp.MustCompile(`(?s)Categories:\s*(.*?)</p>`)
+	categoryRe    = regexp.MustCompile(`>([^<]+)</a>`)
+	videoSrcRe    = regexp.MustCompile(`<video\s+src="([^"]+)"`)
 	descriptionRe = regexp.MustCompile(`(?s)Video Description:\s*</p>\s*<p[^>]*>\s*(.*?)\s*</p>`)
 	htmlTagRe     = regexp.MustCompile(`<[^>]+>`)
 )

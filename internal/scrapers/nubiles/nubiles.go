@@ -250,15 +250,15 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 }
 
 var (
-	gridItemRe    = regexp.MustCompile(`(?s)<figure\b[^>]*>.*?</figcaption>\s*</figure>`)
-	watchLinkRe   = regexp.MustCompile(`/video/watch/(\d+)/([^"]+)`)
-	imgSrcsetRe   = regexp.MustCompile(`data-srcset="([^"]+)"`)
-	previewSrcRe  = regexp.MustCompile(`data-preview-src="([^"]+)"`)
-	titleRe       = regexp.MustCompile(`(?s)<span class="title">\s*<a[^>]*>\s*(.*?)\s*</a>`)
-	modelLinkRe   = regexp.MustCompile(`class="model"[^>]*>([^<]+)</a>`)
-	siteLinkRe    = regexp.MustCompile(`class="site-link"[^>]*>([^<]+)</a>`)
-	dateRe        = regexp.MustCompile(`class="date">([^<]+)</span>`)
-	paginationRe  = regexp.MustCompile(`(\d+)\s+of\s+(\d+)`)
+	gridItemRe   = regexp.MustCompile(`(?s)<figure\b[^>]*>.*?</figcaption>\s*</figure>`)
+	watchLinkRe  = regexp.MustCompile(`/video/watch/(\d+)/([^"]+)`)
+	imgSrcsetRe  = regexp.MustCompile(`data-srcset="([^"]+)"`)
+	previewSrcRe = regexp.MustCompile(`data-preview-src="([^"]+)"`)
+	titleRe      = regexp.MustCompile(`(?s)<span class="title">\s*<a[^>]*>\s*(.*?)\s*</a>`)
+	modelLinkRe  = regexp.MustCompile(`class="model"[^>]*>([^<]+)</a>`)
+	siteLinkRe   = regexp.MustCompile(`class="site-link"[^>]*>([^<]+)</a>`)
+	dateRe       = regexp.MustCompile(`class="date">([^<]+)</span>`)
+	paginationRe = regexp.MustCompile(`(\d+)\s+of\s+(\d+)`)
 )
 
 func (s *Scraper) fetchListing(ctx context.Context, pageURL string) ([]listEntry, int, error) {
@@ -344,9 +344,9 @@ func bestSrcset(srcset string) string {
 }
 
 var (
-	metaDescRe    = regexp.MustCompile(`<meta\s+name="description"\s+content="([^"]*)"`)
+	metaDescRe     = regexp.MustCompile(`<meta\s+name="description"\s+content="([^"]*)"`)
 	metaKeywordsRe = regexp.MustCompile(`<meta\s+name="keywords"\s+content="([^"]*)"`)
-	ogImageRe     = regexp.MustCompile(`<meta\s+property="og:image"\s+content="([^"]*)"`)
+	ogImageRe      = regexp.MustCompile(`<meta\s+property="og:image"\s+content="([^"]*)"`)
 )
 
 func (s *Scraper) fetchDetail(ctx context.Context, studioURL string, entry listEntry) (models.Scene, error) {

@@ -54,7 +54,7 @@ func TestListScenes(t *testing.T) {
 		{
 			ID: 11001, Type: "scene", Title: "DP Scene",
 			DateReleased: "2026-01-15T12:00:00+00:00",
-			RawImages: json.RawMessage(`[]`), RawVideos: json.RawMessage(`[]`),
+			RawImages:    json.RawMessage(`[]`), RawVideos: json.RawMessage(`[]`),
 		},
 	}
 

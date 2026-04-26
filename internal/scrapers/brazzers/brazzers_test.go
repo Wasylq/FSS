@@ -219,7 +219,7 @@ func TestToScene(t *testing.T) {
 			{ID: 365, Name: "Muscular Man", Category: "Body Type"},
 			{ID: 79, Name: "MILF", Category: ""},
 		},
-		Stats: ayloutil.Stats{Likes: 390, Views: 25153},
+		Stats:     ayloutil.Stats{Likes: 390, Views: 25153},
 		RawImages: json.RawMessage(`{"poster":{"0":{"xl":{"urls":{"default":"https://cdn.example.com/poster.jpg"}}}}}`),
 		RawVideos: json.RawMessage(`{"mediabook":{"length":1815,"files":{"720p":{"format":"720p","urls":{"view":"https://cdn.example.com/trailer.mp4"}}}}}`),
 	}
@@ -377,12 +377,12 @@ func TestListScenesKnownIDs(t *testing.T) {
 		{
 			ID: 2001, Type: "scene", Title: "New Scene",
 			DateReleased: "2026-02-01T12:00:00+00:00",
-			RawImages: json.RawMessage(`[]`), RawVideos: json.RawMessage(`[]`),
+			RawImages:    json.RawMessage(`[]`), RawVideos: json.RawMessage(`[]`),
 		},
 		{
 			ID: 2002, Type: "scene", Title: "Known Scene",
 			DateReleased: "2026-01-01T12:00:00+00:00",
-			RawImages: json.RawMessage(`[]`), RawVideos: json.RawMessage(`[]`),
+			RawImages:    json.RawMessage(`[]`), RawVideos: json.RawMessage(`[]`),
 		},
 	}
 

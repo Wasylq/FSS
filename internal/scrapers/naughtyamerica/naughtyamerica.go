@@ -67,19 +67,19 @@ type apiResponse struct {
 }
 
 type scene struct {
-	ID            int               `json:"id"`
-	Title         string            `json:"title"`
-	Length        int               `json:"length"`
-	PublishedDate string            `json:"published_date"`
-	SceneURL      string            `json:"scene_url"`
-	POV           string            `json:"pov"`
-	Degrees       int               `json:"degrees"`
-	Synopsis      string            `json:"synopsis"`
-	Tags          []string          `json:"tags"`
+	ID            int                 `json:"id"`
+	Title         string              `json:"title"`
+	Length        int                 `json:"length"`
+	PublishedDate string              `json:"published_date"`
+	SceneURL      string              `json:"scene_url"`
+	POV           string              `json:"pov"`
+	Degrees       int                 `json:"degrees"`
+	Synopsis      string              `json:"synopsis"`
+	Tags          []string            `json:"tags"`
 	Performers    map[string][]string `json:"performers"`
-	Trailers      map[string]string `json:"trailers"`
-	SiteName      string            `json:"site_name"`
-	RawPromoVideo json.RawMessage   `json:"promo_video_data"`
+	Trailers      map[string]string   `json:"trailers"`
+	SiteName      string              `json:"site_name"`
+	RawPromoVideo json.RawMessage     `json:"promo_video_data"`
 }
 
 func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOpts, out chan<- scraper.SceneResult) {
@@ -209,7 +209,8 @@ func allPerformers(m map[string][]string) []string {
 // thumbnailURL constructs image URL from trailer/promo video paths.
 // Promo pattern: ".../promo/{prefix}/{slug}/{prefix}{slug}_..." → "{prefix}/{slug}"
 // Trailer pattern: ".../naughtycdn.com/{prefix}/trailers/.../{prefix}{slug}trailer_..." → "{prefix}/{slug}"
-//   or VR variant: ".../trailers/vr/{prefix}{slug}/..." → "{prefix}/{slug}"
+//
+//	or VR variant: ".../trailers/vr/{prefix}{slug}/..." → "{prefix}/{slug}"
 var promoPathRe = regexp.MustCompile(`/promo/([^/]+)/([^/]+)/`)
 var trailerPrefixRe = regexp.MustCompile(`naughtycdn\.com/(?:nonsecure/)?([^/]+)/trailers/`)
 var trailerVRSlugRe = regexp.MustCompile(`/trailers/vr/([^/]+)/`)

@@ -21,15 +21,15 @@ type studioFile struct {
 }
 
 type SceneIndex struct {
-	byTitle         map[string][]models.Scene
+	byTitle          map[string][]models.Scene
 	byTitleSanitized map[string][]models.Scene // titles with noise words stripped
-	all             []models.Scene
+	all              []models.Scene
 }
 
 type MatchConfidence int
 
 const (
-	MatchExact     MatchConfidence = iota
+	MatchExact MatchConfidence = iota
 	MatchSubstring
 	MatchNone
 	MatchAmbiguous
@@ -105,9 +105,9 @@ func stripNoise(s string) string {
 
 func BuildIndex(scenes []models.Scene) *SceneIndex {
 	idx := &SceneIndex{
-		byTitle:         make(map[string][]models.Scene),
+		byTitle:          make(map[string][]models.Scene),
 		byTitleSanitized: make(map[string][]models.Scene),
-		all:             scenes,
+		all:              scenes,
 	}
 	for _, s := range scenes {
 		norm := Normalize(s.Title)

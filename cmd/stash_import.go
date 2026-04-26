@@ -69,10 +69,10 @@ type importFailure struct {
 }
 
 type changelogEntry struct {
-	StashSceneID string                       `json:"stash_scene_id"`
-	Timestamp    time.Time                    `json:"timestamp"`
-	Filename     string                       `json:"filename"`
-	MatchedTo    string                       `json:"matched_to"`
+	StashSceneID string                        `json:"stash_scene_id"`
+	Timestamp    time.Time                     `json:"timestamp"`
+	Filename     string                        `json:"filename"`
+	MatchedTo    string                        `json:"matched_to"`
 	Changes      map[string]changelogFieldDiff `json:"changes"`
 }
 

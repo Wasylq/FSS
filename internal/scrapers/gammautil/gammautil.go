@@ -27,11 +27,11 @@ const (
 
 // SiteConfig holds the site-specific constants for a Gamma Entertainment site.
 type SiteConfig struct {
-	SiteID       string // e.g. "puretaboo", "tabooheat"
-	SiteBase     string // e.g. "https://www.puretaboo.com"
-	StudioName   string // e.g. "Pure Taboo"
-	SiteName     string // e.g. "puretaboo" — used in Algolia filter and URL path
-	AlgoliaHost  string // override for testing
+	SiteID      string // e.g. "puretaboo", "tabooheat"
+	SiteBase    string // e.g. "https://www.puretaboo.com"
+	StudioName  string // e.g. "Pure Taboo"
+	SiteName    string // e.g. "puretaboo" — used in Algolia filter and URL path
+	AlgoliaHost string // override for testing
 }
 
 type Scraper struct {

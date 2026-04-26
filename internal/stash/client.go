@@ -88,10 +88,10 @@ type SceneUpdateInput struct {
 }
 
 type FindScenesFilter struct {
-	Organized       *bool   `json:"organized,omitempty"`
-	PerformerName   string  `json:"-"`
-	StudioName      string  `json:"-"`
-	StashIDCount    *int    `json:"-"`
+	Organized     *bool  `json:"organized,omitempty"`
+	PerformerName string `json:"-"`
+	StudioName    string `json:"-"`
+	StashIDCount  *int   `json:"-"`
 }
 
 type graphqlRequest struct {
@@ -204,9 +204,9 @@ func (c *Client) FindSceneByID(ctx context.Context, id string) (*StashScene, boo
 func (c *Client) FindScenes(ctx context.Context, filter FindScenesFilter, page, perPage int) ([]StashScene, int, error) {
 	sceneFilter := map[string]any{}
 	findFilter := map[string]any{
-		"page":     page,
-		"per_page": perPage,
-		"sort":     "path",
+		"page":      page,
+		"per_page":  perPage,
+		"sort":      "path",
 		"direction": "ASC",
 	}
 
@@ -312,7 +312,7 @@ func (c *Client) FindAllScenes(ctx context.Context, filter FindScenesFilter, pro
 
 func (c *Client) FindTagByName(ctx context.Context, name string) (string, bool, error) {
 	data, err := c.do(ctx, graphqlRequest{
-		Query: `query($name: String!) { findTags(tag_filter: { name: { value: $name, modifier: EQUALS } }) { tags { id name } } }`,
+		Query:     `query($name: String!) { findTags(tag_filter: { name: { value: $name, modifier: EQUALS } }) { tags { id name } } }`,
 		Variables: map[string]any{"name": name},
 	})
 	if err != nil {
@@ -334,14 +334,16 @@ func (c *Client) FindTagByName(ctx context.Context, name string) (string, bool, 
 
 func (c *Client) CreateTag(ctx context.Context, name string) (string, error) {
 	data, err := c.do(ctx, graphqlRequest{
-		Query: `mutation($input: TagCreateInput!) { tagCreate(input: $input) { id } }`,
+		Query:     `mutation($input: TagCreateInput!) { tagCreate(input: $input) { id } }`,
 		Variables: map[string]any{"input": map[string]any{"name": name}},
 	})
 	if err != nil {
 		return "", fmt.Errorf("creating tag %q: %w", name, err)
 	}
 	var result struct {
-		TagCreate struct{ ID string `json:"id"` } `json:"tagCreate"`
+		TagCreate struct {
+			ID string `json:"id"`
+		} `json:"tagCreate"`
 	}
 	if err := json.Unmarshal(data, &result); err != nil {
 		return "", fmt.Errorf("decoding tagCreate response for %q: %w", name, err)
@@ -395,7 +397,7 @@ func (c *Client) EnsureTag(ctx context.Context, name string) (string, error) {
 
 func (c *Client) FindPerformerByName(ctx context.Context, name string) (string, bool, error) {
 	data, err := c.do(ctx, graphqlRequest{
-		Query: `query($name: String!) { findPerformers(performer_filter: { name: { value: $name, modifier: EQUALS } }) { performers { id name } } }`,
+		Query:     `query($name: String!) { findPerformers(performer_filter: { name: { value: $name, modifier: EQUALS } }) { performers { id name } } }`,
 		Variables: map[string]any{"name": name},
 	})
 	if err != nil {
@@ -417,14 +419,16 @@ func (c *Client) FindPerformerByName(ctx context.Context, name string) (string, 
 
 func (c *Client) CreatePerformer(ctx context.Context, name string) (string, error) {
 	data, err := c.do(ctx, graphqlRequest{
-		Query: `mutation($input: PerformerCreateInput!) { performerCreate(input: $input) { id } }`,
+		Query:     `mutation($input: PerformerCreateInput!) { performerCreate(input: $input) { id } }`,
 		Variables: map[string]any{"input": map[string]any{"name": name}},
 	})
 	if err != nil {
 		return "", fmt.Errorf("creating performer %q: %w", name, err)
 	}
 	var result struct {
-		PerformerCreate struct{ ID string `json:"id"` } `json:"performerCreate"`
+		PerformerCreate struct {
+			ID string `json:"id"`
+		} `json:"performerCreate"`
 	}
 	if err := json.Unmarshal(data, &result); err != nil {
 		return "", fmt.Errorf("decoding performerCreate response for %q: %w", name, err)
@@ -449,7 +453,7 @@ func (c *Client) EnsurePerformer(ctx context.Context, name string) (string, erro
 
 func (c *Client) FindStudioByName(ctx context.Context, name string) (string, bool, error) {
 	data, err := c.do(ctx, graphqlRequest{
-		Query: `query($name: String!) { findStudios(studio_filter: { name: { value: $name, modifier: EQUALS } }) { studios { id name } } }`,
+		Query:     `query($name: String!) { findStudios(studio_filter: { name: { value: $name, modifier: EQUALS } }) { studios { id name } } }`,
 		Variables: map[string]any{"name": name},
 	})
 	if err != nil {
@@ -471,14 +475,16 @@ func (c *Client) FindStudioByName(ctx context.Context, name string) (string, boo
 
 func (c *Client) CreateStudio(ctx context.Context, name string) (string, error) {
 	data, err := c.do(ctx, graphqlRequest{
-		Query: `mutation($input: StudioCreateInput!) { studioCreate(input: $input) { id } }`,
+		Query:     `mutation($input: StudioCreateInput!) { studioCreate(input: $input) { id } }`,
 		Variables: map[string]any{"input": map[string]any{"name": name}},
 	})
 	if err != nil {
 		return "", fmt.Errorf("creating studio %q: %w", name, err)
 	}
 	var result struct {
-		StudioCreate struct{ ID string `json:"id"` } `json:"studioCreate"`
+		StudioCreate struct {
+			ID string `json:"id"`
+		} `json:"studioCreate"`
 	}
 	if err := json.Unmarshal(data, &result); err != nil {
 		return "", fmt.Errorf("decoding studioCreate response for %q: %w", name, err)
