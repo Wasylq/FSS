@@ -14,10 +14,10 @@ Architectures: `linux/amd64`, `linux/arm64` (Pi 4/5, Apple Silicon Linux VMs, AR
 
 | Tag | Tracks |
 |-----|--------|
-| `latest` | Latest released version (only updated on `v*` tag pushes) |
-| `vX.Y.Z`, `vX.Y`, `vX` | Specific release / minor / major track |
-| `main` | Tip of the default branch (development build) |
-| `sha-<short>` | Specific commit |
+| `latest` | Latest released version (updated only when a `v*` tag is pushed and the manual smoke-test gate is approved) |
+| `vX.Y.Z`, `vX.Y`, `vX` | Specific release / minor / major track (also gated by `manual-smoke-gate`) |
+| `master` | Tip of the default branch (development build, not gated) |
+| `sha-<short>` | Specific commit (development) |
 | `pr-<n>` | Pull request build (when CI runs on PRs) |
 
 Pin to `vX.Y` for stable systems; `latest` is fine for personal use.
@@ -196,14 +196,16 @@ docker buildx build --platform linux/amd64,linux/arm64 -t fss:dev .
 
 ## CI/CD
 
-`.github/workflows/docker.yml` builds and pushes the image:
+Two workflows handle the image, split by purpose so a release can never ship a docker image without the manual smoke-test approval.
 
-| Trigger | Result |
-|---------|--------|
-| Push to `main`/`master` | Pushes `main` and `sha-<short>` tags |
-| Push of `v*` tag | Pushes `vX.Y.Z`, `vX.Y`, `vX`, and `latest` |
-| Pull request touching the Dockerfile | Builds (no push) — sanity check |
-| Manual `workflow_dispatch` | Builds and pushes |
+| Workflow | Trigger | Tags pushed |
+|----------|---------|-------------|
+| `.github/workflows/docker.yml` | Push to `main`/`master` | `master`, `sha-<short>` |
+| `.github/workflows/docker.yml` | Pull request touching the Dockerfile | _(builds, no push)_ |
+| `.github/workflows/docker.yml` | Manual `workflow_dispatch` | `master`, `sha-<short>` |
+| `.github/workflows/release.yml` (`docker` job, after `release`) | Push of `v*` tag, **after `manual-smoke-gate` approval** | `vX.Y.Z`, `vX.Y`, `vX`, `latest` |
+
+The release flow is sequential: tag push → `build` (tests + binaries) → wait for `manual-smoke-gate` approval → `release` (GitHub Release) → `docker` (multi-arch image to GHCR with the version tags). Reject the gate and neither the GitHub Release nor the docker image lands.
 
 Build cache is stored in GitHub Actions cache (`type=gha`) so subsequent builds reuse downloaded modules and compiled stdlib. Multi-arch builds run via QEMU emulation.
 

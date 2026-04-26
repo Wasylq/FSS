@@ -11,6 +11,7 @@ concurrency:
 
 permissions:
   contents: write
+  packages: write # for the docker job that pushes to ghcr after release
 
 jobs:
   build:
@@ -79,11 +80,14 @@ jobs:
     name: Publish GitHub release
     runs-on: ubuntu-latest
     needs: build
-    # Pauses here until a reviewer of the `release-gate` environment approves.
-    # See CONTRIBUTING.md → "Cutting a release" for the manual checklist
-    # (notably: integration smoke tests that CI cannot run).
+    # Pauses here until a reviewer of the `manual-smoke-gate` environment
+    # approves — the approver attests they have run the manual integration
+    # smoke tests (`make smoke`) that CI cannot run because Cloudflare blocks
+    # GitHub-runner IP ranges. The downstream `docker` job inherits this gate
+    # transitively via `needs: release`, so one approval covers both.
+    # See CONTRIBUTING.md → "Cutting a release" for the full checklist.
     environment:
-      name: release-gate
+      name: manual-smoke-gate
       url: ${{ github.server_url }}/${{ github.repository }}/blob/master/CONTRIBUTING.md#cutting-a-release
     steps:
       - uses: actions/checkout@v4
@@ -148,3 +152,61 @@ jobs:
             ```sh
             docker pull ghcr.io/wasylq/fss:${{ github.ref_name }}
             ```
+
+  docker:
+    name: Build and push docker image
+    runs-on: ubuntu-latest
+    # Runs only after the gated release job succeeds, so no image lands on
+    # GHCR unless the manual smoke-test gate was approved.
+    needs: release
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Compute image metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository }}
+          tags: |
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=semver,pattern={{major}}
+            type=raw,value=latest
+
+      - name: Resolve build args
+        id: args
+        run: |
+          echo "version=${GITHUB_REF#refs/tags/}" >> "$GITHUB_OUTPUT"
+          echo "commit=${GITHUB_SHA::8}" >> "$GITHUB_OUTPUT"
+          echo "date=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$GITHUB_OUTPUT"
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          build-args: |
+            VERSION=${{ steps.args.outputs.version }}
+            COMMIT=${{ steps.args.outputs.commit }}
+            DATE=${{ steps.args.outputs.date }}

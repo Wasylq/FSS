@@ -1,9 +1,12 @@
-name: Docker
+name: Docker (dev images)
 
+# Tag-based releases are handled by the gated docker job in release.yml so a
+# v* image cannot ship without the manual smoke-test approval. This workflow
+# only publishes development images: tip-of-default-branch (`master`) and
+# per-commit (`sha-<short>`), plus PR-only sanity builds.
 on:
   push:
     branches: [main, master]
-    tags: ['v*']
   pull_request:
     paths:
       - 'Dockerfile'
@@ -54,10 +57,6 @@ jobs:
           tags: |
             type=ref,event=branch
             type=ref,event=pr
-            type=semver,pattern={{version}}
-            type=semver,pattern={{major}}.{{minor}}
-            type=semver,pattern={{major}}
-            type=raw,value=latest,enable=${{ startsWith(github.ref, 'refs/tags/v') }}
             type=sha,prefix=sha-,format=short
 
       - name: Resolve build args
@@ -65,8 +64,6 @@ jobs:
         run: |
           if [ "${GITHUB_REF}" = "refs/heads/main" ] || [ "${GITHUB_REF}" = "refs/heads/master" ]; then
             VERSION="main"
-          elif [[ "${GITHUB_REF}" == refs/tags/* ]]; then
-            VERSION="${GITHUB_REF#refs/tags/}"
           else
             VERSION="${GITHUB_REF##*/}"
           fi

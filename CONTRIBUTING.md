@@ -292,7 +292,7 @@ git tag -a v1.6.0 -m "v1.6.0"
 git push origin v1.6.0
 ```
 
-Then go to the **Actions → Release** run on GitHub, click *Review deployments*, tick `release-gate`, and approve. The release is published and the Docker image picks up `latest` + `v1.6.0` tags shortly after.
+Then go to the **Actions → Release** run on GitHub, click *Review deployments*, tick `manual-smoke-gate`, and approve. The GitHub Release is published and the Docker image (with `v1.6.0`, `v1.6`, `v1`, and `latest` tags) is built and pushed in the same run. Both happen behind the single approval — neither lands on GHCR or the Releases page if you reject the gate.
 
 ### Approver checklist
 
@@ -307,10 +307,10 @@ The gate is a **trust-me** check — nothing verifies that you actually ran the 
 
 ### One-time setup (per maintainer / per fork)
 
-The `release-gate` environment must exist in the GitHub repository before the workflow can pause on it. To create it:
+The `manual-smoke-gate` environment must exist in the GitHub repository before the workflow can pause on it. To create it:
 
-1. Repository → **Settings → Environments → New environment**, name it `release-gate`.
+1. Repository → **Settings → Environments → New environment**, name it `manual-smoke-gate`.
 2. Under **Deployment protection rules**, tick *Required reviewers* and add yourself (and any co-maintainers).
 3. Save. No environment secrets are needed.
 
-Without this, the release workflow will fail with `Environment "release-gate" not found` on the first tag push. Environment protection rules with required reviewers are free for public repositories.
+Without this, the release workflow will fail with `Environment "manual-smoke-gate" not found` on the first tag push. Environment protection rules with required reviewers are free for public repositories.
