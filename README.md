@@ -15,6 +15,7 @@ Scrapes all scenes and metadata from a studio URL. Designed to be easily extende
 | Brazzers | Aylo/Juan |
 | Clips4Sale | Clips4Sale |
 | Digital Playground | Aylo/Juan |
+| Fakings | Next.js RSC |
 | IWantClips | IWantClips |
 | Kink | Kink |
 | ManyVids | ManyVids |
