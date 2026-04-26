@@ -236,11 +236,27 @@ func TestLive<Site>(t *testing.T) {
 Run all of them:
 
 ```bash
-make smoke              # all scrapers
+make smoke              # all scrapers + Stash
 make smoke-one SCRAPER=<site>   # one scraper
+make smoke-stash        # Stash integration only
 ```
 
-These are **never run in CI** (Cloudflare blocks shared GitHub-runner IP ranges, and they hit live sites). They're a manual pre-release check.
+These are **never run in CI** (Cloudflare blocks shared GitHub-runner IP ranges, and they hit live sites / local services). They're a manual pre-release check.
+
+#### Stash integration tests
+
+The Stash integration tests (`internal/stash/integration_test.go`) verify that the GraphQL client works against your real Stash instance. They are **read-only** — no tags, performers, studios, or scenes are created or modified.
+
+```bash
+# Default: connects to http://localhost:9999, no auth
+make smoke-stash
+
+# Custom URL and/or API key
+FSS_STASH_URL=http://192.168.1.50:9999 make smoke-stash
+FSS_STASH_URL=http://192.168.1.50:9999 FSS_STASH_API_KEY=yourkey make smoke-stash
+```
+
+If Stash isn't reachable, all tests skip gracefully — no failures.
 
 ### 9. Update docs
 
@@ -298,7 +314,7 @@ Then go to the **Actions → Release** run on GitHub, click *Review deployments*
 
 Before clicking approve, confirm:
 
-- [ ] `make smoke` (or equivalent integration tests against a few live scrapers) passed locally — CI cannot run these because Cloudflare blocks shared GitHub runner IP ranges.
+- [ ] `make smoke` (scrapers + Stash integration) passed locally — CI cannot run these because Cloudflare blocks shared GitHub runner IP ranges and Stash is a local service.
 - [ ] `CHANGELOG`/release notes accurately describe user-visible changes.
 - [ ] No known regressions in any of the high-severity checks you track.
 - [ ] The new binary's `fss version` shows the expected tag when run locally.

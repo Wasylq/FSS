@@ -22,15 +22,19 @@ test: ## Run unit tests with race detector (no integration tag).
 	$(GO) test -race -count=1 $(PKGS)
 
 .PHONY: smoke
-smoke: ## Run integration smoke tests against live sites. Manual only — never in CI.
+smoke: ## Run integration smoke tests against live sites + Stash. Manual only — never in CI.
 	@echo "==> Integration smoke tests (live HTTP, not for CI)"
-	@echo "==> Tests with placeholder URLs will SKIP. Edit liveStudioURL in each integration_test.go to enable."
-	$(GO) test -tags=integration -timeout=$(SMOKE_TIMEOUT) -v ./internal/scrapers/...
+	@echo "==> Tests with placeholder URLs will SKIP. Stash tests skip if not reachable."
+	$(GO) test -tags=integration -timeout=$(SMOKE_TIMEOUT) -v ./internal/scrapers/... ./internal/stash/...
 
 .PHONY: smoke-one
 smoke-one: ## Run smoke for one scraper. Usage: make smoke-one SCRAPER=manyvids
 	@if [ -z "$(SCRAPER)" ]; then echo "usage: make smoke-one SCRAPER=<name>"; exit 1; fi
 	$(GO) test -tags=integration -timeout=$(SMOKE_TIMEOUT) -v ./internal/scrapers/$(SCRAPER)/...
+
+.PHONY: smoke-stash
+smoke-stash: ## Run Stash integration tests. Set FSS_STASH_URL / FSS_STASH_API_KEY if needed.
+	$(GO) test -tags=integration -timeout=$(SMOKE_TIMEOUT) -v ./internal/stash/...
 
 .PHONY: vet
 vet: ## go vet on all packages (including integration-tagged).
