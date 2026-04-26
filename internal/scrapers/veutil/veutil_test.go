@@ -96,11 +96,11 @@ func TestPostToScene(t *testing.T) {
 func newTestServer(tags []wpTag, posts []wpPost) *httptest.Server {
 	return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		switch {
-		case r.URL.Path == "/wp-json/wp/v2/tags":
+		switch r.URL.Path {
+		case "/wp-json/wp/v2/tags":
 			w.Header().Set("X-WP-Total", "2")
 			_ = json.NewEncoder(w).Encode(tags)
-		case r.URL.Path == "/wp-json/wp/v2/posts":
+		case "/wp-json/wp/v2/posts":
 			page := r.URL.Query().Get("page")
 			if page == "2" {
 				w.Header().Set("X-WP-Total", "0")

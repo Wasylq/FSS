@@ -201,8 +201,8 @@ A great description of the video.
 
 	var ts *httptest.Server
 	ts = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		switch {
-		case r.URL.Path == "/api/creators/testcreator/videos":
+		switch r.URL.Path {
+		case "/api/creators/testcreator/videos":
 			p1 := page1
 			for i := range p1.Data.Videos {
 				p1.Data.Videos[i].VideoURL = fmt.Sprintf(p1.Data.Videos[i].VideoURL, ts.URL)
@@ -269,8 +269,8 @@ func TestListScenesKnownIDs(t *testing.T) {
 
 	var ts *httptest.Server
 	ts = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		switch {
-		case r.URL.Path == "/api/creators/c/videos":
+		switch r.URL.Path {
+		case "/api/creators/c/videos":
 			p1 := page1
 			for i := range p1.Data.Videos {
 				p1.Data.Videos[i].VideoURL = fmt.Sprintf(p1.Data.Videos[i].VideoURL, ts.URL)

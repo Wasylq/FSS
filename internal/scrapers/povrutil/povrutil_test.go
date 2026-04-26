@@ -181,18 +181,6 @@ func TestBuildSceneNoExport(t *testing.T) {
 	}
 }
 
-func newTestServer(export []exportVideo, listingHTML string) *httptest.Server {
-	return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		switch r.URL.Path {
-		case "/export/videos.json":
-			w.Header().Set("Content-Type", "application/json")
-			_ = json.NewEncoder(w).Encode(export)
-		default:
-			_, _ = w.Write([]byte(listingHTML))
-		}
-	}))
-}
-
 func TestListScenes(t *testing.T) {
 	export := []exportVideo{
 		{
