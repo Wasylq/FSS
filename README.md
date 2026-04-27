@@ -23,6 +23,7 @@ Scrapes all scenes and metadata from a studio URL. Designed to be easily extende
 | IWantClips | IWantClips |
 | Kink | Kink |
 | ManyVids | ManyVids |
+| Mature.nl | Custom |
 | MilfVR | POVR/WankzVR |
 | MissaX | Custom |
 | Mofos | Aylo/Juan |

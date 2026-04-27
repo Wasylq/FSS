@@ -51,6 +51,7 @@ import (
 	_ "github.com/Wasylq/FSS/internal/scrapers/youngerloverofmine"
 
 	_ "github.com/Wasylq/FSS/internal/scrapers/jerkoffinstructions"
+	_ "github.com/Wasylq/FSS/internal/scrapers/maturenl"
 )
 
 // Set by -ldflags at release build time.
