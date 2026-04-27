@@ -13,6 +13,7 @@
 | [Gloryhole Secrets](https://www.gloryholesecrets.com) | `gloryholesecrets.com` | Gamma/Algolia | No | Algolia search API, uses `gammautil` |
 | [BrasilVR](https://www.brasilvr.com) | `brasilvr.com` | POVR/WankzVR | No | Export JSON + listing page dates, uses `povrutil` |
 | [IWantClips](https://www.iwantclips.com) | `iwantclips.com/store/{id}/{username}` | IWantClips | Yes | JSON API, double HTML-unescaping |
+| [Lady Sonia](https://tour.lady-sonia.com) | `lady-sonia.com` | KB Productions/Next.js | No | `__NEXT_DATA__` JSON parsing, 1500+ scenes, listing-only (no detail pages needed) |
 | [Kink](https://www.kink.com) | `kink.com`, `kink.com/channel/{slug}`, `kink.com/model/{id}/{slug}`, `kink.com/tag/{slug}`, `kink.com/series/{slug}` | Kink | No | HTML scraping, 51 channels, filter by channel/performer/tag/series, detail page worker pool for tags/description/duration, age gate cookie bypass, JSON-LD + data-setup parsing |
 | [ManyVids](https://www.manyvids.com) | `manyvids.com/Profile/{id}/{slug}/Store/Videos` | ManyVids | Yes | JSON API, detail-page worker pool |
 | [Mature.nl](https://www.mature.nl) | `mature.nl/en/updates`, `mature.nl/en/model/{id}`, `mature.nl/en/niche/{id}/{page}/{slug}` | Custom | No | HTML scraping, paginated listing + detail page worker pool for model URLs |

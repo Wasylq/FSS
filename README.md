@@ -23,6 +23,7 @@ Scrapes all scenes and metadata from a studio URL. Designed to be easily extende
 | Gloryhole Secrets | Gamma/Algolia |
 | IWantClips | IWantClips |
 | Kink | Kink |
+| Lady Sonia | KB Productions/Next.js |
 | ManyVids | ManyVids |
 | Mature.nl | Custom |
 | MilfVR | POVR/WankzVR |
