@@ -50,6 +50,7 @@ Scrapes all scenes and metadata from a studio URL. Designed to be easily extende
 | Queensnake | Custom |
 | Rachel Steele | MyMember.site |
 | Reality Kings | Aylo/Juan |
+| See Mom Suck | 3rdShiftVideo/ThickCash |
 | Rocco Siffredi | Gamma/Algolia |
 | SexMex | SexMex Pro CMS |
 | Sofie Marie | ELXComplete/Andomark |

@@ -35,6 +35,7 @@ import (
 	_ "github.com/Wasylq/FSS/internal/scrapers/queensnake"
 	_ "github.com/Wasylq/FSS/internal/scrapers/rachelsteele"
 	_ "github.com/Wasylq/FSS/internal/scrapers/realitykings"
+	_ "github.com/Wasylq/FSS/internal/scrapers/seemomsuck"
 	_ "github.com/Wasylq/FSS/internal/scrapers/sexmex"
 	_ "github.com/Wasylq/FSS/internal/scrapers/tabooheat"
 	_ "github.com/Wasylq/FSS/internal/scrapers/taratainton"
