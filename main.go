@@ -28,6 +28,7 @@ import (
 	_ "github.com/Wasylq/FSS/internal/scrapers/oopsfamily"
 	_ "github.com/Wasylq/FSS/internal/scrapers/perfectgirlfriend"
 	_ "github.com/Wasylq/FSS/internal/scrapers/pornhub"
+	_ "github.com/Wasylq/FSS/internal/scrapers/propertysex"
 	_ "github.com/Wasylq/FSS/internal/scrapers/puretaboo"
 	_ "github.com/Wasylq/FSS/internal/scrapers/queensnake"
 	_ "github.com/Wasylq/FSS/internal/scrapers/rachelsteele"
@@ -35,8 +36,10 @@ import (
 	_ "github.com/Wasylq/FSS/internal/scrapers/sexmex"
 	_ "github.com/Wasylq/FSS/internal/scrapers/tabooheat"
 	_ "github.com/Wasylq/FSS/internal/scrapers/taratainton"
+	_ "github.com/Wasylq/FSS/internal/scrapers/transangels"
 	_ "github.com/Wasylq/FSS/internal/scrapers/transqueens"
 	_ "github.com/Wasylq/FSS/internal/scrapers/tranzvr"
+	_ "github.com/Wasylq/FSS/internal/scrapers/twistys"
 	_ "github.com/Wasylq/FSS/internal/scrapers/wankzvr"
 	_ "github.com/Wasylq/FSS/internal/scrapers/yourvids"
 
@@ -58,6 +61,14 @@ import (
 	_ "github.com/Wasylq/FSS/internal/scrapers/mylf"
 	_ "github.com/Wasylq/FSS/internal/scrapers/puremature"
 	_ "github.com/Wasylq/FSS/internal/scrapers/sofiemarie"
+
+	_ "github.com/Wasylq/FSS/internal/scrapers/burningangel"
+	_ "github.com/Wasylq/FSS/internal/scrapers/filthykings"
+	_ "github.com/Wasylq/FSS/internal/scrapers/gangbangcreampie"
+	_ "github.com/Wasylq/FSS/internal/scrapers/girlfriendsfilms"
+	_ "github.com/Wasylq/FSS/internal/scrapers/lethalhardcore"
+	_ "github.com/Wasylq/FSS/internal/scrapers/roccosiffredi"
+	_ "github.com/Wasylq/FSS/internal/scrapers/wicked"
 )
 
 // Set by -ldflags at release build time.

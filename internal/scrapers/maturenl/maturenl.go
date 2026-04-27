@@ -220,7 +220,7 @@ func (s *Scraper) runModel(ctx context.Context, studioURL string, modelID string
 		select {
 		case work <- uid:
 		case <-ctx.Done():
-			break
+			return
 		}
 	}
 

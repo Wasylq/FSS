@@ -217,12 +217,12 @@ func TestPaginatedScrape(t *testing.T) {
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		reqCount++
 		var body map[string]any
-		json.NewDecoder(r.Body).Decode(&body)
+		_ = json.NewDecoder(r.Body).Decode(&body)
 		from, _ := body["from"].(float64)
 		if int(from) == 0 {
-			w.Write(page1)
+			_, _ = w.Write(page1)
 		} else {
-			w.Write(page2)
+			_, _ = w.Write(page2)
 		}
 	}))
 	defer ts.Close()
@@ -265,7 +265,7 @@ func TestKnownIDsStopsEarly(t *testing.T) {
 	page := fakeESResponse(scenes, 3)
 
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Write(page)
+		_, _ = w.Write(page)
 	}))
 	defer ts.Close()
 

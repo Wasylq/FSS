@@ -164,7 +164,7 @@ func TestPaginatedScrape(t *testing.T) {
 
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		w.Write(page1)
+		_, _ = w.Write(page1)
 	}))
 	defer ts.Close()
 
@@ -203,7 +203,7 @@ func TestKnownIDsStopsEarly(t *testing.T) {
 
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		w.Write(page)
+		_, _ = w.Write(page)
 	}))
 	defer ts.Close()
 

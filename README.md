@@ -32,6 +32,11 @@ Scrapes all scenes and metadata from a studio URL. Designed to be easily extende
 | Mofos | Aylo/Juan |
 | Mom Comes First | WordPress |
 | Mommy Blows Best | Gamma/Algolia |
+| Burning Angel | Gamma/Algolia |
+| Filthy Kings | Gamma/Algolia |
+| Gangbang Creampie | Gamma/Algolia |
+| Girlfriends Films | Gamma/Algolia |
+| Lethal Hardcore | Gamma/Algolia |
 | Naughty America | Naughty America |
 | OopsFamily | FapHouse/Custom |
 | Nubiles Network | EdgeCms |
@@ -39,17 +44,22 @@ Scrapes all scenes and metadata from a studio URL. Designed to be easily extende
 | MyDirtyHobby | MyDirtyHobby |
 | Pornhub | Pornhub |
 | Pure Taboo | Gamma/Algolia |
+| PropertySex | Aylo/Juan |
 | Queensnake | Custom |
 | Rachel Steele | MyMember.site |
 | Reality Kings | Aylo/Juan |
+| Rocco Siffredi | Gamma/Algolia |
 | SexMex | SexMex Pro CMS |
 | Sofie Marie | ELXComplete/Andomark |
 | Exposed Latinas | SexMex Pro CMS |
+| Trans Angels | Aylo/Juan |
 | Trans Queens | SexMex Pro CMS |
 | TranzVR | POVR/WankzVR |
 | Taboo Heat | Gamma/Algolia |
 | Tara Tainton | WordPress |
+| Twistys | Aylo/Juan |
 | WankzVR | POVR/WankzVR |
+| Wicked | Gamma/Algolia |
 | YourVids | YourVids |
 
 See [docs/scrapers.md](docs/scrapers.md) for URL patterns and details.

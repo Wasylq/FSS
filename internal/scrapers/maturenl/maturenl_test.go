@@ -287,9 +287,9 @@ func TestPaginatedScrape(t *testing.T) {
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case "/en/updates/1":
-			fmt.Fprint(w, page1)
+			_, _ = fmt.Fprint(w, page1)
 		default:
-			fmt.Fprint(w, page2)
+			_, _ = fmt.Fprint(w, page2)
 		}
 	}))
 	defer ts.Close()
@@ -323,7 +323,7 @@ func TestPaginatedScrape(t *testing.T) {
 
 func TestKnownIDsStopsEarly(t *testing.T) {
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprint(w, listingHTML)
+		_, _ = fmt.Fprint(w, listingHTML)
 	}))
 	defer ts.Close()
 

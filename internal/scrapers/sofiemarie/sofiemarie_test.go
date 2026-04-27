@@ -348,9 +348,9 @@ func TestPaginatedScrape(t *testing.T) {
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch {
 		case strings.Contains(r.URL.Path, "movies_2"):
-			fmt.Fprint(w, page2)
+			_, _ = fmt.Fprint(w, page2)
 		default:
-			fmt.Fprint(w, page1)
+			_, _ = fmt.Fprint(w, page1)
 		}
 	}))
 	defer ts.Close()
@@ -387,7 +387,7 @@ func TestKnownIDsStopsEarly(t *testing.T) {
 	page := makeUpdatesPage(5, 3)
 
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
-		fmt.Fprint(w, page)
+		_, _ = fmt.Fprint(w, page)
 	}))
 	defer ts.Close()
 
@@ -453,9 +453,9 @@ func TestModelPagination(t *testing.T) {
 
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if strings.Contains(r.URL.RawQuery, "page=2") {
-			fmt.Fprint(w, modelPage2)
+			_, _ = fmt.Fprint(w, modelPage2)
 		} else {
-			fmt.Fprint(w, modelPage)
+			_, _ = fmt.Fprint(w, modelPage)
 		}
 	}))
 	defer ts.Close()
@@ -506,7 +506,7 @@ func TestDVDScrape(t *testing.T) {
 </body></html>`
 
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
-		fmt.Fprint(w, dvdPage)
+		_, _ = fmt.Fprint(w, dvdPage)
 	}))
 	defer ts.Close()
 

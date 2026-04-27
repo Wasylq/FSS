@@ -42,6 +42,16 @@
 | [Trans Queens](https://transqueens.com) | `transqueens.com/tour/updates`, `transqueens.com/tour/models/{slug}.html`, `transqueens.com/tour/categories/{slug}.html` | SexMex Pro CMS | No | Thin wrapper around `sexmexutil` |
 | [TranzVR](https://www.tranzvr.com) | `tranzvr.com` | POVR/WankzVR | No | Thin wrapper around `povrutil` |
 | [WankzVR](https://www.wankzvr.com) | `wankzvr.com` | POVR/WankzVR | No | Export JSON + listing page dates, uses `povrutil` |
+| [Burning Angel](https://www.burningangel.com) | `burningangel.com` | Gamma/Algolia | No | Algolia search API, uses `gammautil` |
+| [Filthy Kings](https://www.filthykings.com) | `filthykings.com` | Gamma/Algolia | No | Algolia search API, uses `gammautil` |
+| [Gangbang Creampie](https://www.gangbangcreampie.com) | `gangbangcreampie.com` | Gamma/Algolia | No | Algolia search API, uses `gammautil` |
+| [Girlfriends Films](https://www.girlfriendsfilms.com) | `girlfriendsfilms.com` | Gamma/Algolia | No | Algolia search API, uses `gammautil` |
+| [Lethal Hardcore](https://www.lethalhardcore.com) | `lethalhardcore.com` | Gamma/Algolia | No | Algolia search API, uses `gammautil` |
+| [Rocco Siffredi](https://www.roccosiffredi.com) | `roccosiffredi.com` | Gamma/Algolia | No | Algolia search API, uses `gammautil` |
+| [Wicked](https://www.wicked.com) | `wicked.com` | Gamma/Algolia | No | Algolia search API, uses `gammautil` |
+| [PropertySex](https://www.propertysex.com) | `propertysex.com`, `propertysex.com/pornstar/{id}/{slug}`, `propertysex.com/category/{id}/{slug}`, `propertysex.com/site/{id}/{slug}`, `propertysex.com/series/{id}/{slug}` | Aylo/Juan | No | REST API, filter by performer/category/sub-site/series, uses `ayloutil` |
+| [TransAngels](https://www.transangels.com) | `transangels.com`, `transangels.com/pornstar/{id}/{slug}`, `transangels.com/category/{id}/{slug}`, `transangels.com/site/{id}/{slug}`, `transangels.com/series/{id}/{slug}` | Aylo/Juan | No | REST API, filter by performer/category/sub-site/series, uses `ayloutil` |
+| [Twistys](https://www.twistys.com) | `twistys.com`, `twistys.com/pornstar/{id}/{slug}`, `twistys.com/category/{id}/{slug}`, `twistys.com/site/{id}/{slug}`, `twistys.com/series/{id}/{slug}` | Aylo/Juan | No | REST API, filter by performer/category/sub-site/series, uses `ayloutil` |
 | [Jerk Off Instructions](https://jerkoffinstructions.com) | `jerkoffinstructions.com` | Custom PHP | No | HTML scraping, 302 redirect with body, listing-only (no detail pages needed), `free_adult` cookie for thumbnails |
 | [YourVids](https://yourvids.com) | `yourvids.com/creators/{slug}` | YourVids | Yes | JSON API, detail-page worker pool for tags/description, price tracking with sale detection |
 | [BoyfriendSharing](https://boyfriendsharing.com) | `boyfriendsharing.com` | WP video-elements | No | WP REST API, uses `veutil` |
@@ -63,8 +73,8 @@ Scrapers that share a platform use common utility packages to avoid duplication:
 
 | Package | Platform | Used by |
 |---------|----------|---------|
-| `ayloutil` | Aylo/Juan (REST API, instance token auth) | Babes, Brazzers, Digital Playground, Mofos, Reality Kings |
-| `gammautil` | Gamma Entertainment (Algolia search API) | Evil Angel, Gloryhole Secrets, Mommy Blows Best, Pure Taboo, Taboo Heat |
+| `ayloutil` | Aylo/Juan (REST API, instance token auth) | Babes, Brazzers, Digital Playground, Mofos, PropertySex, Reality Kings, TransAngels, Twistys |
+| `gammautil` | Gamma Entertainment (Algolia search API) | Burning Angel, Evil Angel, Filthy Kings, Gangbang Creampie, Girlfriends Films, Gloryhole Secrets, Lethal Hardcore, Mommy Blows Best, Pure Taboo, Rocco Siffredi, Taboo Heat, Wicked |
 | `povrutil` | POVR/WankzVR (export JSON + HTML listing pages) | BrasilVR, MilfVR, TranzVR, WankzVR |
 | `sexmexutil` | SexMex Pro CMS (HTML scraping, pagination). **Quirk:** their CMS returns HTTP 500 with valid HTML on some pages (e.g. model pages), so `fetchPage` accepts 500 responses instead of using `httpx.Do`. | Exposed Latinas, SexMex, Trans Queens |
 | `veutil` | WordPress video-elements theme (WP REST API for posts + tags, poster extraction from content) | BoyfriendSharing, BrattyFamily, GoStuckYourself, HugeCockBreak, LittleFromAsia, MommysBoy, MomXXX, MyBadMILFs, DaughterSwap, PervMom, SisLovesMe, YoungerLoverOfMine |

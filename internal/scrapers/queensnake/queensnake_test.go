@@ -266,9 +266,9 @@ func TestPaginatedScrape(t *testing.T) {
 
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if strings.Contains(r.URL.Path, "/1") {
-			fmt.Fprint(w, page1)
+			_, _ = fmt.Fprint(w, page1)
 		} else {
-			fmt.Fprint(w, page0)
+			_, _ = fmt.Fprint(w, page0)
 		}
 	}))
 	defer ts.Close()
@@ -301,7 +301,7 @@ func TestKnownIDsStopsEarly(t *testing.T) {
 	page := makeListingPage(5, 2, true)
 
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
-		fmt.Fprint(w, page)
+		_, _ = fmt.Fprint(w, page)
 	}))
 	defer ts.Close()
 
