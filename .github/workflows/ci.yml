@@ -27,14 +27,23 @@ jobs:
       - name: Build
         run: go build ./...
 
+      - name: Install gotestsum
+        run: go install gotest.tools/gotestsum@latest
+
       - name: Test with coverage
-        run: go test -race -count=1 -coverprofile=coverage.out -covermode=atomic ./... 2>&1 | tee test-output.txt
+        run: gotestsum --junitfile junit.xml -- -race -count=1 -coverprofile=coverage.out -covermode=atomic ./... 2>&1 | tee test-output.txt
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v6
         with:
           files: coverage.out
           fail_ci_if_error: false
+          token: ${{ secrets.CODECOV_TOKEN }}
+
+      - name: Upload test results to Codecov
+        if: ${{ !cancelled() }}
+        uses: codecov/test-results-action@v1
+        with:
           token: ${{ secrets.CODECOV_TOKEN }}
 
       - name: Generate coverage summary
