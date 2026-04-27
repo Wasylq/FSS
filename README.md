@@ -17,6 +17,7 @@ Scrapes all scenes and metadata from a studio URL. Designed to be easily extende
 | Clips4Sale | Clips4Sale |
 | Anal Therapy | WordPress |
 | Digital Playground | Aylo/Juan |
+| 50 Plus MILFs | Score Group |
 | Evil Angel | Gamma/Algolia |
 | Fakings | Next.js RSC |
 | Family Therapy | WordPress |
