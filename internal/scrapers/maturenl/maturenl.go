@@ -287,8 +287,8 @@ type card struct {
 }
 
 var (
-	gridItemRe = regexp.MustCompile(`(?s)<div class="grid-item">`)
-	updateIDRe = regexp.MustCompile(`/en/update/(\d+)`)
+	gridItemRe  = regexp.MustCompile(`(?s)<div class="grid-item">`)
+	updateIDRe  = regexp.MustCompile(`/en/update/(\d+)`)
 	cardTitleRe = regexp.MustCompile(`(?s)card-title">\s*<a[^>]*>([^<]+)</a>`)
 	thumbRe     = regexp.MustCompile(`data-src="(https?://[^"]*?/cs_en\.jpg[^"]*)"`)
 	subtitleRe  = regexp.MustCompile(`(?s)card-subtitle">(.*?)</div>`)

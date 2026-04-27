@@ -165,9 +165,9 @@ func (s *Scraper) fetch(ctx context.Context, url string) (*apiResponse, error) {
 type apiResponse struct {
 	Items      []apiScene `json:"items"`
 	Pagination struct {
-		TotalItems int      `json:"totalItems"`
-		TotalPages int      `json:"totalPages"`
-		NextPage   *string  `json:"nextPage"`
+		TotalItems int     `json:"totalItems"`
+		TotalPages int     `json:"totalPages"`
+		NextPage   *string `json:"nextPage"`
 	} `json:"pagination"`
 }
 
