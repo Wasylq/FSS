@@ -38,6 +38,7 @@ Scrapes all scenes and metadata from a studio URL. Designed to be easily extende
 | MyDirtyHobby | MyDirtyHobby |
 | Pornhub | Pornhub |
 | Pure Taboo | Gamma/Algolia |
+| Queensnake | Custom |
 | Rachel Steele | MyMember.site |
 | Reality Kings | Aylo/Juan |
 | SexMex | SexMex Pro CMS |

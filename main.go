@@ -28,6 +28,7 @@ import (
 	_ "github.com/Wasylq/FSS/internal/scrapers/perfectgirlfriend"
 	_ "github.com/Wasylq/FSS/internal/scrapers/pornhub"
 	_ "github.com/Wasylq/FSS/internal/scrapers/puretaboo"
+	_ "github.com/Wasylq/FSS/internal/scrapers/queensnake"
 	_ "github.com/Wasylq/FSS/internal/scrapers/rachelsteele"
 	_ "github.com/Wasylq/FSS/internal/scrapers/realitykings"
 	_ "github.com/Wasylq/FSS/internal/scrapers/sexmex"

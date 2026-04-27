@@ -30,6 +30,7 @@
 | [Perfect Girlfriend](https://perfectgirlfriend.com) | `perfectgirlfriend.com` | WordPress | No | Sitemap-driven, JSON-LD VideoObject fallback, uses `wputil` |
 | [Pornhub](https://www.pornhub.com) | `pornhub.com/pornstar/{slug}`, `pornhub.com/channels/{slug}` | Pornhub | Free | HTML scraping, minimal fields |
 | [Pure Taboo](https://www.puretaboo.com) | `puretaboo.com` | Gamma/Algolia | No | Algolia search API, uses `gammautil` |
+| [Queensnake](https://queensnake.com) | `queensnake.com` | Custom | No | HTML scraping, 0-indexed paginated listing, `cLegalAge` cookie for age gate, performer extraction from title/tags, listing-only (no detail pages needed) |
 | [Rachel Steele](https://rachel-steele.com) | `rachel-steele.com` | MyMember.site | Yes | JSON list API + HTML detail pages, JSON-LD keywords |
 | [Reality Kings](https://www.realitykings.com) | `realitykings.com`, `realitykings.com/pornstar/{id}/{slug}`, `realitykings.com/category/{id}/{slug}`, `realitykings.com/site/{id}/{slug}`, `realitykings.com/series/{id}/{slug}` | Aylo/Juan | No | REST API, filter by performer/category/sub-site/series, uses `ayloutil` |
 | [Taboo Heat](https://www.tabooheat.com) | `tabooheat.com` | Gamma/Algolia | No | Thin wrapper around `gammautil` |
