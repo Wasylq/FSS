@@ -35,6 +35,7 @@
 | [Tara Tainton](https://taratainton.com) | `taratainton.com` | WordPress | Yes | Sitemap-driven, HTML meta parsing, uses `wputil` |
 | [Exposed Latinas](https://exposedlatinas.com) | `exposedlatinas.com/tour/updates`, `exposedlatinas.com/tour/models/{slug}.html`, `exposedlatinas.com/tour/categories/{slug}.html` | SexMex Pro CMS | No | Thin wrapper around `sexmexutil` |
 | [SexMex](https://sexmex.xxx) | `sexmex.xxx/tour/updates`, `sexmex.xxx/tour/models/{slug}.html`, `sexmex.xxx/tour/categories/{slug}.html` | SexMex Pro CMS | No | HTML scraping with regex, pagination, model/category/full-studio modes, uses `sexmexutil` |
+| [Sofie Marie](https://sofiemariexxx.com) | `sofiemariexxx.com`, `sofiemariexxx.com/models/{slug}.html`, `sofiemariexxx.com/dvds/{slug}.html` | ELXComplete/Andomark | No | HTML scraping, paginated listing (movies category), model pages via `sets.php` pagination, DVD pages single-fetch |
 | [Trans Queens](https://transqueens.com) | `transqueens.com/tour/updates`, `transqueens.com/tour/models/{slug}.html`, `transqueens.com/tour/categories/{slug}.html` | SexMex Pro CMS | No | Thin wrapper around `sexmexutil` |
 | [TranzVR](https://www.tranzvr.com) | `tranzvr.com` | POVR/WankzVR | No | Thin wrapper around `povrutil` |
 | [WankzVR](https://www.wankzvr.com) | `wankzvr.com` | POVR/WankzVR | No | Export JSON + listing page dates, uses `povrutil` |

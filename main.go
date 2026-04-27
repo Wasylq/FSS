@@ -54,6 +54,7 @@ import (
 	_ "github.com/Wasylq/FSS/internal/scrapers/maturenl"
 	_ "github.com/Wasylq/FSS/internal/scrapers/mylf"
 	_ "github.com/Wasylq/FSS/internal/scrapers/puremature"
+	_ "github.com/Wasylq/FSS/internal/scrapers/sofiemarie"
 )
 
 // Set by -ldflags at release build time.

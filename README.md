@@ -40,6 +40,7 @@ Scrapes all scenes and metadata from a studio URL. Designed to be easily extende
 | Rachel Steele | MyMember.site |
 | Reality Kings | Aylo/Juan |
 | SexMex | SexMex Pro CMS |
+| Sofie Marie | ELXComplete/Andomark |
 | Exposed Latinas | SexMex Pro CMS |
 | Trans Queens | SexMex Pro CMS |
 | TranzVR | POVR/WankzVR |
