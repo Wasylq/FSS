@@ -26,6 +26,7 @@ Scrapes all scenes and metadata from a studio URL. Designed to be easily extende
 | Mature.nl | Custom |
 | MilfVR | POVR/WankzVR |
 | MYLF | TeamSkeet/PSM |
+| Pure Mature | AMA Multimedia |
 | MissaX | Custom |
 | Mofos | Aylo/Juan |
 | Mom Comes First | WordPress |

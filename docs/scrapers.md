@@ -17,6 +17,7 @@
 | [ManyVids](https://www.manyvids.com) | `manyvids.com/Profile/{id}/{slug}/Store/Videos` | ManyVids | Yes | JSON API, detail-page worker pool |
 | [Mature.nl](https://www.mature.nl) | `mature.nl/en/updates`, `mature.nl/en/model/{id}`, `mature.nl/en/niche/{id}/{page}/{slug}` | Custom | No | HTML scraping, paginated listing + detail page worker pool for model URLs |
 | [MYLF](https://www.mylf.com) | `mylf.com`, `mylf.com/models/{slug}`, `mylf.com/series/{slug}`, `mylf.com/categories/{name}` | TeamSkeet/PSM | No | Public Elasticsearch API, filter by model/series/category |
+| [Pure Mature](https://puremature.com) | `puremature.com`, `puremature.com/models/{slug}` | AMA Multimedia | No | JSON REST API, filter by model, resolution from download options |
 | [MilfVR](https://www.milfvr.com) | `milfvr.com` | POVR/WankzVR | No | Export JSON + listing page dates, uses `povrutil` |
 | [MissaX](https://www.missax.com) | `missax.com` | Custom | No | HTML scraping, listing + detail page worker pool |
 | [Mofos](https://www.mofos.com) | `mofos.com`, `mofos.com/pornstar/{id}/{slug}`, `mofos.com/category/{id}/{slug}`, `mofos.com/site/{id}/{slug}`, `mofos.com/series/{id}/{slug}` | Aylo/Juan | No | REST API, filter by performer/category/sub-site/series, uses `ayloutil` |

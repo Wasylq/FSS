@@ -53,6 +53,7 @@ import (
 	_ "github.com/Wasylq/FSS/internal/scrapers/jerkoffinstructions"
 	_ "github.com/Wasylq/FSS/internal/scrapers/maturenl"
 	_ "github.com/Wasylq/FSS/internal/scrapers/mylf"
+	_ "github.com/Wasylq/FSS/internal/scrapers/puremature"
 )
 
 // Set by -ldflags at release build time.
