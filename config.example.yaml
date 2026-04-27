@@ -2,10 +2,12 @@
 #
 # Copy this file to your XDG config directory:
 #   Linux/macOS:  ~/.config/fss/config.yaml
-#   Windows:      %LOCALAPPDATA%\fss\config.yaml
+#   Windows:      %APPDATA%\fss\config.yaml
 #
 # All keys are optional — missing keys use the defaults shown here.
 # CLI flags take precedence over config values.
+#
+# Windows paths with backslashes work fine — FSS handles them automatically.
 
 # Number of parallel metadata-fetching workers (per scrape run).
 workers: 3

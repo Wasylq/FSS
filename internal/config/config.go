@@ -2,7 +2,9 @@ package config
 
 import (
 	"fmt"
+	"io"
 	"os"
+	"regexp"
 
 	"github.com/adrg/xdg"
 	"gopkg.in/yaml.v3"
@@ -51,6 +53,26 @@ func DefaultPath() string {
 	return path
 }
 
+// windowsPathRe matches double-quoted YAML values that look like Windows
+// absolute paths (drive letter followed by :\). YAML treats backslashes as
+// escape characters inside double-quoted strings, so "C:\Users" fails
+// because \U is parsed as a Unicode escape. We replace \ with / before
+// decoding — Go's filepath functions accept forward slashes on all platforms.
+var windowsPathRe = regexp.MustCompile(`"([A-Za-z]:\\[^"]*)"`)
+
+func sanitizeWindowsPaths(data []byte) []byte {
+	return windowsPathRe.ReplaceAllFunc(data, func(match []byte) []byte {
+		out := make([]byte, len(match))
+		copy(out, match)
+		for i, b := range out {
+			if b == '\\' {
+				out[i] = '/'
+			}
+		}
+		return out
+	})
+}
+
 // Load reads the config file from the XDG config directory.
 // If no file exists, defaults are returned without error.
 func Load() (*Config, error) {
@@ -68,7 +90,14 @@ func Load() (*Config, error) {
 	}
 	defer func() { _ = f.Close() }()
 
-	if err := yaml.NewDecoder(f).Decode(cfg); err != nil {
+	raw, err := io.ReadAll(f)
+	if err != nil {
+		return nil, fmt.Errorf("reading config %s: %w", path, err)
+	}
+
+	raw = sanitizeWindowsPaths(raw)
+
+	if err := yaml.Unmarshal(raw, cfg); err != nil {
 		return nil, fmt.Errorf("parsing config %s: %w", path, err)
 	}
 
