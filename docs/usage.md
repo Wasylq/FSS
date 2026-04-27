@@ -43,7 +43,7 @@ For `fss stash` subcommands, see [stash.md](stash.md).
 
 ## Config file
 
-Located at the XDG config path for your platform (see [README](../README.md)). All keys are optional — missing keys use the defaults shown below.
+Located at the XDG config path for your platform (see [README](../README.md)). All keys are optional — missing keys use the defaults shown below. A fully commented example is available at [`config.example.yaml`](../config.example.yaml) in the repo root.
 
 ```yaml
 workers: 3        # int   — parallel metadata fetchers

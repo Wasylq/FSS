@@ -181,19 +181,23 @@ Optional YAML config at the platform-specific path:
 | macOS    | `~/Library/Application Support/fss/config.yaml` |
 | Windows  | `%APPDATA%\fss\config.yaml` |
 
-```yaml
-workers: 3
-output: json
-out_dir: .
-db: ""
+See [`config.example.yaml`](config.example.yaml) for all available options with descriptions. To get started, grab it directly and drop it into place:
 
-stash:
-  url: "http://localhost:9999"
-  api_key: ""
-  tag: "fss_import"
+```bash
+# Linux
+mkdir -p ~/.config/fss
+curl -fsSL https://raw.githubusercontent.com/Wasylq/FSS/master/config.example.yaml \
+  -o ~/.config/fss/config.yaml
+
+# macOS
+mkdir -p ~/Library/Application\ Support/fss
+curl -fsSL https://raw.githubusercontent.com/Wasylq/FSS/master/config.example.yaml \
+  -o ~/Library/Application\ Support/fss/config.yaml
 ```
 
-CLI flags always override config values.
+Or if you already have the repo cloned: `cp config.example.yaml ~/.config/fss/config.yaml`
+
+CLI flags always override config values. See [docs/usage.md](docs/usage.md#config-file) for the full reference.
 
 ## Documentation
 

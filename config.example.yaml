@@ -1,0 +1,56 @@
+# FSS configuration file.
+#
+# Copy this file to your XDG config directory:
+#   Linux/macOS:  ~/.config/fss/config.yaml
+#   Windows:      %LOCALAPPDATA%\fss\config.yaml
+#
+# All keys are optional — missing keys use the defaults shown here.
+# CLI flags take precedence over config values.
+
+# Number of parallel metadata-fetching workers (per scrape run).
+workers: 3
+
+# Output format(s). Comma-separate for multiple: "json", "csv", or "json,csv".
+output: json
+
+# Directory where output files are written.
+# Each studio gets its own file: <slugified-studio-url>.json (and/or .csv).
+out_dir: "."
+
+# Path to a SQLite database for persistent storage.
+# Leave empty to disable SQLite and use flat JSON files only.
+db: ""
+
+# Default delay between page requests, in milliseconds.
+# 0 means no delay. Some sites may need throttling to avoid rate limits.
+delay: 0
+
+# Per-scraper delay overrides (milliseconds). Overrides the global `delay`
+# for the matching scraper ID. Sites without an entry fall back to `delay`.
+# Run `fss list-scrapers` to see all scraper IDs.
+site_delays:
+  # manyvids: 0
+  # pornhub: 2000
+  # clips4sale: 1000
+  # brazzers: 500
+
+# Stash integration settings (used by `fss stash` subcommands).
+stash:
+  # URL of your Stash instance.
+  url: "http://localhost:9999"
+
+  # API key for Stash authentication.
+  # Prefer the FSS_STASH_API_KEY environment variable over putting secrets here.
+  api_key: ""
+
+  # Tag applied to every scene updated by `fss stash import`.
+  # Created automatically in Stash if it doesn't exist.
+  tag: "fss_import"
+
+  # Tag applied when `--include-stashbox` overwrites scenes that already have
+  # StashDB metadata. Makes overrides easy to find and revert in the Stash UI.
+  stashbox_tag: "fss_stashbox_override"
+
+  # Add resolution tags (4K Available, Full HD Available, HD Available) to
+  # matched scenes based on the highest resolution found across FSS sources.
+  resolution_tags: true
