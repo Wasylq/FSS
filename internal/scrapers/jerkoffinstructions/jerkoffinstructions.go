@@ -267,4 +267,3 @@ func buildScene(c listingCard, now time.Time) models.Scene {
 		ScrapedAt:   now,
 	}
 }
-

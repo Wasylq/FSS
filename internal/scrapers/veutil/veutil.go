@@ -42,8 +42,8 @@ func New(cfg SiteConfig) *Scraper {
 	}
 }
 
-func (s *Scraper) ID() string          { return s.Cfg.ID }
-func (s *Scraper) Patterns() []string  { return s.Cfg.Patterns }
+func (s *Scraper) ID() string               { return s.Cfg.ID }
+func (s *Scraper) Patterns() []string       { return s.Cfg.Patterns }
 func (s *Scraper) MatchesURL(u string) bool { return s.Cfg.MatchRe.MatchString(u) }
 
 func (s *Scraper) ListScenes(ctx context.Context, studioURL string, opts scraper.ListOpts) (<-chan scraper.SceneResult, error) {
@@ -55,12 +55,12 @@ func (s *Scraper) ListScenes(ctx context.Context, studioURL string, opts scraper
 // ---- API types ----
 
 type wpPost struct {
-	ID       int         `json:"id"`
-	DateGMT  string      `json:"date_gmt"`
-	Link     string      `json:"link"`
-	Title    wpRendered  `json:"title"`
-	Content  wpRendered  `json:"content"`
-	Tags     []int       `json:"tags"`
+	ID      int        `json:"id"`
+	DateGMT string     `json:"date_gmt"`
+	Link    string     `json:"link"`
+	Title   wpRendered `json:"title"`
+	Content wpRendered `json:"content"`
+	Tags    []int      `json:"tags"`
 }
 
 type wpRendered struct {

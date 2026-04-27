@@ -76,24 +76,24 @@ type apiPagination struct {
 }
 
 type apiVideo struct {
-	ID            int     `json:"id"`
-	Title         string  `json:"title"`
-	Thumbnail     string  `json:"thumbnail"`
-	PreviewURL    string  `json:"preview_url"`
-	CreatorName   string  `json:"creator_name"`
-	Duration      string  `json:"duration"`
-	Views         int     `json:"views"`
-	Likes         int     `json:"likes"`
-	Price         string  `json:"price"`
+	ID            int             `json:"id"`
+	Title         string          `json:"title"`
+	Thumbnail     string          `json:"thumbnail"`
+	PreviewURL    string          `json:"preview_url"`
+	CreatorName   string          `json:"creator_name"`
+	Duration      string          `json:"duration"`
+	Views         int             `json:"views"`
+	Likes         int             `json:"likes"`
+	Price         string          `json:"price"`
 	OriginalPrice json.RawMessage `json:"original_price"`
-	VideoURL      string  `json:"video_url"`
-	CreatorURL    string  `json:"creator_url"`
-	IsOnSale      bool    `json:"is_on_sale"`
-	IsFree        bool    `json:"is_free"`
-	IsHD          bool    `json:"is_hd"`
-	Is4K          bool    `json:"is_4k"`
-	IsAudio       bool    `json:"is_audio"`
-	CreatedAt     string  `json:"created_at"`
+	VideoURL      string          `json:"video_url"`
+	CreatorURL    string          `json:"creator_url"`
+	IsOnSale      bool            `json:"is_on_sale"`
+	IsFree        bool            `json:"is_free"`
+	IsHD          bool            `json:"is_hd"`
+	Is4K          bool            `json:"is_4k"`
+	IsAudio       bool            `json:"is_audio"`
+	CreatedAt     string          `json:"created_at"`
 }
 
 // ---- runner ----

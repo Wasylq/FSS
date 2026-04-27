@@ -61,7 +61,7 @@ var (
 type pageMode int
 
 const (
-	modeVideos   pageMode = iota
+	modeVideos pageMode = iota
 	modeSerie
 	modeActress
 	modeCategory

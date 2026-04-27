@@ -154,13 +154,13 @@ type listingCard struct {
 }
 
 var (
-	cardBlockRe = regexp.MustCompile(`(?s)<div class="video-card__item"[^>]*>(.*?)<div class="video-card__icons">`)
-	cardURLRe   = regexp.MustCompile(`href="(https://oopsfamily\.com/video/[^"]+)" class="video-card__title"`)
-	cardTitleRe = regexp.MustCompile(`(?s)class="video-card__title">\s*(.+?)\s*</a>`)
-	cardThumbRe = regexp.MustCompile(`class="image-container"[^>]*>\s*<img src="([^"]+)"`)
-	cardDurRe   = regexp.MustCompile(`video-card__quality">\s*(?:<img[^>]*>)?\s*(\d+):(\d+)`)
-	cardPerfsRe = regexp.MustCompile(`(?s)video-card__actors[^>]*>(.*?)</div>`)
-	cardPerfRe  = regexp.MustCompile(`(?s)<a[^>]*>\s*(.+?)\s*</a>`)
+	cardBlockRe  = regexp.MustCompile(`(?s)<div class="video-card__item"[^>]*>(.*?)<div class="video-card__icons">`)
+	cardURLRe    = regexp.MustCompile(`href="(https://oopsfamily\.com/video/[^"]+)" class="video-card__title"`)
+	cardTitleRe  = regexp.MustCompile(`(?s)class="video-card__title">\s*(.+?)\s*</a>`)
+	cardThumbRe  = regexp.MustCompile(`class="image-container"[^>]*>\s*<img src="([^"]+)"`)
+	cardDurRe    = regexp.MustCompile(`video-card__quality">\s*(?:<img[^>]*>)?\s*(\d+):(\d+)`)
+	cardPerfsRe  = regexp.MustCompile(`(?s)video-card__actors[^>]*>(.*?)</div>`)
+	cardPerfRe   = regexp.MustCompile(`(?s)<a[^>]*>\s*(.+?)\s*</a>`)
 	nextActiveRe = regexp.MustCompile(`pagination__next icon-right-arr"`)
 )
 

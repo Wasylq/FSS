@@ -124,4 +124,3 @@ stash:
 		t.Error("Stash.ResolutionTags = true, want false")
 	}
 }
-

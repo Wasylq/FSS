@@ -35,8 +35,8 @@ func New(cfg SiteConfig) *Scraper {
 	}
 }
 
-func (s *Scraper) ID() string          { return s.Cfg.ID }
-func (s *Scraper) Patterns() []string  { return s.Cfg.Patterns }
+func (s *Scraper) ID() string               { return s.Cfg.ID }
+func (s *Scraper) Patterns() []string       { return s.Cfg.Patterns }
 func (s *Scraper) MatchesURL(u string) bool { return s.Cfg.MatchRe.MatchString(u) }
 
 func (s *Scraper) ListScenes(ctx context.Context, studioURL string, opts scraper.ListOpts) (<-chan scraper.SceneResult, error) {

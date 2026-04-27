@@ -398,10 +398,10 @@ type ldActor struct {
 }
 
 type dataSetup struct {
-	Duration    int            `json:"duration"`
-	ChannelName string         `json:"channelName"`
+	Duration    int             `json:"duration"`
+	ChannelName string          `json:"channelName"`
 	Resolutions map[string]bool `json:"resolutions"`
-	Tracking    trackingData   `json:"trackingData"`
+	Tracking    trackingData    `json:"trackingData"`
 }
 
 type trackingData struct {
