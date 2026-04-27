@@ -19,6 +19,7 @@ Scrapes all scenes and metadata from a studio URL. Designed to be easily extende
 | Digital Playground | Aylo/Juan |
 | 50 Plus MILFs | Score Group |
 | Evil Angel | Gamma/Algolia |
+| House of Fyre | ElevatedX |
 | Fakings | Next.js RSC |
 | Family Therapy | WordPress |
 | Gloryhole Secrets | Gamma/Algolia |

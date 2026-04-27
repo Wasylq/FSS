@@ -12,6 +12,7 @@
 | [Fakings](https://fakings.com) | `fakings.com`, `fakings.com/serie/{slug}`, `fakings.com/actrices-porno/{slug}`, `fakings.com/categoria/{slug}` | Next.js RSC | No | React Server Component flight payload parsing, 5 sub-brands (fakings/pepeporn/nigged/morenolust/pornermates), pagination via `/f/pag:{N}`, actress pages load all videos at once |
 | [Family Therapy](https://familytherapyxxx.com) | `familytherapyxxx.com` | WordPress | No | Sitemap-driven, Rank Math SEO, performer extraction from title, uses `wputil` |
 | [Gloryhole Secrets](https://www.gloryholesecrets.com) | `gloryholesecrets.com` | Gamma/Algolia | No | Algolia search API, uses `gammautil` |
+| [House of Fyre](https://www.houseofyre.com) | `houseofyre.com`, `houseofyre.com/models/{name}.html` | ElevatedX | Yes | HTML listing + detail page worker pool for description/tags, price tracking, ~450 scenes |
 | [BrasilVR](https://www.brasilvr.com) | `brasilvr.com` | POVR/WankzVR | No | Export JSON + listing page dates, uses `povrutil` |
 | [IWantClips](https://www.iwantclips.com) | `iwantclips.com/store/{id}/{username}` | IWantClips | Yes | JSON API, double HTML-unescaping |
 | [Lady Sonia](https://tour.lady-sonia.com) | `lady-sonia.com` | KB Productions/Next.js | No | `__NEXT_DATA__` JSON parsing, 1500+ scenes, listing-only (no detail pages needed) |

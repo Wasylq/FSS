@@ -15,6 +15,7 @@ import (
 	_ "github.com/Wasylq/FSS/internal/scrapers/familytherapy"
 	_ "github.com/Wasylq/FSS/internal/scrapers/fiftyplus"
 	_ "github.com/Wasylq/FSS/internal/scrapers/gloryholesecrets"
+	_ "github.com/Wasylq/FSS/internal/scrapers/houseofyre"
 	_ "github.com/Wasylq/FSS/internal/scrapers/iwantclips"
 	_ "github.com/Wasylq/FSS/internal/scrapers/kink"
 	_ "github.com/Wasylq/FSS/internal/scrapers/ladysonia"

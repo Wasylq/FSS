@@ -33,14 +33,6 @@ func makeArticle(slug, title, performer, desc, thumb string) string {
 </article>`, slug, thumb, title, perfHTML, desc)
 }
 
-func makePagination(pages int) string {
-	var links []string
-	for i := 2; i <= pages; i++ {
-		links = append(links, fmt.Sprintf(`<a href="./updates_%d.html?sort=date" class="pagination__page">%d</a>`, i, i))
-	}
-	return `<nav class="pagination">` + strings.Join(links, "") + `</nav>`
-}
-
 const listingHTML = `<html><body>` +
 	`<article class="content-list__item content-list__item--3 dfc__c1">
 <figure class="item-image">
