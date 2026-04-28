@@ -34,6 +34,9 @@ go.work.sum
 # env file
 .env
 
+# GoReleaser output
+dist/
+
 # Editor/IDE
 .idea/
 .vscode/

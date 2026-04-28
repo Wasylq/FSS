@@ -299,16 +299,33 @@ go build -o fss . && ./fss list-scrapers # new scraper appears
 
 ## Cutting a release
 
-Releases are tagged with `vMAJOR.MINOR.PATCH`. Pushing the tag triggers `.github/workflows/release.yml`, which builds the cross-platform binaries automatically and then **pauses for manual approval** before publishing.
+Releases are tagged with `vMAJOR.MINOR.PATCH`. Pushing the tag triggers `.github/workflows/release.yml`, which builds the cross-platform binaries and `.deb`/`.rpm` packages automatically and then **pauses for manual approval** before publishing.
 
 ### Steps
 
 ```bash
-git tag -a v1.6.0 -m "v1.6.0"
-git push origin v1.6.0
+git tag -a v1.7.0 -m "v1.7.0"
+git push origin v1.7.0
 ```
 
-Then go to the **Actions → Release** run on GitHub, click *Review deployments*, tick `manual-smoke-gate`, and approve. The GitHub Release is published and the Docker image (with `v1.6.0`, `v1.6`, `v1`, and `latest` tags) is built and pushed in the same run. Both happen behind the single approval — neither lands on GHCR or the Releases page if you reject the gate.
+Then go to the **Actions → Release** run on GitHub, click *Review deployments*, tick `manual-smoke-gate`, and approve. The GitHub Release is published (with tarballs, zips, `.deb`, and `.rpm` packages) and the Docker image (with `v1.7.0`, `v1.7`, `v1`, and `latest` tags) is built and pushed in the same run. Both happen behind the single approval — neither lands on GHCR or the Releases page if you reject the gate.
+
+### What the release produces
+
+| Artifact | Platforms |
+|----------|-----------|
+| `.tar.gz` binaries | linux/amd64, linux/arm64, darwin/amd64, darwin/arm64 |
+| `.zip` binary | windows/amd64 |
+| `.deb` package | linux/amd64, linux/arm64 |
+| `.rpm` package | linux/amd64, linux/arm64 |
+
+The `.deb`/`.rpm` packages are built by [nfpm](https://nfpm.goreleaser.com/) using `nfpm.yaml`. To test locally:
+
+```bash
+go install github.com/goreleaser/nfpm/v2/cmd/nfpm@latest
+GOOS=linux GOARCH=amd64 go build -o dist/fss .
+GOARCH=amd64 VERSION=1.7.0 nfpm package --packager deb --target dist/
+```
 
 ### Approver checklist
 
@@ -320,6 +337,15 @@ Before clicking approve, confirm:
 - [ ] The new binary's `fss version` shows the expected tag when run locally.
 
 The gate is a **trust-me** check — nothing verifies that you actually ran the smoke tests. Its only job is to force a pause-and-think before a release goes public.
+
+### AUR and Homebrew
+
+Reference packaging files live in `packaging/`:
+
+- `packaging/aur/PKGBUILD` — Arch Linux AUR package. Update `pkgver` and `sha256sums` after each release, then push to the AUR `fss` repository.
+- `packaging/homebrew/fss.rb` — Reference Homebrew formula. For a proper tap, create a `homebrew-fss` repository and publish the formula there after each release.
+
+Both AUR and Homebrew support system-level updates (`yay -Syu` / `brew upgrade`). For `.deb`/`.rpm` auto-updates via `apt upgrade`/`dnf upgrade`, a hosted package repository (e.g. Packagecloud, Cloudsmith, or Gemfury) is needed — see `docs/enhancements.md`.
 
 ### One-time setup (per maintainer / per fork)
 

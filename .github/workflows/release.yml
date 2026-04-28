@@ -69,6 +69,25 @@ jobs:
             cd ..
           done
 
+      - name: Build .deb and .rpm packages
+        run: |
+          VERSION="${GITHUB_REF#refs/tags/v}"
+          COMMIT="${GITHUB_SHA::8}"
+          DATE="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          LDFLAGS="-s -w -X main.version=v${VERSION} -X main.commit=${COMMIT} -X main.date=${DATE}"
+
+          go install github.com/goreleaser/nfpm/v2/cmd/nfpm@latest
+
+          for arch in amd64 arm64; do
+            echo "Packaging linux/${arch}..."
+            GOOS=linux GOARCH=$arch go build -ldflags "$LDFLAGS" -o dist/fss .
+
+            GOARCH=$arch VERSION=$VERSION nfpm package --packager deb --target dist/
+            GOARCH=$arch VERSION=$VERSION nfpm package --packager rpm --target dist/
+
+            rm dist/fss
+          done
+
       - name: Upload release artifacts
         uses: actions/upload-artifact@v7
         with:
@@ -141,6 +160,16 @@ jobs:
             tar xzf fss-${{ github.ref_name }}-darwin-arm64.tar.gz
             chmod +x fss
             ./fss --version
+            ```
+
+            ### Linux packages
+
+            ```sh
+            # Debian / Ubuntu
+            sudo dpkg -i fss_*_amd64.deb
+
+            # Fedora / RHEL
+            sudo rpm -i fss_*_amd64.rpm
             ```
 
             Or build from source:

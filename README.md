@@ -71,7 +71,7 @@ See [docs/scrapers.md](docs/scrapers.md) for URL patterns and details.
 
 ## Install
 
-Pick one — pre-built binary is easiest, Docker if you prefer containers, source if you want to hack on it.
+Pick one — pre-built binary is easiest, system packages for auto-updates, Docker if you prefer containers, source if you want to hack on it.
 
 ### Option 1 — pre-built binary (recommended)
 
@@ -129,7 +129,30 @@ Move-Item -Force fss.exe "$env:USERPROFILE\bin\fss.exe"
 fss version
 ```
 
-### Option 2 — Docker (multi-arch image on GHCR)
+### Option 2 — system package (.deb / .rpm / AUR)
+
+Each release also publishes `.deb` and `.rpm` packages. Download them from the [latest release](https://github.com/Wasylq/FSS/releases/latest).
+
+```bash
+VERSION=1.7.0
+ARCH=amd64    # or arm64
+
+# Debian / Ubuntu
+curl -LO "https://github.com/Wasylq/FSS/releases/download/v${VERSION}/fss_${VERSION}_${ARCH}.deb"
+sudo dpkg -i "fss_${VERSION}_${ARCH}.deb"
+
+# Fedora / RHEL
+curl -LO "https://github.com/Wasylq/FSS/releases/download/v${VERSION}/fss-${VERSION}-1.x86_64.rpm"
+sudo rpm -i "fss-${VERSION}-1.x86_64.rpm"
+```
+
+#### Arch Linux (AUR)
+
+```bash
+yay -S fss
+```
+
+### Option 3 — Docker (multi-arch image on GHCR)
 
 ```bash
 docker pull ghcr.io/wasylq/fss:latest
@@ -138,7 +161,7 @@ docker run --rm ghcr.io/wasylq/fss:latest list-scrapers
 
 See [docs/docker.md](docs/docker.md) for volume conventions, the bind-mount UID gotcha, and a `docker compose` example with Stash.
 
-### Option 3 — build from source
+### Option 4 — build from source
 
 Requires Go 1.25+ (matches the `go` directive in `go.mod`).
 

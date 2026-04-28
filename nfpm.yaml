@@ -1,0 +1,12 @@
+name: fss
+arch: ${GOARCH}
+platform: linux
+version: ${VERSION}
+maintainer: Wasylq <wasylq@protonmail.com>
+description: Scrapes all scenes and metadata from a studio URL
+vendor: Wasylq
+homepage: https://github.com/Wasylq/FSS
+license: MIT
+contents:
+  - src: dist/fss
+    dst: /usr/bin/fss

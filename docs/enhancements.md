@@ -9,3 +9,11 @@ Some sites (e.g., ladyfyre.com) use Wordfence or Cloudflare WAFs that detect aut
 **Scope**: ~20-line change in `httpx.NewClient()` to swap the default transport for a uTLS-based one. All scrapers would benefit automatically.
 
 **Blocked sites**: ladyfyre.com (WordPress + Wordfence WAF).
+
+## Packagecloud / Cloudsmith — APT and DNF Auto-Updates
+
+GoReleaser produces `.deb` and `.rpm` packages attached to each GitHub Release, but they're manual one-off installs. For `apt upgrade` / `dnf upgrade` to pick up new versions automatically, the packages need to be hosted in a proper repository.
+
+**Options**: [Packagecloud](https://packagecloud.io/) (free for open-source), [Cloudsmith](https://cloudsmith.com/) (free tier), or [Gemfury](https://gemfury.com/). All provide APT and YUM/DNF repos with a stable URL users add once.
+
+**Scope**: Add a post-release GitHub Actions step that pushes `.deb`/`.rpm` artifacts to the hosted repo. ~10-line workflow addition + one-time account setup. GoReleaser's `publishers` feature can do this natively with Packagecloud.
