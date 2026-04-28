@@ -4,6 +4,7 @@
 |------|-------------|----------|---------|-------|
 | [50 Plus MILFs](https://www.50plusmilfs.com) | `50plusmilfs.com` | Score Group | No | HTML listing + detail page worker pool for dates/tags/description, uses `scoregrouputil` |
 | [A POV Story](https://apovstory.com) | `apovstory.com` | PHP tour site | No | HTML listing + detail pages, category extraction |
+| [Aunt Judy's](https://www.auntjudysxxx.com) | `auntjudysxxx.com`, `auntjudysxxx.com/tour/categories/movies.html`, `auntjudysxxx.com/tour/models/{slug}.html` | JEBN CMS | No | HTML listing (24/page, `movies_N_d.html`) + detail page worker pool for title/description/tags/duration, model page support, ~1000+ scenes |
 | [APClips](https://apclips.com) | `apclips.com/{creator_slug}` | Custom HTML | Yes | HTML listing (60/page, `sort=date-new`) + detail pages for dates/tags, price tracking |
 | [Babes](https://www.babes.com) | `babes.com`, `babes.com/pornstar/{id}/{slug}`, `babes.com/category/{id}/{slug}`, `babes.com/site/{id}/{slug}`, `babes.com/series/{id}/{slug}` | Aylo/Juan | No | REST API, filter by performer/category/sub-site/series, uses `ayloutil` |
 | [BangBros](https://www.bangbros.com) | `bangbros.com`, `bangbros.com/model/{id}/{slug}`, `bangbros.com/category/{slug}`, `bangbros.com/websites/{slug}`, `bangbros.com/site/{id}/{slug}`, `bangbros.com/series/{id}/{slug}` | Aylo/Juan | No | REST API, slug-to-ID resolution for `/websites/` and `/category/` URLs, uses `ayloutil` |

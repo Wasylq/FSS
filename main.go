@@ -39,6 +39,7 @@ import (
 	_ "github.com/Wasylq/FSS/internal/scrapers/analtherapy"
 	_ "github.com/Wasylq/FSS/internal/scrapers/apclips"
 	_ "github.com/Wasylq/FSS/internal/scrapers/apovstory"
+	_ "github.com/Wasylq/FSS/internal/scrapers/auntjudys"
 	_ "github.com/Wasylq/FSS/internal/scrapers/babes"
 	_ "github.com/Wasylq/FSS/internal/scrapers/bangbros"
 	_ "github.com/Wasylq/FSS/internal/scrapers/brasilvr"
