@@ -28,6 +28,7 @@ For Stash integration, see [stash.md](stash.md).
 | `--db` | string | _(disabled)_ | Path to SQLite database; enables SQLite store |
 | `--delay` | int | `0` | Milliseconds to sleep between page requests (applies to sites without a `--site-delay` override) |
 | `--site-delay` | []string | _(none)_ | Per-scraper delay overrides as `name=ms` pairs, e.g. `--site-delay manyvids=0,pornhub=2000` |
+| `--name` | string | _(none)_ | Human-readable label for this studio (stored when `--db` is set) |
 
 `--full` and `--refresh` are mutually exclusive.
 
@@ -36,6 +37,14 @@ For Stash integration, see [stash.md](stash.md).
 ### `fss list-scrapers`
 
 Prints all registered scrapers and the URL patterns each one handles. No flags.
+
+### `fss list-studios`
+
+Lists all studios in the SQLite database with scene counts and last-scraped timestamps. Requires `--db`.
+
+### `fss version`
+
+Prints the build version, commit hash, and build date. Checks for newer releases on GitHub.
 
 For `fss stash` subcommands, see [stash.md](stash.md).
 

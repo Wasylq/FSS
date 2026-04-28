@@ -23,7 +23,9 @@ main.go                      ← blank-imports each scraper to trigger init()
   │     ├── stash.Match()
   │     └── stash.Client.UpdateScene()
   │
-  └── cmd/stash_unmatched.go  ← queries Stash for unmatched scenes
+  ├── cmd/stash_unmatched.go  ← queries Stash for unmatched scenes
+  ├── cmd/stash_revert.go     ← undoes a previous stash import
+  └── cmd/version.go          ← prints version and checks for updates
 ```
 
 ## Plugin Registry
@@ -45,16 +47,16 @@ The `StudioScraper` interface has four methods: `ID()`, `Patterns()`, `MatchesUR
 
 **Files:** `scraper/interface.go`, `cmd/scrape.go`
 
-`ListScenes()` returns `<-chan SceneResult` immediately. A background goroutine paginates the site and sends results. The channel carries data and control signals in a single stream:
+`ListScenes()` returns `<-chan SceneResult` immediately. A background goroutine paginates the site and sends results. Each result carries a `Kind` field (`ResultKind`) that determines which other fields are populated:
 
-| Field | Meaning |
-|-------|---------|
-| `Scene` | A scraped scene — the normal case |
-| `Err` | A non-fatal error (logged, scraping continues) |
-| `Total` | Progress hint sent once after the first page |
-| `StoppedEarly` | Incremental mode hit a known ID — stop signal |
+| Kind | Meaning |
+|------|---------|
+| `KindScene` | A scraped scene (`result.Scene`) — the normal case |
+| `KindError` | A non-fatal error (`result.Err`) — logged, scraping continues |
+| `KindTotal` | Progress hint (`result.Total`) sent once after the first page |
+| `KindStoppedEarly` | Incremental mode hit a known ID — stop signal |
 
-The consumer (`collectScenes()` in `cmd/scrape.go`) checks these fields in priority order and drains until the channel closes.
+The consumer (`collectScenes()` in `cmd/scrape.go`) switches on `result.Kind` and drains until the channel closes. Prefer the constructor functions: `scraper.Scene(s)`, `scraper.Error(err)`, `scraper.Progress(n)`, `scraper.StoppedEarly()`.
 
 **Critical invariant:** the goroutine must `defer close(out)` as its first line, and every send must be wrapped in `select` with `case <-ctx.Done()` to prevent goroutine leaks on cancellation.
 
@@ -68,10 +70,10 @@ The `Store` interface decouples scraping from persistence:
 type Store interface {
     Load(studioURL string) ([]models.Scene, error)
     Save(studioURL string, scenes []models.Scene) error
-    MarkDeleted(studioURL string, ids []string, at time.Time) error
-    Export(studioURL string, format string) error
-    UpsertStudio(s Studio) error
-    ListStudios() ([]Studio, error)
+    MarkDeleted(studioURL string, ids []string) error
+    Export(format, path, studioURL string) error
+    UpsertStudio(studio models.Studio) error
+    ListStudios() ([]models.Studio, error)
 }
 ```
 
@@ -83,33 +85,49 @@ Scrapers never know which store is active.
 
 ## Shared Scraper Packages
 
-Two utility packages eliminate duplication for sites that share a platform:
+Seven utility packages eliminate duplication for sites that share a platform:
+
+### ayloutil
+
+**File:** `internal/scrapers/ayloutil/`
+
+For Aylo/MindGeek sites (Babes, BangBros, Brazzers, Digital Playground, Mofos, PropertySex, Reality Kings, TransAngels, Twistys). Uses the `/api/2/releases` REST endpoint with `instance_token` cookie. Individual scrapers are thin wrappers supplying site config.
 
 ### gammautil
 
-**File:** `internal/scrapers/gammautil/gammautil.go`
+**File:** `internal/scrapers/gammautil/`
 
-For Gamma Entertainment sites (Pure Taboo, Taboo Heat) that use the same Algolia search backend. Provides:
+For Gamma Entertainment sites (Burning Angel, Evil Angel, Filthy Kings, Gangbang Creampie, Girlfriends Films, Gloryhole Secrets, Lethal Hardcore, Mommy Blows Best, Pure Taboo, Rocco Siffredi, Taboo Heat, Wicked). Uses Algolia search with a rotating API key scraped from the site HTML. Individual scrapers supply a `SiteConfig` and delegate to `gammautil.Scraper.Run()`.
 
-- `Scraper` struct with `Run()` — handles API key extraction, Algolia pagination, and channel streaming
-- `ToScene()` — converts Algolia hits to `models.Scene`
-- `FetchAPIKey()` — scrapes the rotating API key from the site's HTML
-- Resolution, thumbnail, and trailer helpers
+### veutil
 
-Individual scrapers are ~50-line wrappers that supply a `SiteConfig` (site ID, base URL, studio name) and delegate to `gammautil.Scraper.Run()`.
+**File:** `internal/scrapers/veutil/`
+
+For WordPress video-elements theme sites (BoyfriendSharing, BrattyFamily, GoStuckYourself, HugeCockBreak, LittleFromAsia, MommysBoy, MomXXX, MyBadMILFs, DaughterSwap, PervMom, SisLovesMe, YoungerLoverOfMine). Uses `/wp-json/` API with the `flavor` parameter. Individual scrapers register with site-specific config.
 
 ### wputil
 
-**File:** `internal/scrapers/wputil/wputil.go`
+**File:** `internal/scrapers/wputil/`
 
-For WordPress-based sites (Tara Tainton, Mom Comes First). Provides:
+For WordPress-based sites (Anal Therapy, Family Therapy, Mom Comes First, Perfect Girlfriend, Tara Tainton). Provides XML sitemap parsing, OpenGraph/JSON-LD extraction, and a worker pool for parallel page fetching. Individual scrapers implement a `parsePage` callback.
 
-- `FetchSitemap()` / `FetchAllSitemaps()` — XML sitemap parsing
-- `ParseMeta()` — extracts OpenGraph tags, article metadata, JSON-LD VideoObject, shortlink post ID
-- `RunWorkerPool()` — sitemap discovery + parallel page fetching with a `PageParser` callback
-- `BrowserHeaders()` — WAF-bypassing headers
+### povrutil
 
-Individual scrapers implement a `parsePage` callback and registration; wputil handles discovery and concurrency.
+**File:** `internal/scrapers/povrutil/`
+
+For POVR/WankzVR VR platform sites (BrasilVR, MilfVR, TranzVR, WankzVR). Uses the POVR API for scene listing and metadata.
+
+### sexmexutil
+
+**File:** `internal/scrapers/sexmexutil/`
+
+For SexMex Pro CMS sites (Exposed Latinas, SexMex, Trans Queens). Handles the `/es/`/`/en/` locale prefix and HTTP 500 responses with valid HTML (intentional — see Key Conventions in CLAUDE.md).
+
+### scoregrouputil
+
+**File:** `internal/scrapers/scoregrouputil/`
+
+For Score Group sites (50 Plus MILFs). HTML listing + detail page worker pool for dates/tags.
 
 ## HTTP Layer
 

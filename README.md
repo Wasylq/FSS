@@ -11,64 +11,86 @@ Scrapes all scenes and metadata from a studio URL. Designed to be easily extende
 
 | Site | Platform |
 |------|----------|
+| 50 Plus MILFs | Score Group |
 | A POV Story | PHP tour site |
+| Anal Therapy | WordPress |
 | APClips | Custom HTML |
+| Aunt Judy's | JEBN CMS |
 | Babes | Aylo/Juan |
 | BangBros | Aylo/Juan |
+| BoyfriendSharing | WP video-elements |
 | BrasilVR | POVR/WankzVR |
+| BrattyFamily | WP video-elements |
 | Brazzers | Aylo/Juan |
+| Burning Angel | Gamma/Algolia |
 | Clips4Sale | Clips4Sale |
-| Anal Therapy | WordPress |
+| DaughterSwap | WP video-elements |
 | Digital Playground | Aylo/Juan |
-| 50 Plus MILFs | Score Group |
 | Evil Angel | Gamma/Algolia |
-| FapHouse | Custom HTML |
-| House of Fyre | ElevatedX |
+| Exposed Latinas | SexMex Pro CMS |
 | Fakings | Next.js RSC |
 | Family Therapy | WordPress |
+| FanCentro | FanCentro |
+| FapHouse | Custom HTML |
+| Filthy Kings | Gamma/Algolia |
+| FTV MILFs | Custom (FTV) |
+| Gangbang Creampie | Gamma/Algolia |
+| Girlfriends Films | Gamma/Algolia |
 | Gloryhole Secrets | Gamma/Algolia |
+| GoStuckYourself | WP video-elements |
+| House of Fyre | ElevatedX |
+| HugeCockBreak | WP video-elements |
 | IWantClips | IWantClips |
+| Jerk Off Instructions | Custom PHP |
 | Kink | Kink |
 | Lady Sonia | KB Productions/Next.js |
+| Lethal Hardcore | Gamma/Algolia |
+| LittleFromAsia | WP video-elements |
 | LoyalFans | LoyalFans API |
 | ManyVids | ManyVids |
 | Mature.nl | Custom |
 | MilfVR | POVR/WankzVR |
-| MYLF | TeamSkeet/PSM |
-| Pure Mature | AMA Multimedia |
 | MissaX | Custom |
 | Mofos | Aylo/Juan |
 | Mom Comes First | WordPress |
 | Mommy Blows Best | Gamma/Algolia |
-| Burning Angel | Gamma/Algolia |
-| Filthy Kings | Gamma/Algolia |
-| Gangbang Creampie | Gamma/Algolia |
-| Girlfriends Films | Gamma/Algolia |
-| Lethal Hardcore | Gamma/Algolia |
-| Naughty America | Naughty America |
-| OopsFamily | FapHouse/Custom |
-| Nubiles Network | EdgeCms |
-| Perfect Girlfriend | WordPress |
+| MommysBoy | WP video-elements |
+| MomXXX | WP video-elements |
+| MyBadMILFs | WP video-elements |
 | MyDirtyHobby | MyDirtyHobby |
+| MYLF | TeamSkeet/PSM |
+| Naughty America | Naughty America |
+| Nubiles Network | EdgeCms |
+| OopsFamily | FapHouse/Custom |
+| Over 40 Handjobs | Custom |
+| Penny Barber | ModelCentro |
+| Perfect Girlfriend | WordPress |
+| PervMom | WP video-elements |
 | Pornhub | Pornhub |
-| Pure Taboo | Gamma/Algolia |
 | PropertySex | Aylo/Juan |
+| Pure Mature | AMA Multimedia |
+| Pure Taboo | Gamma/Algolia |
 | Queensnake | Custom |
 | Rachel Steele | MyMember.site |
+| Reagan Foxx | Adult Empire Stores |
 | Reality Kings | Aylo/Juan |
-| See Mom Suck | 3rdShiftVideo/ThickCash |
 | Rocco Siffredi | Gamma/Algolia |
+| See Mom Suck | 3rdShiftVideo/ThickCash |
 | SexMex | SexMex Pro CMS |
+| SisLovesMe | WP video-elements |
 | Sofie Marie | ELXComplete/Andomark |
-| Exposed Latinas | SexMex Pro CMS |
-| Trans Angels | Aylo/Juan |
-| Trans Queens | SexMex Pro CMS |
-| TranzVR | POVR/WankzVR |
 | Taboo Heat | Gamma/Algolia |
 | Tara Tainton | WordPress |
+| Trans Queens | SexMex Pro CMS |
+| TransAngels | Aylo/Juan |
+| TranzVR | POVR/WankzVR |
 | Twistys | Aylo/Juan |
+| Visit-X | VXOne |
 | WankzVR | POVR/WankzVR |
 | Wicked | Gamma/Algolia |
+| Xes.pl | Custom |
+| Xev Bellringer | JEBN CMS |
+| YoungerLoverOfMine | WP video-elements |
 | YourVids | YourVids |
 
 See [docs/scrapers.md](docs/scrapers.md) for URL patterns and details.
@@ -87,7 +109,7 @@ Asset naming: `fss-<version>-<os>-<arch>.tar.gz` (or `.zip` for Windows). Availa
 
 ```bash
 # Pick a version from https://github.com/Wasylq/FSS/releases/latest
-VERSION=v1.6.0
+VERSION=v1.10.0
 ARCH=amd64    # or arm64 for Raspberry Pi 4/5, ARM cloud instances, etc.
 
 curl -LO https://github.com/Wasylq/FSS/releases/download/${VERSION}/fss-${VERSION}-linux-${ARCH}.tar.gz
@@ -101,7 +123,7 @@ If you don't have sudo, drop `fss` into `~/.local/bin/` (already on your `PATH` 
 #### macOS
 
 ```bash
-VERSION=v1.6.0
+VERSION=v1.10.0
 ARCH=arm64    # Apple Silicon (M1+); use amd64 for Intel Macs
 
 curl -LO https://github.com/Wasylq/FSS/releases/download/${VERSION}/fss-${VERSION}-darwin-${ARCH}.tar.gz
@@ -118,7 +140,7 @@ fss version
 #### Windows (PowerShell)
 
 ```powershell
-$Version = "v1.6.0"
+$Version = "v1.10.0"
 
 Invoke-WebRequest -Uri "https://github.com/Wasylq/FSS/releases/download/$Version/fss-$Version-windows-amd64.zip" -OutFile fss.zip
 Expand-Archive -Path fss.zip -DestinationPath .
@@ -138,7 +160,7 @@ fss version
 Each release also publishes `.deb` and `.rpm` packages. Download them from the [latest release](https://github.com/Wasylq/FSS/releases/latest).
 
 ```bash
-VERSION=1.7.0
+VERSION=1.10.0
 ARCH=amd64    # or arm64
 
 # Debian / Ubuntu

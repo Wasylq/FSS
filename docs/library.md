@@ -47,20 +47,16 @@ func main() {
 	}
 
 	for r := range ch {
-		if r.Total > 0 {
+		switch r.Kind {
+		case scraper.KindTotal:
 			fmt.Printf("Estimated total: %d scenes\n", r.Total)
-			continue
-		}
-		if r.StoppedEarly {
+		case scraper.KindStoppedEarly:
 			fmt.Println("Stopped early (hit known ID)")
-			continue
-		}
-		if r.Err != nil {
+		case scraper.KindError:
 			log.Printf("error: %v", r.Err)
-			continue
+		case scraper.KindScene:
+			fmt.Printf("%-40s %s\n", r.Scene.Title, r.Scene.URL)
 		}
-
-		fmt.Printf("%-40s %s\n", r.Scene.Title, r.Scene.URL)
 	}
 }
 ```
@@ -123,18 +119,18 @@ opts := scraper.ListOpts{
 
 ## Reading Results
 
-`ListScenes` returns a channel of `SceneResult`. Each result is one of four things — check in this order:
+`ListScenes` returns a channel of `SceneResult`. Each result carries a `Kind` field — switch on it:
 
 ```go
 for r := range ch {
-    switch {
-    case r.Total > 0:
+    switch r.Kind {
+    case scraper.KindTotal:
         // Progress hint (sent once). Use for display, then skip.
-    case r.StoppedEarly:
+    case scraper.KindStoppedEarly:
         // Incremental mode hit a known ID. No more scenes coming.
-    case r.Err != nil:
-        // Non-fatal error. Log and continue.
-    default:
+    case scraper.KindError:
+        // Non-fatal error (r.Err). Log and continue.
+    case scraper.KindScene:
         // r.Scene is a valid models.Scene.
     }
 }
