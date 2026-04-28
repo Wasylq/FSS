@@ -83,6 +83,7 @@ import (
 	_ "github.com/Wasylq/FSS/internal/scrapers/transqueens"
 	_ "github.com/Wasylq/FSS/internal/scrapers/tranzvr"
 	_ "github.com/Wasylq/FSS/internal/scrapers/twistys"
+	_ "github.com/Wasylq/FSS/internal/scrapers/visitx"
 	_ "github.com/Wasylq/FSS/internal/scrapers/wankzvr"
 	_ "github.com/Wasylq/FSS/internal/scrapers/yourvids"
 

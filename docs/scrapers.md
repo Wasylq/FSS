@@ -50,6 +50,7 @@
 | [Sofie Marie](https://sofiemariexxx.com) | `sofiemariexxx.com`, `sofiemariexxx.com/models/{slug}.html`, `sofiemariexxx.com/dvds/{slug}.html` | ELXComplete/Andomark | No | HTML scraping, paginated listing (movies category), model pages via `sets.php` pagination, DVD pages single-fetch |
 | [Trans Queens](https://transqueens.com) | `transqueens.com/tour/updates`, `transqueens.com/tour/models/{slug}.html`, `transqueens.com/tour/categories/{slug}.html` | SexMex Pro CMS | No | Thin wrapper around `sexmexutil` |
 | [TranzVR](https://www.tranzvr.com) | `tranzvr.com` | POVR/WankzVR | No | Thin wrapper around `povrutil` |
+| [Visit-X](https://www.visit-x.net) | `visit-x.net/{lang}/amateur/{model}/videos/` | VXOne (custom) | Yes (VXC) | GraphQL API (`/vxql`), JWT token from page HTML (no login), all data from listing query, price tracking in VXC coins |
 | [WankzVR](https://www.wankzvr.com) | `wankzvr.com` | POVR/WankzVR | No | Export JSON + listing page dates, uses `povrutil` |
 | [Burning Angel](https://www.burningangel.com) | `burningangel.com` | Gamma/Algolia | No | Algolia search API, uses `gammautil` |
 | [Filthy Kings](https://www.filthykings.com) | `filthykings.com` | Gamma/Algolia | No | Algolia search API, uses `gammautil` |
