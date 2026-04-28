@@ -15,6 +15,17 @@ func All() []StudioScraper {
 	return registered
 }
 
+// ForID returns the registered scraper with the given ID,
+// or an error if none match.
+func ForID(id string) (StudioScraper, error) {
+	for _, s := range registered {
+		if s.ID() == id {
+			return s, nil
+		}
+	}
+	return nil, fmt.Errorf("no scraper registered with ID: %s", id)
+}
+
 // ForURL returns the first registered scraper that matches the given URL,
 // or an error if none match.
 func ForURL(url string) (StudioScraper, error) {

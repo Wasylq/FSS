@@ -228,6 +228,7 @@ CLI flags always override config values. See [docs/usage.md](docs/usage.md#confi
 | [docs/usage.md](docs/usage.md) | CLI reference, data model, output formats, SQLite |
 | [docs/stash.md](docs/stash.md) | Stash integration: matching, merging, import workflow |
 | [docs/docker.md](docs/docker.md) | Running FSS in Docker — image tags, volumes, compose examples |
+| [docs/library.md](docs/library.md) | Using FSS as a Go library — registry API, streaming results, Scene model |
 | [docs/architecture.md](docs/architecture.md) | System design, plugin registry, streaming model, store abstraction |
 | [CONTRIBUTING.md](CONTRIBUTING.md) | How to add a new scraper, reference implementations |
 | [SECURITY.md](SECURITY.md) | Credential handling, network policy, vulnerability reporting |

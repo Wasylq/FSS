@@ -37,7 +37,7 @@ init() → scraper.Register(New()) → appends to global slice
 main.go blank-imports each scraper package → triggers init()
 ```
 
-At runtime, `scraper.ForURL(url)` iterates registered scrapers and returns the first whose `MatchesURL()` matches. `scraper.All()` returns everything (used by `list-scrapers`).
+At runtime, `scraper.ForURL(url)` iterates registered scrapers and returns the first whose `MatchesURL()` matches. `scraper.ForID(id)` looks up by stable identifier. `scraper.All()` returns everything (used by `list-scrapers`). See [docs/library.md](library.md) for using these as a Go library.
 
 The `StudioScraper` interface has four methods: `ID()`, `Patterns()`, `MatchesURL()`, and `ListScenes()`. All scrapers implement this directly — there's no base struct or embedding.
 
