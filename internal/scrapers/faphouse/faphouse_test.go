@@ -268,7 +268,7 @@ type testCard struct {
 
 func listingHTML(cards []testCard, total int) string {
 	var sb strings.Builder
-	sb.WriteString(fmt.Sprintf(`<html><body><span class="switcher-block__counter">%d</span>`, total))
+	fmt.Fprintf(&sb, `<html><body><span class="switcher-block__counter">%d</span>`, total)
 	for _, c := range cards {
 		slug := strings.ReplaceAll(strings.ToLower(c.title), " ", "-") + "-abc123"
 		priceAttr := ""
@@ -279,7 +279,7 @@ func listingHTML(cards []testCard, total int) string {
 		if c.preview != "" {
 			previewAttr = fmt.Sprintf(` data-el-video="%s"`, c.preview)
 		}
-		sb.WriteString(fmt.Sprintf(`
+		fmt.Fprintf(&sb, `
 <div class="thumb tv" data-test-id="video-thumb-%s" data-id="%s"%s>
 <a class="t-vl" href="/videos/%s">
 <div class="t-vi">HD <span>%s</span></div>
@@ -290,7 +290,7 @@ func listingHTML(cards []testCard, total int) string {
 </div>`,
 			c.id, c.id, previewAttr,
 			slug, c.dur, c.thumb, c.title,
-			c.studio, priceAttr))
+			c.studio, priceAttr)
 	}
 	sb.WriteString(`</body></html>`)
 	return sb.String()
@@ -303,18 +303,18 @@ func newTestServer(typePath, slug string, pages [][]testCard, total int, details
 		w.Header().Set("Content-Type", "text/html")
 
 		if html, ok := details[r.URL.Path]; ok {
-			fmt.Fprint(w, html)
+			_, _ = fmt.Fprint(w, html)
 			return
 		}
 
 		if strings.HasPrefix(r.URL.Path, listingPrefix) {
 			if pageIdx >= len(pages) {
-				fmt.Fprint(w, `<html><body></body></html>`)
+				_, _ = fmt.Fprint(w, `<html><body></body></html>`)
 				return
 			}
 			cards := pages[pageIdx]
 			pageIdx++
-			fmt.Fprint(w, listingHTML(cards, total))
+			_, _ = fmt.Fprint(w, listingHTML(cards, total))
 			return
 		}
 
@@ -332,12 +332,12 @@ func detailPageHTML(date string, performers []string, desc string, categories []
 	vsJSON, _ := json.Marshal(vs)
 
 	var sb strings.Builder
-	sb.WriteString(fmt.Sprintf(`<html><body><script id="view-state-data" type="application/json">%s</script>`, string(vsJSON)))
+	fmt.Fprintf(&sb, `<html><body><script id="view-state-data" type="application/json">%s</script>`, string(vsJSON))
 	if desc != "" {
-		sb.WriteString(fmt.Sprintf(`<div class="video-info-details__description"><details><p>%s</p></details></div>`, desc))
+		fmt.Fprintf(&sb, `<div class="video-info-details__description"><details><p>%s</p></details></div>`, desc)
 	}
 	for _, cat := range categories {
-		sb.WriteString(fmt.Sprintf(`<a class="vid-c" href="/c/%s/videos">%s</a>`, strings.ToLower(cat), cat))
+		fmt.Fprintf(&sb, `<a class="vid-c" href="/c/%s/videos">%s</a>`, strings.ToLower(cat), cat)
 	}
 	sb.WriteString(`</body></html>`)
 	return sb.String()

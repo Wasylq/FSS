@@ -224,10 +224,10 @@ type testCard struct {
 
 func listingHTML(slug string, cards []testCard, total int) string {
 	var sb strings.Builder
-	sb.WriteString(fmt.Sprintf(`<html><body><h2 class="h5">Showing 1-<span id="shown">%d</span> of %d Results</h2>`, len(cards), total))
+	fmt.Fprintf(&sb, `<html><body><h2 class="h5">Showing 1-<span id="shown">%d</span> of %d Results</h2>`, len(cards), total)
 	for _, c := range cards {
 		detailSlug := strings.ReplaceAll(strings.ToLower(c.title), " ", "-")
-		sb.WriteString(fmt.Sprintf(`
+		fmt.Fprintf(&sb, `
 <div class="col px-2 pb-1 video-col fix-col">
 <div class="card thumb-block with-desc">
 <a class="thumb-image" href="/%s/%s" data-content-code="%s" data-content-price="%s" data-preview="%s">
@@ -245,7 +245,7 @@ func listingHTML(slug string, cards []testCard, total int) string {
 			c.thumb, c.title, c.creator,
 			c.dur,
 			slug, detailSlug,
-			c.title, c.desc))
+			c.title, c.desc)
 	}
 	sb.WriteString(`</body></html>`)
 	return sb.String()
@@ -253,10 +253,10 @@ func listingHTML(slug string, cards []testCard, total int) string {
 
 func detailHTML(date string, tags []string) string {
 	var sb strings.Builder
-	sb.WriteString(fmt.Sprintf(`<html><body><time datetime="%s">%s</time>`, date, date))
+	fmt.Fprintf(&sb, `<html><body><time datetime="%s">%s</time>`, date, date)
 	sb.WriteString(`<div class="tag-cloud">`)
 	for _, tag := range tags {
-		sb.WriteString(fmt.Sprintf(`<a class="tag-link" href="/tags/%s">%s</a>`, tag, tag))
+		fmt.Fprintf(&sb, `<a class="tag-link" href="/tags/%s">%s</a>`, tag, tag)
 	}
 	sb.WriteString(`</div></body></html>`)
 	return sb.String()
@@ -268,7 +268,7 @@ func newTestServer(slug string, pages [][]testCard, total int, details map[strin
 		// Detail page requests.
 		if html, ok := details[r.URL.Path]; ok {
 			w.Header().Set("Content-Type", "text/html")
-			fmt.Fprint(w, html)
+			_, _ = fmt.Fprint(w, html)
 			return
 		}
 
@@ -276,14 +276,14 @@ func newTestServer(slug string, pages [][]testCard, total int, details map[strin
 		if strings.Contains(r.URL.Path, "/videos") {
 			if pageIdx >= len(pages) {
 				w.Header().Set("Content-Type", "text/html")
-				fmt.Fprint(w, `<html><body></body></html>`)
+				_, _ = fmt.Fprint(w, `<html><body></body></html>`)
 				return
 			}
 			cards := pages[pageIdx]
 			pageIdx++
 
 			w.Header().Set("Content-Type", "text/html")
-			fmt.Fprint(w, listingHTML(slug, cards, total))
+			_, _ = fmt.Fprint(w, listingHTML(slug, cards, total))
 			return
 		}
 

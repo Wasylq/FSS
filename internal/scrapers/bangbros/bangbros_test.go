@@ -65,12 +65,12 @@ func TestParseFilter(t *testing.T) {
 func newResolvingServer(t *testing.T, releases []ayloutil.Release, total int) *httptest.Server {
 	t.Helper()
 	return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		switch {
-		case r.URL.Path == "/":
+		switch r.URL.Path {
+		case "/":
 			http.SetCookie(w, &http.Cookie{Name: "instance_token", Value: "test-token"})
 			_, _ = w.Write([]byte("<html></html>"))
 
-		case r.URL.Path == "/v2/tags":
+		case "/v2/tags":
 			name := strings.ToLower(r.URL.Query().Get("name"))
 			tagMap := map[string]int{"brunette": 127, "milf": 79}
 			id, ok := tagMap[name]
@@ -85,7 +85,7 @@ func newResolvingServer(t *testing.T, releases []ayloutil.Release, total int) *h
 				"result": []map[string]any{{"id": id, "name": name}},
 			})
 
-		case r.URL.Path == "/v2/releases":
+		case "/v2/releases":
 			search := r.URL.Query().Get("search")
 			if search != "" {
 				// Collection resolution: return a scene with matching collection.
