@@ -10,6 +10,7 @@ package scraper
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/Wasylq/FSS/models"
@@ -63,6 +64,21 @@ const (
 	// KindStoppedEarly signals the scraper hit a known ID and stopped pagination.
 	KindStoppedEarly
 )
+
+func (k ResultKind) String() string {
+	switch k {
+	case KindScene:
+		return "Scene"
+	case KindError:
+		return "Error"
+	case KindTotal:
+		return "Total"
+	case KindStoppedEarly:
+		return "StoppedEarly"
+	default:
+		return fmt.Sprintf("ResultKind(%d)", int(k))
+	}
+}
 
 // SceneResult is a single item sent on the channel returned by ListScenes.
 // Use the Kind field to determine which other fields are populated.
