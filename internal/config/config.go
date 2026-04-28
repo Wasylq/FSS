@@ -3,8 +3,10 @@ package config
 import (
 	"fmt"
 	"io"
+	"log"
 	"os"
 	"regexp"
+	"runtime"
 
 	"github.com/adrg/xdg"
 	"gopkg.in/yaml.v3"
@@ -89,6 +91,12 @@ func Load() (*Config, error) {
 		return nil, fmt.Errorf("opening config %s: %w", path, err)
 	}
 	defer func() { _ = f.Close() }()
+
+	if runtime.GOOS != "windows" {
+		if info, err := f.Stat(); err == nil && info.Mode().Perm()&0o077 != 0 {
+			log.Printf("warning: %s is readable by other users (mode %04o); consider chmod 600", path, info.Mode().Perm())
+		}
+	}
 
 	raw, err := io.ReadAll(f)
 	if err != nil {
