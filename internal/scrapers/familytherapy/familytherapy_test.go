@@ -9,6 +9,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/Wasylq/FSS/internal/scrapers/testutil"
 	"github.com/Wasylq/FSS/scraper"
 )
 
@@ -191,23 +192,13 @@ func TestListScenes(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	var scenes []string
-	for r := range ch {
-		if r.Kind == scraper.KindTotal || r.Kind == scraper.KindStoppedEarly {
-			continue
-		}
-		if r.Err != nil {
-			t.Errorf("unexpected error: %v", r.Err)
-			continue
-		}
-		scenes = append(scenes, r.Scene.Title)
-	}
+	scenes := testutil.CollectScenes(t, ch)
 
 	if len(scenes) != 1 {
-		t.Fatalf("got %d scenes, want 1 (homepage should be filtered): %v", len(scenes), scenes)
+		t.Fatalf("got %d scenes, want 1 (homepage should be filtered)", len(scenes))
 	}
-	if scenes[0] != "No Vacancy" {
-		t.Errorf("scene title = %q, want No Vacancy", scenes[0])
+	if scenes[0].Title != "No Vacancy" {
+		t.Errorf("scene title = %q, want No Vacancy", scenes[0].Title)
 	}
 }
 

@@ -9,6 +9,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/Wasylq/FSS/internal/scrapers/testutil"
 	"github.com/Wasylq/FSS/scraper"
 )
 
@@ -178,28 +179,19 @@ func TestPaginatedScrape(t *testing.T) {
 		s.runWithBase(ctx, ts.URL+"/api/releases?sort=latest", ts.URL, scraper.ListOpts{}, out)
 	}()
 
-	var scenes []string
-	for r := range out {
-		if r.Err != nil {
-			t.Fatalf("unexpected error: %v", r.Err)
-		}
-		if r.Kind == scraper.KindTotal || r.Kind == scraper.KindStoppedEarly {
-			continue
-		}
-		scenes = append(scenes, r.Scene.ID)
-	}
+	scenes := testutil.CollectScenes(t, out)
 	if len(scenes) != 2 {
 		t.Errorf("got %d scenes, want 2", len(scenes))
 	}
 }
 
 func TestKnownIDsStopsEarly(t *testing.T) {
-	scenes := []apiScene{
+	apiScenes := []apiScene{
 		makeTestScene(100, "a", "A"),
 		makeTestScene(101, "b", "B"),
 		makeTestScene(102, "c", "C"),
 	}
-	page := fakeAPIResponse(scenes, 3, false)
+	page := fakeAPIResponse(apiScenes, 3, false)
 
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
@@ -218,20 +210,9 @@ func TestKnownIDsStopsEarly(t *testing.T) {
 		s.runWithBase(ctx, ts.URL+"/api/releases?sort=latest", ts.URL, opts, out)
 	}()
 
-	var gotScenes int
-	var stoppedEarly bool
-	for r := range out {
-		if r.Kind == scraper.KindStoppedEarly {
-			stoppedEarly = true
-			continue
-		}
-		if r.Total > 0 || r.Err != nil {
-			continue
-		}
-		gotScenes++
-	}
-	if gotScenes != 1 {
-		t.Errorf("got %d scenes before known ID, want 1", gotScenes)
+	scenes, stoppedEarly := testutil.CollectScenesWithStop(t, out)
+	if len(scenes) != 1 {
+		t.Errorf("got %d scenes before known ID, want 1", len(scenes))
 	}
 	if !stoppedEarly {
 		t.Error("expected StoppedEarly")

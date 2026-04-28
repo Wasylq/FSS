@@ -10,6 +10,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/Wasylq/FSS/internal/scrapers/testutil"
 	"github.com/Wasylq/FSS/scraper"
 )
 
@@ -226,26 +227,18 @@ A great description of the video.
 		t.Fatal(err)
 	}
 
-	var scenes []string
-	for r := range ch {
-		if r.Kind == scraper.KindTotal || r.Kind == scraper.KindStoppedEarly {
-			continue
-		}
-		if r.Err != nil {
-			t.Errorf("unexpected error: %v", r.Err)
-			continue
-		}
-		scenes = append(scenes, r.Scene.Title)
-		if r.Scene.Description != "A great description of the video." {
-			t.Errorf("Description = %q", r.Scene.Description)
-		}
-		if len(r.Scene.Tags) != 2 {
-			t.Errorf("Tags = %v", r.Scene.Tags)
-		}
-	}
+	scenes := testutil.CollectScenes(t, ch)
 
 	if len(scenes) != 2 {
-		t.Fatalf("got %d scenes, want 2: %v", len(scenes), scenes)
+		t.Fatalf("got %d scenes, want 2", len(scenes))
+	}
+	for _, s := range scenes {
+		if s.Description != "A great description of the video." {
+			t.Errorf("Description = %q", s.Description)
+		}
+		if len(s.Tags) != 2 {
+			t.Errorf("Tags = %v", s.Tags)
+		}
 	}
 }
 
@@ -293,28 +286,13 @@ func TestListScenesKnownIDs(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	var titles []string
-	stoppedEarly := false
-	for r := range ch {
-		if r.Total > 0 {
-			continue
-		}
-		if r.Kind == scraper.KindStoppedEarly {
-			stoppedEarly = true
-			continue
-		}
-		if r.Err != nil {
-			t.Errorf("unexpected error: %v", r.Err)
-			continue
-		}
-		titles = append(titles, r.Scene.Title)
-	}
+	scenes, stoppedEarly := testutil.CollectScenesWithStop(t, ch)
 
 	if !stoppedEarly {
 		t.Error("expected StoppedEarly")
 	}
-	if len(titles) != 1 || titles[0] != "New" {
-		t.Errorf("titles = %v, want [New]", titles)
+	if len(scenes) != 1 || scenes[0].Title != "New" {
+		t.Errorf("got %d scenes, want [New]", len(scenes))
 	}
 }
 

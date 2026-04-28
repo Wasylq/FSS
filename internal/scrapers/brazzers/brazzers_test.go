@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/Wasylq/FSS/internal/scrapers/ayloutil"
+	"github.com/Wasylq/FSS/internal/scrapers/testutil"
 	"github.com/Wasylq/FSS/scraper"
 )
 
@@ -352,23 +353,13 @@ func TestListScenes(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	var scenes []string
-	for r := range ch {
-		if r.Kind == scraper.KindTotal || r.Kind == scraper.KindStoppedEarly {
-			continue
-		}
-		if r.Err != nil {
-			t.Errorf("unexpected error: %v", r.Err)
-			continue
-		}
-		scenes = append(scenes, r.Scene.Title)
-	}
+	results := testutil.CollectScenes(t, ch)
 
-	if len(scenes) != 2 {
-		t.Fatalf("got %d scenes, want 2", len(scenes))
+	if len(results) != 2 {
+		t.Fatalf("got %d scenes, want 2", len(results))
 	}
-	if scenes[0] != "Scene One" || scenes[1] != "Scene Two" {
-		t.Errorf("scenes = %v", scenes)
+	if results[0].Title != "Scene One" || results[1].Title != "Scene Two" {
+		t.Errorf("scenes = %v", results)
 	}
 }
 
@@ -399,28 +390,13 @@ func TestListScenesKnownIDs(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	var scenes []string
-	var stoppedEarly bool
-	for r := range ch {
-		if r.Total > 0 {
-			continue
-		}
-		if r.Kind == scraper.KindStoppedEarly {
-			stoppedEarly = true
-			continue
-		}
-		if r.Err != nil {
-			t.Errorf("unexpected error: %v", r.Err)
-			continue
-		}
-		scenes = append(scenes, r.Scene.ID)
-	}
+	results, stoppedEarly := testutil.CollectScenesWithStop(t, ch)
 
 	if !stoppedEarly {
 		t.Error("expected StoppedEarly signal")
 	}
-	if len(scenes) != 1 || scenes[0] != "2001" {
-		t.Errorf("got scenes %v, want [2001]", scenes)
+	if len(results) != 1 || results[0].ID != "2001" {
+		t.Errorf("got scenes %v, want [2001]", results)
 	}
 }
 
@@ -463,23 +439,13 @@ func TestListScenesActorFilter(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	var scenes []string
-	for r := range ch {
-		if r.Kind == scraper.KindTotal || r.Kind == scraper.KindStoppedEarly {
-			continue
-		}
-		if r.Err != nil {
-			t.Errorf("unexpected error: %v", r.Err)
-			continue
-		}
-		scenes = append(scenes, r.Scene.Title)
-	}
+	results := testutil.CollectScenes(t, ch)
 
 	if gotActorID != "2719" {
 		t.Errorf("API called with actorId=%q, want 2719", gotActorID)
 	}
-	if len(scenes) != 1 || scenes[0] != "Actor Scene" {
-		t.Errorf("scenes = %v", scenes)
+	if len(results) != 1 || results[0].Title != "Actor Scene" {
+		t.Errorf("scenes = %v", results)
 	}
 }
 
@@ -541,36 +507,26 @@ func TestListScenesSeries(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	var scenes []string
-	for r := range ch {
-		if r.Kind == scraper.KindTotal || r.Kind == scraper.KindStoppedEarly {
-			continue
-		}
-		if r.Err != nil {
-			t.Errorf("unexpected error: %v", r.Err)
-			continue
-		}
-		scenes = append(scenes, r.Scene.Title)
-		if r.Scene.Title == "Episode 1" {
-			if len(r.Scene.Performers) != 2 {
-				t.Errorf("Episode 1 performers = %v, want 2 (inherited from series)", r.Scene.Performers)
-			}
-			if r.Scene.Series != "Brazzers Exxtra" {
-				t.Errorf("Episode 1 series = %q, want Brazzers Exxtra", r.Scene.Series)
-			}
-			if r.Scene.Thumbnail != "https://cdn.example.com/series.jpg" {
-				t.Errorf("Episode 1 thumbnail = %q, want series poster", r.Scene.Thumbnail)
-			}
-			if r.Scene.Duration != 1200 {
-				t.Errorf("Episode 1 duration = %d, want 1200", r.Scene.Duration)
-			}
-		}
+	results := testutil.CollectScenes(t, ch)
+
+	if len(results) != 2 {
+		t.Fatalf("got %d scenes, want 2", len(results))
+	}
+	if results[0].Title != "Episode 1" || results[1].Title != "Episode 2" {
+		t.Errorf("scenes = %v", results)
 	}
 
-	if len(scenes) != 2 {
-		t.Fatalf("got %d scenes, want 2", len(scenes))
+	ep1 := results[0]
+	if len(ep1.Performers) != 2 {
+		t.Errorf("Episode 1 performers = %v, want 2 (inherited from series)", ep1.Performers)
 	}
-	if scenes[0] != "Episode 1" || scenes[1] != "Episode 2" {
-		t.Errorf("scenes = %v", scenes)
+	if ep1.Series != "Brazzers Exxtra" {
+		t.Errorf("Episode 1 series = %q, want Brazzers Exxtra", ep1.Series)
+	}
+	if ep1.Thumbnail != "https://cdn.example.com/series.jpg" {
+		t.Errorf("Episode 1 thumbnail = %q, want series poster", ep1.Thumbnail)
+	}
+	if ep1.Duration != 1200 {
+		t.Errorf("Episode 1 duration = %d, want 1200", ep1.Duration)
 	}
 }

@@ -9,6 +9,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/Wasylq/FSS/internal/scrapers/testutil"
 	"github.com/Wasylq/FSS/scraper"
 )
 
@@ -287,17 +288,7 @@ func TestListScenes(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	var scenes []string
-	for r := range ch {
-		if r.Kind == scraper.KindTotal || r.Kind == scraper.KindStoppedEarly {
-			continue
-		}
-		if r.Err != nil {
-			t.Errorf("unexpected error: %v", r.Err)
-			continue
-		}
-		scenes = append(scenes, r.Scene.Title)
-	}
+	scenes := testutil.CollectScenes(t, ch)
 
 	if len(scenes) != 2 {
 		t.Fatalf("got %d scenes, want 2", len(scenes))
@@ -318,28 +309,13 @@ func TestListScenesKnownIDs(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	var scenes []string
-	var stoppedEarly bool
-	for r := range ch {
-		if r.Total > 0 {
-			continue
-		}
-		if r.Kind == scraper.KindStoppedEarly {
-			stoppedEarly = true
-			continue
-		}
-		if r.Err != nil {
-			t.Errorf("unexpected error: %v", r.Err)
-			continue
-		}
-		scenes = append(scenes, r.Scene.ID)
-	}
+	scenes, stoppedEarly := testutil.CollectScenesWithStop(t, ch)
 
 	if !stoppedEarly {
 		t.Error("expected StoppedEarly signal")
 	}
-	if len(scenes) != 1 || scenes[0] != "100" {
-		t.Errorf("got scenes %v, want [100]", scenes)
+	if len(scenes) != 1 || scenes[0].ID != "100" {
+		t.Errorf("got %d scenes, want [100]", len(scenes))
 	}
 }
 
@@ -357,23 +333,13 @@ func TestListScenesSkipsUnpublished(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	var count int
-	for r := range ch {
-		if r.Kind == scraper.KindTotal || r.Kind == scraper.KindStoppedEarly {
-			continue
-		}
-		if r.Err != nil {
-			t.Errorf("unexpected error: %v", r.Err)
-			continue
-		}
-		count++
-		if r.Scene.Title != "Published" {
-			t.Errorf("got %q, expected only Published", r.Scene.Title)
-		}
-	}
+	scenes := testutil.CollectScenes(t, ch)
 
-	if count != 1 {
-		t.Errorf("got %d scenes, want 1 (unpublished should be skipped)", count)
+	if len(scenes) != 1 {
+		t.Errorf("got %d scenes, want 1 (unpublished should be skipped)", len(scenes))
+	}
+	if len(scenes) == 1 && scenes[0].Title != "Published" {
+		t.Errorf("got %q, expected only Published", scenes[0].Title)
 	}
 }
 
@@ -427,19 +393,9 @@ func TestMultiPage(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	var scenes []string
-	for r := range ch {
-		if r.Kind == scraper.KindTotal || r.Kind == scraper.KindStoppedEarly {
-			continue
-		}
-		if r.Err != nil {
-			t.Errorf("unexpected error: %v", r.Err)
-			continue
-		}
-		scenes = append(scenes, r.Scene.Title)
-	}
+	scenes := testutil.CollectScenes(t, ch)
 
 	if len(scenes) != 2 {
-		t.Fatalf("got %d scenes, want 2: %v", len(scenes), scenes)
+		t.Fatalf("got %d scenes, want 2", len(scenes))
 	}
 }

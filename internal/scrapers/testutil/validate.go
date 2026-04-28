@@ -110,6 +110,43 @@ func RunLiveScrape(t *testing.T, s scraper.StudioScraper, studioURL string, limi
 	}
 }
 
+// CollectScenes drains a SceneResult channel, returning all scenes.
+// Progress and StoppedEarly signals are silently skipped.
+// Errors fail the test via t.Errorf so the remaining scenes are still collected.
+func CollectScenes(t *testing.T, ch <-chan scraper.SceneResult) []models.Scene {
+	t.Helper()
+	scenes, _ := collectAll(t, ch)
+	return scenes
+}
+
+// CollectScenesWithStop drains a SceneResult channel, returning all scenes
+// and whether a StoppedEarly signal was received.
+func CollectScenesWithStop(t *testing.T, ch <-chan scraper.SceneResult) ([]models.Scene, bool) {
+	t.Helper()
+	return collectAll(t, ch)
+}
+
+func collectAll(t *testing.T, ch <-chan scraper.SceneResult) ([]models.Scene, bool) {
+	t.Helper()
+	var scenes []models.Scene
+	stoppedEarly := false
+	for r := range ch {
+		switch r.Kind {
+		case scraper.KindTotal:
+			continue
+		case scraper.KindStoppedEarly:
+			stoppedEarly = true
+			continue
+		case scraper.KindError:
+			t.Errorf("unexpected error: %v", r.Err)
+			continue
+		case scraper.KindScene:
+			scenes = append(scenes, r.Scene)
+		}
+	}
+	return scenes, stoppedEarly
+}
+
 // SkipIfPlaceholder skips the test if the URL still looks like a placeholder
 // (contains "REPLACE-ME"). Use this for scrapers where the maintainer hasn't
 // yet picked a verified live URL.

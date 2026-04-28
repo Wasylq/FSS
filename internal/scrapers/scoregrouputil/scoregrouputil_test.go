@@ -9,6 +9,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/Wasylq/FSS/internal/scrapers/testutil"
 	"github.com/Wasylq/FSS/scraper"
 )
 
@@ -169,19 +170,9 @@ func TestRun(t *testing.T) {
 	out := make(chan scraper.SceneResult)
 	go s.Run(context.Background(), ts.URL, scraper.ListOpts{Workers: 2}, out)
 
-	var scenes []string
-	for r := range out {
-		if r.Kind == scraper.KindTotal || r.Kind == scraper.KindStoppedEarly {
-			continue
-		}
-		if r.Err != nil {
-			t.Logf("error: %v", r.Err)
-			continue
-		}
-		scenes = append(scenes, r.Scene.ID)
-	}
+	scenes := testutil.CollectScenes(t, out)
 	if len(scenes) != 2 {
-		t.Fatalf("got %d scenes, want 2: %v", len(scenes), scenes)
+		t.Fatalf("got %d scenes, want 2", len(scenes))
 	}
 }
 
@@ -209,27 +200,12 @@ func TestKnownIDsStopsEarly(t *testing.T) {
 		KnownIDs: map[string]bool{"10002": true},
 	}, out)
 
-	var ids []string
-	var stoppedEarly bool
-	for r := range out {
-		if r.Total > 0 {
-			continue
-		}
-		if r.Kind == scraper.KindStoppedEarly {
-			stoppedEarly = true
-			continue
-		}
-		if r.Err != nil {
-			t.Logf("error: %v", r.Err)
-			continue
-		}
-		ids = append(ids, r.Scene.ID)
-	}
+	scenes, stoppedEarly := testutil.CollectScenesWithStop(t, out)
 	if !stoppedEarly {
 		t.Error("expected StoppedEarly")
 	}
-	if len(ids) != 1 || ids[0] != "10001" {
-		t.Errorf("got IDs %v, want [10001]", ids)
+	if len(scenes) != 1 || scenes[0].ID != "10001" {
+		t.Errorf("got %d scenes, want [10001]", len(scenes))
 	}
 }
 

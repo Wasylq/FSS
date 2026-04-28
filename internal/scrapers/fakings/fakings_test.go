@@ -8,6 +8,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/Wasylq/FSS/internal/scrapers/testutil"
 	"github.com/Wasylq/FSS/scraper"
 )
 
@@ -221,39 +222,31 @@ func TestListScenes(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	var count int
-	for r := range ch {
-		if r.Kind == scraper.KindTotal || r.Kind == scraper.KindStoppedEarly {
-			continue
-		}
-		if r.Err != nil {
-			t.Errorf("unexpected error: %v", r.Err)
-			continue
-		}
-		count++
-		if r.Scene.ID == "49687" {
-			if r.Scene.Title != "Test Video One" {
-				t.Errorf("Title = %q", r.Scene.Title)
-			}
-			if r.Scene.Duration != 46*60+48 {
-				t.Errorf("Duration = %d, want %d", r.Scene.Duration, 46*60+48)
-			}
-			if r.Scene.Series != "Club Maduras" {
-				t.Errorf("Series = %q", r.Scene.Series)
-			}
-			if r.Scene.Studio != "fakings" {
-				t.Errorf("Studio = %q", r.Scene.Studio)
-			}
-			if r.Scene.Thumbnail != cdnBase+"abc123.jpg" {
-				t.Errorf("Thumbnail = %q", r.Scene.Thumbnail)
-			}
-			if r.Scene.Date.Format("2006-01-02") != "2026-04-26" {
-				t.Errorf("Date = %v", r.Scene.Date)
-			}
-		}
+	scenes := testutil.CollectScenes(t, ch)
+	if len(scenes) != 2 {
+		t.Fatalf("got %d scenes, want 2", len(scenes))
 	}
-	if count != 2 {
-		t.Errorf("got %d scenes, want 2", count)
+	for _, sc := range scenes {
+		if sc.ID == "49687" {
+			if sc.Title != "Test Video One" {
+				t.Errorf("Title = %q", sc.Title)
+			}
+			if sc.Duration != 46*60+48 {
+				t.Errorf("Duration = %d, want %d", sc.Duration, 46*60+48)
+			}
+			if sc.Series != "Club Maduras" {
+				t.Errorf("Series = %q", sc.Series)
+			}
+			if sc.Studio != "fakings" {
+				t.Errorf("Studio = %q", sc.Studio)
+			}
+			if sc.Thumbnail != cdnBase+"abc123.jpg" {
+				t.Errorf("Thumbnail = %q", sc.Thumbnail)
+			}
+			if sc.Date.Format("2006-01-02") != "2026-04-26" {
+				t.Errorf("Date = %v", sc.Date)
+			}
+		}
 	}
 }
 
@@ -271,28 +264,13 @@ func TestListScenesKnownIDs(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	var ids []string
-	var stoppedEarly bool
-	for r := range ch {
-		if r.Total > 0 {
-			continue
-		}
-		if r.Kind == scraper.KindStoppedEarly {
-			stoppedEarly = true
-			continue
-		}
-		if r.Err != nil {
-			t.Errorf("unexpected error: %v", r.Err)
-			continue
-		}
-		ids = append(ids, r.Scene.ID)
-	}
+	scenes, stoppedEarly := testutil.CollectScenesWithStop(t, ch)
 
 	if !stoppedEarly {
 		t.Error("expected StoppedEarly signal")
 	}
-	if len(ids) != 1 || ids[0] != "49687" {
-		t.Errorf("got ids %v, want [49687]", ids)
+	if len(scenes) != 1 || scenes[0].ID != "49687" {
+		t.Errorf("got ids %v, want [49687]", scenes)
 	}
 }
 
@@ -308,21 +286,13 @@ func TestListScenesActress(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	var count int
-	for r := range ch {
-		if r.Kind == scraper.KindTotal || r.Kind == scraper.KindStoppedEarly {
-			continue
-		}
-		if r.Err != nil {
-			t.Errorf("unexpected error: %v", r.Err)
-			continue
-		}
-		count++
-		if len(r.Scene.Performers) != 1 || r.Scene.Performers[0] != "Paula Ortiz" {
-			t.Errorf("Performers = %v, want [Paula Ortiz]", r.Scene.Performers)
-		}
+	scenes := testutil.CollectScenes(t, ch)
+	if len(scenes) != 2 {
+		t.Fatalf("got %d scenes, want 2", len(scenes))
 	}
-	if count != 2 {
-		t.Errorf("got %d scenes, want 2", count)
+	for _, sc := range scenes {
+		if len(sc.Performers) != 1 || sc.Performers[0] != "Paula Ortiz" {
+			t.Errorf("Performers = %v, want [Paula Ortiz]", sc.Performers)
+		}
 	}
 }

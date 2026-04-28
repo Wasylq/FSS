@@ -9,6 +9,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/Wasylq/FSS/internal/scrapers/testutil"
 	"github.com/Wasylq/FSS/internal/scrapers/wputil"
 	"github.com/Wasylq/FSS/scraper"
 )
@@ -266,23 +267,13 @@ func TestListScenes(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	var scenes []string
-	for r := range ch {
-		if r.Kind == scraper.KindTotal || r.Kind == scraper.KindStoppedEarly {
-			continue
-		}
-		if r.Err != nil {
-			t.Errorf("unexpected error: %v", r.Err)
-			continue
-		}
-		scenes = append(scenes, r.Scene.Title)
-	}
+	scenes := testutil.CollectScenes(t, ch)
 
 	if len(scenes) != 1 {
 		t.Fatalf("got %d scenes, want 1 (blog post should be filtered)", len(scenes))
 	}
-	if scenes[0] != "Video One" {
-		t.Errorf("scene title = %q, want Video One", scenes[0])
+	if scenes[0].Title != "Video One" {
+		t.Errorf("scene title = %q, want Video One", scenes[0].Title)
 	}
 }
 
@@ -325,20 +316,10 @@ func TestListScenesKnownIDs(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	var scenes []string
-	for r := range ch {
-		if r.Kind == scraper.KindTotal || r.Kind == scraper.KindStoppedEarly {
-			continue
-		}
-		if r.Err != nil {
-			t.Errorf("unexpected error: %v", r.Err)
-			continue
-		}
-		scenes = append(scenes, r.Scene.ID)
-	}
+	scenes := testutil.CollectScenes(t, ch)
 
-	if len(scenes) != 1 || scenes[0] != "200" {
-		t.Errorf("got scenes %v, want [200] (known ID 100 should be skipped)", scenes)
+	if len(scenes) != 1 || scenes[0].ID != "200" {
+		t.Errorf("got %d scenes, want [200] (known ID 100 should be skipped)", len(scenes))
 	}
 }
 
