@@ -49,6 +49,7 @@ import (
 	_ "github.com/Wasylq/FSS/internal/scrapers/exposedlatinas"
 	_ "github.com/Wasylq/FSS/internal/scrapers/fakings"
 	_ "github.com/Wasylq/FSS/internal/scrapers/familytherapy"
+	_ "github.com/Wasylq/FSS/internal/scrapers/faphouse"
 	_ "github.com/Wasylq/FSS/internal/scrapers/fiftyplus"
 	_ "github.com/Wasylq/FSS/internal/scrapers/gloryholesecrets"
 	_ "github.com/Wasylq/FSS/internal/scrapers/houseofyre"
