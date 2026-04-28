@@ -93,15 +93,15 @@ type apiVideo struct {
 	IsVRVideo                 bool   `json:"is_vr_video"`
 }
 
-func (v apiVideo) price() float64 {
+func (v apiVideo) price() (float64, bool) {
 	switch p := v.StreamPrice.(type) {
 	case float64:
-		return p
+		return p, true
 	case string:
-		f, _ := strconv.ParseFloat(p, 64)
-		return f
+		f, err := strconv.ParseFloat(p, 64)
+		return f, err == nil
 	default:
-		return 0
+		return 0, false
 	}
 }
 
@@ -266,12 +266,13 @@ func (s *Scraper) buildScene(ctx context.Context, studioURL string, vid apiVideo
 		scene.Resolution = "2160p"
 	}
 
-	p := vid.price()
-	scene.AddPrice(models.PriceSnapshot{
-		Date:    now,
-		Regular: p,
-		IsFree:  p == 0,
-	})
+	if p, ok := vid.price(); ok {
+		scene.AddPrice(models.PriceSnapshot{
+			Date:    now,
+			Regular: p,
+			IsFree:  p == 0,
+		})
+	}
 
 	detail, err := s.fetchDetail(ctx, scene.URL)
 	if err == nil {

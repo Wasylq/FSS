@@ -339,23 +339,25 @@ func toScene(studioURL string, v apiVideo, description string, tags []string, no
 		scene.Date = t.UTC()
 	}
 
-	price, _ := strconv.ParseFloat(v.Price, 64)
-	snap := models.PriceSnapshot{
-		Date:   now,
-		IsFree: v.IsFree,
-	}
-	if v.IsOnSale && len(v.OriginalPrice) > 0 && string(v.OriginalPrice) != "null" {
-		orig := parseOriginalPrice(v.OriginalPrice)
-		snap.Regular = orig
-		snap.Discounted = price
-		snap.IsOnSale = true
-		if orig > 0 {
-			snap.DiscountPercent = int((1 - price/orig) * 100)
+	price, priceErr := strconv.ParseFloat(v.Price, 64)
+	if v.IsFree || priceErr == nil {
+		snap := models.PriceSnapshot{
+			Date:   now,
+			IsFree: v.IsFree,
 		}
-	} else {
-		snap.Regular = price
+		if v.IsOnSale && len(v.OriginalPrice) > 0 && string(v.OriginalPrice) != "null" {
+			orig := parseOriginalPrice(v.OriginalPrice)
+			snap.Regular = orig
+			snap.Discounted = price
+			snap.IsOnSale = true
+			if orig > 0 {
+				snap.DiscountPercent = int((1 - price/orig) * 100)
+			}
+		} else {
+			snap.Regular = price
+		}
+		scene.AddPrice(snap)
 	}
-	scene.AddPrice(snap)
 
 	return scene
 }

@@ -85,7 +85,7 @@ func parsePage(studioURL, pageURL string, body []byte, now time.Time) (models.Sc
 		id = wputil.SlugFromURL(pageURL)
 	}
 
-	price, _ := strconv.ParseFloat(string(plMatch[1]), 64)
+	price, priceErr := strconv.ParseFloat(string(plMatch[1]), 64)
 	duration := wputil.ParseDuration(string(plMatch[2]))
 
 	resolution := ""
@@ -126,10 +126,12 @@ func parsePage(studioURL, pageURL string, body []byte, now time.Time) (models.Sc
 		ScrapedAt:   now,
 	}
 
-	scene.AddPrice(models.PriceSnapshot{
-		Date:    now,
-		Regular: price,
-	})
+	if priceErr == nil {
+		scene.AddPrice(models.PriceSnapshot{
+			Date:    now,
+			Regular: price,
+		})
+	}
 
 	return scene, false, nil
 }

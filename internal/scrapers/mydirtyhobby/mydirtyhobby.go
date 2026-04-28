@@ -212,7 +212,7 @@ func (s *Scraper) fetchPage(ctx context.Context, uid, page int) ([]mdhItem, int,
 // ---- mapping ----
 
 func toScene(studioURL, siteBase string, uid int, nick string, item mdhItem, now time.Time) models.Scene {
-	regularCents, _ := strconv.ParseFloat(item.Price, 64)
+	regularCents, priceErr := strconv.ParseFloat(item.Price, 64)
 	regular := regularCents / 100
 
 	var discounted float64
@@ -237,14 +237,16 @@ func toScene(studioURL, siteBase string, uid int, nick string, item mdhItem, now
 		ScrapedAt:   now,
 	}
 
-	scene.AddPrice(models.PriceSnapshot{
-		Date:            now,
-		Regular:         regular,
-		Discounted:      discounted,
-		IsFree:          regular == 0,
-		IsOnSale:        item.HasDiscount,
-		DiscountPercent: discountPct,
-	})
+	if priceErr == nil {
+		scene.AddPrice(models.PriceSnapshot{
+			Date:            now,
+			Regular:         regular,
+			Discounted:      discounted,
+			IsFree:          regular == 0,
+			IsOnSale:        item.HasDiscount,
+			DiscountPercent: discountPct,
+		})
+	}
 
 	return scene
 }

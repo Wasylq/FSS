@@ -94,18 +94,20 @@ func TestSplitKeywordsEmpty(t *testing.T) {
 
 func TestVideoPrice(t *testing.T) {
 	cases := []struct {
-		name  string
-		price any
-		want  float64
+		name   string
+		price  any
+		want   float64
+		wantOK bool
 	}{
-		{"float", 24.99, 24.99},
-		{"string", "19.99", 19.99},
-		{"nil", nil, 0},
+		{"float", 24.99, 24.99, true},
+		{"string", "19.99", 19.99, true},
+		{"nil", nil, 0, false},
 	}
 	for _, c := range cases {
 		vid := apiVideo{StreamPrice: c.price}
-		if got := vid.price(); got != c.want {
-			t.Errorf("%s: price() = %v, want %v", c.name, got, c.want)
+		got, ok := vid.price()
+		if got != c.want || ok != c.wantOK {
+			t.Errorf("%s: price() = (%v, %v), want (%v, %v)", c.name, got, ok, c.want, c.wantOK)
 		}
 	}
 }

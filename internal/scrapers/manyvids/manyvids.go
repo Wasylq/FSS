@@ -211,7 +211,7 @@ func toScene(studioURL, siteBase string, item detailItem, previewURL string, now
 		tags[i] = t.Label
 	}
 
-	regular, _ := strconv.ParseFloat(item.Price.Regular, 64)
+	regular, regularErr := strconv.ParseFloat(item.Price.Regular, 64)
 	discounted, _ := strconv.ParseFloat(item.Price.DiscountedPrice, 64)
 
 	scene := models.Scene{
@@ -238,14 +238,16 @@ func toScene(studioURL, siteBase string, item detailItem, previewURL string, now
 		ScrapedAt:   now,
 	}
 
-	scene.AddPrice(models.PriceSnapshot{
-		Date:            now,
-		Regular:         regular,
-		Discounted:      discounted,
-		IsFree:          item.Price.Free,
-		IsOnSale:        item.Price.OnSale,
-		DiscountPercent: item.Price.PromoRate,
-	})
+	if item.Price.Free || regularErr == nil {
+		scene.AddPrice(models.PriceSnapshot{
+			Date:            now,
+			Regular:         regular,
+			Discounted:      discounted,
+			IsFree:          item.Price.Free,
+			IsOnSale:        item.Price.OnSale,
+			DiscountPercent: item.Price.PromoRate,
+		})
+	}
 
 	return scene, nil
 }
