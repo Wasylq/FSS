@@ -1,3 +1,37 @@
+// FSS (FullStudioScraper) scrapes scene metadata from studio URLs.
+//
+// # CLI
+//
+// Install the binary and run:
+//
+//	fss scrape <studio-url>
+//	fss list-scrapers
+//	fss stash import --dir ./data
+//
+// See https://github.com/Wasylq/FSS for full CLI documentation.
+//
+// # Library
+//
+// FSS can be imported as a Go module. The public API lives in two packages:
+//
+//   - [github.com/Wasylq/FSS/scraper] — scraper registry and streaming interface
+//   - [github.com/Wasylq/FSS/models] — Scene and PriceSnapshot types
+//
+// Blank-import the scraper packages you need to register them, then look up
+// by URL or ID:
+//
+//	import (
+//	    "github.com/Wasylq/FSS/scraper"
+//	    _ "github.com/Wasylq/FSS/internal/scrapers/manyvids"
+//	)
+//
+//	s, err := scraper.ForURL("https://www.manyvids.com/Profile/590705/bettie-bondage/Store/Videos")
+//	ch, err := s.ListScenes(ctx, url, scraper.ListOpts{})
+//	for r := range ch {
+//	    fmt.Println(r.Scene.Title)
+//	}
+//
+// See [docs/library.md] in the repository for the full guide.
 package main
 
 import (

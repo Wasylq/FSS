@@ -1,3 +1,11 @@
+// Package scraper defines the interface for site scrapers and a global registry.
+//
+// Each supported site implements [StudioScraper] and registers itself via
+// [Register] in an init() function. Consumers look up scrapers with [ForURL]
+// or [ForID], then call [StudioScraper.ListScenes] to stream results.
+//
+// Scraper packages live under internal/scrapers/ and must be blank-imported
+// to trigger registration.
 package scraper
 
 import (
@@ -30,6 +38,8 @@ type StudioScraper interface {
 
 // ListOpts controls scraping behaviour passed in from the CLI/config.
 type ListOpts struct {
+	// Workers sets the number of concurrent detail-page fetchers for scrapers
+	// that use a worker pool. Zero uses the scraper's default (typically 4).
 	Workers int
 	// KnownIDs, when non-empty, signals the scraper to stop pagination as soon
 	// as it encounters an ID already in the set. Used for incremental runs where
