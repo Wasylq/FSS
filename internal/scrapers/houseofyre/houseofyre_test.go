@@ -186,7 +186,7 @@ func TestRun(t *testing.T) {
 
 	var scenes []string
 	for r := range out {
-		if r.Total > 0 || r.StoppedEarly {
+		if r.Kind == scraper.KindTotal || r.Kind == scraper.KindStoppedEarly {
 			continue
 		}
 		if r.Err != nil {
@@ -233,7 +233,7 @@ func TestKnownIDsStopsEarly(t *testing.T) {
 		if r.Total > 0 {
 			continue
 		}
-		if r.StoppedEarly {
+		if r.Kind == scraper.KindStoppedEarly {
 			stoppedEarly = true
 			continue
 		}
@@ -277,7 +277,7 @@ func TestModelURL(t *testing.T) {
 			total = r.Total
 			continue
 		}
-		if r.StoppedEarly {
+		if r.Kind == scraper.KindStoppedEarly {
 			continue
 		}
 		if r.Err != nil {

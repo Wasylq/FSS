@@ -71,7 +71,7 @@ func (s *Scraper) run(ctx context.Context, opts scraper.ListOpts, out chan<- scr
 	export, err := s.fetchExport(ctx)
 	if err != nil {
 		select {
-		case out <- scraper.SceneResult{Err: fmt.Errorf("export: %w", err)}:
+		case out <- scraper.Error(fmt.Errorf("export: %w", err)):
 		case <-ctx.Done():
 		}
 		return
@@ -102,7 +102,7 @@ func (s *Scraper) run(ctx context.Context, opts scraper.ListOpts, out chan<- scr
 		cards, err := s.fetchListingPage(ctx, page)
 		if err != nil {
 			select {
-			case out <- scraper.SceneResult{Err: fmt.Errorf("page %d: %w", page, err)}:
+			case out <- scraper.Error(fmt.Errorf("page %d: %w", page, err)):
 			case <-ctx.Done():
 			}
 			return
@@ -124,7 +124,7 @@ func (s *Scraper) run(ctx context.Context, opts scraper.ListOpts, out chan<- scr
 
 			scene := s.buildScene(c, lookup[c.path], id, now)
 			select {
-			case out <- scraper.SceneResult{Scene: scene}:
+			case out <- scraper.Scene(scene):
 			case <-ctx.Done():
 				return
 			}
@@ -132,7 +132,7 @@ func (s *Scraper) run(ctx context.Context, opts scraper.ListOpts, out chan<- scr
 
 		if stoppedEarly {
 			select {
-			case out <- scraper.SceneResult{StoppedEarly: true}:
+			case out <- scraper.StoppedEarly():
 			case <-ctx.Done():
 			}
 			return

@@ -100,7 +100,7 @@ func (s *Scraper) run(ctx context.Context, studioURL string, uid int, nick strin
 		items, total, totalPages, err := s.fetchPage(ctx, uid, page)
 		if err != nil {
 			select {
-			case out <- scraper.SceneResult{Err: fmt.Errorf("page %d: %w", page, err)}:
+			case out <- scraper.Error(fmt.Errorf("page %d: %w", page, err)):
 			case <-ctx.Done():
 			}
 			return
@@ -108,7 +108,7 @@ func (s *Scraper) run(ctx context.Context, studioURL string, uid int, nick strin
 
 		if page == 1 && total > 0 {
 			select {
-			case out <- scraper.SceneResult{Total: total}:
+			case out <- scraper.Progress(total):
 			case <-ctx.Done():
 				return
 			}
@@ -124,7 +124,7 @@ func (s *Scraper) run(ctx context.Context, studioURL string, uid int, nick strin
 			}
 			scene := toScene(studioURL, s.siteBase, uid, nick, item, now)
 			select {
-			case out <- scraper.SceneResult{Scene: scene}:
+			case out <- scraper.Scene(scene):
 			case <-ctx.Done():
 				return
 			}
@@ -133,7 +133,7 @@ func (s *Scraper) run(ctx context.Context, studioURL string, uid int, nick strin
 		if hitKnown || page >= totalPages || len(items) == 0 {
 			if hitKnown {
 				select {
-				case out <- scraper.SceneResult{StoppedEarly: true}:
+				case out <- scraper.StoppedEarly():
 				case <-ctx.Done():
 				}
 			}

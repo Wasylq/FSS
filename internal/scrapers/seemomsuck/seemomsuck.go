@@ -89,7 +89,7 @@ func (s *Scraper) scrapeListingPages(ctx context.Context, opts scraper.ListOpts,
 		body, err := s.fetchPage(ctx, pageURL)
 		if err != nil {
 			select {
-			case out <- scraper.SceneResult{Err: fmt.Errorf("page %d: %w", page, err)}:
+			case out <- scraper.Error(fmt.Errorf("page %d: %w", page, err)):
 			case <-ctx.Done():
 			}
 			return
@@ -104,7 +104,7 @@ func (s *Scraper) scrapeListingPages(ctx context.Context, opts scraper.ListOpts,
 			maxPage := extractMaxPage(body)
 			total := len(scenes) * maxPage
 			select {
-			case out <- scraper.SceneResult{Total: total}:
+			case out <- scraper.Progress(total):
 			case <-ctx.Done():
 				return
 			}
@@ -113,13 +113,13 @@ func (s *Scraper) scrapeListingPages(ctx context.Context, opts scraper.ListOpts,
 		for _, ls := range scenes {
 			if opts.KnownIDs[ls.slug] {
 				select {
-				case out <- scraper.SceneResult{StoppedEarly: true}:
+				case out <- scraper.StoppedEarly():
 				case <-ctx.Done():
 				}
 				return
 			}
 			select {
-			case out <- scraper.SceneResult{Scene: ls.toScene(s.siteBase, now)}:
+			case out <- scraper.Scene(ls.toScene(s.siteBase, now)):
 			case <-ctx.Done():
 				return
 			}
@@ -136,7 +136,7 @@ func (s *Scraper) scrapeModelPage(ctx context.Context, modelURL string, opts scr
 	body, err := s.fetchPage(ctx, cleanURL)
 	if err != nil {
 		select {
-		case out <- scraper.SceneResult{Err: err}:
+		case out <- scraper.Error(err):
 		case <-ctx.Done():
 		}
 		return
@@ -151,7 +151,7 @@ func (s *Scraper) scrapeModelPage(ctx context.Context, modelURL string, opts scr
 	}
 
 	select {
-	case out <- scraper.SceneResult{Total: len(scenes)}:
+	case out <- scraper.Progress(len(scenes)):
 	case <-ctx.Done():
 		return
 	}
@@ -159,13 +159,13 @@ func (s *Scraper) scrapeModelPage(ctx context.Context, modelURL string, opts scr
 	for _, ls := range scenes {
 		if opts.KnownIDs[ls.slug] {
 			select {
-			case out <- scraper.SceneResult{StoppedEarly: true}:
+			case out <- scraper.StoppedEarly():
 			case <-ctx.Done():
 			}
 			return
 		}
 		select {
-		case out <- scraper.SceneResult{Scene: ls.toScene(s.siteBase, now)}:
+		case out <- scraper.Scene(ls.toScene(s.siteBase, now)):
 		case <-ctx.Done():
 			return
 		}

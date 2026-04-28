@@ -71,7 +71,7 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 		body, err := s.fetchPage(ctx, pageURL)
 		if err != nil {
 			select {
-			case out <- scraper.SceneResult{Err: fmt.Errorf("page %d: %w", page, err)}:
+			case out <- scraper.Error(fmt.Errorf("page %d: %w", page, err)):
 			case <-ctx.Done():
 			}
 			return
@@ -86,7 +86,7 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 			total := estimateTotal(body, len(scenes))
 			if total > 0 {
 				select {
-				case out <- scraper.SceneResult{Total: total}:
+				case out <- scraper.Progress(total):
 				case <-ctx.Done():
 					return
 				}
@@ -96,7 +96,7 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 		for _, ps := range scenes {
 			if len(opts.KnownIDs) > 0 && opts.KnownIDs[ps.filmID] {
 				select {
-				case out <- scraper.SceneResult{StoppedEarly: true}:
+				case out <- scraper.StoppedEarly():
 				case <-ctx.Done():
 				}
 				return
@@ -104,7 +104,7 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 
 			scene := toScene(ps, s.siteBase, studioURL, now)
 			select {
-			case out <- scraper.SceneResult{Scene: scene}:
+			case out <- scraper.Scene(scene):
 			case <-ctx.Done():
 				return
 			}

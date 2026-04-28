@@ -74,7 +74,7 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 		pageURL, err := buildPageURL(studioURL, page)
 		if err != nil {
 			select {
-			case out <- scraper.SceneResult{Err: err}:
+			case out <- scraper.Error(err):
 			case <-ctx.Done():
 			}
 			return
@@ -83,7 +83,7 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 		items, err := s.fetchPage(ctx, pageURL)
 		if err != nil {
 			select {
-			case out <- scraper.SceneResult{Err: fmt.Errorf("page %d: %w", page, err)}:
+			case out <- scraper.Error(fmt.Errorf("page %d: %w", page, err)):
 			case <-ctx.Done():
 			}
 			return
@@ -97,14 +97,14 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 		for _, item := range items {
 			if len(opts.KnownIDs) > 0 && opts.KnownIDs[item.vkey] {
 				select {
-				case out <- scraper.SceneResult{StoppedEarly: true}:
+				case out <- scraper.StoppedEarly():
 				case <-ctx.Done():
 				}
 				return
 			}
 			scene := toScene(studioURL, item, now)
 			select {
-			case out <- scraper.SceneResult{Scene: scene}:
+			case out <- scraper.Scene(scene):
 			case <-ctx.Done():
 				return
 			}

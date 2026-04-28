@@ -87,8 +87,16 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 					}
 				}
 				scene, err := s.fetchDetail(ctx, studioURL, entry)
+				if err != nil {
+					select {
+					case out <- scraper.Error(err):
+					case <-ctx.Done():
+						return
+					}
+					continue
+				}
 				select {
-				case out <- scraper.SceneResult{Scene: scene, Err: err}:
+				case out <- scraper.Scene(scene):
 				case <-ctx.Done():
 					return
 				}
@@ -111,7 +119,7 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 		entries, err := s.fetchPage(ctx, page)
 		if err != nil {
 			select {
-			case out <- scraper.SceneResult{Err: fmt.Errorf("page %d: %w", page, err)}:
+			case out <- scraper.Error(fmt.Errorf("page %d: %w", page, err)):
 			case <-ctx.Done():
 			}
 			break
@@ -123,7 +131,7 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 
 		if page == 1 {
 			select {
-			case out <- scraper.SceneResult{Total: estimateTotal(len(entries))}:
+			case out <- scraper.Progress(estimateTotal(len(entries))):
 			case <-ctx.Done():
 				break
 			}
@@ -148,7 +156,7 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 		if cancelled || hitKnown {
 			if hitKnown {
 				select {
-				case out <- scraper.SceneResult{StoppedEarly: true}:
+				case out <- scraper.StoppedEarly():
 				case <-ctx.Done():
 				}
 			}

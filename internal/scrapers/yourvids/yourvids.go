@@ -125,7 +125,7 @@ func (s *Scraper) run(ctx context.Context, studioURL, slug string, opts scraper.
 		resp, err := s.fetchAPI(ctx, apiURL)
 		if err != nil {
 			select {
-			case out <- scraper.SceneResult{Err: fmt.Errorf("page %d: %w", page, err)}:
+			case out <- scraper.Error(fmt.Errorf("page %d: %w", page, err)):
 			case <-ctx.Done():
 			}
 			return
@@ -133,7 +133,7 @@ func (s *Scraper) run(ctx context.Context, studioURL, slug string, opts scraper.
 
 		if page == 1 && resp.Data.Pagination.Total > 0 {
 			select {
-			case out <- scraper.SceneResult{Total: resp.Data.Pagination.Total}:
+			case out <- scraper.Progress(resp.Data.Pagination.Total):
 			case <-ctx.Done():
 				return
 			}
@@ -209,7 +209,7 @@ func (s *Scraper) run(ctx context.Context, studioURL, slug string, opts scraper.
 	for dr := range results {
 		scene := toScene(studioURL, dr.video, dr.description, dr.tags, now)
 		select {
-		case out <- scraper.SceneResult{Scene: scene}:
+		case out <- scraper.Scene(scene):
 		case <-ctx.Done():
 			return
 		}
@@ -217,7 +217,7 @@ func (s *Scraper) run(ctx context.Context, studioURL, slug string, opts scraper.
 
 	if stoppedEarly {
 		select {
-		case out <- scraper.SceneResult{StoppedEarly: true}:
+		case out <- scraper.StoppedEarly():
 		case <-ctx.Done():
 		}
 	}

@@ -289,7 +289,7 @@ func TestListScenes(t *testing.T) {
 
 	var scenes []string
 	for r := range ch {
-		if r.Total > 0 || r.StoppedEarly {
+		if r.Kind == scraper.KindTotal || r.Kind == scraper.KindStoppedEarly {
 			continue
 		}
 		if r.Err != nil {
@@ -324,7 +324,7 @@ func TestListScenesKnownIDs(t *testing.T) {
 		if r.Total > 0 {
 			continue
 		}
-		if r.StoppedEarly {
+		if r.Kind == scraper.KindStoppedEarly {
 			stoppedEarly = true
 			continue
 		}
@@ -359,7 +359,7 @@ func TestListScenesSkipsUnpublished(t *testing.T) {
 
 	var count int
 	for r := range ch {
-		if r.Total > 0 || r.StoppedEarly {
+		if r.Kind == scraper.KindTotal || r.Kind == scraper.KindStoppedEarly {
 			continue
 		}
 		if r.Err != nil {
@@ -429,7 +429,7 @@ func TestMultiPage(t *testing.T) {
 
 	var scenes []string
 	for r := range ch {
-		if r.Total > 0 || r.StoppedEarly {
+		if r.Kind == scraper.KindTotal || r.Kind == scraper.KindStoppedEarly {
 			continue
 		}
 		if r.Err != nil {

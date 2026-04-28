@@ -70,14 +70,14 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 				scene, err := s.fetchDetail(ctx, ls, opts.Delay)
 				if err != nil {
 					select {
-					case out <- scraper.SceneResult{Err: err}:
+					case out <- scraper.Error(err):
 					case <-ctx.Done():
 						return
 					}
 					continue
 				}
 				select {
-				case out <- scraper.SceneResult{Scene: scene}:
+				case out <- scraper.Scene(scene):
 				case <-ctx.Done():
 					return
 				}
@@ -123,7 +123,7 @@ func (s *Scraper) enqueueListingPages(ctx context.Context, opts scraper.ListOpts
 		body, err := s.fetchPage(ctx, pageURL)
 		if err != nil {
 			select {
-			case out <- scraper.SceneResult{Err: fmt.Errorf("page %d: %w", page, err)}:
+			case out <- scraper.Error(fmt.Errorf("page %d: %w", page, err)):
 			case <-ctx.Done():
 			}
 			return
@@ -138,7 +138,7 @@ func (s *Scraper) enqueueListingPages(ctx context.Context, opts scraper.ListOpts
 			maxPage := extractMaxPage(body)
 			total := len(scenes) * maxPage
 			select {
-			case out <- scraper.SceneResult{Total: total}:
+			case out <- scraper.Progress(total):
 			case <-ctx.Done():
 				return
 			}
@@ -147,7 +147,7 @@ func (s *Scraper) enqueueListingPages(ctx context.Context, opts scraper.ListOpts
 		for _, ls := range scenes {
 			if opts.KnownIDs[ls.id] {
 				select {
-				case out <- scraper.SceneResult{StoppedEarly: true}:
+				case out <- scraper.StoppedEarly():
 				case <-ctx.Done():
 				}
 				return
@@ -169,7 +169,7 @@ func (s *Scraper) enqueueModelPage(ctx context.Context, modelURL string, opts sc
 	body, err := s.fetchPage(ctx, modelURL)
 	if err != nil {
 		select {
-		case out <- scraper.SceneResult{Err: err}:
+		case out <- scraper.Error(err):
 		case <-ctx.Done():
 		}
 		return
@@ -177,7 +177,7 @@ func (s *Scraper) enqueueModelPage(ctx context.Context, modelURL string, opts sc
 
 	scenes := parseListingPage(body, s.siteBase)
 	select {
-	case out <- scraper.SceneResult{Total: len(scenes)}:
+	case out <- scraper.Progress(len(scenes)):
 	case <-ctx.Done():
 		return
 	}
@@ -185,7 +185,7 @@ func (s *Scraper) enqueueModelPage(ctx context.Context, modelURL string, opts sc
 	for _, ls := range scenes {
 		if opts.KnownIDs[ls.id] {
 			select {
-			case out <- scraper.SceneResult{StoppedEarly: true}:
+			case out <- scraper.StoppedEarly():
 			case <-ctx.Done():
 			}
 			return

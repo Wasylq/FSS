@@ -183,7 +183,7 @@ func TestPaginatedScrape(t *testing.T) {
 		if r.Err != nil {
 			t.Fatalf("unexpected error: %v", r.Err)
 		}
-		if r.Total > 0 || r.StoppedEarly {
+		if r.Kind == scraper.KindTotal || r.Kind == scraper.KindStoppedEarly {
 			continue
 		}
 		scenes = append(scenes, r.Scene.ID)
@@ -221,7 +221,7 @@ func TestKnownIDsStopsEarly(t *testing.T) {
 	var gotScenes int
 	var stoppedEarly bool
 	for r := range out {
-		if r.StoppedEarly {
+		if r.Kind == scraper.KindStoppedEarly {
 			stoppedEarly = true
 			continue
 		}

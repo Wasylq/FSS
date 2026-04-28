@@ -98,7 +98,7 @@ func (s *Scraper) run(ctx context.Context, studioURL, sid, slug string, opts scr
 		clips, clipsCount, err := s.fetchPage(ctx, sid, slug, page)
 		if err != nil {
 			select {
-			case out <- scraper.SceneResult{Err: fmt.Errorf("page %d: %w", page, err)}:
+			case out <- scraper.Error(fmt.Errorf("page %d: %w", page, err)):
 			case <-ctx.Done():
 			}
 			return
@@ -109,7 +109,7 @@ func (s *Scraper) run(ctx context.Context, studioURL, sid, slug string, opts scr
 		// After the first page, send a total hint so the consumer can show progress.
 		if page == 1 && clipsCount > 0 {
 			select {
-			case out <- scraper.SceneResult{Total: clipsCount}:
+			case out <- scraper.Progress(clipsCount):
 			case <-ctx.Done():
 				return
 			}
@@ -119,8 +119,16 @@ func (s *Scraper) run(ctx context.Context, studioURL, sid, slug string, opts scr
 			// so early-stop optimisation cannot be used. All clips are emitted in
 			// site order; scrapeIncremental carries price history for known IDs.
 			scene, err := toScene(studioURL, s.siteBase, clip, now)
+			if err != nil {
+				select {
+				case out <- scraper.Error(err):
+				case <-ctx.Done():
+					return
+				}
+				continue
+			}
 			select {
-			case out <- scraper.SceneResult{Scene: scene, Err: err}:
+			case out <- scraper.Scene(scene):
 			case <-ctx.Done():
 				return
 			}

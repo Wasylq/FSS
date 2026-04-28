@@ -190,7 +190,7 @@ func TestListScenes(t *testing.T) {
 
 	var scenes []string
 	for r := range ch {
-		if r.StoppedEarly {
+		if r.Kind == scraper.KindStoppedEarly {
 			continue
 		}
 		if r.Err != nil {
@@ -258,7 +258,7 @@ func TestListScenesKnownIDs(t *testing.T) {
 	var titles []string
 	stoppedEarly := false
 	for r := range ch {
-		if r.StoppedEarly {
+		if r.Kind == scraper.KindStoppedEarly {
 			stoppedEarly = true
 			continue
 		}

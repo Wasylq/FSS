@@ -80,7 +80,7 @@ func (s *Scraper) run(ctx context.Context, opts scraper.ListOpts, out chan<- scr
 	tagMap, err := s.fetchAllTags(ctx)
 	if err != nil {
 		select {
-		case out <- scraper.SceneResult{Err: fmt.Errorf("tags: %w", err)}:
+		case out <- scraper.Error(fmt.Errorf("tags: %w", err)):
 		case <-ctx.Done():
 		}
 		return
@@ -103,7 +103,7 @@ func (s *Scraper) run(ctx context.Context, opts scraper.ListOpts, out chan<- scr
 		posts, total, err := s.fetchPosts(ctx, page)
 		if err != nil {
 			select {
-			case out <- scraper.SceneResult{Err: fmt.Errorf("page %d: %w", page, err)}:
+			case out <- scraper.Error(fmt.Errorf("page %d: %w", page, err)):
 			case <-ctx.Done():
 			}
 			return
@@ -111,7 +111,7 @@ func (s *Scraper) run(ctx context.Context, opts scraper.ListOpts, out chan<- scr
 
 		if page == 1 && total > 0 {
 			select {
-			case out <- scraper.SceneResult{Total: total}:
+			case out <- scraper.Progress(total):
 			case <-ctx.Done():
 				return
 			}
@@ -131,7 +131,7 @@ func (s *Scraper) run(ctx context.Context, opts scraper.ListOpts, out chan<- scr
 
 			scene := s.postToScene(p, tagMap, now)
 			select {
-			case out <- scraper.SceneResult{Scene: scene}:
+			case out <- scraper.Scene(scene):
 			case <-ctx.Done():
 				return
 			}
@@ -139,7 +139,7 @@ func (s *Scraper) run(ctx context.Context, opts scraper.ListOpts, out chan<- scr
 
 		if stoppedEarly {
 			select {
-			case out <- scraper.SceneResult{StoppedEarly: true}:
+			case out <- scraper.StoppedEarly():
 			case <-ctx.Done():
 			}
 			return

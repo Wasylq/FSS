@@ -142,7 +142,7 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 		result, err := s.search(ctx, baseQuery)
 		if err != nil {
 			select {
-			case out <- scraper.SceneResult{Err: fmt.Errorf("from=%d: %w", from, err)}:
+			case out <- scraper.Error(fmt.Errorf("from=%d: %w", from, err)):
 			case <-ctx.Done():
 			}
 			return
@@ -150,7 +150,7 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 
 		if from == 0 && result.Hits.Total.Value > 0 {
 			select {
-			case out <- scraper.SceneResult{Total: result.Hits.Total.Value}:
+			case out <- scraper.Progress(result.Hits.Total.Value):
 			case <-ctx.Done():
 				return
 			}
@@ -165,7 +165,7 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 
 			if len(opts.KnownIDs) > 0 && opts.KnownIDs[id] {
 				select {
-				case out <- scraper.SceneResult{StoppedEarly: true}:
+				case out <- scraper.StoppedEarly():
 				case <-ctx.Done():
 				}
 				return
@@ -173,7 +173,7 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 
 			scene := hitToScene(hit.Source, studioURL, now)
 			select {
-			case out <- scraper.SceneResult{Scene: scene}:
+			case out <- scraper.Scene(scene):
 			case <-ctx.Done():
 				return
 			}

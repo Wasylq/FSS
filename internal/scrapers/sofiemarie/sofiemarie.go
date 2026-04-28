@@ -114,7 +114,7 @@ func (s *Scraper) runUpdates(ctx context.Context, studioURL string, opts scraper
 		body, err := s.fetchPage(ctx, pageURL)
 		if err != nil {
 			select {
-			case out <- scraper.SceneResult{Err: fmt.Errorf("page %d: %w", page, err)}:
+			case out <- scraper.Error(fmt.Errorf("page %d: %w", page, err)):
 			case <-ctx.Done():
 			}
 			return
@@ -129,7 +129,7 @@ func (s *Scraper) runUpdates(ctx context.Context, studioURL string, opts scraper
 			total := estimateTotal(body, len(scenes))
 			if total > 0 {
 				select {
-				case out <- scraper.SceneResult{Total: total}:
+				case out <- scraper.Progress(total):
 				case <-ctx.Done():
 					return
 				}
@@ -152,7 +152,7 @@ func (s *Scraper) runModel(ctx context.Context, studioURL string, opts scraper.L
 	body, err := s.fetchPage(ctx, studioURL)
 	if err != nil {
 		select {
-		case out <- scraper.SceneResult{Err: fmt.Errorf("model page: %w", err)}:
+		case out <- scraper.Error(fmt.Errorf("model page: %w", err)):
 		case <-ctx.Done():
 		}
 		return
@@ -167,7 +167,7 @@ func (s *Scraper) runModel(ctx context.Context, studioURL string, opts scraper.L
 
 	if maxPage > 0 {
 		select {
-		case out <- scraper.SceneResult{Total: len(scenes) * maxPage}:
+		case out <- scraper.Progress(len(scenes) * maxPage):
 		case <-ctx.Done():
 			return
 		}
@@ -197,7 +197,7 @@ func (s *Scraper) runModel(ctx context.Context, studioURL string, opts scraper.L
 		body, err := s.fetchPage(ctx, pageURL)
 		if err != nil {
 			select {
-			case out <- scraper.SceneResult{Err: fmt.Errorf("model page %d: %w", page, err)}:
+			case out <- scraper.Error(fmt.Errorf("model page %d: %w", page, err)):
 			case <-ctx.Done():
 			}
 			return
@@ -220,7 +220,7 @@ func (s *Scraper) runDVD(ctx context.Context, studioURL string, opts scraper.Lis
 	body, err := s.fetchPage(ctx, studioURL)
 	if err != nil {
 		select {
-		case out <- scraper.SceneResult{Err: fmt.Errorf("dvd page: %w", err)}:
+		case out <- scraper.Error(fmt.Errorf("dvd page: %w", err)):
 		case <-ctx.Done():
 		}
 		return
@@ -232,7 +232,7 @@ func (s *Scraper) runDVD(ctx context.Context, studioURL string, opts scraper.Lis
 	}
 
 	select {
-	case out <- scraper.SceneResult{Total: len(scenes)}:
+	case out <- scraper.Progress(len(scenes)):
 	case <-ctx.Done():
 		return
 	}
@@ -244,7 +244,7 @@ func (s *Scraper) emitScenes(ctx context.Context, scenes []parsedScene, studioUR
 	for _, ps := range scenes {
 		if len(opts.KnownIDs) > 0 && opts.KnownIDs[ps.id] {
 			select {
-			case out <- scraper.SceneResult{StoppedEarly: true}:
+			case out <- scraper.StoppedEarly():
 			case <-ctx.Done():
 			}
 			return true
@@ -252,7 +252,7 @@ func (s *Scraper) emitScenes(ctx context.Context, scenes []parsedScene, studioUR
 
 		scene := toScene(ps, s.siteBase, studioURL, now)
 		select {
-		case out <- scraper.SceneResult{Scene: scene}:
+		case out <- scraper.Scene(scene):
 		case <-ctx.Done():
 			return true
 		}

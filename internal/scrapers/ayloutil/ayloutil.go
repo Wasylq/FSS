@@ -225,7 +225,7 @@ func (s *Scraper) Run(ctx context.Context, studioURL string, opts scraper.ListOp
 	token, err := s.FetchToken(ctx)
 	if err != nil {
 		select {
-		case out <- scraper.SceneResult{Err: err}:
+		case out <- scraper.Error(err):
 		case <-ctx.Done():
 		}
 		return
@@ -254,7 +254,7 @@ func (s *Scraper) Run(ctx context.Context, studioURL string, opts scraper.ListOp
 		releases, total, err := s.FetchPage(ctx, token, filter, page)
 		if err != nil {
 			select {
-			case out <- scraper.SceneResult{Err: fmt.Errorf("page %d: %w", page, err)}:
+			case out <- scraper.Error(fmt.Errorf("page %d: %w", page, err)):
 			case <-ctx.Done():
 			}
 			return
@@ -266,7 +266,7 @@ func (s *Scraper) Run(ctx context.Context, studioURL string, opts scraper.ListOp
 
 		if page == 0 && total > 0 {
 			select {
-			case out <- scraper.SceneResult{Total: total}:
+			case out <- scraper.Progress(total):
 			case <-ctx.Done():
 				return
 			}
@@ -277,7 +277,7 @@ func (s *Scraper) Run(ctx context.Context, studioURL string, opts scraper.ListOp
 			id := strconv.Itoa(rel.ID)
 			if len(opts.KnownIDs) > 0 && opts.KnownIDs[id] {
 				select {
-				case out <- scraper.SceneResult{StoppedEarly: true}:
+				case out <- scraper.StoppedEarly():
 				case <-ctx.Done():
 				}
 				return
@@ -285,7 +285,7 @@ func (s *Scraper) Run(ctx context.Context, studioURL string, opts scraper.ListOp
 
 			scene := ToScene(s.Config, studioURL, rel, now)
 			select {
-			case out <- scraper.SceneResult{Scene: scene}:
+			case out <- scraper.Scene(scene):
 			case <-ctx.Done():
 				return
 			}
@@ -301,7 +301,7 @@ func (s *Scraper) runSeries(ctx context.Context, studioURL string, opts scraper.
 	releases, total, err := s.fetchSeries(ctx, token, seriesID)
 	if err != nil {
 		select {
-		case out <- scraper.SceneResult{Err: err}:
+		case out <- scraper.Error(err):
 		case <-ctx.Done():
 		}
 		return
@@ -309,7 +309,7 @@ func (s *Scraper) runSeries(ctx context.Context, studioURL string, opts scraper.
 
 	if total > 0 {
 		select {
-		case out <- scraper.SceneResult{Total: total}:
+		case out <- scraper.Progress(total):
 		case <-ctx.Done():
 			return
 		}
@@ -320,7 +320,7 @@ func (s *Scraper) runSeries(ctx context.Context, studioURL string, opts scraper.
 		id := strconv.Itoa(rel.ID)
 		if len(opts.KnownIDs) > 0 && opts.KnownIDs[id] {
 			select {
-			case out <- scraper.SceneResult{StoppedEarly: true}:
+			case out <- scraper.StoppedEarly():
 			case <-ctx.Done():
 			}
 			return
@@ -328,7 +328,7 @@ func (s *Scraper) runSeries(ctx context.Context, studioURL string, opts scraper.
 
 		scene := ToScene(s.Config, studioURL, rel, now)
 		select {
-		case out <- scraper.SceneResult{Scene: scene}:
+		case out <- scraper.Scene(scene):
 		case <-ctx.Done():
 			return
 		}

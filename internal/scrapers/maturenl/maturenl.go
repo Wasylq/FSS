@@ -118,7 +118,7 @@ func (s *Scraper) runPaginated(ctx context.Context, studioURL string, opts scrap
 		body, err := s.fetch(ctx, pageURL(page))
 		if err != nil {
 			select {
-			case out <- scraper.SceneResult{Err: fmt.Errorf("page %d: %w", page, err)}:
+			case out <- scraper.Error(fmt.Errorf("page %d: %w", page, err)):
 			case <-ctx.Done():
 			}
 			return
@@ -133,7 +133,7 @@ func (s *Scraper) runPaginated(ctx context.Context, studioURL string, opts scrap
 			total := estimateTotal(body, len(cards))
 			if total > 0 {
 				select {
-				case out <- scraper.SceneResult{Total: total}:
+				case out <- scraper.Progress(total):
 				case <-ctx.Done():
 					return
 				}
@@ -143,7 +143,7 @@ func (s *Scraper) runPaginated(ctx context.Context, studioURL string, opts scrap
 		for _, c := range cards {
 			if len(opts.KnownIDs) > 0 && opts.KnownIDs[c.id] {
 				select {
-				case out <- scraper.SceneResult{StoppedEarly: true}:
+				case out <- scraper.StoppedEarly():
 				case <-ctx.Done():
 				}
 				return
@@ -151,7 +151,7 @@ func (s *Scraper) runPaginated(ctx context.Context, studioURL string, opts scrap
 
 			scene := cardToScene(c, studioURL, now)
 			select {
-			case out <- scraper.SceneResult{Scene: scene}:
+			case out <- scraper.Scene(scene):
 			case <-ctx.Done():
 				return
 			}
@@ -165,7 +165,7 @@ func (s *Scraper) runModel(ctx context.Context, studioURL string, modelID string
 	body, err := s.fetch(ctx, fmt.Sprintf("%s/en/model/%s", siteBase, modelID))
 	if err != nil {
 		select {
-		case out <- scraper.SceneResult{Err: err}:
+		case out <- scraper.Error(err):
 		case <-ctx.Done():
 		}
 		return
@@ -177,7 +177,7 @@ func (s *Scraper) runModel(ctx context.Context, studioURL string, modelID string
 	}
 
 	select {
-	case out <- scraper.SceneResult{Total: len(ids)}:
+	case out <- scraper.Progress(len(ids)):
 	case <-ctx.Done():
 		return
 	}
@@ -200,15 +200,23 @@ func (s *Scraper) runModel(ctx context.Context, studioURL string, modelID string
 
 				if len(opts.KnownIDs) > 0 && opts.KnownIDs[updateID] {
 					select {
-					case out <- scraper.SceneResult{StoppedEarly: true}:
+					case out <- scraper.StoppedEarly():
 					case <-ctx.Done():
 					}
 					return
 				}
 
 				scene, ferr := s.fetchDetailScene(ctx, studioURL, updateID)
+				if ferr != nil {
+					select {
+					case out <- scraper.Error(ferr):
+					case <-ctx.Done():
+						return
+					}
+					continue
+				}
 				select {
-				case out <- scraper.SceneResult{Scene: scene, Err: ferr}:
+				case out <- scraper.Scene(scene):
 				case <-ctx.Done():
 					return
 				}

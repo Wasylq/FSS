@@ -31,7 +31,7 @@ func runLive(t *testing.T, studioURL string, limit int) {
 			t.Errorf("error: %v", r.Err)
 			continue
 		}
-		if r.Total > 0 || r.StoppedEarly {
+		if r.Kind == scraper.KindTotal || r.Kind == scraper.KindStoppedEarly {
 			continue
 		}
 		count++

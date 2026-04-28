@@ -85,7 +85,7 @@ func (s *Scraper) run(ctx context.Context, studioURL, memberID string, opts scra
 	apiKey, tsBase, err := s.fetchAPIKey(ctx, studioURL)
 	if err != nil {
 		select {
-		case out <- scraper.SceneResult{Err: fmt.Errorf("fetching api key: %w", err)}:
+		case out <- scraper.Error(fmt.Errorf("fetching api key: %w", err)):
 		case <-ctx.Done():
 		}
 		return
@@ -117,7 +117,7 @@ func (s *Scraper) run(ctx context.Context, studioURL, memberID string, opts scra
 			}
 			if err != nil {
 				select {
-				case out <- scraper.SceneResult{Err: fmt.Errorf("page %d: %w", page, err)}:
+				case out <- scraper.Error(fmt.Errorf("page %d: %w", page, err)):
 				case <-ctx.Done():
 				}
 				return
@@ -126,7 +126,7 @@ func (s *Scraper) run(ctx context.Context, studioURL, memberID string, opts scra
 
 		if page == 1 && total > 0 {
 			select {
-			case out <- scraper.SceneResult{Total: total}:
+			case out <- scraper.Progress(total):
 			case <-ctx.Done():
 				return
 			}
@@ -141,7 +141,7 @@ func (s *Scraper) run(ctx context.Context, studioURL, memberID string, opts scra
 			}
 			scene := toScene(studioURL, doc, now)
 			select {
-			case out <- scraper.SceneResult{Scene: scene}:
+			case out <- scraper.Scene(scene):
 			case <-ctx.Done():
 				return
 			}
@@ -151,7 +151,7 @@ func (s *Scraper) run(ctx context.Context, studioURL, memberID string, opts scra
 		if hitKnown || page >= totalPages || len(docs) == 0 {
 			if hitKnown {
 				select {
-				case out <- scraper.SceneResult{StoppedEarly: true}:
+				case out <- scraper.StoppedEarly():
 				case <-ctx.Done():
 				}
 			}

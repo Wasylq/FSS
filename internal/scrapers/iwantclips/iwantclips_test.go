@@ -275,7 +275,7 @@ func TestListScenesKnownIDs(t *testing.T) {
 	var scenesOnly []scraper.SceneResult
 	sawStoppedEarly := false
 	for r := range ch {
-		if r.StoppedEarly {
+		if r.Kind == scraper.KindStoppedEarly {
 			sawStoppedEarly = true
 			continue
 		}

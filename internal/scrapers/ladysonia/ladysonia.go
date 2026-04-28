@@ -91,7 +91,7 @@ func (s *Scraper) run(ctx context.Context, base string, opts scraper.ListOpts, o
 		body, err := s.fetchPage(ctx, url)
 		if err != nil {
 			select {
-			case out <- scraper.SceneResult{Err: fmt.Errorf("page %d: %w", page, err)}:
+			case out <- scraper.Error(fmt.Errorf("page %d: %w", page, err)):
 			case <-ctx.Done():
 			}
 			return
@@ -100,7 +100,7 @@ func (s *Scraper) run(ctx context.Context, base string, opts scraper.ListOpts, o
 		contents, err := parsePage(body)
 		if err != nil {
 			select {
-			case out <- scraper.SceneResult{Err: fmt.Errorf("page %d: %w", page, err)}:
+			case out <- scraper.Error(fmt.Errorf("page %d: %w", page, err)):
 			case <-ctx.Done():
 			}
 			return
@@ -108,7 +108,7 @@ func (s *Scraper) run(ctx context.Context, base string, opts scraper.ListOpts, o
 
 		if page == 1 {
 			select {
-			case out <- scraper.SceneResult{Total: contents.Total}:
+			case out <- scraper.Progress(contents.Total):
 			case <-ctx.Done():
 				return
 			}
@@ -118,13 +118,13 @@ func (s *Scraper) run(ctx context.Context, base string, opts scraper.ListOpts, o
 			id := strconv.Itoa(sc.ID)
 			if opts.KnownIDs[id] {
 				select {
-				case out <- scraper.SceneResult{StoppedEarly: true}:
+				case out <- scraper.StoppedEarly():
 				case <-ctx.Done():
 				}
 				return
 			}
 			select {
-			case out <- scraper.SceneResult{Scene: toScene(base, sc)}:
+			case out <- scraper.Scene(toScene(base, sc)):
 			case <-ctx.Done():
 				return
 			}

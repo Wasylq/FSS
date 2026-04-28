@@ -313,7 +313,7 @@ func TestKnownIDsStopsEarly(t *testing.T) {
 	var scenes int
 	var stopped bool
 	for r := range ch {
-		if r.StoppedEarly {
+		if r.Kind == scraper.KindStoppedEarly {
 			stopped = true
 			continue
 		}

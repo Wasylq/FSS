@@ -123,7 +123,7 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 		body, err := s.fetchHTML(ctx, pc.pageURL(page))
 		if err != nil {
 			select {
-			case out <- scraper.SceneResult{Err: fmt.Errorf("page %d: %w", page, err)}:
+			case out <- scraper.Error(fmt.Errorf("page %d: %w", page, err)):
 			case <-ctx.Done():
 			}
 			return
@@ -139,7 +139,7 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 			total, take := parsePagination(rsc)
 			if total > 0 {
 				select {
-				case out <- scraper.SceneResult{Total: total}:
+				case out <- scraper.Progress(total):
 				case <-ctx.Done():
 					return
 				}
@@ -154,13 +154,13 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 			scene := v.toScene(studioURL, now)
 			if len(opts.KnownIDs) > 0 && opts.KnownIDs[scene.ID] {
 				select {
-				case out <- scraper.SceneResult{StoppedEarly: true}:
+				case out <- scraper.StoppedEarly():
 				case <-ctx.Done():
 				}
 				return
 			}
 			select {
-			case out <- scraper.SceneResult{Scene: scene}:
+			case out <- scraper.Scene(scene):
 			case <-ctx.Done():
 				return
 			}
@@ -179,7 +179,7 @@ func (s *Scraper) runActress(ctx context.Context, pc pageConfig, studioURL strin
 	body, err := s.fetchHTML(ctx, pc.baseURL)
 	if err != nil {
 		select {
-		case out <- scraper.SceneResult{Err: err}:
+		case out <- scraper.Error(err):
 		case <-ctx.Done():
 		}
 		return
@@ -190,7 +190,7 @@ func (s *Scraper) runActress(ctx context.Context, pc pageConfig, studioURL strin
 
 	if len(videos) > 0 {
 		select {
-		case out <- scraper.SceneResult{Total: len(videos)}:
+		case out <- scraper.Progress(len(videos)):
 		case <-ctx.Done():
 			return
 		}
@@ -209,13 +209,13 @@ func (s *Scraper) runActress(ctx context.Context, pc pageConfig, studioURL strin
 		}
 		if len(opts.KnownIDs) > 0 && opts.KnownIDs[scene.ID] {
 			select {
-			case out <- scraper.SceneResult{StoppedEarly: true}:
+			case out <- scraper.StoppedEarly():
 			case <-ctx.Done():
 			}
 			return
 		}
 		select {
-		case out <- scraper.SceneResult{Scene: scene}:
+		case out <- scraper.Scene(scene):
 		case <-ctx.Done():
 			return
 		}

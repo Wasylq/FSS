@@ -306,18 +306,18 @@ func collectScenes(ctx context.Context, sc scraper.StudioScraper, studioURL stri
 	total := 0
 	stoppedEarly := false
 	for result := range ch {
-		if result.Total > 0 {
+		switch result.Kind {
+		case scraper.KindTotal:
 			total = result.Total
 			continue
-		}
-		if result.StoppedEarly {
+		case scraper.KindStoppedEarly:
 			stoppedEarly = true
 			continue
-		}
-		if result.Err != nil {
+		case scraper.KindError:
 			errCount++
 			fmt.Fprintf(os.Stderr, "\rwarning: %v\n", result.Err)
 			continue
+		case scraper.KindScene:
 		}
 		scenes = append(scenes, result.Scene)
 		if total > 0 {

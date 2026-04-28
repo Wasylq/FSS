@@ -50,17 +50,46 @@ type ListOpts struct {
 	Delay time.Duration
 }
 
-// SceneResult is a single item sent by ListScenes — either a scene or an error.
+// ResultKind identifies what a SceneResult carries.
+type ResultKind int
+
+const (
+	// KindScene indicates the result carries a valid Scene.
+	KindScene ResultKind = iota
+	// KindError indicates a non-fatal error. Log and continue.
+	KindError
+	// KindTotal is a progress hint sent once after the first page.
+	KindTotal
+	// KindStoppedEarly signals the scraper hit a known ID and stopped pagination.
+	KindStoppedEarly
+)
+
+// SceneResult is a single item sent on the channel returned by ListScenes.
+// Use the Kind field to determine which other fields are populated.
+// Prefer the constructor functions [Scene], [Error], [Total], [StoppedEarly].
 type SceneResult struct {
+	Kind  ResultKind
 	Scene models.Scene
 	Err   error
-	// Total, when > 0, carries a hint about the total number of scenes for the
-	// studio. Sent at most once (after the first page). Consumers should skip
-	// this result and use the value only for progress display.
 	Total int
-	// StoppedEarly, when true, signals the scraper halted pagination because it
-	// hit an ID from opts.KnownIDs. Older scenes beyond that point already exist
-	// in storage. Sent once immediately before the channel is closed, instead
-	// of a Scene.
-	StoppedEarly bool
+}
+
+// Scene constructs a SceneResult carrying a scraped scene.
+func Scene(s models.Scene) SceneResult {
+	return SceneResult{Kind: KindScene, Scene: s}
+}
+
+// Error constructs a SceneResult carrying a non-fatal error.
+func Error(err error) SceneResult {
+	return SceneResult{Kind: KindError, Err: err}
+}
+
+// Progress constructs a SceneResult carrying a total-scenes hint.
+func Progress(total int) SceneResult {
+	return SceneResult{Kind: KindTotal, Total: total}
+}
+
+// StoppedEarly constructs a SceneResult signalling early pagination stop.
+func StoppedEarly() SceneResult {
+	return SceneResult{Kind: KindStoppedEarly}
 }

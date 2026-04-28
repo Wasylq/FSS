@@ -92,7 +92,7 @@ func (s *Scraper) runWithBase(ctx context.Context, baseURL string, studioURL str
 		result, err := s.fetch(ctx, pageURL)
 		if err != nil {
 			select {
-			case out <- scraper.SceneResult{Err: fmt.Errorf("page %d: %w", page, err)}:
+			case out <- scraper.Error(fmt.Errorf("page %d: %w", page, err)):
 			case <-ctx.Done():
 			}
 			return
@@ -104,7 +104,7 @@ func (s *Scraper) runWithBase(ctx context.Context, baseURL string, studioURL str
 
 		if page == 1 && result.Pagination.TotalItems > 0 {
 			select {
-			case out <- scraper.SceneResult{Total: result.Pagination.TotalItems}:
+			case out <- scraper.Progress(result.Pagination.TotalItems):
 			case <-ctx.Done():
 				return
 			}
@@ -115,7 +115,7 @@ func (s *Scraper) runWithBase(ctx context.Context, baseURL string, studioURL str
 
 			if len(opts.KnownIDs) > 0 && opts.KnownIDs[id] {
 				select {
-				case out <- scraper.SceneResult{StoppedEarly: true}:
+				case out <- scraper.StoppedEarly():
 				case <-ctx.Done():
 				}
 				return
@@ -123,7 +123,7 @@ func (s *Scraper) runWithBase(ctx context.Context, baseURL string, studioURL str
 
 			scene := itemToScene(item, studioURL, now)
 			select {
-			case out <- scraper.SceneResult{Scene: scene}:
+			case out <- scraper.Scene(scene):
 			case <-ctx.Done():
 				return
 			}

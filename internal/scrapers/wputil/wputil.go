@@ -256,7 +256,7 @@ func RunWorkerPool(ctx context.Context, client *http.Client, headers map[string]
 	allURLs, err := FetchAllSitemaps(ctx, client, sitemapURLs, headers)
 	if err != nil {
 		select {
-		case out <- scraper.SceneResult{Err: err}:
+		case out <- scraper.Error(err):
 		case <-ctx.Done():
 		}
 		return
@@ -264,7 +264,7 @@ func RunWorkerPool(ctx context.Context, client *http.Client, headers map[string]
 
 	if len(allURLs) > 0 {
 		select {
-		case out <- scraper.SceneResult{Total: len(allURLs)}:
+		case out <- scraper.Progress(len(allURLs)):
 		case <-ctx.Done():
 			return
 		}
@@ -292,7 +292,7 @@ func RunWorkerPool(ctx context.Context, client *http.Client, headers map[string]
 				body, fetchErr := FetchPage(ctx, client, entry.Loc, headers)
 				if fetchErr != nil {
 					select {
-					case out <- scraper.SceneResult{Err: fetchErr}:
+					case out <- scraper.Error(fetchErr):
 					case <-ctx.Done():
 						return
 					}
@@ -302,7 +302,7 @@ func RunWorkerPool(ctx context.Context, client *http.Client, headers map[string]
 				scene, skip, parseErr := parse(studioURL, entry.Loc, body, time.Now().UTC())
 				if parseErr != nil {
 					select {
-					case out <- scraper.SceneResult{Err: parseErr}:
+					case out <- scraper.Error(parseErr):
 					case <-ctx.Done():
 						return
 					}
@@ -315,7 +315,7 @@ func RunWorkerPool(ctx context.Context, client *http.Client, headers map[string]
 					continue
 				}
 				select {
-				case out <- scraper.SceneResult{Scene: scene}:
+				case out <- scraper.Scene(scene):
 				case <-ctx.Done():
 					return
 				}
