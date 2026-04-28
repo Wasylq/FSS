@@ -70,6 +70,7 @@ import (
 	_ "github.com/Wasylq/FSS/internal/scrapers/naughtyamerica"
 	_ "github.com/Wasylq/FSS/internal/scrapers/nubiles"
 	_ "github.com/Wasylq/FSS/internal/scrapers/oopsfamily"
+	_ "github.com/Wasylq/FSS/internal/scrapers/over40handjobs"
 	_ "github.com/Wasylq/FSS/internal/scrapers/pennybarber"
 	_ "github.com/Wasylq/FSS/internal/scrapers/perfectgirlfriend"
 	_ "github.com/Wasylq/FSS/internal/scrapers/pornhub"
