@@ -6,7 +6,7 @@ class Fss < Formula
   homepage "https://github.com/Wasylq/FSS"
   url "https://github.com/Wasylq/FSS/archive/vVERSION.tar.gz"
   sha256 "PLACEHOLDER"
-  license "MIT"
+  license "GPL-3.0-only"
 
   depends_on "go" => :build
 

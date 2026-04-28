@@ -185,6 +185,9 @@ jobs:
             docker pull ghcr.io/wasylq/fss:${{ github.ref_name }}
             ```
 
+      - name: Stamp PKGBUILD version
+        run: sed -i "s/^pkgver=VERSION$/pkgver=${GITHUB_REF#refs/tags/v}/" ./packaging/aur/PKGBUILD
+
       - name: Publish to AUR
         uses: KSXGitHub/github-actions-deploy-aur@v4.1.3
         with:

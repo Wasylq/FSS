@@ -6,7 +6,7 @@ maintainer: Wasylq <wasylq@protonmail.com>
 description: Scrapes all scenes and metadata from a studio URL
 vendor: Wasylq
 homepage: https://github.com/Wasylq/FSS
-license: MIT
+license: GPL-3.0-only
 contents:
   - src: dist/fss
     dst: /usr/bin/fss
