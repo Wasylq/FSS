@@ -357,13 +357,13 @@ func scanScene(rows *sql.Rows) (models.Scene, error) {
 		return sc, fmt.Errorf("parsing deleted_at for %s: %w", sc.ID, err)
 	}
 	if err := json.Unmarshal([]byte(performers), &sc.Performers); err != nil {
-		return sc, fmt.Errorf("unmarshalling performers: %w", err)
+		return sc, fmt.Errorf("unmarshalling performers for %s: %w", sc.ID, err)
 	}
 	if err := json.Unmarshal([]byte(tags), &sc.Tags); err != nil {
-		return sc, fmt.Errorf("unmarshalling tags: %w", err)
+		return sc, fmt.Errorf("unmarshalling tags for %s: %w", sc.ID, err)
 	}
 	if err := json.Unmarshal([]byte(categories), &sc.Categories); err != nil {
-		return sc, fmt.Errorf("unmarshalling categories: %w", err)
+		return sc, fmt.Errorf("unmarshalling categories for %s: %w", sc.ID, err)
 	}
 	return sc, nil
 }
