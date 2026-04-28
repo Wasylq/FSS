@@ -34,7 +34,13 @@ func (s *SQLite) Close() error { return s.db.Close() }
 
 // ---- schema ----
 
-const schema = `
+// baseSchema creates the core tables present since v0. The performers/tags/categories
+// TEXT columns are kept for backwards compatibility but are no longer read or written.
+const baseSchema = `
+CREATE TABLE IF NOT EXISTS schema_version (
+    version INTEGER NOT NULL
+);
+
 CREATE TABLE IF NOT EXISTS scenes (
     id                TEXT NOT NULL,
     site_id           TEXT NOT NULL,
@@ -91,9 +97,139 @@ CREATE INDEX IF NOT EXISTS idx_scenes_studio_url ON scenes(studio_url);
 CREATE INDEX IF NOT EXISTS idx_price_history_scene ON price_history(scene_id, site_id);
 `
 
+// migration1 adds normalised junction tables for performers, tags, and categories.
+const migration1 = `
+CREATE TABLE IF NOT EXISTS performers (
+    id   INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL UNIQUE
+);
+
+CREATE TABLE IF NOT EXISTS tags (
+    id   INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL UNIQUE
+);
+
+CREATE TABLE IF NOT EXISTS categories (
+    id   INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL UNIQUE
+);
+
+CREATE TABLE IF NOT EXISTS scene_performers (
+    scene_id     TEXT NOT NULL,
+    site_id      TEXT NOT NULL,
+    performer_id INTEGER NOT NULL,
+    position     INTEGER NOT NULL DEFAULT 0,
+    PRIMARY KEY (scene_id, site_id, performer_id),
+    FOREIGN KEY (scene_id, site_id) REFERENCES scenes(id, site_id) ON DELETE CASCADE,
+    FOREIGN KEY (performer_id) REFERENCES performers(id)
+);
+
+CREATE TABLE IF NOT EXISTS scene_tags (
+    scene_id TEXT NOT NULL,
+    site_id  TEXT NOT NULL,
+    tag_id   INTEGER NOT NULL,
+    PRIMARY KEY (scene_id, site_id, tag_id),
+    FOREIGN KEY (scene_id, site_id) REFERENCES scenes(id, site_id) ON DELETE CASCADE,
+    FOREIGN KEY (tag_id) REFERENCES tags(id)
+);
+
+CREATE TABLE IF NOT EXISTS scene_categories (
+    scene_id    TEXT NOT NULL,
+    site_id     TEXT NOT NULL,
+    category_id INTEGER NOT NULL,
+    PRIMARY KEY (scene_id, site_id, category_id),
+    FOREIGN KEY (scene_id, site_id) REFERENCES scenes(id, site_id) ON DELETE CASCADE,
+    FOREIGN KEY (category_id) REFERENCES categories(id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_scene_performers_performer ON scene_performers(performer_id);
+CREATE INDEX IF NOT EXISTS idx_scene_tags_tag ON scene_tags(tag_id);
+CREATE INDEX IF NOT EXISTS idx_scene_categories_category ON scene_categories(category_id);
+`
+
 func (s *SQLite) migrate() error {
-	_, err := s.db.Exec(schema)
-	return err
+	if _, err := s.db.Exec(baseSchema); err != nil {
+		return err
+	}
+
+	var version int
+	if err := s.db.QueryRow(`SELECT COALESCE(MAX(version), 0) FROM schema_version`).Scan(&version); err != nil {
+		return fmt.Errorf("reading schema version: %w", err)
+	}
+
+	if version < 1 {
+		if err := s.applyMigration1(); err != nil {
+			return fmt.Errorf("migration 1: %w", err)
+		}
+	}
+	return nil
+}
+
+// applyMigration1 creates the junction tables and migrates existing JSON data.
+func (s *SQLite) applyMigration1() error {
+	tx, err := s.db.Begin()
+	if err != nil {
+		return err
+	}
+	defer func() { _ = tx.Rollback() }()
+
+	if _, err := tx.Exec(migration1); err != nil {
+		return err
+	}
+
+	// Migrate existing JSON data from the scenes table into junction tables.
+	rows, err := tx.Query(`SELECT id, site_id, performers, tags, categories FROM scenes`)
+	if err != nil {
+		return err
+	}
+	defer func() { _ = rows.Close() }()
+
+	type sceneStrings struct {
+		id, siteID                   string
+		performers, tags, categories string
+	}
+	var all []sceneStrings
+	for rows.Next() {
+		var r sceneStrings
+		if err := rows.Scan(&r.id, &r.siteID, &r.performers, &r.tags, &r.categories); err != nil {
+			return err
+		}
+		all = append(all, r)
+	}
+	if err := rows.Err(); err != nil {
+		return err
+	}
+
+	for _, r := range all {
+		performers, err := unmarshalStrings(r.performers)
+		if err != nil {
+			return fmt.Errorf("parsing performers for scene %s: %w", r.id, err)
+		}
+		if err := insertRelation(tx, "performers", "scene_performers", "performer_id", r.id, r.siteID, performers, true); err != nil {
+			return err
+		}
+
+		tags, err := unmarshalStrings(r.tags)
+		if err != nil {
+			return fmt.Errorf("parsing tags for scene %s: %w", r.id, err)
+		}
+		if err := insertRelation(tx, "tags", "scene_tags", "tag_id", r.id, r.siteID, tags, false); err != nil {
+			return err
+		}
+
+		cats, err := unmarshalStrings(r.categories)
+		if err != nil {
+			return fmt.Errorf("parsing categories for scene %s: %w", r.id, err)
+		}
+		if err := insertRelation(tx, "categories", "scene_categories", "category_id", r.id, r.siteID, cats, false); err != nil {
+			return err
+		}
+	}
+
+	if _, err := tx.Exec(`INSERT INTO schema_version (version) VALUES (1)`); err != nil {
+		return err
+	}
+	return tx.Commit()
 }
 
 // ---- Store interface ----
@@ -101,8 +237,8 @@ func (s *SQLite) migrate() error {
 func (s *SQLite) Load(studioURL string) ([]models.Scene, error) {
 	rows, err := s.db.Query(`
 		SELECT id, site_id, studio_url, title, url, date, description,
-		       thumbnail, preview, performers, director, studio,
-		       tags, categories, series, series_part,
+		       thumbnail, preview, director, studio,
+		       series, series_part,
 		       duration, resolution, width, height, format,
 		       views, likes, comments,
 		       lowest_price, lowest_price_date, scraped_at, deleted_at
@@ -124,6 +260,15 @@ func (s *SQLite) Load(studioURL string) ([]models.Scene, error) {
 		return nil, err
 	}
 
+	if err := s.loadRelation(studioURL, "scene_performers", "performers", "performer_id", "position", scenes); err != nil {
+		return nil, err
+	}
+	if err := s.loadRelation(studioURL, "scene_tags", "tags", "tag_id", "", scenes); err != nil {
+		return nil, err
+	}
+	if err := s.loadRelation(studioURL, "scene_categories", "categories", "category_id", "", scenes); err != nil {
+		return nil, err
+	}
 	if err := s.loadPriceHistory(studioURL, scenes); err != nil {
 		return nil, err
 	}
@@ -224,22 +369,10 @@ func (s *SQLite) Export(format, path, studioURL string) error {
 	}
 }
 
-// ---- helpers ----
+// ---- upsert helpers ----
 
 func upsertScene(tx *sql.Tx, sc models.Scene) error {
-	performers, err := jsonStr(sc.Performers)
-	if err != nil {
-		return fmt.Errorf("encoding performers for %s: %w", sc.ID, err)
-	}
-	tags, err := jsonStr(sc.Tags)
-	if err != nil {
-		return fmt.Errorf("encoding tags for %s: %w", sc.ID, err)
-	}
-	categories, err := jsonStr(sc.Categories)
-	if err != nil {
-		return fmt.Errorf("encoding categories for %s: %w", sc.ID, err)
-	}
-	_, err = tx.Exec(`
+	_, err := tx.Exec(`
 		INSERT OR REPLACE INTO scenes (
 		    id, site_id, studio_url, title, url, date, description,
 		    thumbnail, preview, performers, director, studio,
@@ -250,8 +383,8 @@ func upsertScene(tx *sql.Tx, sc models.Scene) error {
 		) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
 		sc.ID, sc.SiteID, sc.StudioURL, sc.Title, sc.URL,
 		timeStr(sc.Date), sc.Description, sc.Thumbnail, sc.Preview,
-		performers, sc.Director, sc.Studio,
-		tags, categories,
+		"[]", sc.Director, sc.Studio,
+		"[]", "[]",
 		sc.Series, sc.SeriesPart,
 		sc.Duration, sc.Resolution, sc.Width, sc.Height, sc.Format,
 		sc.Views, sc.Likes, sc.Comments,
@@ -260,6 +393,16 @@ func upsertScene(tx *sql.Tx, sc models.Scene) error {
 	)
 	if err != nil {
 		return fmt.Errorf("upserting scene %s: %w", sc.ID, err)
+	}
+
+	if err := insertRelation(tx, "performers", "scene_performers", "performer_id", sc.ID, sc.SiteID, sc.Performers, true); err != nil {
+		return fmt.Errorf("upserting performers for %s: %w", sc.ID, err)
+	}
+	if err := insertRelation(tx, "tags", "scene_tags", "tag_id", sc.ID, sc.SiteID, sc.Tags, false); err != nil {
+		return fmt.Errorf("upserting tags for %s: %w", sc.ID, err)
+	}
+	if err := insertRelation(tx, "categories", "scene_categories", "category_id", sc.ID, sc.SiteID, sc.Categories, false); err != nil {
+		return fmt.Errorf("upserting categories for %s: %w", sc.ID, err)
 	}
 
 	if _, err := tx.Exec(`DELETE FROM price_history WHERE scene_id = ? AND site_id = ?`,
@@ -277,6 +420,99 @@ func upsertScene(tx *sql.Tx, sc models.Scene) error {
 		}
 	}
 	return nil
+}
+
+// insertRelation upserts each name into the entity table, then replaces the
+// scene's junction rows. withPosition preserves slice order in a position column.
+func insertRelation(tx *sql.Tx, entityTable, junctionTable, fkCol, sceneID, siteID string, names []string, withPosition bool) error {
+	if _, err := tx.Exec(
+		`DELETE FROM `+junctionTable+` WHERE scene_id = ? AND site_id = ?`,
+		sceneID, siteID,
+	); err != nil {
+		return err
+	}
+	for i, name := range names {
+		if name == "" {
+			continue
+		}
+		if _, err := tx.Exec(
+			`INSERT OR IGNORE INTO `+entityTable+` (name) VALUES (?)`, name,
+		); err != nil {
+			return err
+		}
+		var id int64
+		if err := tx.QueryRow(
+			`SELECT id FROM `+entityTable+` WHERE name = ?`, name,
+		).Scan(&id); err != nil {
+			return err
+		}
+		var insertErr error
+		if withPosition {
+			_, insertErr = tx.Exec(
+				`INSERT OR IGNORE INTO `+junctionTable+` (scene_id, site_id, `+fkCol+`, position) VALUES (?,?,?,?)`,
+				sceneID, siteID, id, i,
+			)
+		} else {
+			_, insertErr = tx.Exec(
+				`INSERT OR IGNORE INTO `+junctionTable+` (scene_id, site_id, `+fkCol+`) VALUES (?,?,?)`,
+				sceneID, siteID, id,
+			)
+		}
+		if insertErr != nil {
+			return insertErr
+		}
+	}
+	return nil
+}
+
+// ---- load helpers ----
+
+// loadRelation batch-loads a string relation (performers, tags, or categories)
+// for all scenes belonging to studioURL and attaches results to the scene slice.
+// orderCol is the column to ORDER BY (empty = no ordering).
+func (s *SQLite) loadRelation(studioURL, junctionTable, entityTable, fkCol, orderCol string, scenes []models.Scene) error {
+	if len(scenes) == 0 {
+		return nil
+	}
+	idx := make(map[string]int, len(scenes))
+	for i, sc := range scenes {
+		idx[sc.SiteID+":"+sc.ID] = i
+	}
+
+	q := `SELECT j.scene_id, j.site_id, e.name
+		FROM ` + junctionTable + ` j
+		JOIN ` + entityTable + ` e ON j.` + fkCol + ` = e.id
+		JOIN scenes s ON j.scene_id = s.id AND j.site_id = s.site_id
+		WHERE s.studio_url = ?`
+	if orderCol != "" {
+		q += ` ORDER BY j.scene_id, j.site_id, j.` + orderCol
+	}
+
+	rows, err := s.db.Query(q, studioURL)
+	if err != nil {
+		return err
+	}
+	defer func() { _ = rows.Close() }()
+
+	for rows.Next() {
+		var sceneID, siteID, name string
+		if err := rows.Scan(&sceneID, &siteID, &name); err != nil {
+			return err
+		}
+		i, ok := idx[siteID+":"+sceneID]
+		if !ok {
+			continue
+		}
+		switch junctionTable {
+		case "scene_performers":
+			scenes[i].Performers = append(scenes[i].Performers, name)
+		case "scene_tags":
+			scenes[i].Tags = append(scenes[i].Tags, name)
+		case "scene_categories":
+			scenes[i].Categories = append(scenes[i].Categories, name)
+		}
+	}
+	return rows.Err()
 }
 
 func (s *SQLite) loadPriceHistory(studioURL string, scenes []models.Scene) error {
@@ -308,9 +544,10 @@ func (s *SQLite) loadPriceHistory(studioURL string, scenes []models.Scene) error
 			&p.Regular, &p.Discounted, &isFree, &isOnSale, &p.DiscountPercent); err != nil {
 			return err
 		}
-		p.Date, err = parseStr(dateStr)
-		if err != nil {
-			return fmt.Errorf("parsing price_history date for %s: %w", sceneID, err)
+		var parseErr error
+		p.Date, parseErr = parseStr(dateStr)
+		if parseErr != nil {
+			return fmt.Errorf("parsing price_history date for %s: %w", sceneID, parseErr)
 		}
 		p.IsFree = isFree != 0
 		p.IsOnSale = isOnSale != 0
@@ -325,9 +562,6 @@ func scanScene(rows *sql.Rows) (models.Scene, error) {
 	var sc models.Scene
 	var (
 		dateStr         string
-		performers      string
-		tags            string
-		categories      string
 		lowestPriceDate sql.NullString
 		scrapedAt       string
 		deletedAt       sql.NullString
@@ -335,8 +569,8 @@ func scanScene(rows *sql.Rows) (models.Scene, error) {
 	err := rows.Scan(
 		&sc.ID, &sc.SiteID, &sc.StudioURL, &sc.Title, &sc.URL,
 		&dateStr, &sc.Description, &sc.Thumbnail, &sc.Preview,
-		&performers, &sc.Director, &sc.Studio,
-		&tags, &categories, &sc.Series, &sc.SeriesPart,
+		&sc.Director, &sc.Studio,
+		&sc.Series, &sc.SeriesPart,
 		&sc.Duration, &sc.Resolution, &sc.Width, &sc.Height, &sc.Format,
 		&sc.Views, &sc.Likes, &sc.Comments,
 		&sc.LowestPrice, &lowestPriceDate, &scrapedAt, &deletedAt,
@@ -355,15 +589,6 @@ func scanScene(rows *sql.Rows) (models.Scene, error) {
 	}
 	if sc.DeletedAt, err = parseStrPtr(deletedAt); err != nil {
 		return sc, fmt.Errorf("parsing deleted_at for %s: %w", sc.ID, err)
-	}
-	if err := json.Unmarshal([]byte(performers), &sc.Performers); err != nil {
-		return sc, fmt.Errorf("unmarshalling performers for %s: %w", sc.ID, err)
-	}
-	if err := json.Unmarshal([]byte(tags), &sc.Tags); err != nil {
-		return sc, fmt.Errorf("unmarshalling tags for %s: %w", sc.ID, err)
-	}
-	if err := json.Unmarshal([]byte(categories), &sc.Categories); err != nil {
-		return sc, fmt.Errorf("unmarshalling categories for %s: %w", sc.ID, err)
 	}
 	return sc, nil
 }
@@ -402,17 +627,21 @@ func parseStrPtr(s sql.NullString) (*time.Time, error) {
 	return &t, nil
 }
 
-func jsonStr(v any) (string, error) {
-	b, err := json.Marshal(v)
-	if err != nil {
-		return "", err
-	}
-	return string(b), nil
-}
-
 func boolInt(b bool) int {
 	if b {
 		return 1
 	}
 	return 0
+}
+
+// unmarshalStrings decodes a JSON array of strings, returning nil for empty/null arrays.
+func unmarshalStrings(s string) ([]string, error) {
+	if s == "" || s == "[]" || s == "null" {
+		return nil, nil
+	}
+	var result []string
+	if err := json.Unmarshal([]byte(s), &result); err != nil {
+		return nil, err
+	}
+	return result, nil
 }
