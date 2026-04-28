@@ -12,7 +12,9 @@ Scrapes all scenes and metadata from a studio URL. Designed to be easily extende
 | Site | Platform |
 |------|----------|
 | A POV Story | PHP tour site |
+| APClips | Custom HTML |
 | Babes | Aylo/Juan |
+| BangBros | Aylo/Juan |
 | BrasilVR | POVR/WankzVR |
 | Brazzers | Aylo/Juan |
 | Clips4Sale | Clips4Sale |
@@ -20,6 +22,7 @@ Scrapes all scenes and metadata from a studio URL. Designed to be easily extende
 | Digital Playground | Aylo/Juan |
 | 50 Plus MILFs | Score Group |
 | Evil Angel | Gamma/Algolia |
+| FapHouse | Custom HTML |
 | House of Fyre | ElevatedX |
 | Fakings | Next.js RSC |
 | Family Therapy | WordPress |
@@ -27,6 +30,7 @@ Scrapes all scenes and metadata from a studio URL. Designed to be easily extende
 | IWantClips | IWantClips |
 | Kink | Kink |
 | Lady Sonia | KB Productions/Next.js |
+| LoyalFans | LoyalFans API |
 | ManyVids | ManyVids |
 | Mature.nl | Custom |
 | MilfVR | POVR/WankzVR |

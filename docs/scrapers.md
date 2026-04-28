@@ -4,18 +4,22 @@
 |------|-------------|----------|---------|-------|
 | [50 Plus MILFs](https://www.50plusmilfs.com) | `50plusmilfs.com` | Score Group | No | HTML listing + detail page worker pool for dates/tags/description, uses `scoregrouputil` |
 | [A POV Story](https://apovstory.com) | `apovstory.com` | PHP tour site | No | HTML listing + detail pages, category extraction |
+| [APClips](https://apclips.com) | `apclips.com/{creator_slug}` | Custom HTML | Yes | HTML listing (60/page, `sort=date-new`) + detail pages for dates/tags, price tracking |
 | [Babes](https://www.babes.com) | `babes.com`, `babes.com/pornstar/{id}/{slug}`, `babes.com/category/{id}/{slug}`, `babes.com/site/{id}/{slug}`, `babes.com/series/{id}/{slug}` | Aylo/Juan | No | REST API, filter by performer/category/sub-site/series, uses `ayloutil` |
+| [BangBros](https://www.bangbros.com) | `bangbros.com`, `bangbros.com/model/{id}/{slug}`, `bangbros.com/category/{slug}`, `bangbros.com/websites/{slug}`, `bangbros.com/site/{id}/{slug}`, `bangbros.com/series/{id}/{slug}` | Aylo/Juan | No | REST API, slug-to-ID resolution for `/websites/` and `/category/` URLs, uses `ayloutil` |
 | [Brazzers](https://www.brazzers.com) | `brazzers.com`, `brazzers.com/pornstar/{id}/{slug}`, `brazzers.com/category/{id}/{slug}`, `brazzers.com/site/{id}/{slug}`, `brazzers.com/series/{id}/{slug}` | Aylo/Juan | No | REST API, filter by performer/category/sub-site/series, uses `ayloutil` |
 | [Clips4Sale](https://www.clips4sale.com) | `clips4sale.com/studio/{id}/{slug}` | Clips4Sale | Yes | Multi-page JSON, categories, all-page enumeration |
 | [Anal Therapy](https://analtherapyxxx.com) | `analtherapyxxx.com` | WordPress | No | Sitemap-driven, JSON-LD VideoObject fallback, uses `wputil` |
 | [Digital Playground](https://www.digitalplayground.com) | `digitalplayground.com`, `digitalplayground.com/pornstar/{id}/{slug}`, `digitalplayground.com/category/{id}/{slug}`, `digitalplayground.com/site/{id}/{slug}`, `digitalplayground.com/series/{id}/{slug}` | Aylo/Juan | No | REST API, filter by performer/category/sub-site/series, uses `ayloutil` |
 | [Fakings](https://fakings.com) | `fakings.com`, `fakings.com/serie/{slug}`, `fakings.com/actrices-porno/{slug}`, `fakings.com/categoria/{slug}` | Next.js RSC | No | React Server Component flight payload parsing, 5 sub-brands (fakings/pepeporn/nigged/morenolust/pornermates), pagination via `/f/pag:{N}`, actress pages load all videos at once |
 | [Family Therapy](https://familytherapyxxx.com) | `familytherapyxxx.com` | WordPress | No | Sitemap-driven, Rank Math SEO, performer extraction from title, uses `wputil` |
+| [FapHouse](https://faphouse.com) | `faphouse.com/models/{slug}`, `faphouse.com/studios/{slug}` | Custom HTML | Yes | HTML listing (60/page, `sort=new`) + detail pages with embedded JSON (`view-state-data`) for dates/performers/categories, price tracking for VOD content, xHamster ecosystem |
 | [Gloryhole Secrets](https://www.gloryholesecrets.com) | `gloryholesecrets.com` | Gamma/Algolia | No | Algolia search API, uses `gammautil` |
 | [House of Fyre](https://www.houseofyre.com) | `houseofyre.com`, `houseofyre.com/models/{name}.html` | ElevatedX | Yes | HTML listing + detail page worker pool for description/tags, price tracking, ~450 scenes |
 | [BrasilVR](https://www.brasilvr.com) | `brasilvr.com` | POVR/WankzVR | No | Export JSON + listing page dates, uses `povrutil` |
 | [IWantClips](https://www.iwantclips.com) | `iwantclips.com/store/{id}/{username}` | IWantClips | Yes | JSON API, double HTML-unescaping |
 | [Lady Sonia](https://tour.lady-sonia.com) | `lady-sonia.com` | KB Productions/Next.js | No | `__NEXT_DATA__` JSON parsing, 1500+ scenes, listing-only (no detail pages needed) |
+| [LoyalFans](https://www.loyalfans.com) | `loyalfans.com/{creator_slug}` | LoyalFans API | No | POST `/api/v2/advanced-search`, cursor-based `page_token` pagination (20/page), session via `/api/v2/system-status`, filters results by owner slug |
 | [Kink](https://www.kink.com) | `kink.com`, `kink.com/channel/{slug}`, `kink.com/model/{id}/{slug}`, `kink.com/tag/{slug}`, `kink.com/series/{slug}` | Kink | No | HTML scraping, 51 channels, filter by channel/performer/tag/series, detail page worker pool for tags/description/duration, age gate cookie bypass, JSON-LD + data-setup parsing |
 | [ManyVids](https://www.manyvids.com) | `manyvids.com/Profile/{id}/{slug}/Store/Videos` | ManyVids | Yes | JSON API, detail-page worker pool |
 | [Mature.nl](https://www.mature.nl) | `mature.nl/en/updates`, `mature.nl/en/model/{id}`, `mature.nl/en/niche/{id}/{page}/{slug}` | Custom | No | HTML scraping, paginated listing + detail page worker pool for model URLs |
@@ -77,7 +81,7 @@ Scrapers that share a platform use common utility packages to avoid duplication:
 
 | Package | Platform | Used by |
 |---------|----------|---------|
-| `ayloutil` | Aylo/Juan (REST API, instance token auth) | Babes, Brazzers, Digital Playground, Mofos, PropertySex, Reality Kings, TransAngels, Twistys |
+| `ayloutil` | Aylo/Juan (REST API, instance token auth) | Babes, BangBros, Brazzers, Digital Playground, Mofos, PropertySex, Reality Kings, TransAngels, Twistys |
 | `gammautil` | Gamma Entertainment (Algolia search API) | Burning Angel, Evil Angel, Filthy Kings, Gangbang Creampie, Girlfriends Films, Gloryhole Secrets, Lethal Hardcore, Mommy Blows Best, Pure Taboo, Rocco Siffredi, Taboo Heat, Wicked |
 | `scoregrouputil` | Score Group (HTML listing + detail pages, `meta name="Date"` for dates, `updates-tag` links for tags) | 50 Plus MILFs |
 | `povrutil` | POVR/WankzVR (export JSON + HTML listing pages) | BrasilVR, MilfVR, TranzVR, WankzVR |

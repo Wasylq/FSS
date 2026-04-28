@@ -642,3 +642,33 @@ CLI flags override config. The API key can also be set via `FSS_STASH_API_KEY` e
 3. `fss stash import` (dry-run) — should show matches without modifying Stash
 4. `fss stash import --apply` — should update scenes, verify in Stash UI
 5. Verify cross-site merge: scrape same performer from two sites, import, check that Stash scene gets both URLs and earliest date
+
+---
+
+## Phase 8 — SQLite Normalization + Packaging + New Scrapers ✓
+
+### SQLite Schema Normalization
+
+Performers, tags, and categories were stored as JSON-encoded TEXT columns in the `scenes` table — queryable only via `json_each()`. Normalized into proper junction tables:
+
+- Lookup tables: `performers`, `tags`, `categories` (id + unique name)
+- Junction tables: `scene_performers` (with `position` for billing order), `scene_tags`, `scene_categories`
+- Reverse lookup indexes on each junction table
+- Migration via `schema_version` table: version 0 → 1 migrates existing JSON data into junction tables within a single transaction
+- Old JSON columns kept for compatibility but no longer read
+
+### Packaging
+
+- `.deb`/`.rpm` via nfpm (`nfpm.yaml`)
+- AUR `PKGBUILD` (`packaging/aur/PKGBUILD`)
+- AUR auto-publish in GitHub Actions release workflow via `KSXGitHub/github-actions-deploy-aur`
+- Release pipeline: build (5 binaries + deb/rpm) → manual-smoke-gate → GitHub Release + AUR publish → Docker push
+
+### New Scrapers
+
+| Scraper | Platform | Notes |
+|---------|----------|-------|
+| BangBros | Aylo/Juan | Slug-to-ID resolution for `/websites/` and `/category/` URLs, uses `ayloutil` |
+| LoyalFans | LoyalFans API | POST-based search API, cursor pagination, session init, owner filtering |
+| APClips | Custom HTML | Listing + detail pages, price tracking, `sort=date-new` |
+| FapHouse | Custom HTML | Listing + detail pages with embedded JSON, model/studio URL types, price tracking |

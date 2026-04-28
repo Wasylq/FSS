@@ -77,7 +77,7 @@ type Store interface {
 
 **Flat store** (default): one JSON file per studio on disk. The file _is_ the backing store — `Load()` reads it, `Save()` overwrites it atomically. CSV is an export format written alongside.
 
-**SQLite store** (`--db`): auto-migrates schema on open. Scenes, price history, and studios live in relational tables. `Export()` regenerates JSON/CSV from the database. Uses `SetMaxOpenConns(1)` for serial writes.
+**SQLite store** (`--db`): auto-migrates schema on open via `schema_version` table. Scenes, price history, and studios live in relational tables. Performers, tags, and categories are normalized into lookup tables with junction tables (`scene_performers`, `scene_tags`, `scene_categories`) — the old JSON columns in `scenes` are kept but ignored on read. `Export()` regenerates JSON/CSV from the database. Uses `SetMaxOpenConns(1)` for serial writes.
 
 Scrapers never know which store is active.
 

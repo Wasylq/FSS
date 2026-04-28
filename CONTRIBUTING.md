@@ -284,7 +284,11 @@ go build -o fss . && ./fss list-scrapers # new scraper appears
 | `tabooheat` | Simple | Thin wrapper around `gammautil` for a Gamma Entertainment site |
 | `naughtyamerica` | Medium | Open JSON API, paginated, multi-domain (6 sister sites), VR support, thumbnail URL construction from trailer paths |
 | `nubiles` | Medium | EdgeCms HTML scraping, 20+ network domains, detail page worker pool, model/category URL filtering |
+| `bangbros` | Medium | Aylo/Juan REST API with slug-to-ID resolution for `/websites/` and `/category/` URLs, uses `ayloutil` |
 | `brazzers` | Medium | Aylo/Juan REST API, instance token auth, multi-filter URL parsing, series support, uses `ayloutil` |
+| `loyalfans` | Medium | POST-based JSON API, cursor pagination (`page_token`), session init, owner filtering |
+| `apclips` | Medium | HTML scraping, listing + detail pages for dates/tags, price tracking |
+| `faphouse` | Medium | HTML listing + detail pages with embedded JSON (`view-state-data`), model/studio URL types, price tracking |
 | `apovstory` | Medium | PHP tour site, HTML listing + detail pages, category extraction |
 | `manyvids` | Medium | JSON API, pricing, detail-page worker pool |
 | `clips4sale` | Medium | Multi-page HTML, categories, pricing |
@@ -308,7 +312,7 @@ git tag -a v1.7.0 -m "v1.7.0"
 git push origin v1.7.0
 ```
 
-Then go to the **Actions → Release** run on GitHub, click *Review deployments*, tick `manual-smoke-gate`, and approve. The GitHub Release is published (with tarballs, zips, `.deb`, and `.rpm` packages) and the Docker image (with `v1.7.0`, `v1.7`, `v1`, and `latest` tags) is built and pushed in the same run. Both happen behind the single approval — neither lands on GHCR or the Releases page if you reject the gate.
+Then go to the **Actions → Release** run on GitHub, click *Review deployments*, tick `manual-smoke-gate`, and approve. The GitHub Release is published (with tarballs, zips, `.deb`, and `.rpm` packages), the AUR `fss` package is updated, and the Docker image (with semantic version tags) is built and pushed — all in the same run. Everything happens behind the single approval gate.
 
 ### What the release produces
 
@@ -318,6 +322,8 @@ Then go to the **Actions → Release** run on GitHub, click *Review deployments*
 | `.zip` binary | windows/amd64 |
 | `.deb` package | linux/amd64, linux/arm64 |
 | `.rpm` package | linux/amd64, linux/arm64 |
+| AUR `fss` package | auto-published after release |
+| Docker image (`ghcr.io/wasylq/fss`) | linux/amd64, linux/arm64 |
 
 The `.deb`/`.rpm` packages are built by [nfpm](https://nfpm.goreleaser.com/) using `nfpm.yaml`. To test locally:
 
@@ -340,9 +346,9 @@ The gate is a **trust-me** check — nothing verifies that you actually ran the 
 
 ### AUR and Homebrew
 
-Reference packaging files live in `packaging/`:
+Packaging files live in `packaging/`:
 
-- `packaging/aur/PKGBUILD` — Arch Linux AUR package. Update `pkgver` and `sha256sums` after each release, then push to the AUR `fss` repository.
+- `packaging/aur/PKGBUILD` — Arch Linux AUR package. **Automatically published** to the AUR after the GitHub Release is created (via `KSXGitHub/github-actions-deploy-aur` action). Requires `AUR_SSH_PRIVATE_KEY` secret in the repository.
 - `packaging/homebrew/fss.rb` — Reference Homebrew formula. For a proper tap, create a `homebrew-fss` repository and publish the formula there after each release.
 
 Both AUR and Homebrew support system-level updates (`yay -Syu` / `brew upgrade`). For `.deb`/`.rpm` auto-updates via `apt upgrade`/`dnf upgrade`, a hosted package repository (e.g. Packagecloud, Cloudsmith, or Gemfury) is needed — see `docs/enhancements.md`.

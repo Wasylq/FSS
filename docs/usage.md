@@ -261,7 +261,7 @@ When `--db` is set, SQLite is the source of truth. JSON/CSV files are exported f
 
 ### Schema
 
-Three tables. Inspect with any SQLite client (`sqlite3`, DBeaver, TablePlus, etc.).
+Ten tables (three core + six junction/lookup + one metadata). Inspect with any SQLite client (`sqlite3`, DBeaver, TablePlus, etc.).
 
 **`scenes`** — one row per scene:
 
@@ -320,6 +320,30 @@ Three tables. Inspect with any SQLite client (`sqlite3`, DBeaver, TablePlus, etc
 | `added_at` | TEXT | RFC3339 — when first scraped |
 | `last_scraped_at` | TEXT | RFC3339, nullable |
 
+**Normalized lookup tables** — performers, tags, and categories are stored in dedicated tables with junction tables linking them to scenes. This makes the data fully queryable without JSON parsing. The old JSON columns (`performers`, `tags`, `categories`) in the `scenes` table are kept for compatibility but are no longer used for reads.
+
+**`performers`** — deduplicated performer names:
+
+| Column | Type |
+|--------|------|
+| `id` | INTEGER (autoincrement) |
+| `name` | TEXT (unique) |
+
+**`tags`** / **`categories`** — same structure as `performers`.
+
+**`scene_performers`** — links scenes to performers:
+
+| Column | Type | Notes |
+|--------|------|-------|
+| `scene_id` | TEXT | FK to scenes |
+| `site_id` | TEXT | FK to scenes |
+| `performer_id` | INTEGER | FK to performers |
+| `position` | INTEGER | Listing order (0 = first billed) |
+
+**`scene_tags`** / **`scene_categories`** — same structure without `position`.
+
+**`schema_version`** — tracks migration state (single `version INTEGER` column).
+
 ### Listing studios
 
 ```bash
@@ -355,9 +379,36 @@ FROM studios st
 LEFT JOIN scenes sc ON sc.studio_url = st.url AND sc.deleted_at IS NULL
 GROUP BY st.url;
 
--- Scenes with a specific tag (SQLite JSON extension)
-SELECT title FROM scenes, json_each(tags)
-WHERE json_each.value = 'MILF'
-  AND deleted_at IS NULL;
+-- Scenes with a specific tag (via junction table)
+SELECT s.title
+FROM scenes s
+JOIN scene_tags st ON s.id = st.scene_id AND s.site_id = st.site_id
+JOIN tags t ON st.tag_id = t.id
+WHERE t.name = 'MILF'
+  AND s.deleted_at IS NULL;
+
+-- All performers for a scene (ordered by billing)
+SELECT p.name
+FROM scene_performers sp
+JOIN performers p ON sp.performer_id = p.id
+WHERE sp.scene_id = '7342578' AND sp.site_id = 'manyvids'
+ORDER BY sp.position;
+
+-- Scenes by performer (across all sites)
+SELECT s.title, s.site_id, s.date
+FROM scenes s
+JOIN scene_performers sp ON s.id = sp.scene_id AND s.site_id = sp.site_id
+JOIN performers p ON sp.performer_id = p.id
+WHERE p.name = 'Rachel Steele'
+  AND s.deleted_at IS NULL
+ORDER BY s.date DESC;
+
+-- Most common tags
+SELECT t.name, COUNT(*) AS scene_count
+FROM scene_tags st
+JOIN tags t ON st.tag_id = t.id
+GROUP BY t.name
+ORDER BY scene_count DESC
+LIMIT 20;
 ```
 
