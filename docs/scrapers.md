@@ -42,6 +42,7 @@
 | [Queensnake](https://queensnake.com) | `queensnake.com` | Custom | No | HTML scraping, 0-indexed paginated listing, `cLegalAge` cookie for age gate, performer extraction from title/tags, listing-only (no detail pages needed) |
 | [Rachel Steele](https://rachel-steele.com) | `rachel-steele.com` | MyMember.site | Yes | JSON list API + HTML detail pages, JSON-LD keywords |
 | [See Mom Suck](https://www.seemomsuck.com) | `seemomsuck.com`, `seemomsuck.com/models/{name}.html` | 3rdShiftVideo/ThickCash | No | HTML scraping, listing-only (no detail pages), model page support, ~1500 scenes, no dates available on tour pages |
+| [Reagan Foxx](https://www.reaganfoxx.com) | `reaganfoxx.com`, `reaganfoxx.com/scenes/{id}/{slug}.html` | Adult Empire Stores (Ravana LLC) | Yes (USD) | HTML listing (52/page, `?page=N`) + detail page worker pool for dates/tags/price, `AgeConfirmed` cookie, ~174 scenes |
 | [Reality Kings](https://www.realitykings.com) | `realitykings.com`, `realitykings.com/pornstar/{id}/{slug}`, `realitykings.com/category/{id}/{slug}`, `realitykings.com/site/{id}/{slug}`, `realitykings.com/series/{id}/{slug}` | Aylo/Juan | No | REST API, filter by performer/category/sub-site/series, uses `ayloutil` |
 | [Taboo Heat](https://www.tabooheat.com) | `tabooheat.com` | Gamma/Algolia | No | Thin wrapper around `gammautil` |
 | [Tara Tainton](https://taratainton.com) | `taratainton.com` | WordPress | Yes | Sitemap-driven, HTML meta parsing, uses `wputil` |

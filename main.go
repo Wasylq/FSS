@@ -75,6 +75,7 @@ import (
 	_ "github.com/Wasylq/FSS/internal/scrapers/puretaboo"
 	_ "github.com/Wasylq/FSS/internal/scrapers/queensnake"
 	_ "github.com/Wasylq/FSS/internal/scrapers/rachelsteele"
+	_ "github.com/Wasylq/FSS/internal/scrapers/reaganfoxx"
 	_ "github.com/Wasylq/FSS/internal/scrapers/realitykings"
 	_ "github.com/Wasylq/FSS/internal/scrapers/seemomsuck"
 	_ "github.com/Wasylq/FSS/internal/scrapers/sexmex"
