@@ -78,10 +78,15 @@ type Scene struct {
 }
 
 // AddPrice appends a new PriceSnapshot and updates LowestPrice/LowestPriceDate if the
-// effective price is lower than the current record.
+// effective price is lower than the current record. Snapshots with no real price
+// information (not free, but zero amount) are still recorded in history but do
+// not affect the lowest-price tracking.
 func (s *Scene) AddPrice(p PriceSnapshot) {
 	s.PriceHistory = append(s.PriceHistory, p)
 	effective := p.Effective()
+	if effective == 0 && !p.IsFree {
+		return
+	}
 	if s.LowestPriceDate == nil || effective < s.LowestPrice {
 		s.LowestPrice = effective
 		s.LowestPriceDate = &p.Date

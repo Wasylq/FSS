@@ -5,7 +5,7 @@ FSS can be imported as a Go module. The scraper registry, scene types, and strea
 ## Install
 
 ```bash
-go get github.com/Wasylq/FSS@latest
+go get github.com/Wasylq/FSS@latest # Or use tag for stable release
 ```
 
 ## Quick Start
