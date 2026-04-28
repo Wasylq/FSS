@@ -182,6 +182,17 @@ jobs:
             docker pull ghcr.io/wasylq/fss:${{ github.ref_name }}
             ```
 
+      - name: Publish to AUR
+        uses: KSXGitHub/github-actions-deploy-aur@v3
+        with:
+          pkgname: fss
+          pkgbuild: ./packaging/aur/PKGBUILD
+          commit_username: Wasylq
+          commit_email: wasylq@protonmail.com
+          ssh_private_key: ${{ secrets.AUR_SSH_PRIVATE_KEY }}
+          commit_message: "Update to ${{ github.ref_name }}"
+          updpkgsums: false
+
   docker:
     name: Build and push docker image
     runs-on: ubuntu-latest
