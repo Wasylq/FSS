@@ -88,6 +88,7 @@ import (
 	_ "github.com/Wasylq/FSS/internal/scrapers/twistys"
 	_ "github.com/Wasylq/FSS/internal/scrapers/visitx"
 	_ "github.com/Wasylq/FSS/internal/scrapers/wankzvr"
+	_ "github.com/Wasylq/FSS/internal/scrapers/xespl"
 	_ "github.com/Wasylq/FSS/internal/scrapers/xevbellringer"
 	_ "github.com/Wasylq/FSS/internal/scrapers/yourvids"
 
