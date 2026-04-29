@@ -113,6 +113,8 @@ import (
 	_ "github.com/Wasylq/FSS/internal/scrapers/puremature"
 	_ "github.com/Wasylq/FSS/internal/scrapers/sofiemarie"
 
+	_ "github.com/Wasylq/FSS/internal/scrapers/charleechase"
+
 	_ "github.com/Wasylq/FSS/internal/scrapers/burningangel"
 	_ "github.com/Wasylq/FSS/internal/scrapers/filthykings"
 	_ "github.com/Wasylq/FSS/internal/scrapers/gangbangcreampie"
