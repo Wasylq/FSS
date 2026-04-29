@@ -53,6 +53,7 @@ func NewScraper(cfg SiteConfig) *Scraper {
 }
 
 var apiKeyRe = regexp.MustCompile(`"algolia"\s*:\s*\{[^}]*"apiKey"\s*:\s*"([^"]+)"`)
+var actorURLRe = regexp.MustCompile(`/pornstar/view/[^/]+/(\d+)`)
 
 func (s *Scraper) FetchAPIKey(ctx context.Context) (string, error) {
 	resp, err := httpx.Do(ctx, s.Client, httpx.Request{
@@ -91,6 +92,11 @@ func (s *Scraper) Run(ctx context.Context, studioURL string, opts scraper.ListOp
 		return
 	}
 
+	extraFilter := ""
+	if m := actorURLRe.FindStringSubmatch(studioURL); m != nil {
+		extraFilter = "actors.actor_id:" + m[1]
+	}
+
 	for page := 0; ; page++ {
 		if ctx.Err() != nil {
 			return
@@ -104,7 +110,7 @@ func (s *Scraper) Run(ctx context.Context, studioURL string, opts scraper.ListOp
 			}
 		}
 
-		hits, total, err := s.FetchPage(ctx, apiKey, page)
+		hits, total, err := s.FetchPage(ctx, apiKey, page, extraFilter)
 		if err != nil {
 			select {
 			case out <- scraper.Error(fmt.Errorf("page %d: %w", page, err)):
@@ -150,12 +156,18 @@ func (s *Scraper) Run(ctx context.Context, studioURL string, opts scraper.ListOp
 	}
 }
 
-func (s *Scraper) FetchPage(ctx context.Context, apiKey string, page int) ([]AlgoliaHit, int, error) {
+func (s *Scraper) FetchPage(ctx context.Context, apiKey string, page int, extraFilters ...string) ([]AlgoliaHit, int, error) {
+	filters := fmt.Sprintf("availableOnSite:%s AND upcoming:0", s.Config.SiteName)
+	for _, f := range extraFilters {
+		if f != "" {
+			filters += " AND " + f
+		}
+	}
 	query := AlgoliaQuery{
 		Query:       "",
 		HitsPerPage: HitsPerPage,
 		Page:        page,
-		Filters:     fmt.Sprintf("availableOnSite:%s AND upcoming:0", s.Config.SiteName),
+		Filters:     filters,
 	}
 	body, err := json.Marshal(query)
 	if err != nil {

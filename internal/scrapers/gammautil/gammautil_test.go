@@ -299,3 +299,55 @@ func TestFetchPage(t *testing.T) {
 		t.Errorf("hits = %+v", got)
 	}
 }
+
+func TestFetchPageActorFilter(t *testing.T) {
+	var capturedFilter string
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		var q AlgoliaQuery
+		if err := json.NewDecoder(r.Body).Decode(&q); err == nil {
+			capturedFilter = q.Filters
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(AlgoliaResponse{
+			Hits:   []AlgoliaHit{{ClipID: 42, Title: "Filtered Scene"}},
+			NbHits: 1,
+		})
+	}))
+	defer ts.Close()
+
+	s := &Scraper{
+		Client:      ts.Client(),
+		Config:      SiteConfig{SiteName: "lethalhardcore", SiteBase: "https://example.com"},
+		AlgoliaHost: ts.URL,
+	}
+	_, _, err := s.FetchPage(context.Background(), "test-key", 0, "actors.actor_id:111676")
+	if err != nil {
+		t.Fatalf("FetchPage error: %v", err)
+	}
+	want := "availableOnSite:lethalhardcore AND upcoming:0 AND actors.actor_id:111676"
+	if capturedFilter != want {
+		t.Errorf("filter = %q, want %q", capturedFilter, want)
+	}
+}
+
+func TestActorURLParsing(t *testing.T) {
+	cases := []struct {
+		url  string
+		want string
+	}{
+		{"https://www.lethalhardcore.com/en/pornstar/view/Syren-De-Mer/111676", "111676"},
+		{"https://www.evilangel.com/en/pornstar/view/Angela-White/48859", "48859"},
+		{"https://www.lethalhardcore.com/en/videos", ""},
+		{"https://www.lethalhardcore.com", ""},
+	}
+	for _, c := range cases {
+		m := actorURLRe.FindStringSubmatch(c.url)
+		got := ""
+		if m != nil {
+			got = m[1]
+		}
+		if got != c.want {
+			t.Errorf("actorURLRe(%q) = %q, want %q", c.url, got, c.want)
+		}
+	}
+}
