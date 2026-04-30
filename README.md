@@ -9,7 +9,7 @@ Scrapes all scenes and metadata from a studio URL. Designed to be easily extende
 
 ## Supported sites
 
-**88 sites** across 15+ platforms — [full list with URL patterns →](docs/scrapers.md)
+**89 sites** across 15+ platforms — [full list with URL patterns →](docs/scrapers.md)
 
 | Platform | Count | Examples |
 |----------|------:|---------|
@@ -20,7 +20,7 @@ Scrapes all scenes and metadata from a studio URL. Designed to be easily extende
 | POVR/WankzVR | 4 | BrasilVR, MilfVR, TranzVR, WankzVR |
 | Up-Timely CMS | 3 | Idea Pocket, Madonna, MOODYZ |
 | SexMex Pro CMS | 3 | Exposed Latinas, SexMex, Trans Queens |
-| Standalone | 40 | APClips, Clips4Sale, Fakings, Kink, KM Produce, ManyVids, Pornhub, … |
+| Standalone | 41 | APClips, Clips4Sale, Fakings, Kink, KM Produce, ManyVids, Pornhub, Takara TV, … |
 
 ## Install
 

@@ -119,6 +119,7 @@ import (
 
 	_ "github.com/Wasylq/FSS/internal/scrapers/charleechase"
 	_ "github.com/Wasylq/FSS/internal/scrapers/kmproduce"
+	_ "github.com/Wasylq/FSS/internal/scrapers/takaratv"
 
 	_ "github.com/Wasylq/FSS/internal/scrapers/burningangel"
 	_ "github.com/Wasylq/FSS/internal/scrapers/filthykings"

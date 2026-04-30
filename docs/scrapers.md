@@ -54,6 +54,7 @@
 | [Reality Kings](https://www.realitykings.com) | `realitykings.com`, `realitykings.com/pornstar/{id}/{slug}`, `realitykings.com/category/{id}/{slug}`, `realitykings.com/site/{id}/{slug}`, `realitykings.com/series/{id}/{slug}` | Aylo/Juan | No | REST API, filter by performer/category/sub-site/series, uses `ayloutil` |
 | [Rocket Inc](https://rocket-inc.net) | `rocket-inc.net/works/`, `rocket-inc.net/works_actress/{slug}/` | WordPress | No | HTML scraping, listing + detail page worker pool for Japanese metadata (performers/director/tags/series/duration), full catalog via `/works/` or per-actress via `/works_actress/` |
 | [Taboo Heat](https://www.tabooheat.com) | `tabooheat.com` | Gamma/Algolia | No | Thin wrapper around `gammautil` |
+| [Takara TV](https://www.takara-tv.jp) | `takara-tv.jp`, `takara-tv.jp/search.php?ac={id}`, `takara-tv.jp/search.php?lb={id}` | Custom PHP | No | HTML listing (20/page, `search.php` pagination) + detail page worker pool, actress/label search, performer extraction from title or model field, ~1100 scenes |
 | [Tara Tainton](https://taratainton.com) | `taratainton.com` | WordPress | Yes | Sitemap-driven, HTML meta parsing, uses `wputil` |
 | [Evil Angel](https://www.evilangel.com) | `evilangel.com` | Gamma/Algolia | No | Algolia search API, ~20k scenes, uses `gammautil` |
 | [Exposed Latinas](https://exposedlatinas.com) | `exposedlatinas.com/tour/updates`, `exposedlatinas.com/tour/models/{slug}.html`, `exposedlatinas.com/tour/categories/{slug}.html` | SexMex Pro CMS | No | Thin wrapper around `sexmexutil` |
