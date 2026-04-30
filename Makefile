@@ -5,7 +5,7 @@
 GO       ?= go
 PKGS     := ./...
 SMOKE_TIMEOUT ?= 5m
-LINT     ?= golangci-lint
+GOLINT   ?= golangci-lint
 
 .DEFAULT_GOAL := help
 
@@ -43,7 +43,7 @@ vet: ## go vet on all packages (including integration-tagged).
 
 .PHONY: lint
 lint: vet ## Run go vet + golangci-lint.
-	$(LINT) run --timeout=5m
+	$(GOLINT) run --timeout=5m
 
 .PHONY: tidy
 tidy: ## go mod tidy.
