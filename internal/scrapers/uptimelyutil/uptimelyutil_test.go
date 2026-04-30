@@ -1,10 +1,11 @@
-package moodyz
+package uptimelyutil
 
 import (
 	"context"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"regexp"
 	"strings"
 	"testing"
 
@@ -22,7 +23,7 @@ func listingPageHTML(items []listingItem, total int) string {
 	}
 	for _, item := range items {
 		fmt.Fprintf(&sb, `<div class="item"><div class="c-card">`+
-			`<a class="img hover" href="https://moodyz.com/works/detail/%s?page_from=series">`+
+			`<a class="img hover" href="https://example.com/works/detail/%s?page_from=series">`+
 			`<img class="c-main-bg lazyload" data-src="%s" alt=""/>`+
 			`<div class="hover__child"><p class="text">Title for %s</p></div>`+
 			`</a></div></div>`, item.code, item.thumb, item.code)
@@ -38,7 +39,7 @@ func actressListingPageHTML(items []listingItem, total int) string {
 		fmt.Fprintf(&sb, `<div class="swiper-pagination-02">全%d作品中 1 〜 %d タイトルを表示</div>`, total, len(items))
 	}
 	for _, item := range items {
-		fmt.Fprintf(&sb, `<a class="item" href="https://moodyz.com/works/detail/%s?page_from=actress">`+
+		fmt.Fprintf(&sb, `<a class="item" href="https://example.com/works/detail/%s?page_from=actress">`+
 			`<div class="c-card"><div class="img hover">`+
 			`<img class="c-main-bg lazyload" data-src="%s" alt="" />`+
 			`<div class="hover__child"><p class="text">Title for %s</p></div>`+
@@ -57,24 +58,24 @@ func detailPageHTML(code, title, desc string, performers []string, director stri
 
 	sb.WriteString(`<div class="item"><div class="th">女優</div><div class="td">`)
 	for _, p := range performers {
-		fmt.Fprintf(&sb, `<div class="item"><a class="c-tag c-main-bg-hover c-main-font c-main-bd" href="https://moodyz.com/actress/detail/123">%s</a></div>`, p)
+		fmt.Fprintf(&sb, `<div class="item"><a class="c-tag c-main-bg-hover c-main-font c-main-bd" href="https://example.com/actress/detail/123">%s</a></div>`, p)
 	}
 	sb.WriteString(`</div></div>`)
 
 	fmt.Fprintf(&sb, `<div class="item"><div class="th">発売日</div><div class="td"><div class="item">`+
-		`<a class="c-tag c-main-bg-hover c-main-font c-main-bd" href="https://moodyz.com/works/list/date/%s">%s</a>`+
+		`<a class="c-tag c-main-bg-hover c-main-font c-main-bd" href="https://example.com/works/list/date/%s">%s</a>`+
 		`</div></div></div>`, date, date)
 
 	if series != "" {
 		fmt.Fprintf(&sb, `<div class="item"><div class="th">シリーズ</div><div class="item">`+
-			`<a class="c-tag c-main-bg-hover c-main-font c-main-bd" href="https://moodyz.com/works/list/series/1">%s</a>`+
+			`<a class="c-tag c-main-bg-hover c-main-font c-main-bd" href="https://example.com/works/list/series/1">%s</a>`+
 			`</div><div class="td"></div></div>`, series)
 	}
 
 	if len(genres) > 0 {
 		sb.WriteString(`<div class="item"><div class="th">ジャンル</div><div class="td">`)
 		for _, g := range genres {
-			fmt.Fprintf(&sb, `<div class="item"><a class="c-tag c-main-bg-hover c-main-font c-main-bd" href="https://moodyz.com/works/list/genre/1">%s</a></div>`, g)
+			fmt.Fprintf(&sb, `<div class="item"><a class="c-tag c-main-bg-hover c-main-font c-main-bd" href="https://example.com/works/list/genre/1">%s</a></div>`, g)
 		}
 		sb.WriteString(`</div></div>`)
 	}
@@ -92,24 +93,34 @@ func detailPageHTML(code, title, desc string, performers []string, director stri
 	return sb.String()
 }
 
+var testCfg = SiteConfig{
+	ID:      "testsite",
+	Studio:  "TESTSITE",
+	Domain:  "example.com",
+	MatchRe: regexp.MustCompile(`^https?://(?:www\.)?example\.com/(?:works/list/|actress/detail/)`),
+}
+
 // ---- TestMatchesURL ----
 
 func TestMatchesURL(t *testing.T) {
-	s := New()
+	s := New(SiteConfig{
+		ID:      "testsite",
+		MatchRe: regexp.MustCompile(`^https?://(?:www\.)?example\.com/(?:works/list/|actress/detail/)`),
+	})
 	cases := []struct {
 		url   string
 		match bool
 	}{
-		{"https://moodyz.com/works/list/series/3482", true},
-		{"https://moodyz.com/works/list/release", true},
-		{"https://moodyz.com/works/list/date/2026-04-21", true},
-		{"https://moodyz.com/works/list/genre/126", true},
-		{"https://moodyz.com/works/list/label/5046", true},
-		{"https://moodyz.com/actress/detail/701326", true},
-		{"https://www.moodyz.com/works/list/series/3482", true},
-		{"https://moodyz.com/works/detail/MIAD491", false},
-		{"https://moodyz.com/", false},
-		{"https://example.com/works/list/series/1", false},
+		{"https://example.com/works/list/series/3482", true},
+		{"https://example.com/works/list/release", true},
+		{"https://example.com/works/list/date/2026-04-21", true},
+		{"https://example.com/works/list/genre/126", true},
+		{"https://example.com/works/list/label/5046", true},
+		{"https://example.com/actress/detail/701326", true},
+		{"https://www.example.com/works/list/series/3482", true},
+		{"https://example.com/works/detail/MIAD491", false},
+		{"https://example.com/", false},
+		{"https://other.com/works/list/series/1", false},
 		{"", false},
 	}
 	for _, c := range cases {
@@ -127,9 +138,9 @@ func TestNormalizeListURL(t *testing.T) {
 		input string
 		want  string
 	}{
-		{"https://moodyz.com/actress/detail/700115", "https://moodyz.com/actress/detail/700115"},
-		{"https://moodyz.com/actress/detail/700115?page=3", "https://moodyz.com/actress/detail/700115"},
-		{"https://moodyz.com/works/list/series/3482?page=2", "https://moodyz.com/works/list/series/3482"},
+		{"https://example.com/actress/detail/700115", "https://example.com/actress/detail/700115"},
+		{"https://example.com/actress/detail/700115?page=3", "https://example.com/actress/detail/700115"},
+		{"https://example.com/works/list/series/3482?page=2", "https://example.com/works/list/series/3482"},
 	}
 	for _, c := range cases {
 		got := normalizeListURL(c.input)
@@ -147,9 +158,9 @@ func TestBuildPageURL(t *testing.T) {
 		page int
 		want string
 	}{
-		{"https://moodyz.com/actress/detail/700115", 1, "https://moodyz.com/actress/detail/700115"},
-		{"https://moodyz.com/actress/detail/700115", 2, "https://moodyz.com/actress/detail/700115?page=2"},
-		{"https://moodyz.com/works/list/series/3482", 3, "https://moodyz.com/works/list/series/3482?page=3"},
+		{"https://example.com/actress/detail/700115", 1, "https://example.com/actress/detail/700115"},
+		{"https://example.com/actress/detail/700115", 2, "https://example.com/actress/detail/700115?page=2"},
+		{"https://example.com/works/list/series/3482", 3, "https://example.com/works/list/series/3482?page=3"},
 	}
 	for _, c := range cases {
 		got := buildPageURL(c.base, c.page)
@@ -165,16 +176,17 @@ func TestBuildDetailURL(t *testing.T) {
 	cases := []struct {
 		studioURL string
 		code      string
+		domain    string
 		want      string
 	}{
-		{"https://moodyz.com/actress/detail/700115", "MIAD491", "https://moodyz.com/works/detail/MIAD491"},
-		{"https://moodyz.com/works/list/series/3482", "MDVR418", "https://moodyz.com/works/detail/MDVR418"},
-		{"http://localhost:12345/works/list/release", "TEST001", "http://localhost:12345/works/detail/TEST001"},
+		{"https://example.com/actress/detail/700115", "MIAD491", "example.com", "https://example.com/works/detail/MIAD491"},
+		{"https://example.com/works/list/series/3482", "MDVR418", "example.com", "https://example.com/works/detail/MDVR418"},
+		{"http://localhost:12345/works/list/release", "TEST001", "example.com", "http://localhost:12345/works/detail/TEST001"},
 	}
 	for _, c := range cases {
-		got := buildDetailURL(c.studioURL, c.code)
+		got := buildDetailURL(c.studioURL, c.code, c.domain)
 		if got != c.want {
-			t.Errorf("buildDetailURL(%q, %q) = %q, want %q", c.studioURL, c.code, got, c.want)
+			t.Errorf("buildDetailURL(%q, %q, %q) = %q, want %q", c.studioURL, c.code, c.domain, got, c.want)
 		}
 	}
 }
@@ -256,12 +268,12 @@ func TestParseDetail(t *testing.T) {
 	))
 
 	item := listingItem{code: "MIAD491", thumb: "https://cdn.example.com/MIAD491_1.jpg"}
-	scene := parseDetail(body, "https://moodyz.com/works/list/series/3482", item, "https://moodyz.com/works/detail/MIAD491")
+	scene := parseDetail(body, "testsite", "TESTSITE", "https://example.com/works/list/series/3482", item, "https://example.com/works/detail/MIAD491")
 
 	if scene.ID != "MIAD491" {
 		t.Errorf("ID = %q", scene.ID)
 	}
-	if scene.SiteID != "moodyz" {
+	if scene.SiteID != "testsite" {
 		t.Errorf("SiteID = %q", scene.SiteID)
 	}
 	if scene.Title != "超絶品ボディ" {
@@ -291,7 +303,7 @@ func TestParseDetail(t *testing.T) {
 	if scene.Date.Year() != 2011 || scene.Date.Month() != 1 || scene.Date.Day() != 13 {
 		t.Errorf("Date = %v", scene.Date)
 	}
-	if scene.Studio != "MOODYZ" {
+	if scene.Studio != "TESTSITE" {
 		t.Errorf("Studio = %q", scene.Studio)
 	}
 }
@@ -321,7 +333,7 @@ func TestListScenes(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	s := &Scraper{client: ts.Client()}
+	s := &Scraper{Cfg: testCfg, Client: ts.Client()}
 	ch, err := s.ListScenes(context.Background(), ts.URL+"/works/list/series/100", scraper.ListOpts{})
 	if err != nil {
 		t.Fatalf("ListScenes error: %v", err)
@@ -368,7 +380,7 @@ func TestListScenesKnownIDs(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	s := &Scraper{client: ts.Client()}
+	s := &Scraper{Cfg: testCfg, Client: ts.Client()}
 	ch, err := s.ListScenes(context.Background(), ts.URL+"/actress/detail/100", scraper.ListOpts{
 		KnownIDs: map[string]bool{"MIAD469": true},
 	})
@@ -417,7 +429,7 @@ func TestListScenesPagination(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	s := &Scraper{client: ts.Client()}
+	s := &Scraper{Cfg: testCfg, Client: ts.Client()}
 	ch, err := s.ListScenes(context.Background(), ts.URL+"/actress/detail/100", scraper.ListOpts{})
 	if err != nil {
 		t.Fatalf("ListScenes error: %v", err)

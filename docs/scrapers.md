@@ -21,6 +21,7 @@
 | [Gloryhole Secrets](https://www.gloryholesecrets.com) | `gloryholesecrets.com` | Gamma/Algolia | No | Algolia search API, uses `gammautil` |
 | [House of Fyre](https://www.houseofyre.com) | `houseofyre.com`, `houseofyre.com/models/{name}.html` | ElevatedX | Yes | HTML listing + detail page worker pool for description/tags, price tracking, ~450 scenes |
 | [BrasilVR](https://www.brasilvr.com) | `brasilvr.com` | POVR/WankzVR | No | Export JSON + listing page dates, uses `povrutil` |
+| [Idea Pocket](https://ideapocket.com) | `ideapocket.com/works/list/series/{id}`, `ideapocket.com/works/list/release`, `ideapocket.com/works/list/date/{date}`, `ideapocket.com/works/list/genre/{id}`, `ideapocket.com/works/list/label/{id}`, `ideapocket.com/actress/detail/{id}` | Up-Timely CMS | No | Thin wrapper around `uptimelyutil` |
 | [IWantClips](https://www.iwantclips.com) | `iwantclips.com/store/{id}/{username}` | IWantClips | Yes | JSON API, double HTML-unescaping |
 | [Lady Sonia](https://tour.lady-sonia.com) | `lady-sonia.com` | KB Productions/Next.js | No | `__NEXT_DATA__` JSON parsing, 1500+ scenes, listing-only (no detail pages needed) |
 | [LoyalFans](https://www.loyalfans.com) | `loyalfans.com/{creator_slug}` | LoyalFans API | No | POST `/api/v2/advanced-search`, cursor-based `page_token` pagination (20/page), session via `/api/v2/system-status`, filters results by owner slug |
@@ -33,7 +34,7 @@
 | [MissaX](https://www.missax.com) | `missax.com` | Custom | No | HTML scraping, listing + detail page worker pool |
 | [Mommy Blows Best](https://www.mommyblowsbest.com) | `mommyblowsbest.com` | Gamma/Algolia | No | Algolia search API, uses `gammautil` |
 | [Mofos](https://www.mofos.com) | `mofos.com`, `mofos.com/pornstar/{id}/{slug}`, `mofos.com/category/{id}/{slug}`, `mofos.com/site/{id}/{slug}`, `mofos.com/series/{id}/{slug}` | Aylo/Juan | No | REST API, filter by performer/category/sub-site/series, uses `ayloutil` |
-| [MOODYZ](https://moodyz.com) | `moodyz.com/works/list/series/{id}`, `moodyz.com/works/list/release`, `moodyz.com/works/list/date/{date}`, `moodyz.com/works/list/genre/{id}`, `moodyz.com/works/list/label/{id}`, `moodyz.com/actress/detail/{id}` | Custom CMS | No | HTML scraping, listing + detail page worker pool for Japanese metadata (performers/director/tags/series/duration), cross-page dedup, series/actress/genre/label/date/release listing modes |
+| [MOODYZ](https://moodyz.com) | `moodyz.com/works/list/series/{id}`, `moodyz.com/works/list/release`, `moodyz.com/works/list/date/{date}`, `moodyz.com/works/list/genre/{id}`, `moodyz.com/works/list/label/{id}`, `moodyz.com/actress/detail/{id}` | Up-Timely CMS | No | Thin wrapper around `uptimelyutil` |
 | [Mom Comes First](https://momcomesfirst.com) | `momcomesfirst.com` | WordPress | No | Sitemap-driven, JSON-LD VideoObject, uses `wputil` |
 | [OopsFamily](https://oopsfamily.com) | `oopsfamily.com`, `oopsfamily.com/model/{slug}`, `oopsfamily.com/tag/{slug}` | FapHouse/Custom | No | HTML listing + detail page JSON-LD worker pool for dates/tags, model/tag filtering, 4K |
 | [Over 40 Handjobs](https://www.over40handjobs.com) | `over40handjobs.com`, `over40handjobs.com/updates.htm`, `over40handjobs.com/models/*.html` | Custom | No | HTML listing (8/page, ~40 pages) + detail page worker pool for performers, model page support, NATS param stripping |
@@ -98,6 +99,7 @@ Scrapers that share a platform use common utility packages to avoid duplication:
 | `scoregrouputil` | Score Group (HTML listing + detail pages, `meta name="Date"` for dates, `updates-tag` links for tags) | 50 Plus MILFs |
 | `povrutil` | POVR/WankzVR (export JSON + HTML listing pages) | BrasilVR, MilfVR, TranzVR, WankzVR |
 | `sexmexutil` | SexMex Pro CMS (HTML scraping, pagination). **Quirk:** their CMS returns HTTP 500 with valid HTML on some pages (e.g. model pages), so `fetchPage` accepts 500 responses instead of using `httpx.Do`. | Exposed Latinas, SexMex, Trans Queens |
+| `uptimelyutil` | Up-Timely CMS (HTML listing + detail page worker pool, Japanese metadata, cross-page dedup) | Idea Pocket, MOODYZ |
 | `veutil` | WordPress video-elements theme (WP REST API for posts + tags, poster extraction from content) | BoyfriendSharing, BrattyFamily, GoStuckYourself, HugeCockBreak, LittleFromAsia, MommysBoy, MomXXX, MyBadMILFs, DaughterSwap, PervMom, SisLovesMe, YoungerLoverOfMine |
 | `wputil` | WordPress (sitemap + HTML meta parsing) | Anal Therapy, Family Therapy, Mom Comes First, Perfect Girlfriend, Tara Tainton |
 

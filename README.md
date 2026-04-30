@@ -9,7 +9,7 @@ Scrapes all scenes and metadata from a studio URL. Designed to be easily extende
 
 ## Supported sites
 
-**85 sites** across 15+ platforms — [full list with URL patterns →](docs/scrapers.md)
+**86 sites** across 15+ platforms — [full list with URL patterns →](docs/scrapers.md)
 
 | Platform | Count | Examples |
 |----------|------:|---------|
@@ -19,7 +19,8 @@ Scrapes all scenes and metadata from a studio URL. Designed to be easily extende
 | WordPress | 5 | Anal Therapy, Family Therapy, Tara Tainton, … |
 | POVR/WankzVR | 4 | BrasilVR, MilfVR, TranzVR, WankzVR |
 | SexMex Pro CMS | 3 | Exposed Latinas, SexMex, Trans Queens |
-| Standalone | 40 | APClips, Clips4Sale, Fakings, Kink, ManyVids, MOODYZ, Pornhub, … |
+| Up-Timely CMS | 2 | Idea Pocket, MOODYZ |
+| Standalone | 39 | APClips, Clips4Sale, Fakings, Kink, ManyVids, Pornhub, … |
 
 ## Install
 
