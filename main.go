@@ -64,6 +64,7 @@ import (
 	_ "github.com/Wasylq/FSS/internal/scrapers/milfvr"
 	_ "github.com/Wasylq/FSS/internal/scrapers/missax"
 	_ "github.com/Wasylq/FSS/internal/scrapers/mofos"
+	_ "github.com/Wasylq/FSS/internal/scrapers/moodyz"
 	_ "github.com/Wasylq/FSS/internal/scrapers/momcomesfirst"
 	_ "github.com/Wasylq/FSS/internal/scrapers/mommyblowsbest"
 	_ "github.com/Wasylq/FSS/internal/scrapers/mydirtyhobby"
