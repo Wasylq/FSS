@@ -12,6 +12,7 @@
 | [Charlee Chase](https://charleechaselive.com) | `charleechaselive.com/videos` | Custom | No | HTML scraping, listing + detail pages, performer extraction from title |
 | [Clips4Sale](https://www.clips4sale.com) | `clips4sale.com/studio/{id}/{slug}` | Clips4Sale | Yes | Multi-page JSON, categories, all-page enumeration |
 | [DEEP'S](https://deeps.net) | `deeps.net/item`, `deeps.net/item/index.php?w_{actress}`, `deeps.net/item/index.php?d_{director}`, `deeps.net/item/index.php?s_{series}`, `deeps.net/item/index.php?c_{category}` | Custom PHP | Yes (JPY) | HTML listing (32+50/page) + detail page worker pool, actress/director/series/category filtering, price/duration/tags, ~2600 titles |
+| [DAS!](https://dasdas.jp) | `dasdas.jp/works/list/series/{id}`, `dasdas.jp/works/list/release`, `dasdas.jp/works/list/date/{date}`, `dasdas.jp/works/list/genre/{id}`, `dasdas.jp/works/list/label/{id}`, `dasdas.jp/actress/detail/{id}` | Up-Timely CMS | No | Thin wrapper around `uptimelyutil` |
 | [Anal Therapy](https://analtherapyxxx.com) | `analtherapyxxx.com` | WordPress | No | Sitemap-driven, JSON-LD VideoObject fallback, uses `wputil` |
 | [Digital Playground](https://www.digitalplayground.com) | `digitalplayground.com`, `digitalplayground.com/pornstar/{id}/{slug}`, `digitalplayground.com/category/{id}/{slug}`, `digitalplayground.com/site/{id}/{slug}`, `digitalplayground.com/series/{id}/{slug}` | Aylo/Juan | No | REST API, filter by performer/category/sub-site/series, uses `ayloutil` |
 | [Fakings](https://fakings.com) | `fakings.com`, `fakings.com/serie/{slug}`, `fakings.com/actrices-porno/{slug}`, `fakings.com/categoria/{slug}` | Next.js RSC | No | React Server Component flight payload parsing, 5 sub-brands (fakings/pepeporn/nigged/morenolust/pornermates), pagination via `/f/pag:{N}`, actress pages load all videos at once |
@@ -105,7 +106,7 @@ Scrapers that share a platform use common utility packages to avoid duplication:
 | `scoregrouputil` | Score Group (HTML listing + detail pages, `meta name="Date"` for dates, `updates-tag` links for tags) | 50 Plus MILFs |
 | `povrutil` | POVR/WankzVR (export JSON + HTML listing pages) | BrasilVR, MilfVR, TranzVR, WankzVR |
 | `sexmexutil` | SexMex Pro CMS (HTML scraping, pagination). **Quirk:** their CMS returns HTTP 500 with valid HTML on some pages (e.g. model pages), so `fetchPage` accepts 500 responses instead of using `httpx.Do`. | Exposed Latinas, SexMex, Trans Queens |
-| `uptimelyutil` | Up-Timely CMS (HTML listing + detail page worker pool, Japanese metadata, cross-page dedup) | Idea Pocket, Madonna, MOODYZ |
+| `uptimelyutil` | Up-Timely CMS (HTML listing + detail page worker pool, Japanese metadata, cross-page dedup) | DAS!, Idea Pocket, Madonna, MOODYZ |
 | `veutil` | WordPress video-elements theme (WP REST API for posts + tags, poster extraction from content) | BoyfriendSharing, BrattyFamily, GoStuckYourself, HugeCockBreak, LittleFromAsia, MommysBoy, MomXXX, MyBadMILFs, DaughterSwap, PervMom, SisLovesMe, YoungerLoverOfMine |
 | `wputil` | WordPress (sitemap + HTML meta parsing) | Anal Therapy, Family Therapy, Mom Comes First, Perfect Girlfriend, Tara Tainton |
 

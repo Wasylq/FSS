@@ -45,6 +45,7 @@ import (
 	_ "github.com/Wasylq/FSS/internal/scrapers/brasilvr"
 	_ "github.com/Wasylq/FSS/internal/scrapers/brazzers"
 	_ "github.com/Wasylq/FSS/internal/scrapers/clips4sale"
+	_ "github.com/Wasylq/FSS/internal/scrapers/dasdas"
 	_ "github.com/Wasylq/FSS/internal/scrapers/digitalplayground"
 	_ "github.com/Wasylq/FSS/internal/scrapers/evilangel"
 	_ "github.com/Wasylq/FSS/internal/scrapers/exposedlatinas"
