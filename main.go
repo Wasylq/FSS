@@ -61,6 +61,7 @@ import (
 	_ "github.com/Wasylq/FSS/internal/scrapers/kink"
 	_ "github.com/Wasylq/FSS/internal/scrapers/ladysonia"
 	_ "github.com/Wasylq/FSS/internal/scrapers/loyalfans"
+	_ "github.com/Wasylq/FSS/internal/scrapers/madonna"
 	_ "github.com/Wasylq/FSS/internal/scrapers/manyvids"
 	_ "github.com/Wasylq/FSS/internal/scrapers/milfvr"
 	_ "github.com/Wasylq/FSS/internal/scrapers/missax"

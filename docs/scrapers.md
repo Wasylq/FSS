@@ -26,6 +26,7 @@
 | [Lady Sonia](https://tour.lady-sonia.com) | `lady-sonia.com` | KB Productions/Next.js | No | `__NEXT_DATA__` JSON parsing, 1500+ scenes, listing-only (no detail pages needed) |
 | [LoyalFans](https://www.loyalfans.com) | `loyalfans.com/{creator_slug}` | LoyalFans API | No | POST `/api/v2/advanced-search`, cursor-based `page_token` pagination (20/page), session via `/api/v2/system-status`, filters results by owner slug |
 | [Kink](https://www.kink.com) | `kink.com`, `kink.com/channel/{slug}`, `kink.com/model/{id}/{slug}`, `kink.com/tag/{slug}`, `kink.com/series/{slug}` | Kink | No | HTML scraping, 51 channels, filter by channel/performer/tag/series, detail page worker pool for tags/description/duration, age gate cookie bypass, JSON-LD + data-setup parsing |
+| [Madonna](https://madonna-av.com) | `madonna-av.com/works/list/series/{id}`, `madonna-av.com/works/list/release`, `madonna-av.com/works/list/date/{date}`, `madonna-av.com/works/list/genre/{id}`, `madonna-av.com/works/list/label/{id}`, `madonna-av.com/actress/detail/{id}` | Up-Timely CMS | No | Thin wrapper around `uptimelyutil` |
 | [ManyVids](https://www.manyvids.com) | `manyvids.com/Profile/{id}/{slug}/Store/Videos` | ManyVids | Yes | JSON API, detail-page worker pool |
 | [Mature.nl](https://www.mature.nl) | `mature.nl/en/updates`, `mature.nl/en/model/{id}`, `mature.nl/en/niche/{id}/{page}/{slug}` | Custom | No | HTML scraping, paginated listing + detail page worker pool for model URLs |
 | [MYLF](https://www.mylf.com) | `mylf.com`, `mylf.com/models/{slug}`, `mylf.com/series/{slug}`, `mylf.com/categories/{name}` | TeamSkeet/PSM | No | Public Elasticsearch API, filter by model/series/category |
@@ -99,7 +100,7 @@ Scrapers that share a platform use common utility packages to avoid duplication:
 | `scoregrouputil` | Score Group (HTML listing + detail pages, `meta name="Date"` for dates, `updates-tag` links for tags) | 50 Plus MILFs |
 | `povrutil` | POVR/WankzVR (export JSON + HTML listing pages) | BrasilVR, MilfVR, TranzVR, WankzVR |
 | `sexmexutil` | SexMex Pro CMS (HTML scraping, pagination). **Quirk:** their CMS returns HTTP 500 with valid HTML on some pages (e.g. model pages), so `fetchPage` accepts 500 responses instead of using `httpx.Do`. | Exposed Latinas, SexMex, Trans Queens |
-| `uptimelyutil` | Up-Timely CMS (HTML listing + detail page worker pool, Japanese metadata, cross-page dedup) | Idea Pocket, MOODYZ |
+| `uptimelyutil` | Up-Timely CMS (HTML listing + detail page worker pool, Japanese metadata, cross-page dedup) | Idea Pocket, Madonna, MOODYZ |
 | `veutil` | WordPress video-elements theme (WP REST API for posts + tags, poster extraction from content) | BoyfriendSharing, BrattyFamily, GoStuckYourself, HugeCockBreak, LittleFromAsia, MommysBoy, MomXXX, MyBadMILFs, DaughterSwap, PervMom, SisLovesMe, YoungerLoverOfMine |
 | `wputil` | WordPress (sitemap + HTML meta parsing) | Anal Therapy, Family Therapy, Mom Comes First, Perfect Girlfriend, Tara Tainton |
 
