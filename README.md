@@ -9,91 +9,17 @@ Scrapes all scenes and metadata from a studio URL. Designed to be easily extende
 
 ## Supported sites
 
-| Site | Platform |
-|------|----------|
-| 50 Plus MILFs | Score Group |
-| A POV Story | PHP tour site |
-| Anal Therapy | WordPress |
-| APClips | Custom HTML |
-| Aunt Judy's | JEBN CMS |
-| Babes | Aylo/Juan |
-| BangBros | Aylo/Juan |
-| BoyfriendSharing | WP video-elements |
-| BrasilVR | POVR/WankzVR |
-| BrattyFamily | WP video-elements |
-| Brazzers | Aylo/Juan |
-| Burning Angel | Gamma/Algolia |
-| Clips4Sale | Clips4Sale |
-| DaughterSwap | WP video-elements |
-| Digital Playground | Aylo/Juan |
-| Evil Angel | Gamma/Algolia |
-| Exposed Latinas | SexMex Pro CMS |
-| Fakings | Next.js RSC |
-| Family Therapy | WordPress |
-| FanCentro | FanCentro |
-| FapHouse | Custom HTML |
-| Filthy Kings | Gamma/Algolia |
-| FTV MILFs | Custom (FTV) |
-| Gangbang Creampie | Gamma/Algolia |
-| Girlfriends Films | Gamma/Algolia |
-| Gloryhole Secrets | Gamma/Algolia |
-| GoStuckYourself | WP video-elements |
-| House of Fyre | ElevatedX |
-| HugeCockBreak | WP video-elements |
-| IWantClips | IWantClips |
-| Jerk Off Instructions | Custom PHP |
-| Kink | Kink |
-| Lady Sonia | KB Productions/Next.js |
-| Lethal Hardcore | Gamma/Algolia |
-| LittleFromAsia | WP video-elements |
-| LoyalFans | LoyalFans API |
-| ManyVids | ManyVids |
-| Mature.nl | Custom |
-| MilfVR | POVR/WankzVR |
-| MissaX | Custom |
-| Mofos | Aylo/Juan |
-| Mom Comes First | WordPress |
-| Mommy Blows Best | Gamma/Algolia |
-| MommysBoy | WP video-elements |
-| MomXXX | WP video-elements |
-| MyBadMILFs | WP video-elements |
-| MyDirtyHobby | MyDirtyHobby |
-| MYLF | TeamSkeet/PSM |
-| Naughty America | Naughty America |
-| Nubiles Network | EdgeCms |
-| OopsFamily | FapHouse/Custom |
-| Over 40 Handjobs | Custom |
-| Penny Barber | ModelCentro |
-| Perfect Girlfriend | WordPress |
-| PervMom | WP video-elements |
-| Pornhub | Pornhub |
-| PropertySex | Aylo/Juan |
-| Pure Mature | AMA Multimedia |
-| Pure Taboo | Gamma/Algolia |
-| Queensnake | Custom |
-| Rachel Steele | MyMember.site |
-| Reagan Foxx | Adult Empire Stores |
-| Reality Kings | Aylo/Juan |
-| Rocco Siffredi | Gamma/Algolia |
-| See Mom Suck | 3rdShiftVideo/ThickCash |
-| SexMex | SexMex Pro CMS |
-| SisLovesMe | WP video-elements |
-| Sofie Marie | ELXComplete/Andomark |
-| Taboo Heat | Gamma/Algolia |
-| Tara Tainton | WordPress |
-| Trans Queens | SexMex Pro CMS |
-| TransAngels | Aylo/Juan |
-| TranzVR | POVR/WankzVR |
-| Twistys | Aylo/Juan |
-| Visit-X | VXOne |
-| WankzVR | POVR/WankzVR |
-| Wicked | Gamma/Algolia |
-| Xes.pl | Custom |
-| Xev Bellringer | JEBN CMS |
-| YoungerLoverOfMine | WP video-elements |
-| YourVids | YourVids |
+**85 sites** across 15+ platforms — [full list with URL patterns →](docs/scrapers.md)
 
-See [docs/scrapers.md](docs/scrapers.md) for URL patterns and details.
+| Platform | Count | Examples |
+|----------|------:|---------|
+| Gamma/Algolia | 12 | Burning Angel, Evil Angel, Pure Taboo, Wicked, … |
+| WP video-elements | 12 | DaughterSwap, MommysBoy, PervMom, SisLovesMe, … |
+| Aylo/Juan | 9 | Babes, BangBros, Brazzers, Reality Kings, … |
+| WordPress | 5 | Anal Therapy, Family Therapy, Tara Tainton, … |
+| POVR/WankzVR | 4 | BrasilVR, MilfVR, TranzVR, WankzVR |
+| SexMex Pro CMS | 3 | Exposed Latinas, SexMex, Trans Queens |
+| Standalone | 40 | APClips, Clips4Sale, Fakings, Kink, ManyVids, MOODYZ, Pornhub, … |
 
 ## Install
 
