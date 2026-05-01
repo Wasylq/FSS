@@ -6,6 +6,7 @@ import (
 	"html"
 	"net/http"
 	"regexp"
+	"strconv"
 	"strings"
 	"time"
 
@@ -103,6 +104,17 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 			return
 		}
 
+		if page == 1 {
+			maxPage := extractMaxPage(body)
+			if maxPage > 0 {
+				select {
+				case out <- scraper.Progress(maxPage * len(cards)):
+				case <-ctx.Done():
+					return
+				}
+			}
+		}
+
 		now := time.Now().UTC()
 		stoppedEarly := false
 		for _, c := range cards {
@@ -154,7 +166,22 @@ func (s *Scraper) fetchPage(ctx context.Context, rawURL string) ([]byte, error) 
 
 // ---- parsing ----
 
-var cardRe = regexp.MustCompile(`(?s)<div[^>]*data-setid="(\d+)"[^>]*>.*?</a></div>`)
+var (
+	cardRe    = regexp.MustCompile(`(?s)<div[^>]*data-setid="(\d+)"[^>]*>.*?</a></div>`)
+	pageNumRe = regexp.MustCompile(`_(\d+)_d\.html`)
+)
+
+func extractMaxPage(body []byte) int {
+	matches := pageNumRe.FindAllSubmatch(body, -1)
+	max := 0
+	for _, m := range matches {
+		n, _ := strconv.Atoi(string(m[1]))
+		if n > max {
+			max = n
+		}
+	}
+	return max
+}
 
 type card struct {
 	id          string

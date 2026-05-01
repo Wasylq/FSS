@@ -6,6 +6,7 @@ import (
 	"html"
 	"net/http"
 	"regexp"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -150,6 +151,17 @@ func (s *Scraper) enqueueListingPages(ctx context.Context, delay time.Duration, 
 		items := parseListingCards(body, s.base)
 		if len(items) == 0 {
 			return
+		}
+
+		if page == 1 {
+			maxPage := extractMaxListPage(body)
+			if maxPage > 0 {
+				select {
+				case out <- scraper.Progress(maxPage * len(items)):
+				case <-ctx.Done():
+					return
+				}
+			}
 		}
 
 		for _, item := range items {
@@ -315,14 +327,27 @@ func (s *Scraper) enqueueDVDPages(ctx context.Context, delay time.Duration, opts
 // --- parsing: listing cards ---
 
 var (
-	cardRe      = regexp.MustCompile(`class="jj-content-card"`)
-	sceneURLRe  = regexp.MustCompile(`href="([^"]*scenes/[^"]*_vids\.html)"`)
-	slugRe      = regexp.MustCompile(`/scenes/([^/]+?)_vids\.html`)
-	cardThumbRe = regexp.MustCompile(`class="jj-thumb-img[^"]*"[^>]*src="([^"]+)"`)
-	cardTitleRe = regexp.MustCompile(`class="jj-card-title"[^>]*>([^<]+)<`)
-	performerRe = regexp.MustCompile(`href="[^"]*models/[^"]*">([^<]+)</a>`)
-	cardDateRe  = regexp.MustCompile(`class="jj-card-date"[^>]*>Released:\s*([^<]+)<`)
+	cardRe        = regexp.MustCompile(`class="jj-content-card"`)
+	sceneURLRe    = regexp.MustCompile(`href="([^"]*scenes/[^"]*_vids\.html)"`)
+	slugRe        = regexp.MustCompile(`/scenes/([^/]+?)_vids\.html`)
+	cardThumbRe   = regexp.MustCompile(`class="jj-thumb-img[^"]*"[^>]*src="([^"]+)"`)
+	cardTitleRe   = regexp.MustCompile(`class="jj-card-title"[^>]*>([^<]+)<`)
+	performerRe   = regexp.MustCompile(`href="[^"]*models/[^"]*">([^<]+)</a>`)
+	cardDateRe    = regexp.MustCompile(`class="jj-card-date"[^>]*>Released:\s*([^<]+)<`)
+	listPageNumRe = regexp.MustCompile(`movies_(\d+)_d\.html`)
 )
+
+func extractMaxListPage(body []byte) int {
+	matches := listPageNumRe.FindAllSubmatch(body, -1)
+	max := 0
+	for _, m := range matches {
+		n, _ := strconv.Atoi(string(m[1]))
+		if n > max {
+			max = n
+		}
+	}
+	return max
+}
 
 func parseListingCards(body []byte, base string) []workItem {
 	page := string(body)

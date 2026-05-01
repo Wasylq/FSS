@@ -227,7 +227,7 @@ func TestListScenes(t *testing.T) {
 
 	var scenes []string
 	for r := range ch {
-		if r.Kind == scraper.KindStoppedEarly {
+		if r.Kind == scraper.KindStoppedEarly || r.Kind == scraper.KindTotal {
 			continue
 		}
 		if r.Err != nil {

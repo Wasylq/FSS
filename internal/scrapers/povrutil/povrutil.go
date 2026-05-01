@@ -84,6 +84,14 @@ func (s *Scraper) run(ctx context.Context, opts scraper.ListOpts, out chan<- scr
 		}
 	}
 
+	if len(export) > 0 {
+		select {
+		case out <- scraper.Progress(len(export)):
+		case <-ctx.Done():
+			return
+		}
+	}
+
 	now := time.Now().UTC()
 
 	for page := 1; ; page++ {

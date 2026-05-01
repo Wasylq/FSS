@@ -79,7 +79,7 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 			return
 		}
 
-		items, err := s.fetchPage(ctx, pageURL)
+		items, total, err := s.fetchPage(ctx, pageURL)
 		if err != nil {
 			select {
 			case out <- scraper.Error(fmt.Errorf("page %d: %w", page, err)):
@@ -90,6 +90,14 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 
 		if len(items) == 0 {
 			return
+		}
+
+		if page == 1 && total > 0 {
+			select {
+			case out <- scraper.Progress(total):
+			case <-ctx.Done():
+				return
+			}
 		}
 
 		now := time.Now().UTC()
@@ -136,7 +144,7 @@ func buildPageURL(studioURL string, page int) (string, error) {
 
 var liRe = regexp.MustCompile(`(?s)<li[^>]*pcVideoListItem[^>]*>.*?</li>`)
 
-func (s *Scraper) fetchPage(ctx context.Context, rawURL string) ([]phItem, error) {
+func (s *Scraper) fetchPage(ctx context.Context, rawURL string) ([]phItem, int, error) {
 	resp, err := httpx.Do(ctx, s.client, httpx.Request{
 		URL: rawURL,
 		Headers: map[string]string{
@@ -145,27 +153,33 @@ func (s *Scraper) fetchPage(ctx context.Context, rawURL string) ([]phItem, error
 		},
 	})
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 	defer func() { _ = resp.Body.Close() }()
 
 	body, err := httpx.ReadBody(resp.Body)
 	if err != nil {
-		return nil, fmt.Errorf("reading page: %w", err)
+		return nil, 0, fmt.Errorf("reading page: %w", err)
 	}
 
-	return parseItems(body), nil
+	total := 0
+	if m := videoCountRe.FindSubmatch(body); m != nil {
+		total, _ = strconv.Atoi(strings.ReplaceAll(string(m[1]), ",", ""))
+	}
+
+	return parseItems(body), total, nil
 }
 
 // ---- parsing ----
 
 var (
-	vkeyRe     = regexp.MustCompile(`data-video-vkey="([\w]+)"`)
-	titleRe    = regexp.MustCompile(`href="/view_video\.php\?viewkey=[^"]*"\s+title="([^"]+)"`)
-	thumbSrcRe = regexp.MustCompile(`<img[^>]+src="(https://[^"]+)"`)
-	durRe      = regexp.MustCompile(`<var[^>]*duration[^>]*>([^<]+)</var>`)
-	cdnDateRe  = regexp.MustCompile(`/videos/(\d{4})(\d{2})/(\d{2})/`)
-	uploaderRe = regexp.MustCompile(`(?s)class="usernameWrap"[^>]*>.*?<a[^>]+>([^<]+)</a>`)
+	vkeyRe       = regexp.MustCompile(`data-video-vkey="([\w]+)"`)
+	titleRe      = regexp.MustCompile(`href="/view_video\.php\?viewkey=[^"]*"\s+title="([^"]+)"`)
+	thumbSrcRe   = regexp.MustCompile(`<img[^>]+src="(https://[^"]+)"`)
+	durRe        = regexp.MustCompile(`<var[^>]*duration[^>]*>([^<]+)</var>`)
+	cdnDateRe    = regexp.MustCompile(`/videos/(\d{4})(\d{2})/(\d{2})/`)
+	uploaderRe   = regexp.MustCompile(`(?s)class="usernameWrap"[^>]*>.*?<a[^>]+>([^<]+)</a>`)
+	videoCountRe = regexp.MustCompile(`showingCounter">\s*(\d[\d,]*)`)
 )
 
 type phItem struct {
