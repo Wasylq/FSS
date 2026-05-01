@@ -1,7 +1,6 @@
 package stashbox
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -382,22 +381,21 @@ func (s *Scraper) queryScenes(ctx context.Context, inst instance, input map[stri
 		return gqlResponse{}, err
 	}
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, inst.graphqlURL, bytes.NewReader(body))
-	if err != nil {
-		return gqlResponse{}, err
+	headers := map[string]string{
+		"Content-Type": "application/json",
+		"ApiKey":       inst.apiKey,
 	}
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("ApiKey", inst.apiKey)
 
-	resp, err := s.client.Do(req)
+	resp, err := httpx.Do(ctx, s.client, httpx.Request{
+		Method:  http.MethodPost,
+		URL:     inst.graphqlURL,
+		Body:    body,
+		Headers: headers,
+	})
 	if err != nil {
 		return gqlResponse{}, err
 	}
 	defer func() { _ = resp.Body.Close() }()
-
-	if resp.StatusCode != http.StatusOK {
-		return gqlResponse{}, fmt.Errorf("HTTP %d from %s", resp.StatusCode, inst.graphqlURL)
-	}
 
 	var gqlResp gqlResponse
 	if err := json.NewDecoder(resp.Body).Decode(&gqlResp); err != nil {
