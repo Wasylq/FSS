@@ -58,7 +58,7 @@ func sceneToRow(s models.Scene) ([]string, error) {
 		s.StudioURL,
 		s.Title,
 		s.URL,
-		s.Date.Format(time.RFC3339),
+		formatTime(s.Date),
 		s.Description,
 		s.Thumbnail,
 		s.Preview,
@@ -83,6 +83,13 @@ func sceneToRow(s models.Scene) ([]string, error) {
 		s.ScrapedAt.Format(time.RFC3339),
 		formatTimePtr(s.DeletedAt),
 	}, nil
+}
+
+func formatTime(t time.Time) string {
+	if t.IsZero() {
+		return ""
+	}
+	return t.Format(time.RFC3339)
 }
 
 func formatTimePtr(t *time.Time) string {
