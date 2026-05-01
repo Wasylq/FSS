@@ -305,6 +305,9 @@ func (c *Client) FindAllScenes(ctx context.Context, filter FindScenesFilter, pro
 		if len(scenes) < perPage {
 			break
 		}
+		if ctx.Err() != nil {
+			return all, ctx.Err()
+		}
 		page++
 	}
 	return all, nil
