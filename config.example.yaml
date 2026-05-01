@@ -36,6 +36,16 @@ site_delays:
   # clips4sale: 1000
   # brazzers: 500
 
+# Stashbox instances for the stashbox scraper.
+# Each entry maps a GraphQL endpoint to an API key. The scraper matches
+# incoming URLs against these endpoints to find the right key.
+# Supports any stashbox instance (stashdb.org, pmvstash.org, etc.).
+stashbox:
+  # - url: "https://stashdb.org/graphql"
+  #   api_key: "your-api-key-here"
+  # - url: "https://pmvstash.org/graphql"
+  #   api_key: "another-api-key"
+
 # Stash integration settings (used by `fss stash` subcommands).
 stash:
   # URL of your Stash instance.

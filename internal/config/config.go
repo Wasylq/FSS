@@ -20,8 +20,14 @@ type Config struct {
 	Delay   int    `yaml:"delay"`
 	// SiteDelays overrides Delay per scraper ID (e.g. "manyvids", "pornhub").
 	// Sites without an entry fall back to Delay.
-	SiteDelays map[string]int `yaml:"site_delays"`
-	Stash      StashConfig    `yaml:"stash"`
+	SiteDelays map[string]int   `yaml:"site_delays"`
+	Stash      StashConfig      `yaml:"stash"`
+	Stashbox   []StashboxConfig `yaml:"stashbox"`
+}
+
+type StashboxConfig struct {
+	URL    string `yaml:"url"`
+	APIKey string `yaml:"api_key"`
 }
 
 type StashConfig struct {

@@ -66,6 +66,12 @@ site_delays:      # map[string]int — per-scraper delay overrides (overrides `d
   # pornhub: 2000
   # brazzers: 500
 
+stashbox:         # list — stashbox instances for the stashbox scraper
+  # - url: "https://stashdb.org/graphql"       # GraphQL endpoint URL
+  #   api_key: "your-api-key-here"             # API key for this instance
+  # - url: "https://pmvstash.org/graphql"
+  #   api_key: "another-api-key"
+
 stash:
   url: "http://localhost:9999"    # str   — Stash server URL
   api_key: ""                     # str   — API key (prefer FSS_STASH_API_KEY env var)
