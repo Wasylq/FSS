@@ -162,8 +162,10 @@ func (s *Scraper) fetchAllTags(ctx context.Context) (map[int]string, error) {
 		}
 
 		var tags []wpTag
-		err = json.NewDecoder(resp.Body).Decode(&tags)
-		_ = resp.Body.Close()
+		err = func() error {
+			defer func() { _ = resp.Body.Close() }()
+			return json.NewDecoder(resp.Body).Decode(&tags)
+		}()
 		if err != nil {
 			return nil, fmt.Errorf("tags decode: %w", err)
 		}
@@ -193,12 +195,12 @@ func (s *Scraper) fetchPosts(ctx context.Context, page int) ([]wpPost, int, erro
 		return nil, 0, err
 	}
 
+	defer func() { _ = resp.Body.Close() }()
+
 	total, _ := strconv.Atoi(resp.Header.Get("X-WP-Total"))
 
 	var posts []wpPost
-	err = json.NewDecoder(resp.Body).Decode(&posts)
-	_ = resp.Body.Close()
-	if err != nil {
+	if err := json.NewDecoder(resp.Body).Decode(&posts); err != nil {
 		return nil, 0, fmt.Errorf("decode: %w", err)
 	}
 
