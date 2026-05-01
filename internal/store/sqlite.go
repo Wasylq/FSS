@@ -226,6 +226,9 @@ func (s *SQLite) applyMigration1() error {
 		}
 	}
 
+	if _, err := tx.Exec(`DELETE FROM schema_version`); err != nil {
+		return err
+	}
 	if _, err := tx.Exec(`INSERT INTO schema_version (version) VALUES (1)`); err != nil {
 		return err
 	}
