@@ -4,7 +4,7 @@ import (
 	"encoding/csv"
 	"encoding/json"
 	"fmt"
-	"os"
+	"io"
 	"strconv"
 	"strings"
 	"time"
@@ -28,27 +28,23 @@ var csvHeaders = []string{
 }
 
 func WriteCSV(scenes []models.Scene, path string) error {
-	f, err := os.Create(path)
-	if err != nil {
-		return fmt.Errorf("creating %s: %w", path, err)
-	}
-	defer func() { _ = f.Close() }()
-
-	w := csv.NewWriter(f)
-	if err := w.Write(csvHeaders); err != nil {
-		return err
-	}
-	for _, s := range scenes {
-		row, err := sceneToRow(s)
-		if err != nil {
+	return atomicWriteFile(path, func(out io.Writer) error {
+		w := csv.NewWriter(out)
+		if err := w.Write(csvHeaders); err != nil {
 			return err
 		}
-		if err := w.Write(row); err != nil {
-			return err
+		for _, s := range scenes {
+			row, err := sceneToRow(s)
+			if err != nil {
+				return err
+			}
+			if err := w.Write(row); err != nil {
+				return err
+			}
 		}
-	}
-	w.Flush()
-	return w.Error()
+		w.Flush()
+		return w.Error()
+	})
 }
 
 func sceneToRow(s models.Scene) ([]string, error) {
