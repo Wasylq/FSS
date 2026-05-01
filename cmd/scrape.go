@@ -341,18 +341,23 @@ func collectScenes(ctx context.Context, sc scraper.StudioScraper, studioURL stri
 
 // carryOverPriceHistory replays the existing scene's price history plus the new
 // snapshot through AddPrice so LowestPrice is recomputed correctly.
+// When the fresh scene has no price data (e.g. site stopped returning pricing),
+// existing history is preserved so no data is lost.
 func carryOverPriceHistory(fresh, existing models.Scene) models.Scene {
-	if len(fresh.PriceHistory) == 0 {
-		return fresh
+	var newSnap *models.PriceSnapshot
+	if len(fresh.PriceHistory) > 0 {
+		s := fresh.PriceHistory[len(fresh.PriceHistory)-1]
+		newSnap = &s
 	}
-	newSnap := fresh.PriceHistory[len(fresh.PriceHistory)-1]
 	fresh.PriceHistory = nil
 	fresh.LowestPrice = 0
 	fresh.LowestPriceDate = nil
 	for _, snap := range existing.PriceHistory {
 		fresh.AddPrice(snap)
 	}
-	fresh.AddPrice(newSnap)
+	if newSnap != nil {
+		fresh.AddPrice(*newSnap)
+	}
 	return fresh
 }
 
