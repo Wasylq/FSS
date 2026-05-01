@@ -5,7 +5,6 @@ import (
 	"encoding/xml"
 	"fmt"
 	"html"
-	"io"
 	"net/http"
 	"regexp"
 	"strconv"
@@ -61,7 +60,7 @@ func FetchSitemap(ctx context.Context, client *http.Client, sitemapURL string, h
 	}
 	defer func() { _ = resp.Body.Close() }()
 
-	body, err := io.ReadAll(resp.Body)
+	body, err := httpx.ReadBody(resp.Body)
 	if err != nil {
 		return nil, fmt.Errorf("reading sitemap: %w", err)
 	}
@@ -100,7 +99,7 @@ func FetchPage(ctx context.Context, client *http.Client, pageURL string, headers
 		return nil, fmt.Errorf("fetching %s: %w", pageURL, err)
 	}
 	defer func() { _ = resp.Body.Close() }()
-	body, err := io.ReadAll(resp.Body)
+	body, err := httpx.ReadBody(resp.Body)
 	if err != nil {
 		return nil, fmt.Errorf("reading %s: %w", pageURL, err)
 	}

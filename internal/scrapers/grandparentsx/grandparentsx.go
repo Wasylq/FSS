@@ -3,7 +3,6 @@ package grandparentsx
 import (
 	"context"
 	"fmt"
-	"io"
 	"net/http"
 	"regexp"
 	"strconv"
@@ -185,5 +184,5 @@ func (s *Scraper) fetchPage(ctx context.Context, rawURL string) ([]byte, error) 
 		return nil, err
 	}
 	defer func() { _ = resp.Body.Close() }()
-	return io.ReadAll(resp.Body)
+	return httpx.ReadBody(resp.Body)
 }

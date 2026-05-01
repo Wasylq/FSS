@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"html"
-	"io"
 	"net/http"
 	"net/url"
 	"regexp"
@@ -176,7 +175,7 @@ func (s *Scraper) fetchAPIKey(ctx context.Context, studioURL string) (apiKey, ts
 	}
 	defer func() { _ = resp.Body.Close() }()
 
-	body, err := io.ReadAll(resp.Body)
+	body, err := httpx.ReadBody(resp.Body)
 	if err != nil {
 		return "", "", fmt.Errorf("reading store page: %w", err)
 	}

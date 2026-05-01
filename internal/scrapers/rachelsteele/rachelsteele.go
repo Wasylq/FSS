@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"html"
-	"io"
 	"net/http"
 	"regexp"
 	"strconv"
@@ -228,7 +227,7 @@ func (s *Scraper) fetchPage(ctx context.Context, page int) (videosPage, error) {
 	}
 	defer func() { _ = resp.Body.Close() }()
 
-	body, err := io.ReadAll(resp.Body)
+	body, err := httpx.ReadBody(resp.Body)
 	if err != nil {
 		return videosPage{}, err
 	}
@@ -326,7 +325,7 @@ func (s *Scraper) fetchDetail(ctx context.Context, pageURL string) (sceneDetail,
 	}
 	defer func() { _ = resp.Body.Close() }()
 
-	body, err := io.ReadAll(resp.Body)
+	body, err := httpx.ReadBody(resp.Body)
 	if err != nil {
 		return sceneDetail{}, err
 	}

@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"html"
-	"io"
 	"net/http"
 	"regexp"
 	"strings"
@@ -150,7 +149,7 @@ func (s *Scraper) fetchPage(ctx context.Context, rawURL string) ([]byte, error) 
 	if resp.StatusCode >= 400 && resp.StatusCode != http.StatusInternalServerError {
 		return nil, &httpx.StatusError{StatusCode: resp.StatusCode}
 	}
-	return io.ReadAll(resp.Body)
+	return httpx.ReadBody(resp.Body)
 }
 
 // ---- parsing ----

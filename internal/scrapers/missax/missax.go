@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"html"
-	"io"
 	"net/http"
 	"regexp"
 	"strconv"
@@ -354,5 +353,5 @@ func collapseWhitespace(s string) string {
 }
 
 func readBody(resp *http.Response) ([]byte, error) {
-	return io.ReadAll(resp.Body)
+	return httpx.ReadBody(resp.Body)
 }

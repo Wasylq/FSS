@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"html"
-	"io"
 	"net/http"
 	"regexp"
 	"strconv"
@@ -247,7 +246,7 @@ func (s *Scraper) fetch(ctx context.Context, url string) ([]byte, error) {
 		return nil, err
 	}
 	defer func() { _ = resp.Body.Close() }()
-	return io.ReadAll(resp.Body)
+	return httpx.ReadBody(resp.Body)
 }
 
 func (s *Scraper) fetchDetailScene(ctx context.Context, studioURL string, updateID string) (models.Scene, error) {

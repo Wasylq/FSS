@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io"
 	"net/http"
 	"regexp"
 	"strings"
@@ -366,5 +365,5 @@ func (s *Scraper) fetchHTML(ctx context.Context, rawURL string) ([]byte, error) 
 		return nil, err
 	}
 	defer func() { _ = resp.Body.Close() }()
-	return io.ReadAll(resp.Body)
+	return httpx.ReadBody(resp.Body)
 }

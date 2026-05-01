@@ -3,7 +3,6 @@ package charleechase
 import (
 	"context"
 	"fmt"
-	"io"
 	"net/http"
 	"regexp"
 	"strconv"
@@ -149,7 +148,7 @@ func (s *Scraper) fetchListing(ctx context.Context, rawURL string) ([]listItem, 
 	}
 	defer func() { _ = resp.Body.Close() }()
 
-	body, err := io.ReadAll(resp.Body)
+	body, err := httpx.ReadBody(resp.Body)
 	if err != nil {
 		return nil, fmt.Errorf("reading page: %w", err)
 	}
@@ -244,7 +243,7 @@ func (s *Scraper) fetchDetail(ctx context.Context, path string) (*detailData, er
 	}
 	defer func() { _ = resp.Body.Close() }()
 
-	body, err := io.ReadAll(resp.Body)
+	body, err := httpx.ReadBody(resp.Body)
 	if err != nil {
 		return nil, fmt.Errorf("reading detail: %w", err)
 	}

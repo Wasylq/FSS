@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"html"
-	"io"
 	"net/http"
 	"regexp"
 	"strconv"
@@ -138,7 +137,7 @@ func (s *Scraper) fetchPage(ctx context.Context, page int) ([]byte, error) {
 		return nil, &httpx.StatusError{StatusCode: resp.StatusCode}
 	}
 
-	return io.ReadAll(resp.Body)
+	return httpx.ReadBody(resp.Body)
 }
 
 // ---- parsing ----

@@ -20,6 +20,23 @@ const (
 	UserAgentChrome  = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
 )
 
+// MaxPageBytes caps ReadBody response reads to prevent an oversized or
+// malicious response from exhausting memory.
+const MaxPageBytes = 10 * 1024 * 1024
+
+// ReadBody reads an HTTP response body up to MaxPageBytes. Use this instead of
+// io.ReadAll(resp.Body) in scrapers to bound memory usage.
+func ReadBody(body io.ReadCloser) ([]byte, error) {
+	data, err := io.ReadAll(io.LimitReader(body, MaxPageBytes+1))
+	if err != nil {
+		return nil, err
+	}
+	if len(data) > MaxPageBytes {
+		return nil, fmt.Errorf("response body exceeds %d bytes", MaxPageBytes)
+	}
+	return data, nil
+}
+
 // sharedTransport is reused across all scrapers so TCP/TLS connections are
 // pooled per host instead of being re-established on every request.
 var sharedTransport http.RoundTripper = &http.Transport{
