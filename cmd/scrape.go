@@ -336,6 +336,9 @@ func collectScenes(ctx context.Context, sc scraper.StudioScraper, studioURL stri
 	if ctx.Err() != nil {
 		fmt.Printf("Interrupted — saving %d partial results...\n", len(scenes))
 	}
+	if errCount > 0 && len(scenes) == 0 {
+		return nil, fmt.Errorf("scrape failed with %d error(s) and 0 scenes", errCount)
+	}
 	return scenes, nil
 }
 
