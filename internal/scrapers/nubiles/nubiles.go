@@ -106,8 +106,10 @@ func parseFilter(rawURL string) filter {
 	return filter{mode: filterAll}
 }
 
+var baseURLRe = regexp.MustCompile(`^(https?://[^/]+)`)
+
 func baseURL(rawURL string) string {
-	m := regexp.MustCompile(`^(https?://[^/]+)`).FindString(rawURL)
+	m := baseURLRe.FindString(rawURL)
 	if m == "" {
 		return rawURL
 	}
