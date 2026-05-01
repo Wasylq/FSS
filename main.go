@@ -57,6 +57,7 @@ import (
 	_ "github.com/Wasylq/FSS/internal/scrapers/ftvmilfs"
 	_ "github.com/Wasylq/FSS/internal/scrapers/gloryholesecrets"
 	_ "github.com/Wasylq/FSS/internal/scrapers/gloryquest"
+	_ "github.com/Wasylq/FSS/internal/scrapers/grandparentsx"
 	_ "github.com/Wasylq/FSS/internal/scrapers/houseofyre"
 	_ "github.com/Wasylq/FSS/internal/scrapers/ideapocket"
 	_ "github.com/Wasylq/FSS/internal/scrapers/iwantclips"
