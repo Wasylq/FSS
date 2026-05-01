@@ -156,62 +156,74 @@ func (s *Scraper) FetchPage(ctx context.Context, token string, filter Filter, pa
 }
 
 func (s *Scraper) fetchSeries(ctx context.Context, token string, seriesID int) ([]Release, int, error) {
-	params := url.Values{}
-	params.Set("type", "serie")
-	params.Set("limit", "100")
-	params.Set("offset", "0")
+	for offset := 0; ; offset += HitsPerPage {
+		params := url.Values{}
+		params.Set("type", "serie")
+		params.Set("limit", strconv.Itoa(HitsPerPage))
+		params.Set("offset", strconv.Itoa(offset))
 
-	apiURL := fmt.Sprintf("%s/v2/releases?%s", s.APIHost, params.Encode())
+		apiURL := fmt.Sprintf("%s/v2/releases?%s", s.APIHost, params.Encode())
 
-	resp, err := httpx.Do(ctx, s.Client, httpx.Request{
-		URL: apiURL,
-		Headers: map[string]string{
-			"Instance": token,
-			"Accept":   "application/json",
-		},
-	})
-	if err != nil {
-		return nil, 0, err
-	}
-	defer func() { _ = resp.Body.Close() }()
-
-	var result ReleasesResponse
-	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
-		return nil, 0, fmt.Errorf("decoding series: %w", err)
-	}
-
-	for _, sr := range result.Result {
-		if sr.ID != seriesID {
-			continue
+		resp, err := httpx.Do(ctx, s.Client, httpx.Request{
+			URL: apiURL,
+			Headers: map[string]string{
+				"Instance": token,
+				"Accept":   "application/json",
+			},
+		})
+		if err != nil {
+			return nil, 0, err
 		}
-		enriched := make([]Release, 0, len(sr.Children))
-		for _, child := range sr.Children {
-			if child.Type != "scene" {
+
+		var result ReleasesResponse
+		err = func() error {
+			defer func() { _ = resp.Body.Close() }()
+			return json.NewDecoder(resp.Body).Decode(&result)
+		}()
+		if err != nil {
+			return nil, 0, fmt.Errorf("decoding series: %w", err)
+		}
+
+		if len(result.Result) == 0 {
+			return nil, 0, fmt.Errorf("series %d not found", seriesID)
+		}
+
+		for _, sr := range result.Result {
+			if sr.ID != seriesID {
 				continue
 			}
-			if len(child.Actors) == 0 {
-				child.Actors = sr.Actors
+			enriched := make([]Release, 0, len(sr.Children))
+			for _, child := range sr.Children {
+				if child.Type != "scene" {
+					continue
+				}
+				if len(child.Actors) == 0 {
+					child.Actors = sr.Actors
+				}
+				if child.DateReleased == "" {
+					child.DateReleased = sr.DateReleased
+				}
+				if child.Description == "" {
+					child.Description = sr.Description
+				}
+				if isEmptyJSON(child.RawImages) {
+					child.RawImages = sr.RawImages
+				}
+				if len(child.Collections) == 0 {
+					child.Collections = sr.Collections
+				}
+				if len(child.Tags) == 0 {
+					child.Tags = sr.Tags
+				}
+				enriched = append(enriched, child)
 			}
-			if child.DateReleased == "" {
-				child.DateReleased = sr.DateReleased
-			}
-			if child.Description == "" {
-				child.Description = sr.Description
-			}
-			if isEmptyJSON(child.RawImages) {
-				child.RawImages = sr.RawImages
-			}
-			if len(child.Collections) == 0 {
-				child.Collections = sr.Collections
-			}
-			if len(child.Tags) == 0 {
-				child.Tags = sr.Tags
-			}
-			enriched = append(enriched, child)
+			return enriched, len(enriched), nil
 		}
-		return enriched, len(enriched), nil
+
+		if offset+HitsPerPage >= result.Meta.Total {
+			return nil, 0, fmt.Errorf("series %d not found", seriesID)
+		}
 	}
-	return nil, 0, fmt.Errorf("series %d not found", seriesID)
 }
 
 func isEmptyJSON(raw json.RawMessage) bool {
