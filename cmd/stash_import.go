@@ -628,6 +628,16 @@ func buildChanges(ss stash.StashScene, merged stash.MergedScene, mergedURLs []st
 		changes["performers"] = changelogFieldDiff{Added: addedPerfs}
 	}
 
+	if merged.Studio != "" {
+		existingStudio := ""
+		if ss.Studio != nil {
+			existingStudio = ss.Studio.Name
+		}
+		if merged.Studio != existingStudio {
+			changes["studio"] = changelogFieldDiff{From: existingStudio, To: merged.Studio}
+		}
+	}
+
 	return changes
 }
 
