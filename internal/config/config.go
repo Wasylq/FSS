@@ -5,6 +5,7 @@ import (
 	"io"
 	"log"
 	"os"
+	"path/filepath"
 	"regexp"
 	"runtime"
 
@@ -57,8 +58,7 @@ func defaults() *Config {
 // DefaultPath returns the canonical config file path for the current platform.
 // The file may not exist yet — this is where it should be created.
 func DefaultPath() string {
-	path, _ := xdg.ConfigFile("fss/config.yaml")
-	return path
+	return filepath.Join(xdg.ConfigHome, "fss", "config.yaml")
 }
 
 // windowsPathRe matches double-quoted YAML values that look like Windows
