@@ -61,6 +61,7 @@ import (
 	_ "github.com/Wasylq/FSS/internal/scrapers/houseofyre"
 	_ "github.com/Wasylq/FSS/internal/scrapers/ideapocket"
 	_ "github.com/Wasylq/FSS/internal/scrapers/iwantclips"
+	_ "github.com/Wasylq/FSS/internal/scrapers/julesjordan"
 	_ "github.com/Wasylq/FSS/internal/scrapers/kink"
 	_ "github.com/Wasylq/FSS/internal/scrapers/ladysonia"
 	_ "github.com/Wasylq/FSS/internal/scrapers/loyalfans"
