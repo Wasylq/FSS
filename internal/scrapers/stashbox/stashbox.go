@@ -402,7 +402,11 @@ func (s *Scraper) queryScenes(ctx context.Context, inst instance, input map[stri
 		return gqlResponse{}, fmt.Errorf("decoding response: %w", err)
 	}
 	if len(gqlResp.Errors) > 0 {
-		return gqlResponse{}, fmt.Errorf("graphql error: %s", gqlResp.Errors[0].Message)
+		msgs := make([]string, len(gqlResp.Errors))
+		for i, e := range gqlResp.Errors {
+			msgs[i] = e.Message
+		}
+		return gqlResponse{}, fmt.Errorf("graphql error: %s", strings.Join(msgs, "; "))
 	}
 	return gqlResp, nil
 }
