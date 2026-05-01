@@ -73,6 +73,7 @@ import (
 	_ "github.com/Wasylq/FSS/internal/scrapers/mommyblowsbest"
 	_ "github.com/Wasylq/FSS/internal/scrapers/moodyz"
 	_ "github.com/Wasylq/FSS/internal/scrapers/mydirtyhobby"
+	_ "github.com/Wasylq/FSS/internal/scrapers/nakednews"
 	_ "github.com/Wasylq/FSS/internal/scrapers/naughtyamerica"
 	_ "github.com/Wasylq/FSS/internal/scrapers/nubiles"
 	_ "github.com/Wasylq/FSS/internal/scrapers/oopsfamily"
