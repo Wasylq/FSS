@@ -88,6 +88,7 @@ import (
 	_ "github.com/Wasylq/FSS/internal/scrapers/reaganfoxx"
 	_ "github.com/Wasylq/FSS/internal/scrapers/realitykings"
 	_ "github.com/Wasylq/FSS/internal/scrapers/rocketinc"
+	_ "github.com/Wasylq/FSS/internal/scrapers/s1no1style"
 	_ "github.com/Wasylq/FSS/internal/scrapers/seemomsuck"
 	_ "github.com/Wasylq/FSS/internal/scrapers/sexmex"
 	_ "github.com/Wasylq/FSS/internal/scrapers/stashbox"

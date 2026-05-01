@@ -53,6 +53,7 @@
 | [Pornhub](https://www.pornhub.com) | `pornhub.com/pornstar/{slug}`, `pornhub.com/channels/{slug}` | Pornhub | Free | HTML scraping, minimal fields |
 | [Pure Taboo](https://www.puretaboo.com) | `puretaboo.com` | Gamma/Algolia | No | Algolia search API, uses `gammautil` |
 | [Queensnake](https://queensnake.com) | `queensnake.com` | Custom | No | HTML scraping, 0-indexed paginated listing, `cLegalAge` cookie for age gate, performer extraction from title/tags, listing-only (no detail pages needed) |
+| [S1 NO.1 STYLE](https://s1s1s1.com) | `s1s1s1.com/works/list/series/{id}`, `s1s1s1.com/works/list/release`, `s1s1s1.com/works/list/date/{date}`, `s1s1s1.com/works/list/genre/{id}`, `s1s1s1.com/works/list/label/{id}`, `s1s1s1.com/actress/detail/{id}` | Up-Timely CMS | No | Thin wrapper around `uptimelyutil` |
 | [r18.dev](https://r18.dev) | `r18.dev/videos/vod/movies/list/?id={id}&type=actress`, `r18.dev/videos/vod/movies/list/?id={id}&type=studio`, `r18.dev/videos/vod/movies/list/?id={id}&type=category`, `r18.dev/videos/vod/movies/list/?id={id}&type=director` | Custom JSON API | No | JSON listing API (100/page) + detail API worker pool, filter by actress/studio/category/director, full JAV metadata (cast/tags/runtime/maker/label), 500ms default delay, community site |
 | [Rachel Steele](https://rachel-steele.com) | `rachel-steele.com` | MyMember.site | Yes | JSON list API + HTML detail pages, JSON-LD keywords |
 | Stashbox (any instance) | `{instance}/performers/{id}`, `{instance}/studios/{id}` | Stashbox GraphQL | No | GraphQL API (100/page), filter by performer or studio (incl. sub-studios via `parentStudio`), full metadata (cast/tags/duration/director/images), API key per instance via config, 500ms default delay, SiteID derived from hostname |
@@ -110,7 +111,7 @@ Scrapers that share a platform use common utility packages to avoid duplication:
 | `scoregrouputil` | Score Group (HTML listing + detail pages, `meta name="Date"` for dates, `updates-tag` links for tags) | 50 Plus MILFs |
 | `povrutil` | POVR/WankzVR (export JSON + HTML listing pages) | BrasilVR, MilfVR, TranzVR, WankzVR |
 | `sexmexutil` | SexMex Pro CMS (HTML scraping, pagination). **Quirk:** their CMS returns HTTP 500 with valid HTML on some pages (e.g. model pages), so `fetchPage` accepts 500 responses instead of using `httpx.Do`. | Exposed Latinas, SexMex, Trans Queens |
-| `uptimelyutil` | Up-Timely CMS (HTML listing + detail page worker pool, Japanese metadata, cross-page dedup) | DAS!, Idea Pocket, Madonna, MOODYZ |
+| `uptimelyutil` | Up-Timely CMS (HTML listing + detail page worker pool, Japanese metadata, cross-page dedup) | DAS!, Idea Pocket, Madonna, MOODYZ, S1 NO.1 STYLE |
 | `veutil` | WordPress video-elements theme (WP REST API for posts + tags, poster extraction from content) | BoyfriendSharing, BrattyFamily, GoStuckYourself, HugeCockBreak, LittleFromAsia, MommysBoy, MomXXX, MyBadMILFs, DaughterSwap, PervMom, SisLovesMe, YoungerLoverOfMine |
 | `wputil` | WordPress (sitemap + HTML meta parsing) | Anal Therapy, Family Therapy, Mom Comes First, Perfect Girlfriend, Tara Tainton |
 
