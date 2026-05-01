@@ -150,6 +150,9 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 			case <-ctx.Done():
 				break
 			}
+			if ctx.Err() != nil {
+				break
+			}
 		}
 
 		vp, err := s.fetchPage(ctx, page)
@@ -165,7 +168,6 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 			select {
 			case out <- scraper.Progress(vp.Total):
 			case <-ctx.Done():
-				break
 			}
 		}
 

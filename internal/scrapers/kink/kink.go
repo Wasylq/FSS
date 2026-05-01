@@ -122,6 +122,9 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 			case <-ctx.Done():
 				break
 			}
+			if ctx.Err() != nil {
+				break
+			}
 		}
 
 		pageURL := lc.pageURL(page)
@@ -143,7 +146,6 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 			select {
 			case out <- scraper.Progress(totalPages * 24):
 			case <-ctx.Done():
-				break
 			}
 		}
 
