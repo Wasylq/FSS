@@ -373,14 +373,41 @@ func (s *SQLite) Export(format, path, studioURL string) error {
 
 func upsertScene(tx *sql.Tx, sc models.Scene) error {
 	_, err := tx.Exec(`
-		INSERT OR REPLACE INTO scenes (
+		INSERT INTO scenes (
 		    id, site_id, studio_url, title, url, date, description,
 		    thumbnail, preview, performers, director, studio,
 		    tags, categories, series, series_part,
 		    duration, resolution, width, height, format,
 		    views, likes, comments,
 		    lowest_price, lowest_price_date, scraped_at, deleted_at
-		) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+		) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+		ON CONFLICT(id, site_id) DO UPDATE SET
+		    studio_url        = excluded.studio_url,
+		    title             = excluded.title,
+		    url               = excluded.url,
+		    date              = excluded.date,
+		    description       = excluded.description,
+		    thumbnail         = excluded.thumbnail,
+		    preview           = excluded.preview,
+		    performers        = excluded.performers,
+		    director          = excluded.director,
+		    studio            = excluded.studio,
+		    tags              = excluded.tags,
+		    categories        = excluded.categories,
+		    series            = excluded.series,
+		    series_part       = excluded.series_part,
+		    duration          = excluded.duration,
+		    resolution        = excluded.resolution,
+		    width             = excluded.width,
+		    height            = excluded.height,
+		    format            = excluded.format,
+		    views             = excluded.views,
+		    likes             = excluded.likes,
+		    comments          = excluded.comments,
+		    lowest_price      = excluded.lowest_price,
+		    lowest_price_date = excluded.lowest_price_date,
+		    scraped_at        = excluded.scraped_at,
+		    deleted_at        = excluded.deleted_at`,
 		sc.ID, sc.SiteID, sc.StudioURL, sc.Title, sc.URL,
 		timeStr(sc.Date), sc.Description, sc.Thumbnail, sc.Preview,
 		"[]", sc.Director, sc.Studio,
