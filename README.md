@@ -37,7 +37,7 @@ Asset naming: `fss-<version>-<os>-<arch>.tar.gz` (or `.zip` for Windows). Availa
 
 ```bash
 # Pick a version from https://github.com/Wasylq/FSS/releases/latest
-VERSION=v1.10.0
+VERSION=v1.11.0
 ARCH=amd64    # or arm64 for Raspberry Pi 4/5, ARM cloud instances, etc.
 
 curl -LO https://github.com/Wasylq/FSS/releases/download/${VERSION}/fss-${VERSION}-linux-${ARCH}.tar.gz
@@ -51,7 +51,7 @@ If you don't have sudo, drop `fss` into `~/.local/bin/` (already on your `PATH` 
 #### macOS
 
 ```bash
-VERSION=v1.10.0
+VERSION=v1.11.0
 ARCH=arm64    # Apple Silicon (M1+); use amd64 for Intel Macs
 
 curl -LO https://github.com/Wasylq/FSS/releases/download/${VERSION}/fss-${VERSION}-darwin-${ARCH}.tar.gz
@@ -68,7 +68,7 @@ fss version
 #### Windows (PowerShell)
 
 ```powershell
-$Version = "v1.10.0"
+$Version = "v1.11.0"
 
 Invoke-WebRequest -Uri "https://github.com/Wasylq/FSS/releases/download/$Version/fss-$Version-windows-amd64.zip" -OutFile fss.zip
 Expand-Archive -Path fss.zip -DestinationPath .
@@ -88,7 +88,7 @@ fss version
 Each release also publishes `.deb` and `.rpm` packages. Download them from the [latest release](https://github.com/Wasylq/FSS/releases/latest).
 
 ```bash
-VERSION=1.10.0
+VERSION=1.11.0
 ARCH=amd64    # or arm64
 
 # Debian / Ubuntu
