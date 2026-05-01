@@ -156,12 +156,13 @@ func (s *Scraper) Run(ctx context.Context, studioURL string, opts scraper.ListOp
 }
 
 func (s *Scraper) FetchPage(ctx context.Context, apiKey string, page int, extraFilters ...string) ([]AlgoliaHit, int, error) {
-	filters := fmt.Sprintf("availableOnSite:%s AND upcoming:0", s.Config.SiteName)
+	parts := []string{fmt.Sprintf("availableOnSite:%s AND upcoming:0", s.Config.SiteName)}
 	for _, f := range extraFilters {
 		if f != "" {
-			filters += " AND " + f
+			parts = append(parts, f)
 		}
 	}
+	filters := strings.Join(parts, " AND ")
 	query := AlgoliaQuery{
 		Query:       "",
 		HitsPerPage: HitsPerPage,

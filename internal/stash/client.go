@@ -18,6 +18,11 @@ import (
 // malicious or oversized URL from exhausting memory.
 const MaxCoverImageBytes = 10 * 1024 * 1024
 
+// MaxResponseBytes caps GraphQL response reads. Set high enough for paginated
+// FindScenes responses with full metadata, low enough that a runaway server
+// cannot OOM the CLI.
+const MaxResponseBytes = 50 * 1024 * 1024
+
 type Client struct {
 	url    string
 	apiKey string
@@ -127,9 +132,12 @@ func (c *Client) do(ctx context.Context, gql graphqlRequest) (json.RawMessage, e
 	}
 	defer func() { _ = resp.Body.Close() }()
 
-	respBody, err := io.ReadAll(resp.Body)
+	respBody, err := io.ReadAll(io.LimitReader(resp.Body, MaxResponseBytes+1))
 	if err != nil {
 		return nil, fmt.Errorf("reading stash response: %w", err)
+	}
+	if len(respBody) > MaxResponseBytes {
+		return nil, fmt.Errorf("stash response exceeds %d bytes", MaxResponseBytes)
 	}
 
 	var gqlResp graphqlResponse

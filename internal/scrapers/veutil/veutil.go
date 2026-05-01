@@ -152,6 +152,9 @@ func (s *Scraper) run(ctx context.Context, opts scraper.ListOpts, out chan<- scr
 func (s *Scraper) fetchAllTags(ctx context.Context) (map[int]string, error) {
 	tagMap := make(map[int]string)
 	for page := 1; ; page++ {
+		if err := ctx.Err(); err != nil {
+			return nil, err
+		}
 		u := fmt.Sprintf("%s/wp-json/wp/v2/tags?per_page=100&page=%d&_fields=id,name", s.Cfg.SiteBase, page)
 		resp, err := httpx.Do(ctx, s.Client, httpx.Request{
 			URL:     u,

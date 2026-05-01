@@ -157,6 +157,9 @@ func (s *Scraper) FetchPage(ctx context.Context, token string, filter Filter, pa
 
 func (s *Scraper) fetchSeries(ctx context.Context, token string, seriesID int) ([]Release, int, error) {
 	for offset := 0; ; offset += HitsPerPage {
+		if err := ctx.Err(); err != nil {
+			return nil, 0, err
+		}
 		params := url.Values{}
 		params.Set("type", "serie")
 		params.Set("limit", strconv.Itoa(HitsPerPage))

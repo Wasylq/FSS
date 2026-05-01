@@ -73,9 +73,10 @@ func (s *Scraper) ListScenes(ctx context.Context, studioURL string, opts scraper
 	}
 
 	var inst *instance
-	for i := range getInstances() {
-		if strings.EqualFold(parsed.Host, getInstances()[i].host) {
-			inst = &getInstances()[i]
+	insts := getInstances()
+	for i := range insts {
+		if strings.EqualFold(parsed.Host, insts[i].host) {
+			inst = &insts[i]
 			break
 		}
 	}
