@@ -51,6 +51,7 @@
 | [Penny Barber](https://pennybarber.com) | `pennybarber.com/videos` | ModelCentro | No | JSON API (`/api/content.load`), listing + per-scene detail for tags/description, no thumbnails (CDN-encrypted) |
 | [Perfect Girlfriend](https://perfectgirlfriend.com) | `perfectgirlfriend.com` | WordPress | No | Sitemap-driven, JSON-LD VideoObject fallback, uses `wputil` |
 | [Pornhub](https://www.pornhub.com) | `pornhub.com/pornstar/{slug}`, `pornhub.com/channels/{slug}` | Pornhub | Free | HTML scraping, minimal fields |
+| [Pure CFNM](https://www.purecfnm.com) | `purecfnm.com`, `purecfnm.com/categories/{slug}_{page}_d.html`, `purecfnm.com/models/{slug}.html` | JEBN CMS | No | HTML listing (28/page, `{slug}_N_d.html`) listing-only (no detail pages), model pages provide description/tags, 6-site network, 500ms default delay |
 | [Pure Taboo](https://www.puretaboo.com) | `puretaboo.com` | Gamma/Algolia | No | Algolia search API, uses `gammautil` |
 | [Queensnake](https://queensnake.com) | `queensnake.com` | Custom | No | HTML scraping, 0-indexed paginated listing, `cLegalAge` cookie for age gate, performer extraction from title/tags, listing-only (no detail pages needed) |
 | [S1 NO.1 STYLE](https://s1s1s1.com) | `s1s1s1.com/works/list/series/{id}`, `s1s1s1.com/works/list/release`, `s1s1s1.com/works/list/date/{date}`, `s1s1s1.com/works/list/genre/{id}`, `s1s1s1.com/works/list/label/{id}`, `s1s1s1.com/actress/detail/{id}` | Up-Timely CMS | No | Thin wrapper around `uptimelyutil` |

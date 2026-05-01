@@ -82,6 +82,7 @@ import (
 	_ "github.com/Wasylq/FSS/internal/scrapers/perfectgirlfriend"
 	_ "github.com/Wasylq/FSS/internal/scrapers/pornhub"
 	_ "github.com/Wasylq/FSS/internal/scrapers/propertysex"
+	_ "github.com/Wasylq/FSS/internal/scrapers/purecfnm"
 	_ "github.com/Wasylq/FSS/internal/scrapers/puretaboo"
 	_ "github.com/Wasylq/FSS/internal/scrapers/queensnake"
 	_ "github.com/Wasylq/FSS/internal/scrapers/rachelsteele"
