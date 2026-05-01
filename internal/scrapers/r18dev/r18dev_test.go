@@ -222,12 +222,12 @@ func TestToSceneNoOptionalFields(t *testing.T) {
 func TestListScenes(t *testing.T) {
 	items := sampleListItems()
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		switch {
-		case r.URL.Path == "/videos/vod/movies/list2/json":
+		switch r.URL.Path {
+		case "/videos/vod/movies/list2/json":
 			_, _ = fmt.Fprint(w, listJSON(items, 2))
-		case r.URL.Path == "/videos/vod/movies/detail/-/combined=abc001/json":
+		case "/videos/vod/movies/detail/-/combined=abc001/json":
 			_, _ = fmt.Fprint(w, detailJSON(sampleDetail("abc001", "ABC-001")))
-		case r.URL.Path == "/videos/vod/movies/detail/-/combined=def002/json":
+		case "/videos/vod/movies/detail/-/combined=def002/json":
 			_, _ = fmt.Fprint(w, detailJSON(sampleDetail("def002", "DEF-002")))
 		default:
 			http.NotFound(w, r)
@@ -263,10 +263,10 @@ func TestListScenesKnownIDs(t *testing.T) {
 		{ContentID: "old002", DvdID: strPtr("OLD-002")},
 	}
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		switch {
-		case r.URL.Path == "/videos/vod/movies/list2/json":
+		switch r.URL.Path {
+		case "/videos/vod/movies/list2/json":
 			_, _ = fmt.Fprint(w, listJSON(items, 3))
-		case r.URL.Path == "/videos/vod/movies/detail/-/combined=new001/json":
+		case "/videos/vod/movies/detail/-/combined=new001/json":
 			_, _ = fmt.Fprint(w, detailJSON(sampleDetail("new001", "NEW-001")))
 		default:
 			http.NotFound(w, r)
@@ -360,8 +360,8 @@ func TestListScenesDedup(t *testing.T) {
 		{ContentID: "def002", DvdID: strPtr("DEF-002")},
 	}
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		switch {
-		case r.URL.Path == "/videos/vod/movies/list2/json":
+		switch r.URL.Path {
+		case "/videos/vod/movies/list2/json":
 			_, _ = fmt.Fprint(w, listJSON(items, 3))
 		default:
 			_, _ = fmt.Fprint(w, detailJSON(detailResponse{

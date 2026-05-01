@@ -81,7 +81,7 @@ func (s *Scraper) ListScenes(ctx context.Context, studioURL string, opts scraper
 		}
 	}
 	if inst == nil {
-		return nil, fmt.Errorf("no stashbox config found for host %s — add it to config.yaml under stashbox:", parsed.Host)
+		return nil, fmt.Errorf("no stashbox config found for host %s, add it to config.yaml under stashbox", parsed.Host)
 	}
 
 	out := make(chan scraper.SceneResult)
