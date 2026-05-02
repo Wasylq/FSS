@@ -205,7 +205,7 @@ func (s *SQLite) applyMigration1() error {
 		if err != nil {
 			return fmt.Errorf("parsing performers for scene %s: %w", r.id, err)
 		}
-		if err := insertRelation(tx, "performers", "scene_performers", "performer_id", r.id, r.siteID, performers, true); err != nil {
+		if err := syncRelation(tx, "performers", "scene_performers", "performer_id", r.id, r.siteID, performers, true); err != nil {
 			return err
 		}
 
@@ -213,7 +213,7 @@ func (s *SQLite) applyMigration1() error {
 		if err != nil {
 			return fmt.Errorf("parsing tags for scene %s: %w", r.id, err)
 		}
-		if err := insertRelation(tx, "tags", "scene_tags", "tag_id", r.id, r.siteID, tags, false); err != nil {
+		if err := syncRelation(tx, "tags", "scene_tags", "tag_id", r.id, r.siteID, tags, false); err != nil {
 			return err
 		}
 
@@ -221,7 +221,7 @@ func (s *SQLite) applyMigration1() error {
 		if err != nil {
 			return fmt.Errorf("parsing categories for scene %s: %w", r.id, err)
 		}
-		if err := insertRelation(tx, "categories", "scene_categories", "category_id", r.id, r.siteID, cats, false); err != nil {
+		if err := syncRelation(tx, "categories", "scene_categories", "category_id", r.id, r.siteID, cats, false); err != nil {
 			return err
 		}
 	}
@@ -425,73 +425,227 @@ func upsertScene(tx *sql.Tx, sc models.Scene) error {
 		return fmt.Errorf("upserting scene %s: %w", sc.ID, err)
 	}
 
-	if err := insertRelation(tx, "performers", "scene_performers", "performer_id", sc.ID, sc.SiteID, sc.Performers, true); err != nil {
+	if err := syncRelation(tx, "performers", "scene_performers", "performer_id", sc.ID, sc.SiteID, sc.Performers, true); err != nil {
 		return fmt.Errorf("upserting performers for %s: %w", sc.ID, err)
 	}
-	if err := insertRelation(tx, "tags", "scene_tags", "tag_id", sc.ID, sc.SiteID, sc.Tags, false); err != nil {
+	if err := syncRelation(tx, "tags", "scene_tags", "tag_id", sc.ID, sc.SiteID, sc.Tags, false); err != nil {
 		return fmt.Errorf("upserting tags for %s: %w", sc.ID, err)
 	}
-	if err := insertRelation(tx, "categories", "scene_categories", "category_id", sc.ID, sc.SiteID, sc.Categories, false); err != nil {
+	if err := syncRelation(tx, "categories", "scene_categories", "category_id", sc.ID, sc.SiteID, sc.Categories, false); err != nil {
 		return fmt.Errorf("upserting categories for %s: %w", sc.ID, err)
 	}
 
-	if _, err := tx.Exec(`DELETE FROM price_history WHERE scene_id = ? AND site_id = ?`,
-		sc.ID, sc.SiteID); err != nil {
-		return err
-	}
-	for _, p := range sc.PriceHistory {
-		if _, err := tx.Exec(`
-			INSERT INTO price_history (scene_id, site_id, date, regular, discounted, is_free, is_on_sale, discount_percent)
-			VALUES (?,?,?,?,?,?,?,?)`,
-			sc.ID, sc.SiteID, timeStr(p.Date),
-			p.Regular, p.Discounted, boolInt(p.IsFree), boolInt(p.IsOnSale), p.DiscountPercent,
-		); err != nil {
-			return fmt.Errorf("inserting price history for %s: %w", sc.ID, err)
-		}
-	}
-	return nil
+	return syncPriceHistory(tx, sc)
 }
 
-// insertRelation upserts each name into the entity table, then replaces the
-// scene's junction rows. withPosition preserves slice order in a position column.
-func insertRelation(tx *sql.Tx, entityTable, junctionTable, fkCol, sceneID, siteID string, names []string, withPosition bool) error {
-	if _, err := tx.Exec(
-		`DELETE FROM `+junctionTable+` WHERE scene_id = ? AND site_id = ?`,
-		sceneID, siteID,
-	); err != nil {
-		return err
+// syncRelation diffs the desired (name, position) set against the junction rows
+// already stored for this scene and applies only the deltas. Entity upserts use
+// INSERT ... ON CONFLICT ... RETURNING id to fetch the id in a single round
+// trip whether the entity is new or already known.
+func syncRelation(tx *sql.Tx, entityTable, junctionTable, fkCol, sceneID, siteID string, names []string, withPosition bool) error {
+	type want struct {
+		name     string
+		position int
 	}
+	seen := make(map[string]struct{}, len(names))
+	desired := make([]want, 0, len(names))
 	for i, name := range names {
 		if name == "" {
 			continue
 		}
+		if _, dup := seen[name]; dup {
+			continue
+		}
+		seen[name] = struct{}{}
+		desired = append(desired, want{name: name, position: i})
+	}
+	desiredSet := make(map[string]int, len(desired))
+	for _, w := range desired {
+		desiredSet[w.name] = w.position
+	}
+
+	type linked struct {
+		id       int64
+		position int
+	}
+	posCol := "0"
+	if withPosition {
+		posCol = "j.position"
+	}
+	rows, err := tx.Query(
+		`SELECT e.name, j.`+fkCol+`, `+posCol+`
+		 FROM `+junctionTable+` j
+		 JOIN `+entityTable+` e ON j.`+fkCol+` = e.id
+		 WHERE j.scene_id = ? AND j.site_id = ?`,
+		sceneID, siteID,
+	)
+	if err != nil {
+		return err
+	}
+	existing := map[string]linked{}
+	for rows.Next() {
+		var name string
+		var l linked
+		if err := rows.Scan(&name, &l.id, &l.position); err != nil {
+			_ = rows.Close()
+			return err
+		}
+		existing[name] = l
+	}
+	_ = rows.Close()
+	if err := rows.Err(); err != nil {
+		return err
+	}
+
+	// Drop junction rows whose entity is no longer in the desired set.
+	for name, l := range existing {
+		if _, keep := desiredSet[name]; keep {
+			continue
+		}
 		if _, err := tx.Exec(
-			`INSERT OR IGNORE INTO `+entityTable+` (name) VALUES (?)`, name,
+			`DELETE FROM `+junctionTable+
+				` WHERE scene_id = ? AND site_id = ? AND `+fkCol+` = ?`,
+			sceneID, siteID, l.id,
 		); err != nil {
 			return err
 		}
+		delete(existing, name)
+	}
+
+	// Walk desired in input order so newly inserted rowids reflect that order
+	// (loadRelation has no ORDER BY for tags/categories and relies on this).
+	for _, w := range desired {
+		if l, ok := existing[w.name]; ok {
+			if withPosition && l.position != w.position {
+				if _, err := tx.Exec(
+					`UPDATE `+junctionTable+
+						` SET position = ? WHERE scene_id = ? AND site_id = ? AND `+fkCol+` = ?`,
+					w.position, sceneID, siteID, l.id,
+				); err != nil {
+					return err
+				}
+			}
+			continue
+		}
+
 		var id int64
 		if err := tx.QueryRow(
-			`SELECT id FROM `+entityTable+` WHERE name = ?`, name,
+			`INSERT INTO `+entityTable+` (name) VALUES (?)
+			 ON CONFLICT(name) DO UPDATE SET name = excluded.name
+			 RETURNING id`,
+			w.name,
 		).Scan(&id); err != nil {
 			return err
 		}
-		var insertErr error
 		if withPosition {
-			_, insertErr = tx.Exec(
-				`INSERT OR IGNORE INTO `+junctionTable+` (scene_id, site_id, `+fkCol+`, position) VALUES (?,?,?,?)`,
-				sceneID, siteID, id, i,
+			_, err = tx.Exec(
+				`INSERT INTO `+junctionTable+` (scene_id, site_id, `+fkCol+`, position) VALUES (?,?,?,?)`,
+				sceneID, siteID, id, w.position,
 			)
 		} else {
-			_, insertErr = tx.Exec(
-				`INSERT OR IGNORE INTO `+junctionTable+` (scene_id, site_id, `+fkCol+`) VALUES (?,?,?)`,
+			_, err = tx.Exec(
+				`INSERT INTO `+junctionTable+` (scene_id, site_id, `+fkCol+`) VALUES (?,?,?)`,
 				sceneID, siteID, id,
 			)
 		}
-		if insertErr != nil {
-			return insertErr
+		if err != nil {
+			return err
 		}
 	}
+
+	return nil
+}
+
+// syncPriceHistory diffs the desired snapshot list against price_history rows
+// already stored for this scene, deleting and inserting only the differences.
+// Identity is the full snapshot tuple (date + price fields), so re-saves with
+// unchanged history are a single SELECT, and adding one snapshot is a single
+// INSERT — instead of the old DELETE-all + reinsert-all pattern.
+func syncPriceHistory(tx *sql.Tx, sc models.Scene) error {
+	type key struct {
+		date            string
+		regular         float64
+		discounted      float64
+		isFree          int
+		isOnSale        int
+		discountPercent int
+	}
+	keyOf := func(p models.PriceSnapshot) key {
+		return key{
+			date:            timeStr(p.Date),
+			regular:         p.Regular,
+			discounted:      p.Discounted,
+			isFree:          boolInt(p.IsFree),
+			isOnSale:        boolInt(p.IsOnSale),
+			discountPercent: p.DiscountPercent,
+		}
+	}
+
+	desired := make(map[key]int, len(sc.PriceHistory))
+	for _, p := range sc.PriceHistory {
+		desired[keyOf(p)]++
+	}
+
+	rows, err := tx.Query(`
+		SELECT id, date, regular, discounted, is_free, is_on_sale, discount_percent
+		FROM price_history WHERE scene_id = ? AND site_id = ?`,
+		sc.ID, sc.SiteID,
+	)
+	if err != nil {
+		return err
+	}
+	type existingRow struct {
+		id  int64
+		key key
+	}
+	var existing []existingRow
+	for rows.Next() {
+		var r existingRow
+		if err := rows.Scan(
+			&r.id, &r.key.date, &r.key.regular, &r.key.discounted,
+			&r.key.isFree, &r.key.isOnSale, &r.key.discountPercent,
+		); err != nil {
+			_ = rows.Close()
+			return err
+		}
+		existing = append(existing, r)
+	}
+	_ = rows.Close()
+	if err := rows.Err(); err != nil {
+		return err
+	}
+
+	// For each existing row: if the desired set still wants one, consume it;
+	// otherwise the row is no longer needed and is deleted.
+	for _, r := range existing {
+		if desired[r.key] > 0 {
+			desired[r.key]--
+			continue
+		}
+		if _, err := tx.Exec(
+			`DELETE FROM price_history WHERE id = ?`, r.id,
+		); err != nil {
+			return err
+		}
+	}
+
+	// Anything still owed in `desired` represents new snapshots to insert.
+	for _, p := range sc.PriceHistory {
+		k := keyOf(p)
+		if desired[k] <= 0 {
+			continue
+		}
+		desired[k]--
+		if _, err := tx.Exec(`
+			INSERT INTO price_history (scene_id, site_id, date, regular, discounted, is_free, is_on_sale, discount_percent)
+			VALUES (?,?,?,?,?,?,?,?)`,
+			sc.ID, sc.SiteID, k.date,
+			k.regular, k.discounted, k.isFree, k.isOnSale, k.discountPercent,
+		); err != nil {
+			return fmt.Errorf("inserting price history for %s: %w", sc.ID, err)
+		}
+	}
+
 	return nil
 }
 

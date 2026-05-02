@@ -335,3 +335,173 @@ func TestSQLiteMarkDeleted(t *testing.T) {
 		}
 	}
 }
+
+// TestSQLiteRelationDiffAddRemove covers the syncRelation diff path: re-saving
+// a scene with a different relation set should add new entries and drop removed
+// ones, without re-touching unchanged rows.
+func TestSQLiteRelationDiffAddRemove(t *testing.T) {
+	s := newTestDB(t)
+	now := time.Now().UTC().Truncate(time.Second)
+
+	scene := models.Scene{
+		ID: "1", SiteID: "manyvids", StudioURL: testStudioURL, Title: "X", ScrapedAt: now,
+		Performers: []string{"Alice", "Bob"},
+		Tags:       []string{"red", "green"},
+	}
+	if err := s.Save(testStudioURL, []models.Scene{scene}); err != nil {
+		t.Fatal(err)
+	}
+
+	// Drop Bob, add Carol; drop "green", add "blue".
+	scene.Performers = []string{"Alice", "Carol"}
+	scene.Tags = []string{"red", "blue"}
+	if err := s.Save(testStudioURL, []models.Scene{scene}); err != nil {
+		t.Fatal(err)
+	}
+
+	loaded, err := s.Load(testStudioURL)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(loaded) != 1 {
+		t.Fatalf("got %d scenes, want 1", len(loaded))
+	}
+	got := loaded[0]
+	wantPerformers := []string{"Alice", "Carol"}
+	if len(got.Performers) != 2 || got.Performers[0] != wantPerformers[0] || got.Performers[1] != wantPerformers[1] {
+		t.Errorf("Performers = %v, want %v", got.Performers, wantPerformers)
+	}
+	// Tags have no deterministic order in the schema; check as a set.
+	gotTags := map[string]bool{}
+	for _, t := range got.Tags {
+		gotTags[t] = true
+	}
+	if !gotTags["red"] || !gotTags["blue"] || gotTags["green"] || len(gotTags) != 2 {
+		t.Errorf("Tags = %v, want {red, blue}", got.Tags)
+	}
+}
+
+// TestSQLiteRelationDiffPositionUpdate covers the positioned-relation case:
+// reordering performers should update positions in place, not duplicate rows.
+func TestSQLiteRelationDiffPositionUpdate(t *testing.T) {
+	s := newTestDB(t)
+	now := time.Now().UTC().Truncate(time.Second)
+
+	scene := models.Scene{
+		ID: "1", SiteID: "manyvids", StudioURL: testStudioURL, Title: "X", ScrapedAt: now,
+		Performers: []string{"Alice", "Bob"},
+	}
+	if err := s.Save(testStudioURL, []models.Scene{scene}); err != nil {
+		t.Fatal(err)
+	}
+
+	scene.Performers = []string{"Bob", "Alice"}
+	if err := s.Save(testStudioURL, []models.Scene{scene}); err != nil {
+		t.Fatal(err)
+	}
+
+	loaded, _ := s.Load(testStudioURL)
+	got := loaded[0].Performers
+	if len(got) != 2 || got[0] != "Bob" || got[1] != "Alice" {
+		t.Errorf("Performers after reorder = %v, want [Bob, Alice]", got)
+	}
+
+	var rowCount int
+	if err := s.db.QueryRow(`SELECT COUNT(*) FROM scene_performers WHERE scene_id = '1'`).Scan(&rowCount); err != nil {
+		t.Fatal(err)
+	}
+	if rowCount != 2 {
+		t.Errorf("scene_performers row count = %d, want 2", rowCount)
+	}
+}
+
+// TestSQLitePriceHistoryDiff verifies that re-saving with the same history is
+// a no-op (no duplicate inserts) and that adding one snapshot inserts only
+// the new row.
+func TestSQLitePriceHistoryDiff(t *testing.T) {
+	s := newTestDB(t)
+	now := time.Now().UTC().Truncate(time.Second)
+
+	scene := models.Scene{
+		ID: "1", SiteID: "manyvids", StudioURL: testStudioURL, Title: "X", ScrapedAt: now,
+	}
+	scene.AddPrice(models.PriceSnapshot{Date: now, Regular: 29.99})
+	if err := s.Save(testStudioURL, []models.Scene{scene}); err != nil {
+		t.Fatal(err)
+	}
+
+	var firstID int64
+	if err := s.db.QueryRow(`SELECT id FROM price_history WHERE scene_id = '1'`).Scan(&firstID); err != nil {
+		t.Fatal(err)
+	}
+
+	// Re-save with no change: row id must be preserved (no DELETE+reinsert churn).
+	if err := s.Save(testStudioURL, []models.Scene{scene}); err != nil {
+		t.Fatal(err)
+	}
+	var afterResaveID int64
+	if err := s.db.QueryRow(`SELECT id FROM price_history WHERE scene_id = '1'`).Scan(&afterResaveID); err != nil {
+		t.Fatal(err)
+	}
+	if afterResaveID != firstID {
+		t.Errorf("re-save churned row id: %d -> %d (should be unchanged)", firstID, afterResaveID)
+	}
+
+	// Add a new snapshot. Original row id must still be preserved.
+	scene.AddPrice(models.PriceSnapshot{Date: now.Add(24 * time.Hour), Regular: 24.99, IsOnSale: true, Discounted: 24.99})
+	if err := s.Save(testStudioURL, []models.Scene{scene}); err != nil {
+		t.Fatal(err)
+	}
+	var rowCount int
+	if err := s.db.QueryRow(`SELECT COUNT(*) FROM price_history WHERE scene_id = '1'`).Scan(&rowCount); err != nil {
+		t.Fatal(err)
+	}
+	if rowCount != 2 {
+		t.Fatalf("price_history row count after add = %d, want 2", rowCount)
+	}
+	var stillFirst int64
+	if err := s.db.QueryRow(`SELECT id FROM price_history WHERE scene_id = '1' AND regular = 29.99`).Scan(&stillFirst); err != nil {
+		t.Fatal(err)
+	}
+	if stillFirst != firstID {
+		t.Errorf("original snapshot row id changed: %d -> %d (diff path should not delete unchanged rows)", firstID, stillFirst)
+	}
+}
+
+// TestSQLiteRelationFastPathPreservesEntities verifies the no-op case: re-saving
+// with identical relations should not churn the entity table or junction rows.
+func TestSQLiteRelationFastPathPreservesEntities(t *testing.T) {
+	s := newTestDB(t)
+	now := time.Now().UTC().Truncate(time.Second)
+
+	scene := models.Scene{
+		ID: "1", SiteID: "manyvids", StudioURL: testStudioURL, Title: "X", ScrapedAt: now,
+		Performers: []string{"Alice"},
+	}
+	if err := s.Save(testStudioURL, []models.Scene{scene}); err != nil {
+		t.Fatal(err)
+	}
+	var firstAliceID int64
+	if err := s.db.QueryRow(`SELECT id FROM performers WHERE name = 'Alice'`).Scan(&firstAliceID); err != nil {
+		t.Fatal(err)
+	}
+
+	// Re-save unchanged: Alice's id and her junction row must be untouched.
+	if err := s.Save(testStudioURL, []models.Scene{scene}); err != nil {
+		t.Fatal(err)
+	}
+	var afterAliceID int64
+	if err := s.db.QueryRow(`SELECT id FROM performers WHERE name = 'Alice'`).Scan(&afterAliceID); err != nil {
+		t.Fatal(err)
+	}
+	if afterAliceID != firstAliceID {
+		t.Errorf("Alice id churned: %d -> %d", firstAliceID, afterAliceID)
+	}
+	var perfCount int
+	if err := s.db.QueryRow(`SELECT COUNT(*) FROM scene_performers WHERE scene_id = '1'`).Scan(&perfCount); err != nil {
+		t.Fatal(err)
+	}
+	if perfCount != 1 {
+		t.Errorf("scene_performers row count after no-op resave = %d, want 1", perfCount)
+	}
+}
