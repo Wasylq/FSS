@@ -2,8 +2,10 @@ package stash
 
 import (
 	"encoding/json"
+	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 
@@ -342,6 +344,76 @@ func TestLoadJSONFiles(t *testing.T) {
 	}
 	if len(scenes) != 2 {
 		t.Errorf("got %d scenes, want 2", len(scenes))
+	}
+}
+
+// BenchmarkMatchSubstringLargeIndex exercises the substring-match slow path
+// against a 10k-title index so the inverted-index optimization can be
+// quantified. The filename does not exact-match any title, forcing the
+// substring path on every iteration.
+func BenchmarkMatchSubstringLargeIndex(b *testing.B) {
+	scenes := make([]models.Scene, 0, 10000)
+	for i := 0; i < 10000; i++ {
+		scenes = append(scenes, scene(
+			fmt.Sprintf("%d", i), "site",
+			fmt.Sprintf("Scene Title Number %d Special", i),
+		))
+	}
+	idx := BuildIndex(scenes)
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		idx.Match("Studio - Scene Title Number 4242 Special Edition.mp4", 0)
+	}
+}
+
+// BenchmarkMatchSubstringFullScan replicates the pre-optimization full-scan
+// algorithm so the speedup is measured against the same input as
+// BenchmarkMatchSubstringLargeIndex. Kept in test code only — the production
+// code no longer calls this path.
+func BenchmarkMatchSubstringFullScan(b *testing.B) {
+	scenes := make([]models.Scene, 0, 10000)
+	for i := 0; i < 10000; i++ {
+		scenes = append(scenes, scene(
+			fmt.Sprintf("%d", i), "site",
+			fmt.Sprintf("Scene Title Number %d Special", i),
+		))
+	}
+	idx := BuildIndex(scenes)
+	filename := "Studio - Scene Title Number 4242 Special Edition.mp4"
+
+	oldIsSubstring := func(title, filename string) bool {
+		titleWords := strings.Fields(title)
+		if len(titleWords) == 0 {
+			return false
+		}
+		filenameWords := strings.Fields(filename)
+		wordSet := make(map[string]bool, len(filenameWords))
+		for _, w := range filenameWords {
+			wordSet[w] = true
+		}
+		for _, w := range titleWords {
+			if !wordSet[w] {
+				return false
+			}
+		}
+		return float64(len(titleWords)) >= float64(len(filenameWords))*0.5
+	}
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		raw := stripExtension(filename)
+		norm := Normalize(raw)
+		if _, ok := idx.byTitle[norm]; ok {
+			continue
+		}
+		var matches int
+		for title := range idx.byTitle {
+			if oldIsSubstring(title, norm) {
+				matches++
+			}
+		}
+		_ = matches
 	}
 }
 

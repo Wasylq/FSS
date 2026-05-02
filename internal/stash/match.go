@@ -24,6 +24,87 @@ type SceneIndex struct {
 	byTitle          map[string][]models.Scene
 	byTitleSanitized map[string][]models.Scene // titles with noise words stripped
 	all              []models.Scene
+
+	titleSubstrIdx     *substringIndex
+	sanitizedSubstrIdx *substringIndex
+}
+
+// substringIndex narrows the substring-match search from O(N_titles) to roughly
+// O(rarest-word-bucket-size). Each title is filed under its lowest-frequency
+// word; only that bucket is consulted when its key word appears in the
+// filename. The full subset check still runs on the (small) shortlist.
+type substringIndex struct {
+	byRarestWord map[string][]indexedTitle
+}
+
+type indexedTitle struct {
+	title string
+	words []string
+}
+
+func newSubstringIndex(titleMap map[string][]models.Scene) *substringIndex {
+	freq := make(map[string]int)
+	for title := range titleMap {
+		for _, w := range strings.Fields(title) {
+			freq[w]++
+		}
+	}
+	si := &substringIndex{byRarestWord: make(map[string][]indexedTitle)}
+	for title := range titleMap {
+		words := strings.Fields(title)
+		if len(words) == 0 {
+			continue
+		}
+		rarest := words[0]
+		for _, w := range words[1:] {
+			if freq[w] < freq[rarest] {
+				rarest = w
+			}
+		}
+		si.byRarestWord[rarest] = append(si.byRarestWord[rarest], indexedTitle{
+			title: title,
+			words: words,
+		})
+	}
+	return si
+}
+
+// findCandidateTitles returns titles whose word-set is a subset of the
+// filename's word-set and whose word count is ≥ half the filename's word
+// count. Reached via the rarest-word inversion rather than a full scan.
+func (si *substringIndex) findCandidateTitles(filenameWords []string) []string {
+	if len(filenameWords) == 0 {
+		return nil
+	}
+	filenameSet := make(map[string]bool, len(filenameWords))
+	for _, w := range filenameWords {
+		filenameSet[w] = true
+	}
+	minLen := float64(len(filenameWords)) * 0.5
+	seen := make(map[string]bool)
+	var titles []string
+	for w := range filenameSet {
+		for _, it := range si.byRarestWord[w] {
+			if seen[it.title] {
+				continue
+			}
+			seen[it.title] = true
+			if float64(len(it.words)) < minLen {
+				continue
+			}
+			ok := true
+			for _, tw := range it.words {
+				if !filenameSet[tw] {
+					ok = false
+					break
+				}
+			}
+			if ok {
+				titles = append(titles, it.title)
+			}
+		}
+	}
+	return titles
 }
 
 type MatchConfidence int
@@ -119,6 +200,8 @@ func BuildIndex(scenes []models.Scene) *SceneIndex {
 			}
 		}
 	}
+	idx.titleSubstrIdx = newSubstringIndex(idx.byTitle)
+	idx.sanitizedSubstrIdx = newSubstringIndex(idx.byTitleSanitized)
 	return idx
 }
 
@@ -171,7 +254,7 @@ func (idx *SceneIndex) Match(filename string, fileDurationSec float64) MatchResu
 	}
 
 	// Pass 1: match against original titles.
-	if r := matchAgainst(idx.byTitle, norm, fileDurationSec); r.Confidence != MatchNone {
+	if r := matchAgainst(idx.byTitle, idx.titleSubstrIdx, norm, fileDurationSec); r.Confidence != MatchNone {
 		return r
 	}
 
@@ -180,7 +263,7 @@ func (idx *SceneIndex) Match(filename string, fileDurationSec float64) MatchResu
 	// sanitized title index might match.
 	sanitized := stripNoise(norm)
 	if sanitized != "" {
-		if r := matchAgainst(idx.byTitleSanitized, sanitized, fileDurationSec); r.Confidence != MatchNone {
+		if r := matchAgainst(idx.byTitleSanitized, idx.sanitizedSubstrIdx, sanitized, fileDurationSec); r.Confidence != MatchNone {
 			return r
 		}
 	}
@@ -188,7 +271,7 @@ func (idx *SceneIndex) Match(filename string, fileDurationSec float64) MatchResu
 	return MatchResult{Confidence: MatchNone}
 }
 
-func matchAgainst(titleMap map[string][]models.Scene, norm string, fileDurationSec float64) MatchResult {
+func matchAgainst(titleMap map[string][]models.Scene, si *substringIndex, norm string, fileDurationSec float64) MatchResult {
 	if scenes, ok := titleMap[norm]; ok {
 		filtered := filterByDuration(scenes, fileDurationSec)
 		if len(filtered) > 0 {
@@ -205,14 +288,13 @@ func matchAgainst(titleMap map[string][]models.Scene, norm string, fileDurationS
 		scenes []models.Scene
 	}
 	var candidates []candidate
-	for title, scenes := range titleMap {
-		if isSubstring(title, norm) {
-			filtered := filterByDuration(scenes, fileDurationSec)
-			if len(filtered) > 0 {
-				candidates = append(candidates, candidate{title: title, scenes: filtered})
-			} else if fileDurationSec == 0 {
-				candidates = append(candidates, candidate{title: title, scenes: scenes})
-			}
+	for _, title := range si.findCandidateTitles(strings.Fields(norm)) {
+		scenes := titleMap[title]
+		filtered := filterByDuration(scenes, fileDurationSec)
+		if len(filtered) > 0 {
+			candidates = append(candidates, candidate{title: title, scenes: filtered})
+		} else if fileDurationSec == 0 {
+			candidates = append(candidates, candidate{title: title, scenes: scenes})
 		}
 	}
 
@@ -294,26 +376,6 @@ func filterByDuration(scenes []models.Scene, fileDuration float64) []models.Scen
 		}
 	}
 	return out
-}
-
-func isSubstring(title, filename string) bool {
-	titleWords := strings.Fields(title)
-	if len(titleWords) == 0 {
-		return false
-	}
-	filenameWords := strings.Fields(filename)
-	wordSet := make(map[string]bool, len(filenameWords))
-	for _, w := range filenameWords {
-		wordSet[w] = true
-	}
-	for _, w := range titleWords {
-		if !wordSet[w] {
-			return false
-		}
-	}
-	// Title must cover at least half the filename's words to avoid
-	// short titles matching long unrelated filenames.
-	return float64(len(titleWords)) >= float64(len(filenameWords))*0.5
 }
 
 // countCodepoints returns the number of Unicode codepoints (runes) in s.
