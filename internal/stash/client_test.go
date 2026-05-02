@@ -166,3 +166,36 @@ func TestDownloadCoverImage_detectsContentTypeWhenMissing(t *testing.T) {
 		t.Errorf("expected detected image/png, got prefix of: %s", got[:40])
 	}
 }
+
+// TestClientDoJoinsAndRedactsGraphQLErrors covers two related concerns:
+// (1) all GraphQL error messages are joined into the returned error, not just
+// the first one; (2) the configured API key is redacted from each message in
+// case a misbehaving server ever echoes it back.
+func TestClientDoJoinsAndRedactsGraphQLErrors(t *testing.T) {
+	const apiKey = "supersecretkey-do-not-leak"
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{"errors":[{"message":"bad request: token=` + apiKey + `"},{"message":"second failure"}]}`))
+	}))
+	defer ts.Close()
+
+	c := &Client{
+		url:    ts.URL,
+		apiKey: apiKey,
+		http:   ts.Client(),
+	}
+	_, err := c.do(context.Background(), graphqlRequest{Query: "{ x }"})
+	if err == nil {
+		t.Fatal("expected error from server-returned GraphQL errors")
+	}
+	msg := err.Error()
+	if strings.Contains(msg, apiKey) {
+		t.Errorf("API key leaked in error message: %s", msg)
+	}
+	if !strings.Contains(msg, "[redacted]") {
+		t.Errorf("expected [redacted] marker, got: %s", msg)
+	}
+	if !strings.Contains(msg, "second failure") {
+		t.Errorf("second error was not joined into result, got: %s", msg)
+	}
+}

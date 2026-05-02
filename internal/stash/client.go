@@ -9,6 +9,7 @@ import (
 	"net"
 	"net/http"
 	"net/url"
+	"strings"
 	"time"
 
 	"github.com/Wasylq/FSS/internal/httpx"
@@ -145,7 +146,18 @@ func (c *Client) do(ctx context.Context, gql graphqlRequest) (json.RawMessage, e
 		return nil, fmt.Errorf("parsing stash response: %w", err)
 	}
 	if len(gqlResp.Errors) > 0 {
-		return nil, fmt.Errorf("stash api: %s", gqlResp.Errors[0].Message)
+		msgs := make([]string, len(gqlResp.Errors))
+		for i, e := range gqlResp.Errors {
+			msg := e.Message
+			// Defensive: if a misbehaving server echoes the API key back in an
+			// error (some GraphQL middlewares do this on auth failures), don't
+			// let it land in stderr / logs.
+			if c.apiKey != "" {
+				msg = strings.ReplaceAll(msg, c.apiKey, "[redacted]")
+			}
+			msgs[i] = msg
+		}
+		return nil, fmt.Errorf("stash api: %s", strings.Join(msgs, "; "))
 	}
 	return gqlResp.Data, nil
 }
