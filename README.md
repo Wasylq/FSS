@@ -9,7 +9,7 @@ Scrapes all scenes and metadata from a studio URL. Designed to be easily extende
 
 ## Supported sites
 
-**100 sites** across 15+ platforms — [full list with URL patterns →](docs/scrapers.md)
+**99 sites** across 15+ platforms — [full list with URL patterns →](docs/scrapers.md)
 
 | Platform | Count | Examples |
 |----------|------:|---------|
@@ -21,7 +21,7 @@ Scrapes all scenes and metadata from a studio URL. Designed to be easily extende
 | Up-Timely CMS | 5 | DAS!, Idea Pocket, Madonna, MOODYZ, S1 NO.1 STYLE |
 | SexMex Pro CMS | 3 | Exposed Latinas, SexMex, Trans Queens |
 | Stashbox | 1+ | StashDB, any stashbox instance (config-driven) |
-| Standalone | 49 | APClips, Clips4Sale, DEEP'S, Fakings, Glory Quest, GrandparentsX, Jules Jordan, Kink, KM Produce, ManyVids, Naked News, Pornhub, Pure CFNM, r18.dev, Takara TV, VENUS, … |
+| Standalone | 47 | APClips, Clips4Sale, DEEP'S, Fakings, Glory Quest, GrandparentsX, Jules Jordan, Kink, KM Produce, ManyVids, Naked News, Pornhub, Pure CFNM, r18.dev, Takara TV, VENUS, … |
 
 ## Install
 
@@ -36,8 +36,8 @@ Asset naming: `fss-<version>-<os>-<arch>.tar.gz` (or `.zip` for Windows). Availa
 #### Linux
 
 ```bash
-# Pick a version from https://github.com/Wasylq/FSS/releases/latest
-VERSION=v1.11.0
+# Resolves to the latest tag (e.g. v1.11.0) by following the GitHub redirect.
+VERSION=$(curl -sIL -o /dev/null -w '%{url_effective}' https://github.com/Wasylq/FSS/releases/latest | sed 's|.*/||')
 ARCH=amd64    # or arm64 for Raspberry Pi 4/5, ARM cloud instances, etc.
 
 curl -LO https://github.com/Wasylq/FSS/releases/download/${VERSION}/fss-${VERSION}-linux-${ARCH}.tar.gz
@@ -51,7 +51,7 @@ If you don't have sudo, drop `fss` into `~/.local/bin/` (already on your `PATH` 
 #### macOS
 
 ```bash
-VERSION=v1.11.0
+VERSION=$(curl -sIL -o /dev/null -w '%{url_effective}' https://github.com/Wasylq/FSS/releases/latest | sed 's|.*/||')
 ARCH=arm64    # Apple Silicon (M1+); use amd64 for Intel Macs
 
 curl -LO https://github.com/Wasylq/FSS/releases/download/${VERSION}/fss-${VERSION}-darwin-${ARCH}.tar.gz
@@ -68,7 +68,7 @@ fss version
 #### Windows (PowerShell)
 
 ```powershell
-$Version = "v1.11.0"
+$Version = (Invoke-RestMethod -Uri "https://api.github.com/repos/Wasylq/FSS/releases/latest").tag_name
 
 Invoke-WebRequest -Uri "https://github.com/Wasylq/FSS/releases/download/$Version/fss-$Version-windows-amd64.zip" -OutFile fss.zip
 Expand-Archive -Path fss.zip -DestinationPath .
@@ -88,15 +88,16 @@ fss version
 Each release also publishes `.deb` and `.rpm` packages. Download them from the [latest release](https://github.com/Wasylq/FSS/releases/latest).
 
 ```bash
-VERSION=1.11.0
-ARCH=amd64    # or arm64
+TAG=$(curl -sIL -o /dev/null -w '%{url_effective}' https://github.com/Wasylq/FSS/releases/latest | sed 's|.*/||')
+VERSION=${TAG#v}    # asset filenames drop the leading "v"
+ARCH=amd64          # or arm64
 
 # Debian / Ubuntu
-curl -LO "https://github.com/Wasylq/FSS/releases/download/v${VERSION}/fss_${VERSION}_${ARCH}.deb"
+curl -LO "https://github.com/Wasylq/FSS/releases/download/${TAG}/fss_${VERSION}_${ARCH}.deb"
 sudo dpkg -i "fss_${VERSION}_${ARCH}.deb"
 
 # Fedora / RHEL
-curl -LO "https://github.com/Wasylq/FSS/releases/download/v${VERSION}/fss-${VERSION}-1.x86_64.rpm"
+curl -LO "https://github.com/Wasylq/FSS/releases/download/${TAG}/fss-${VERSION}-1.x86_64.rpm"
 sudo rpm -i "fss-${VERSION}-1.x86_64.rpm"
 ```
 
