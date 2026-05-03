@@ -23,6 +23,7 @@ func init() {
 
 	stashUnmatchedCmd.Flags().String("performer", "", "filter by performer name")
 	stashUnmatchedCmd.Flags().String("studio", "", "filter by studio name")
+	stashUnmatchedCmd.Flags().String("filter", "", "filter by substring in file path")
 	stashUnmatchedCmd.Flags().Int("top", 10, "limit number of results (0 = all)")
 }
 
@@ -37,6 +38,7 @@ func runStashUnmatched(cmd *cobra.Command, _ []string) error {
 
 	performer, _ := cmd.Flags().GetString("performer")
 	studio, _ := cmd.Flags().GetString("studio")
+	pathFilter, _ := cmd.Flags().GetString("filter")
 
 	top, _ := cmd.Flags().GetInt("top")
 
@@ -45,6 +47,7 @@ func runStashUnmatched(cmd *cobra.Command, _ []string) error {
 		StashIDCount:  &zero,
 		PerformerName: performer,
 		StudioName:    studio,
+		PathFilter:    pathFilter,
 	}
 
 	fmt.Print("Querying unmatched scenes...")

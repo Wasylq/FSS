@@ -98,6 +98,7 @@ type FindScenesFilter struct {
 	PerformerName string `json:"-"`
 	StudioName    string `json:"-"`
 	StashIDCount  *int   `json:"-"`
+	PathFilter    string `json:"-"`
 }
 
 type graphqlRequest struct {
@@ -271,6 +272,13 @@ func (c *Client) FindScenes(ctx context.Context, filter FindScenesFilter, page, 
 			"value":    []string{studioID},
 			"modifier": "INCLUDES_ALL",
 			"depth":    0,
+		}
+	}
+
+	if filter.PathFilter != "" {
+		sceneFilter["path"] = map[string]any{
+			"value":    filter.PathFilter,
+			"modifier": "INCLUDES",
 		}
 	}
 

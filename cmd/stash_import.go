@@ -42,6 +42,7 @@ func init() {
 	stashImportCmd.Flags().Bool("apply", false, "actually write changes (default is dry-run)")
 	stashImportCmd.Flags().String("performer", "", "filter Stash scenes by performer name")
 	stashImportCmd.Flags().String("studio", "", "filter Stash scenes by studio name")
+	stashImportCmd.Flags().String("filter", "", "filter Stash scenes by substring in file path")
 	stashImportCmd.Flags().Int("top", 0, "limit number of Stash scenes to process (0 = all)")
 	stashImportCmd.Flags().StringSlice("fields", nil, "only update these fields (title,details,date,urls,tags,performers,studio,cover); default: all")
 }
@@ -155,6 +156,7 @@ func runStashImport(cmd *cobra.Command, _ []string) error {
 
 	performer, _ := cmd.Flags().GetString("performer")
 	studio, _ := cmd.Flags().GetString("studio")
+	pathFilter, _ := cmd.Flags().GetString("filter")
 	top, _ := cmd.Flags().GetInt("top")
 
 	// --- query stash scenes ---
@@ -162,6 +164,7 @@ func runStashImport(cmd *cobra.Command, _ []string) error {
 	filter := stash.FindScenesFilter{
 		PerformerName: performer,
 		StudioName:    studio,
+		PathFilter:    pathFilter,
 	}
 	if !includeStashbox {
 		filter.StashIDCount = &zero

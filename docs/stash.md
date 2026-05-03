@@ -32,6 +32,7 @@ Lists Stash scenes that have no StashDB metadata (`stash_id_count == 0`).
 | `--api-key` | string | _(empty)_ | Stash API key (also: `FSS_STASH_API_KEY` env var) |
 | `--performer` | string | _(none)_ | Filter by performer name |
 | `--studio` | string | _(none)_ | Filter by studio name |
+| `--filter` | string | _(none)_ | Filter by substring in file path |
 | `--top` | int | `10` | Limit number of results; 0 = all |
 
 ### `fss stash import`
@@ -55,6 +56,7 @@ Matches FSS JSON scenes against Stash scenes by filename and pushes metadata. **
 | `--apply` | bool | `false` | Actually write changes to Stash |
 | `--performer` | string | _(none)_ | Filter Stash scenes by performer name |
 | `--studio` | string | _(none)_ | Filter Stash scenes by studio name |
+| `--filter` | string | _(none)_ | Filter Stash scenes by substring in file path |
 | `--top` | int | `0` | Limit number of Stash scenes to process; 0 = all |
 
 ## Listing unmatched scenes
@@ -63,6 +65,7 @@ Matches FSS JSON scenes against Stash scenes by filename and pushes metadata. **
 fss stash unmatched
 fss stash unmatched --performer "Bettie Bondage"
 fss stash unmatched --studio "Some Studio"
+fss stash unmatched --filter "glamourSpanking"
 ```
 
 Lists scenes in Stash with `stash_id_count == 0` (no StashDB metadata). Output is a table with ID, filename, title, and performers.

@@ -159,6 +159,40 @@ func TestLiveFilterByStudio(t *testing.T) {
 	}
 }
 
+func TestLiveFilterByPath(t *testing.T) {
+	c := stashClient(t)
+	ctx := context.Background()
+
+	scenes, _, err := c.FindScenes(ctx, FindScenesFilter{}, 1, 5)
+	if err != nil {
+		t.Fatalf("FindScenes: %v", err)
+	}
+	if len(scenes) == 0 {
+		t.Skip("No scenes found")
+	}
+
+	// Use a substring from the first scene's file path.
+	var substr string
+	for _, s := range scenes {
+		if len(s.Files) > 0 && s.Files[0].Basename != "" {
+			substr = s.Files[0].Basename[:min(10, len(s.Files[0].Basename))]
+			break
+		}
+	}
+	if substr == "" {
+		t.Skip("No scenes with file paths found")
+	}
+
+	filtered, count, err := c.FindScenes(ctx, FindScenesFilter{PathFilter: substr}, 1, 5)
+	if err != nil {
+		t.Fatalf("FindScenes(path=%q): %v", substr, err)
+	}
+	t.Logf("Filter by path %q: %d scenes (total %d)", substr, len(filtered), count)
+	if count == 0 {
+		t.Errorf("expected at least 1 scene for path substring %q", substr)
+	}
+}
+
 func TestLiveFindTagByName(t *testing.T) {
 	c := stashClient(t)
 	ctx := context.Background()
