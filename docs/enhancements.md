@@ -17,3 +17,12 @@ GoReleaser produces `.deb` and `.rpm` packages attached to each GitHub Release, 
 **Options**: [Packagecloud](https://packagecloud.io/) (free for open-source), [Cloudsmith](https://cloudsmith.com/) (free tier), or [Gemfury](https://gemfury.com/). All provide APT and YUM/DNF repos with a stable URL users add once.
 
 **Scope**: Add a post-release GitHub Actions step that pushes `.deb`/`.rpm` artifacts to the hosted repo. ~10-line workflow addition + one-time account setup. GoReleaser's `publishers` feature can do this natively with Packagecloud.
+
+## `fss identify` — Future Improvements
+
+`fss identify` is implemented — see [identify.md](identify.md) for full documentation. Potential future additions:
+
+- **`--nfo-dir`**: Write `.nfo` files to a `.nfo/` subdirectory instead of next to the video, keeping the video folder clean. The Stash NFO scraper supports both locations.
+- **ffprobe duration**: Use `ffprobe` (if available) to read video file durations for better matching accuracy, especially for the trailing-number pass which requires duration to disambiguate. Fall back to duration=0 if not installed.
+- **Importable package**: Move `internal/identify` to a top-level `identify` package so external Go code can use it as a library. Requires also extracting the matching engine from `internal/stash`.
+

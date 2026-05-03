@@ -11,6 +11,7 @@ Full technical reference. Use the section links to jump to what you need.
 - [SQLite](#sqlite)
 
 For Stash integration, see [stash.md](stash.md).
+For NFO sidecar file generation, see [identify.md](identify.md).
 
 ---
 
