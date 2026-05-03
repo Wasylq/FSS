@@ -294,6 +294,83 @@ func TestMatchDurationUnknownPassesThrough(t *testing.T) {
 	}
 }
 
+func TestMatchTrailingNumberStripped(t *testing.T) {
+	idx := BuildIndex([]models.Scene{
+		sceneWithDuration("1", "spankingglamour", "Artemisia Love 1", 795),
+		sceneWithDuration("2", "spankingglamour", "Artemisia Love 2", 715),
+	})
+
+	// Filename has a different trailing number (site-wide episode ID).
+	// Pass 3 strips trailing numbers from both sides, duration disambiguates.
+	r := idx.Match("[SpankingGlamour] - Artemisia Love - 044.mp4", 795)
+	if r.Confidence != MatchSubstring {
+		t.Errorf("confidence = %v, want SUBSTR", r.Confidence)
+	}
+	if len(r.Scenes) != 1 || r.Scenes[0].ID != "1" {
+		t.Errorf("scenes = %+v, want single scene id=1", r.Scenes)
+	}
+}
+
+func TestMatchTrailingNumberNoMatch(t *testing.T) {
+	idx := BuildIndex([]models.Scene{
+		scene("1", "site", "A Title Without Number"),
+	})
+
+	// Title has no trailing number — pass 3 should not engage.
+	r := idx.Match("Something Else 99.mp4", 0)
+	if r.Confidence != MatchNone {
+		t.Errorf("confidence = %v, want NONE", r.Confidence)
+	}
+}
+
+func TestMatchTrailingNumberSkippedWithoutDuration(t *testing.T) {
+	idx := BuildIndex([]models.Scene{
+		sceneWithDuration("1", "site", "Rachel 1", 267),
+		sceneWithDuration("2", "site", "Rachel 2", 358),
+		sceneWithDuration("3", "site", "Rachel 3", 345),
+	})
+
+	// Without duration info, pass 3 is not attempted — too risky without
+	// duration to disambiguate.
+	r := idx.Match("[Site] - Rachel - 108.mp4", 0)
+	if r.Confidence != MatchNone {
+		t.Errorf("confidence = %v, want NONE (pass 3 requires duration)", r.Confidence)
+	}
+}
+
+func TestMatchTrailingNumberShortNameWithDuration(t *testing.T) {
+	idx := BuildIndex([]models.Scene{
+		sceneWithDuration("1", "site", "Marsha 1", 597),
+		sceneWithDuration("2", "site", "Marsha 2", 506),
+	})
+
+	// Single-word performer name — would fail the 50% word-count check in
+	// passes 1-2, but pass 3 relaxes it when duration is available.
+	r := idx.Match("[SpankingGlamour] - Marsha - 042.mp4", 597)
+	if r.Confidence == MatchNone || r.Confidence == MatchAmbiguous {
+		t.Errorf("confidence = %v, want a definite match", r.Confidence)
+	}
+	if len(r.Scenes) != 1 || r.Scenes[0].ID != "1" {
+		t.Errorf("scenes = %+v, want single scene id=1", r.Scenes)
+	}
+}
+
+func TestMatchTrailingNumberDisambiguatedByDuration(t *testing.T) {
+	idx := BuildIndex([]models.Scene{
+		sceneWithDuration("1", "site", "Rachel 1", 267),
+		sceneWithDuration("2", "site", "Rachel 2", 358),
+		sceneWithDuration("3", "site", "Rachel 3", 345),
+	})
+
+	r := idx.Match("[Site] - Rachel - 108.mp4", 267)
+	if r.Confidence == MatchNone || r.Confidence == MatchAmbiguous {
+		t.Errorf("confidence = %v, want a definite match", r.Confidence)
+	}
+	if len(r.Scenes) != 1 || r.Scenes[0].ID != "1" {
+		t.Errorf("scenes = %+v, want single scene id=1", r.Scenes)
+	}
+}
+
 func TestDurationClose(t *testing.T) {
 	// tolerance = max(fileDuration * 10%, 30s)
 	cases := []struct {

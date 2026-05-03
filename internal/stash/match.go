@@ -21,12 +21,14 @@ type studioFile struct {
 }
 
 type SceneIndex struct {
-	byTitle          map[string][]models.Scene
-	byTitleSanitized map[string][]models.Scene // titles with noise words stripped
-	all              []models.Scene
+	byTitle             map[string][]models.Scene
+	byTitleSanitized    map[string][]models.Scene // titles with noise words stripped
+	byTitleNoTrailingID map[string][]models.Scene // titles with trailing number stripped
+	all                 []models.Scene
 
-	titleSubstrIdx     *substringIndex
-	sanitizedSubstrIdx *substringIndex
+	titleSubstrIdx        *substringIndex
+	sanitizedSubstrIdx    *substringIndex
+	noTrailingIDSubstrIdx *substringIndex
 }
 
 // substringIndex narrows the substring-match search from O(N_titles) to roughly
@@ -70,9 +72,9 @@ func newSubstringIndex(titleMap map[string][]models.Scene) *substringIndex {
 }
 
 // findCandidateTitles returns titles whose word-set is a subset of the
-// filename's word-set and whose word count is ≥ half the filename's word
-// count. Reached via the rarest-word inversion rather than a full scan.
-func (si *substringIndex) findCandidateTitles(filenameWords []string) []string {
+// filename's word-set and whose word count is ≥ minWordRatio of the filename's
+// word count. Reached via the rarest-word inversion rather than a full scan.
+func (si *substringIndex) findCandidateTitles(filenameWords []string, minWordRatio float64) []string {
 	if len(filenameWords) == 0 {
 		return nil
 	}
@@ -80,7 +82,7 @@ func (si *substringIndex) findCandidateTitles(filenameWords []string) []string {
 	for _, w := range filenameWords {
 		filenameSet[w] = true
 	}
-	minLen := float64(len(filenameWords)) * 0.5
+	minLen := float64(len(filenameWords)) * minWordRatio
 	seen := make(map[string]bool)
 	var titles []string
 	for w := range filenameSet {
@@ -184,11 +186,18 @@ func stripNoise(s string) string {
 	return strings.Join(out, " ")
 }
 
+var trailingNumberRe = regexp.MustCompile(`\s+\d+$`)
+
+func stripTrailingNumber(s string) string {
+	return trailingNumberRe.ReplaceAllString(s, "")
+}
+
 func BuildIndex(scenes []models.Scene) *SceneIndex {
 	idx := &SceneIndex{
-		byTitle:          make(map[string][]models.Scene),
-		byTitleSanitized: make(map[string][]models.Scene),
-		all:              scenes,
+		byTitle:             make(map[string][]models.Scene),
+		byTitleSanitized:    make(map[string][]models.Scene),
+		byTitleNoTrailingID: make(map[string][]models.Scene),
+		all:                 scenes,
 	}
 	for _, s := range scenes {
 		norm := Normalize(s.Title)
@@ -198,10 +207,15 @@ func BuildIndex(scenes []models.Scene) *SceneIndex {
 			if sanitized != "" {
 				idx.byTitleSanitized[sanitized] = append(idx.byTitleSanitized[sanitized], s)
 			}
+			noID := stripTrailingNumber(norm)
+			if noID != "" && noID != norm {
+				idx.byTitleNoTrailingID[noID] = append(idx.byTitleNoTrailingID[noID], s)
+			}
 		}
 	}
 	idx.titleSubstrIdx = newSubstringIndex(idx.byTitle)
 	idx.sanitizedSubstrIdx = newSubstringIndex(idx.byTitleSanitized)
+	idx.noTrailingIDSubstrIdx = newSubstringIndex(idx.byTitleNoTrailingID)
 	return idx
 }
 
@@ -254,7 +268,7 @@ func (idx *SceneIndex) Match(filename string, fileDurationSec float64) MatchResu
 	}
 
 	// Pass 1: match against original titles.
-	if r := matchAgainst(idx.byTitle, idx.titleSubstrIdx, norm, fileDurationSec); r.Confidence != MatchNone {
+	if r := matchAgainst(idx.byTitle, idx.titleSubstrIdx, norm, fileDurationSec, 0.5); r.Confidence != MatchNone {
 		return r
 	}
 
@@ -263,7 +277,20 @@ func (idx *SceneIndex) Match(filename string, fileDurationSec float64) MatchResu
 	// sanitized title index might match.
 	sanitized := stripNoise(norm)
 	if sanitized != "" {
-		if r := matchAgainst(idx.byTitleSanitized, idx.sanitizedSubstrIdx, sanitized, fileDurationSec); r.Confidence != MatchNone {
+		if r := matchAgainst(idx.byTitleSanitized, idx.sanitizedSubstrIdx, sanitized, fileDurationSec, 0.5); r.Confidence != MatchNone {
+			return r
+		}
+	}
+
+	// Pass 3: strip trailing numbers from both sides. Handles sites where the
+	// FSS title uses a per-performer sequence number (e.g. "Artemisia Love 1")
+	// but the filename uses a site-wide episode number (e.g. "044"). The
+	// performer name is the real match key; duration disambiguates. Only
+	// attempted when file duration is known — without it, single-word names
+	// like "Marsha" would match too broadly.
+	noID := stripTrailingNumber(norm)
+	if noID != "" && noID != norm && fileDurationSec > 0 {
+		if r := matchAgainst(idx.byTitleNoTrailingID, idx.noTrailingIDSubstrIdx, noID, fileDurationSec, 0); r.Confidence != MatchNone {
 			return r
 		}
 	}
@@ -271,7 +298,7 @@ func (idx *SceneIndex) Match(filename string, fileDurationSec float64) MatchResu
 	return MatchResult{Confidence: MatchNone}
 }
 
-func matchAgainst(titleMap map[string][]models.Scene, si *substringIndex, norm string, fileDurationSec float64) MatchResult {
+func matchAgainst(titleMap map[string][]models.Scene, si *substringIndex, norm string, fileDurationSec float64, minWordRatio float64) MatchResult {
 	if scenes, ok := titleMap[norm]; ok {
 		filtered := filterByDuration(scenes, fileDurationSec)
 		if len(filtered) > 0 {
@@ -288,7 +315,7 @@ func matchAgainst(titleMap map[string][]models.Scene, si *substringIndex, norm s
 		scenes []models.Scene
 	}
 	var candidates []candidate
-	for _, title := range si.findCandidateTitles(strings.Fields(norm)) {
+	for _, title := range si.findCandidateTitles(strings.Fields(norm), minWordRatio) {
 		scenes := titleMap[title]
 		filtered := filterByDuration(scenes, fileDurationSec)
 		if len(filtered) > 0 {

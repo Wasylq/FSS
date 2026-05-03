@@ -118,23 +118,26 @@ Dry-run: 12 would match, 38 already up-to-date, 5 skipped, 0 ambiguous
 
 FSS matches Stash scenes to FSS scenes by comparing each Stash scene's filename (minus extension) against FSS scene titles. Both sides are normalized: camelCase boundaries split into words (e.g. `SunnyDayAtTheBeach` → `sunny day at the beach`), format suffixes stripped (e.g. `(FULL HD)`, `(mp4)`, `(mov)`), lowercased, non-alphanumeric characters replaced with spaces, trimmed.
 
-**Two-pass matching:**
+**Three-pass matching** — returns the first hit:
 
 1. **Primary index** — match normalized filename against normalized titles:
    - Exact match (filename == title)
    - Substring match: all title words present in filename as whole words, and title covers >=50% of filename words
 2. **Sanitized index** — strip noise words (e.g. "step") from both filename and titles, then retry exact + substring. This handles cases where studios add "step-" prefixes that aren't in the filename.
+3. **Trailing-number index** — strip the last numeric token from both filename and titles, then retry exact + substring with **no word-count minimum**. This pass **only fires when the Stash file has a known duration**, since duration is the sole guard against false positives. Designed for sites like SpankingGlamour where FSS titles use a per-performer sequence number (`Artemisia Love 1`) but the filename uses a site-wide episode number (`[SpankingGlamour] - Artemisia Love - 044.mp4`) — different numbering systems that passes 1–2 can never reconcile. Dropping the word-count minimum also lets single-word performer names like `Marsha` match.
 
-**Duration filtering:** When the file's duration is known, candidates where the FSS scene duration differs by more than `max(10% of file duration, 30 seconds)` are rejected. This reduces false positives when multiple scenes have similar titles.
+**Duration filtering:** When the file's duration is known, candidates where the FSS scene duration differs by more than `max(10% of file duration, 30 seconds)` are rejected. This reduces false positives when multiple scenes have similar titles. In pass 3, duration is required — without it, the pass is skipped entirely.
 
-**Disambiguation:** When multiple substring matches tie on title length, the match is flagged as ambiguous and skipped.
+**Disambiguation:** When multiple distinct titles match as substrings, the longest (most specific) title wins. If two titles tie in length, the match is flagged as ambiguous and skipped.
+
+**Performance:** The index uses a rarest-word inverted lookup — each title is filed under its least-frequent word — so the subset check runs against a small bucket rather than scanning all titles on every match.
 
 Match confidence levels:
 
 | Level | Meaning |
 |-------|---------|
 | **EXACT** | Normalized filename equals normalized title |
-| **SUBSTR** | All title words are present in the filename (whole-word, >=50% overlap). When multiple titles match, the longest (most specific) wins |
+| **SUBSTR** | All title words are present in the filename. When multiple titles match, the longest (most specific) wins |
 | **AMBIGUOUS** | Multiple distinct titles match with equal specificity — skipped |
 | **SKIP** | No match found |
 
