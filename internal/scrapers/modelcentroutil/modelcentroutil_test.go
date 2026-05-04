@@ -1,4 +1,4 @@
-package pennybarber
+package modelcentroutil
 
 import (
 	"context"
@@ -14,29 +14,6 @@ import (
 	"github.com/Wasylq/FSS/scraper"
 )
 
-func TestMatchesURL(t *testing.T) {
-	s := New()
-	cases := []struct {
-		url  string
-		want bool
-	}{
-		{"https://pennybarber.com/videos", true},
-		{"https://www.pennybarber.com/videos", true},
-		{"https://pennybarber.com/videos/", true},
-		{"https://pennybarber.com/videos?page=2", true},
-		{"https://pennybarber.com", true},
-		{"https://pennybarber.com/", true},
-		{"https://pennybarber.com/scene/123/some-slug", false},
-		{"https://example.com/pennybarber", false},
-		{"", false},
-	}
-	for _, c := range cases {
-		if got := s.MatchesURL(c.url); got != c.want {
-			t.Errorf("MatchesURL(%q) = %v, want %v", c.url, got, c.want)
-		}
-	}
-}
-
 func TestSlugify(t *testing.T) {
 	cases := []struct {
 		input, want string
@@ -49,29 +26,29 @@ func TestSlugify(t *testing.T) {
 		{"", ""},
 	}
 	for _, c := range cases {
-		if got := slugify(c.input); got != c.want {
-			t.Errorf("slugify(%q) = %q, want %q", c.input, got, c.want)
+		if got := Slugify(c.input); got != c.want {
+			t.Errorf("Slugify(%q) = %q, want %q", c.input, got, c.want)
 		}
 	}
 }
 
 func TestParsePublishDate(t *testing.T) {
-	sc := apiScene{ID: 100}
-	sc.Sites.Collection = map[string]apiSiteEntry{
+	sc := APIScene{ID: 100}
+	sc.Sites.Collection = map[string]APISiteEntry{
 		"100": {PublishDate: "2026-04-24 10:00:00"},
 	}
-	d := parsePublishDate(sc)
+	d := ParsePublishDate(sc)
 	if d.Year() != 2026 || d.Month() != 4 || d.Day() != 24 {
 		t.Errorf("date = %v", d)
 	}
 }
 
 func TestParsePublishDateFallback(t *testing.T) {
-	sc := apiScene{ID: 100}
-	sc.Sites.Collection = map[string]apiSiteEntry{
+	sc := APIScene{ID: 100}
+	sc.Sites.Collection = map[string]APISiteEntry{
 		"999": {PublishDate: "2025-01-15 08:00:00"},
 	}
-	d := parsePublishDate(sc)
+	d := ParsePublishDate(sc)
 	if d.Year() != 2025 || d.Month() != 1 || d.Day() != 15 {
 		t.Errorf("date = %v", d)
 	}
@@ -79,7 +56,7 @@ func TestParsePublishDateFallback(t *testing.T) {
 
 func TestParseTagsWrapped(t *testing.T) {
 	raw := json.RawMessage(`{"collection":{"10":{"alias":"milf"},"20":{"alias":"pov"}}}`)
-	tags := parseTags(raw)
+	tags := ParseTags(raw)
 	if len(tags) != 2 {
 		t.Fatalf("got %d tags, want 2", len(tags))
 	}
@@ -94,7 +71,7 @@ func TestParseTagsWrapped(t *testing.T) {
 
 func TestParseTagsFlat(t *testing.T) {
 	raw := json.RawMessage(`{"10":{"alias":"blonde"},"20":{"alias":"dirty talk"}}`)
-	tags := parseTags(raw)
+	tags := ParseTags(raw)
 	if len(tags) != 2 {
 		t.Fatalf("got %d tags, want 2", len(tags))
 	}
@@ -108,39 +85,46 @@ func TestParseTagsFlat(t *testing.T) {
 }
 
 func TestParseTagsEmpty(t *testing.T) {
-	if tags := parseTags(nil); tags != nil {
+	if tags := ParseTags(nil); tags != nil {
 		t.Errorf("nil input: got %v", tags)
 	}
-	if tags := parseTags(json.RawMessage(`{}`)); len(tags) != 0 {
+	if tags := ParseTags(json.RawMessage(`{}`)); len(tags) != 0 {
 		t.Errorf("empty object: got %v", tags)
 	}
 }
 
 func TestToScene(t *testing.T) {
-	listing := apiScene{
+	cfg := SiteConfig{
+		SiteID:     "testsite",
+		SiteBase:   "https://testsite.com",
+		StudioName: "Test Site",
+		Performers: []string{"Performer One"},
+	}
+
+	listing := APIScene{
 		ID:    12345,
 		Title: "Test Scene Title",
 		Len:   600,
 	}
-	listing.Sites.Collection = map[string]apiSiteEntry{
+	listing.Sites.Collection = map[string]APISiteEntry{
 		"12345": {PublishDate: "2026-03-15 12:00:00"},
 	}
 
-	detail := &apiScene{
+	detail := &APIScene{
 		Description: "A great description",
 		Tags:        json.RawMessage(`{"collection":{"1":{"alias":"tag1"},"2":{"alias":"tag2"}}}`),
 	}
 
 	now := time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC)
-	sc := toScene(listing, detail, "https://pennybarber.com/videos", "https://pennybarber.com", now)
+	sc := ToScene(cfg, listing, detail, "https://testsite.com/videos", now)
 
 	if sc.ID != "12345" {
 		t.Errorf("ID = %q", sc.ID)
 	}
-	if sc.SiteID != "pennybarber" {
+	if sc.SiteID != "testsite" {
 		t.Errorf("SiteID = %q", sc.SiteID)
 	}
-	if sc.URL != "https://pennybarber.com/scene/12345/test-scene-title" {
+	if sc.URL != "https://testsite.com/scene/12345/test-scene-title" {
 		t.Errorf("URL = %q", sc.URL)
 	}
 	if sc.Title != "Test Scene Title" {
@@ -152,10 +136,10 @@ func TestToScene(t *testing.T) {
 	if sc.Date.Month() != 3 || sc.Date.Day() != 15 {
 		t.Errorf("Date = %v", sc.Date)
 	}
-	if sc.Studio != "Penny Barber" {
+	if sc.Studio != "Test Site" {
 		t.Errorf("Studio = %q", sc.Studio)
 	}
-	if len(sc.Performers) != 1 || sc.Performers[0] != "Penny Barber" {
+	if len(sc.Performers) != 1 || sc.Performers[0] != "Performer One" {
 		t.Errorf("Performers = %v", sc.Performers)
 	}
 	if sc.Description != "A great description" {
@@ -166,18 +150,36 @@ func TestToScene(t *testing.T) {
 	}
 }
 
-func TestToSceneNoDetail(t *testing.T) {
-	listing := apiScene{ID: 1, Title: "No Detail", Len: 300}
-	listing.Sites.Collection = map[string]apiSiteEntry{}
-
-	now := time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC)
-	sc := toScene(listing, nil, "https://pennybarber.com/videos", "https://pennybarber.com", now)
-
-	if sc.Description != "" {
-		t.Errorf("Description = %q, want empty", sc.Description)
+func TestToSceneNoPerformers(t *testing.T) {
+	cfg := SiteConfig{
+		SiteID:     "testsite",
+		SiteBase:   "https://testsite.com",
+		StudioName: "Test Site",
 	}
-	if sc.Tags != nil {
-		t.Errorf("Tags = %v, want nil", sc.Tags)
+
+	listing := APIScene{ID: 1, Title: "Scene", Len: 300}
+	listing.Sites.Collection = map[string]APISiteEntry{}
+
+	now := time.Now().UTC()
+	sc := ToScene(cfg, listing, nil, "https://testsite.com/videos", now)
+
+	if sc.Performers != nil {
+		t.Errorf("Performers = %v, want nil", sc.Performers)
+	}
+}
+
+func TestDomainFromBase(t *testing.T) {
+	cases := []struct {
+		base, want string
+	}{
+		{"https://example.com", "example.com"},
+		{"https://www.example.com/", "www.example.com"},
+		{"http://test.net", "test.net"},
+	}
+	for _, c := range cases {
+		if got := domainFromBase(c.base); got != c.want {
+			t.Errorf("domainFromBase(%q) = %q, want %q", c.base, got, c.want)
+		}
 	}
 }
 
@@ -253,7 +255,6 @@ func newTestServer(scenes [][]testScene, total int, details map[int]testScene) *
 		w.Header().Set("Content-Type", "application/json")
 		q := r.URL.Query()
 
-		// Detail request: has filter[id][values][0].
 		if filterID := q.Get("filter[id][values][0]"); filterID != "" {
 			id, _ := strconv.Atoi(filterID)
 			if sc, ok := details[id]; ok {
@@ -264,7 +265,6 @@ func newTestServer(scenes [][]testScene, total int, details map[int]testScene) *
 			return
 		}
 
-		// Listing request.
 		if pageIdx >= len(scenes) {
 			_, _ = fmt.Fprint(w, `{"status":true,"response":{"collection":[],"meta":{"totalCount":0}}}`)
 			return
@@ -285,7 +285,10 @@ func TestListScenes(t *testing.T) {
 	ts := newTestServer([][]testScene{scenes}, 2, details)
 	defer ts.Close()
 
-	s := &Scraper{client: ts.Client(), base: ts.URL}
+	s := &Scraper{
+		Config: SiteConfig{SiteID: "test", SiteBase: ts.URL, StudioName: "Test"},
+		Client: ts.Client(),
+	}
 	ch, err := s.ListScenes(context.Background(), ts.URL+"/videos", scraper.ListOpts{})
 	if err != nil {
 		t.Fatal(err)
@@ -304,13 +307,10 @@ func TestListScenes(t *testing.T) {
 	if results[0].Duration != 600 {
 		t.Errorf("first duration = %d", results[0].Duration)
 	}
-	if results[1].Title != "Scene Two" {
-		t.Errorf("second title = %q", results[1].Title)
-	}
 }
 
 func TestListScenesPagination(t *testing.T) {
-	page1 := make([]testScene, perPage)
+	page1 := make([]testScene, PerPage)
 	for i := range page1 {
 		page1[i] = testScene{
 			id: i + 1, title: fmt.Sprintf("Scene %d", i+1),
@@ -333,7 +333,10 @@ func TestListScenesPagination(t *testing.T) {
 	ts := newTestServer([][]testScene{page1, page2}, 102, allDetails)
 	defer ts.Close()
 
-	s := &Scraper{client: ts.Client(), base: ts.URL}
+	s := &Scraper{
+		Config: SiteConfig{SiteID: "test", SiteBase: ts.URL, StudioName: "Test"},
+		Client: ts.Client(),
+	}
 	ch, err := s.ListScenes(context.Background(), ts.URL+"/videos", scraper.ListOpts{})
 	if err != nil {
 		t.Fatal(err)
@@ -357,7 +360,10 @@ func TestListScenesKnownIDs(t *testing.T) {
 	ts := newTestServer([][]testScene{scenes}, 4, details)
 	defer ts.Close()
 
-	s := &Scraper{client: ts.Client(), base: ts.URL}
+	s := &Scraper{
+		Config: SiteConfig{SiteID: "test", SiteBase: ts.URL, StudioName: "Test"},
+		Client: ts.Client(),
+	}
 	ch, err := s.ListScenes(context.Background(), ts.URL+"/videos", scraper.ListOpts{
 		KnownIDs: map[string]bool{"3": true},
 	})

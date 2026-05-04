@@ -52,6 +52,7 @@ import (
 	_ "github.com/Wasylq/FSS/internal/scrapers/maturenl"
 	_ "github.com/Wasylq/FSS/internal/scrapers/milfvr"
 	_ "github.com/Wasylq/FSS/internal/scrapers/missax"
+	_ "github.com/Wasylq/FSS/internal/scrapers/modelcentro"
 	_ "github.com/Wasylq/FSS/internal/scrapers/mofos"
 	_ "github.com/Wasylq/FSS/internal/scrapers/momcomesfirst"
 	_ "github.com/Wasylq/FSS/internal/scrapers/mommyblowsbest"
@@ -69,7 +70,7 @@ import (
 	_ "github.com/Wasylq/FSS/internal/scrapers/nubiles"
 	_ "github.com/Wasylq/FSS/internal/scrapers/oopsfamily"
 	_ "github.com/Wasylq/FSS/internal/scrapers/over40handjobs"
-	_ "github.com/Wasylq/FSS/internal/scrapers/pennybarber"
+
 	_ "github.com/Wasylq/FSS/internal/scrapers/perfectgirlfriend"
 	_ "github.com/Wasylq/FSS/internal/scrapers/pornhub"
 	_ "github.com/Wasylq/FSS/internal/scrapers/propertysex"

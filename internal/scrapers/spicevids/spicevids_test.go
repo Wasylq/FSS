@@ -28,21 +28,21 @@ func TestMatchesURL(t *testing.T) {
 
 	cases := []struct {
 		name   string
+		collID int
 		url    string
-		siteID string
 		want   bool
 	}{
-		{"adamandeve match", "https://www.spicevids.com/collection/62061/adamandevevod", "sv-adamandevevod", true},
-		{"wrong ID", "https://www.spicevids.com/collection/99999/unknown", "sv-adamandevevod", false},
-		{"not a collection URL", "https://www.spicevids.com/scenes", "sv-adamandevevod", false},
-		{"different domain", "https://www.example.com/collection/62061", "sv-adamandevevod", false},
+		{"collection URL match", 62061, "https://www.spicevids.com/collection/62061/adamandevevod", true},
+		{"wrong collection ID", 62061, "https://www.spicevids.com/collection/99999/unknown", false},
+		{"not a collection URL", 62061, "https://www.spicevids.com/scenes", false},
+		{"different domain", 62061, "https://www.example.com/collection/62061", false},
 	}
 
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
-			s := lookup[62061]
+			s := lookup[c.collID]
 			if s == nil {
-				t.Fatal("adamandevevod collection not found")
+				t.Fatalf("collection %d not found", c.collID)
 			}
 			if got := s.MatchesURL(c.url); got != c.want {
 				t.Errorf("MatchesURL(%q) = %v, want %v", c.url, got, c.want)
