@@ -47,6 +47,7 @@ Lists all studios in the SQLite database with scene counts and last-scraped time
 
 Prints the build version, commit hash, and build date. Checks for newer releases on GitHub.
 
+For `fss identify`, see [identify.md](identify.md).
 For `fss stash` subcommands, see [stash.md](stash.md).
 
 ---

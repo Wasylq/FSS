@@ -19,12 +19,13 @@ main.go                      ← blank-imports each scraper to trigger init()
   │     └── store.Save()      ← persists to JSON or SQLite
   │
   ├── cmd/stash_import.go     ← matches FSS scenes → Stash scenes
-  │     ├── stash.BuildIndex()
-  │     ├── stash.Match()
+  │     ├── match.BuildIndex()
+  │     ├── idx.Match()
   │     └── stash.Client.UpdateScene()
   │
   ├── cmd/stash_unmatched.go  ← queries Stash for unmatched scenes
   ├── cmd/stash_revert.go     ← undoes a previous stash import
+  ├── cmd/identify.go         ← matches video files → NFO sidecars
   └── cmd/version.go          ← prints version and checks for updates
 ```
 
@@ -85,7 +86,7 @@ Scrapers never know which store is active.
 
 ## Shared Scraper Packages
 
-Seven utility packages eliminate duplication for sites that share a platform:
+Nine utility packages eliminate duplication for sites that share a platform:
 
 ### ayloutil
 
@@ -128,6 +129,18 @@ For SexMex Pro CMS sites (Exposed Latinas, SexMex, Trans Queens). Handles the `/
 **File:** `internal/scrapers/scoregrouputil/`
 
 For Score Group sites (50 Plus MILFs). HTML listing + detail page worker pool for dates/tags.
+
+### railwayutil
+
+**File:** `internal/scrapers/railwayutil/`
+
+For Railway/Express/MongoDB platform sites (Smoking Erotica, Smoking Models, Spanking Glamour). Single JSON API call returns all videos in one response, no auth, no dates, performer extraction from title.
+
+### uptimelyutil
+
+**File:** `internal/scrapers/uptimelyutil/`
+
+For Up-Timely CMS platform sites (DAS!, Idea Pocket, Madonna, MOODYZ, S1 NO.1 STYLE). HTML listing + detail page worker pool, Japanese metadata extraction, cross-page dedup.
 
 ## HTTP Layer
 

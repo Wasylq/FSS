@@ -1,6 +1,6 @@
 # Using FSS as a Go Library
 
-FSS can be imported as a Go module. The scraper registry, scene types, and streaming interface are all exported — you get the same engine the CLI uses, without the CLI.
+FSS can be imported as a Go module. The scraper engine, matching, merging, Stash integration, and NFO generation are all available to external code.
 
 ## Install
 
@@ -8,7 +8,27 @@ FSS can be imported as a Go module. The scraper registry, scene types, and strea
 go get github.com/Wasylq/FSS@latest # Or use tag for stable release
 ```
 
-## Quick Start
+## Public Packages
+
+| Package | Import path | Purpose |
+|---------|------------|---------|
+| `scrapers/all` | `github.com/Wasylq/FSS/scrapers/all` | Blank-import to register all scrapers |
+| `scraper` | `github.com/Wasylq/FSS/scraper` | Registry API, `StudioScraper` interface, `SceneResult` channel protocol |
+| `models` | `github.com/Wasylq/FSS/models` | `Scene`, `PriceSnapshot` — the core data model |
+| `match` | `github.com/Wasylq/FSS/match` | Filename→title matching, cross-site merging, JSON loading |
+| `stash` | `github.com/Wasylq/FSS/stash` | GraphQL client for Stash |
+| `nfo` | `github.com/Wasylq/FSS/nfo` | Kodi-style NFO XML generation |
+| `identify` | `github.com/Wasylq/FSS/identify` | Video directory scan + match + NFO write |
+
+**Registering scrapers:** The individual scraper implementations live under `internal/scrapers/`, but a public aggregator package re-exports them all:
+
+```go
+import _ "github.com/Wasylq/FSS/scrapers/all"  // registers all 102 scrapers
+```
+
+This is all you need to populate the registry for scraping from external code.
+
+## Quick Start — Scraping
 
 ```go
 package main
@@ -19,24 +39,13 @@ import (
 	"log"
 
 	"github.com/Wasylq/FSS/scraper"
-
-	// Blank-import each scraper you want available.
-	// Each import registers itself via init().
-	_ "github.com/Wasylq/FSS/internal/scrapers/manyvids"
-	_ "github.com/Wasylq/FSS/internal/scrapers/clips4sale"
+	_ "github.com/Wasylq/FSS/scrapers/all"
 )
 
 func main() {
 	ctx := context.Background()
 
-	// Look up by URL (returns the first scraper whose MatchesURL matches)...
 	s, err := scraper.ForURL("https://www.manyvids.com/Profile/590705/bettie-bondage/Store/Videos")
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	// ...or by scraper ID directly.
-	s, err = scraper.ForID("manyvids")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -48,37 +57,76 @@ func main() {
 
 	for r := range ch {
 		switch r.Kind {
-		case scraper.KindTotal:
-			fmt.Printf("Estimated total: %d scenes\n", r.Total)
-		case scraper.KindStoppedEarly:
-			fmt.Println("Stopped early (hit known ID)")
-		case scraper.KindError:
-			log.Printf("error: %v", r.Err)
 		case scraper.KindScene:
 			fmt.Printf("%-40s %s\n", r.Scene.Title, r.Scene.URL)
+		case scraper.KindError:
+			log.Printf("error: %v", r.Err)
 		}
 	}
 }
 ```
 
-## Registering Scrapers
+## Quick Start — Matching & Merging
 
-Scrapers use Go's `init()` mechanism — a blank import is all it takes:
+Load FSS JSON output files and match filenames against them (no scraper registration needed).
 
 ```go
-// Register a single scraper:
-_ "github.com/Wasylq/FSS/internal/scrapers/manyvids"
+package main
 
-// Or register all of them (same imports as main.go):
-_ "github.com/Wasylq/FSS/internal/scrapers/brazzers"
-_ "github.com/Wasylq/FSS/internal/scrapers/clips4sale"
-_ "github.com/Wasylq/FSS/internal/scrapers/manyvids"
-// ... etc.
+import (
+	"fmt"
+	"time"
+
+	"github.com/Wasylq/FSS/match"
+)
+
+func main() {
+	// Load scenes from FSS JSON files (produced by `fss scrape`).
+	scenes, err := match.LoadJSONDir("./data")
+	if err != nil {
+		panic(err)
+	}
+
+	// Build a title index.
+	idx := match.BuildIndex(scenes)
+
+	// Match a filename (duration in seconds, 0 = unknown).
+	result := idx.Match("Fostering the Bully.mp4", 605.0)
+
+	switch result.Confidence {
+	case match.MatchExact:
+		fmt.Println("Exact match:", result.Scenes[0].Title)
+	case match.MatchSubstring:
+		fmt.Println("Substring match:", result.Scenes[0].Title)
+	case match.MatchAmbiguous:
+		fmt.Printf("Ambiguous: %d candidates\n", result.Candidates)
+	case match.MatchNone:
+		fmt.Println("No match")
+	}
+
+	// Merge cross-site scenes into a single metadata record.
+	if result.Confidence == match.MatchExact || result.Confidence == match.MatchSubstring {
+		merged := match.MergeScenes(result.Scenes, time.Time{})
+		fmt.Println(merged.Title, merged.URLs, merged.Performers)
+	}
+}
 ```
 
-Only import what you need — each import adds to the global registry and slightly increases binary size.
+## Selective Scraper Registration
+
+If you only need a few scrapers (to reduce binary size), you can blank-import individual packages from within a fork or custom build inside this repo:
+
+```go
+// Only works within the FSS module (forks, custom builds).
+_ "github.com/Wasylq/FSS/internal/scrapers/manyvids"
+_ "github.com/Wasylq/FSS/internal/scrapers/clips4sale"
+```
+
+From external modules, use `_ "github.com/Wasylq/FSS/scrapers/all"` to register all scrapers at once.
 
 ## Registry API
+
+After importing `scrapers/all`, the registry is populated and these functions work:
 
 ```go
 // Find a scraper by URL.

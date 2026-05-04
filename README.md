@@ -20,6 +20,8 @@ Scrapes all scenes and metadata from a studio URL. Designed to be easily extende
 | POVR/WankzVR | 4 | BrasilVR, MilfVR, TranzVR, WankzVR |
 | Up-Timely CMS | 5 | DAS!, Idea Pocket, Madonna, MOODYZ, S1 NO.1 STYLE |
 | SexMex Pro CMS | 3 | Exposed Latinas, SexMex, Trans Queens |
+| Railway/Express | 3 | Smoking Erotica, Smoking Models, Spanking Glamour |
+| Score Group | 1 | 50 Plus MILFs |
 | Stashbox | 1+ | StashDB, any stashbox instance (config-driven) |
 | Standalone | 47 | APClips, Clips4Sale, DEEP'S, Fakings, Glory Quest, GrandparentsX, Jules Jordan, Kink, KM Produce, ManyVids, Naked News, Pornhub, Pure CFNM, r18.dev, Takara TV, VENUS, … |
 
@@ -158,6 +160,16 @@ fss scrape --db ./fss.db --name "Bettie Bondage" <url>
 fss list-scrapers
 ```
 
+### NFO sidecar files
+
+```bash
+# Dry-run: match video files against FSS metadata
+fss identify /path/to/videos --dir ./data
+
+# Write .nfo files next to matched videos
+fss identify /path/to/videos --dir ./data --apply
+```
+
 ### Stash integration
 
 ```bash
@@ -205,6 +217,7 @@ CLI flags always override config values. See [docs/usage.md](docs/usage.md#confi
 |----------|----------|
 | [docs/scrapers.md](docs/scrapers.md) | Supported sites, URL patterns, shared packages |
 | [docs/usage.md](docs/usage.md) | CLI reference, data model, output formats, SQLite |
+| [docs/identify.md](docs/identify.md) | NFO sidecar file generation: matching videos, writing .nfo files |
 | [docs/stash.md](docs/stash.md) | Stash integration: matching, merging, import workflow |
 | [docs/docker.md](docs/docker.md) | Running FSS in Docker — image tags, volumes, compose examples |
 | [docs/library.md](docs/library.md) | Using FSS as a Go library — registry API, streaming results, Scene model |
