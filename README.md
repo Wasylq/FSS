@@ -9,10 +9,11 @@ Scrapes all scenes and metadata from a studio URL. Designed to be easily extende
 
 ## Supported sites
 
-**102 sites** across 15+ platforms — [full list with URL patterns →](docs/scrapers.md)
+**194 sites** across 15+ platforms — [full list with URL patterns →](docs/scrapers.md)
 
 | Platform | Count | Examples |
 |----------|------:|---------|
+| Score Group | 93 | Scoreland, XL Girls, 18Eighteen, Leg Sex, Naughty Mag, 50 Plus MILFs, … |
 | Gamma/Algolia | 12 | Burning Angel, Evil Angel, Pure Taboo, Wicked, … |
 | WP video-elements | 12 | DaughterSwap, MommysBoy, PervMom, SisLovesMe, … |
 | Aylo/Juan | 9 | Babes, BangBros, Brazzers, Reality Kings, … |
@@ -21,7 +22,6 @@ Scrapes all scenes and metadata from a studio URL. Designed to be easily extende
 | Up-Timely CMS | 5 | DAS!, Idea Pocket, Madonna, MOODYZ, S1 NO.1 STYLE |
 | SexMex Pro CMS | 3 | Exposed Latinas, SexMex, Trans Queens |
 | Railway/Express | 3 | Smoking Erotica, Smoking Models, Spanking Glamour |
-| Score Group | 1 | 50 Plus MILFs |
 | Stashbox | 1+ | StashDB, any stashbox instance (config-driven) |
 | Standalone | 47 | APClips, Clips4Sale, DEEP'S, Fakings, Glory Quest, GrandparentsX, Jules Jordan, Kink, KM Produce, ManyVids, Naked News, Pornhub, Pure CFNM, r18.dev, Takara TV, VENUS, … |
 

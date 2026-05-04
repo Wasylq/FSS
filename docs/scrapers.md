@@ -2,7 +2,99 @@
 
 | Site | URL Pattern | Platform | Pricing | Notes |
 |------|-------------|----------|---------|-------|
-| [50 Plus MILFs](https://www.50plusmilfs.com) | `50plusmilfs.com` | Score Group | No | HTML listing + detail page worker pool for dates/tags/description, uses `scoregrouputil` |
+| [18Eighteen](https://www.18eighteen.com) | `18eighteen.com`, `18eighteen.com/teen-babes/{name}/{id}` | Score Group | No | Score Group, table-driven `scoregroup` package |
+| [40 Something Mag](https://www.40somethingmag.com) | `40somethingmag.com`, `40somethingmag.com/xxx-mature-models/{name}/{id}` | Score Group | No | Score Group, table-driven `scoregroup` package |
+| [50 Plus MILFs](https://www.50plusmilfs.com) | `50plusmilfs.com`, `50plusmilfs.com/xxx-milf-models/{name}/{id}` | Score Group | No | Score Group, table-driven `scoregroup` package |
+| [60 Plus MILFs](https://www.60plusmilfs.com) | `60plusmilfs.com`, `60plusmilfs.com/xxx-granny-models/{name}/{id}` | Score Group | No | Score Group, table-driven `scoregroup` package |
+| [Anal QTs](https://www.analqts.com) | `analqts.com`, `analqts.com/anal-porn-stars/{name}/{id}` | Score Group | No | Score Group, table-driven `scoregroup` package |
+| [Ashley Sage Ellison](https://www.ashleysageellison.com) | `ashleysageellison.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
+| [Asian Coochies](https://www.asiancoochies.com) | `asiancoochies.com`, `asiancoochies.com/asian-porn-stars/{name}/{id}` | Score Group | No | Score Group, table-driven `scoregroup` package |
+| [Autumn Jade](https://www.autumn-jade.com) | `autumn-jade.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
+| [Big Boob Alexya](https://www.bigboobalexya.com) | `bigboobalexya.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
+| [Big Boob Bundle](https://www.bigboobbundle.com) | `bigboobbundle.com`, `bigboobbundle.com/big-tit-babes/{name}/{id}` | Score Group | No | Score Group, table-driven `scoregroup` package |
+| [Big Boob Daria](https://www.bigboobdaria.com) | `bigboobdaria.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
+| [Big Boobs POV](https://www.bigboobspov.com) | `bigboobspov.com`, `bigboobspov.com/big-boob-models/{name}/{id}` | Score Group | No | Score Group, table-driven `scoregroup` package |
+| [Big Boob Vanessa Y](https://www.bigboobvanessay.com) | `bigboobvanessay.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
+| [Big Tit Angela White](https://www.bigtitangelawhite.com) | `bigtitangelawhite.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
+| [Big Tit Hitomi](https://www.bigtithitomi.com) | `bigtithitomi.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
+| [Big Tit Hooker](https://www.bigtithooker.com) | `bigtithooker.com`, `bigtithooker.com/big-boob-models/{name}/{id}` | Score Group | No | Score Group, table-driven `scoregroup` package |
+| [Big Tit Katie Thornton](https://www.bigtitkatiethornton.com) | `bigtitkatiethornton.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
+| [Big Tit Terry Nova](https://www.bigtitterrynova.com) | `bigtitterrynova.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
+| [Big Titty Maserati](https://www.bigtittymaserati.com) | `bigtittymaserati.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
+| [Big Tit Venera](https://www.bigtitvenera.com) | `bigtitvenera.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
+| [Boned At Home](https://www.bonedathome.com) | `bonedathome.com`, `bonedathome.com/amateur-girls/{name}/{id}` | Score Group | No | Score Group, table-driven `scoregroup` package |
+| [Bootylicious Mag](https://www.bootyliciousmag.com) | `bootyliciousmag.com`, `bootyliciousmag.com/big-booty-girls/{name}/{id}` | Score Group | No | Score Group, table-driven `scoregroup` package |
+| [Busty Angelique](https://www.bustyangelique.com) | `bustyangelique.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
+| [Busty Arianna](https://www.bustyarianna.com) | `bustyarianna.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
+| [Busty Dusty Stash](https://www.bustydustystash.com) | `bustydustystash.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
+| [Busty Ines Cudna](https://www.bustyinescudna.com) | `bustyinescudna.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
+| [Busty Kelly Kay](https://www.bustykellykay.com) | `bustykellykay.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
+| [Busty Kerry Marie](https://www.bustykerrymarie.com) | `bustykerrymarie.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
+| [Busty Lezzies](https://www.bustylezzies.com) | `bustylezzies.com`, `bustylezzies.com/big-tit-models/{name}/{id}` | Score Group | No | Score Group, table-driven `scoregroup` package |
+| [Busty Merilyn](https://www.bustymerilyn.com) | `bustymerilyn.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
+| [Busty Old Sluts](https://www.bustyoldsluts.com) | `bustyoldsluts.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
+| [Chicks On Black Dicks](https://www.chicksonblackdicks.com) | `chicksonblackdicks.com`, `chicksonblackdicks.com/interracial-porn-stars/{name}/{id}` | Score Group | No | Score Group, table-driven `scoregroup` package |
+| [Chloe's World](https://www.chloesworld.com) | `chloesworld.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
+| [Christy Marks](https://www.christymarks.com) | `christymarks.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
+| [Cock 4 Stepmom](https://www.cock4stepmom.com) | `cock4stepmom.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
+| [Codi Vore XXX](https://www.codivorexxx.com) | `codivorexxx.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
+| [Creampie For Granny](https://www.creampieforgranny.com) | `creampieforgranny.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
+| [Daylene Rio](https://www.daylenerio.com) | `daylenerio.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
+| [Desirae's World](https://www.desiraesworld.com) | `desiraesworld.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
+| [Ebony Thots](https://www.ebonythots.com) | `ebonythots.com`, `ebonythots.com/black-porn-stars/{name}/{id}` | Score Group | No | Score Group, table-driven `scoregroup` package |
+| [Eva Notty Videos](https://www.evanottyvideos.com) | `evanottyvideos.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
+| [Feed Her Fuck Her](https://www.feedherfuckher.com) | `feedherfuckher.com`, `feedherfuckher.com/bbw-models/{name}/{id}` | Score Group | No | Score Group, table-driven `scoregroup` package |
+| [Flat And Fucked MILFs](https://www.flatandfuckedmilfs.com) | `flatandfuckedmilfs.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
+| [Granny Gets A Facial](https://www.grannygetsafacial.com) | `grannygetsafacial.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
+| [Granny Loves BBC](https://www.grannylovesbbc.com) | `grannylovesbbc.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
+| [Granny Loves Young Cock](https://www.grannylovesyoungcock.com) | `grannylovesyoungcock.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
+| [Hairy Coochies](https://www.hairycoochies.com) | `hairycoochies.com`, `hairycoochies.com/hirsute-girls/{name}/{id}` | Score Group | No | Score Group, table-driven `scoregroup` package |
+| [Home Alone MILFs](https://www.homealonemilfs.com) | `homealonemilfs.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
+| [Horny Asian MILFs](https://www.hornyasianmilfs.com) | `hornyasianmilfs.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
+| [I Boned Your Mom](https://www.ibonedyourmom.com) | `ibonedyourmom.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
+| [I Fucked The Boss](https://www.ifuckedtheboss.com) | `ifuckedtheboss.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
+| [Joana Bliss](https://www.joanabliss.com) | `joanabliss.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
+| [Karina Hart](https://www.karinahart.com) | `karinahart.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
+| [Latina Coochies](https://www.latinacoochies.com) | `latinacoochies.com`, `latinacoochies.com/latina-porn-stars/{name}/{id}` | Score Group | No | Score Group, table-driven `scoregroup` package |
+| [Latin Mommas](https://www.latinmommas.com) | `latinmommas.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
+| [Leanne Crow Videos](https://www.leannecrowvideos.com) | `leannecrowvideos.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
+| [Leg Sex](https://www.legsex.com) | `legsex.com`, `legsex.com/foot-models/{name}/{id}` | Score Group | No | Score Group, table-driven `scoregroup` package |
+| [Linsey's World](https://www.linseysworld.com) | `linseysworld.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
+| [Mega Tits Minka](https://www.megatitsminka.com) | `megatitsminka.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
+| [Micky Bells](https://www.mickybells.com) | `mickybells.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
+| [MILF Bundle](https://www.milfbundle.com) | `milfbundle.com`, `milfbundle.com/milf-models/{name}/{id}` | Score Group | No | Score Group, table-driven `scoregroup` package |
+| [MILF Threesomes](https://www.milfthreesomes.com) | `milfthreesomes.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
+| [MILF Tugs](https://www.milftugs.com) | `milftugs.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
+| [Milly Marks](https://www.millymarks.com) | `millymarks.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
+| [Mommy's Toy Time](https://www.mommystoytime.com) | `mommystoytime.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
+| [Natalie Fiore](https://www.nataliefiore.com) | `nataliefiore.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
+| [Naughty Footjobs](https://www.naughtyfootjobs.com) | `naughtyfootjobs.com`, `naughtyfootjobs.com/foot-models/{name}/{id}` | Score Group | No | Score Group, table-driven `scoregroup` package |
+| [Naughty Mag](https://www.naughtymag.com) | `naughtymag.com`, `naughtymag.com/amateur-girls/{name}/{id}` | Score Group | No | Score Group, table-driven `scoregroup` package |
+| [Naughty Tugs](https://www.naughtytugs.com) | `naughtytugs.com`, `naughtytugs.com/hand-job-models/{name}/{id}` | Score Group | No | Score Group, table-driven `scoregroup` package |
+| [Nicole Peters](https://www.nicolepeters.com) | `nicolepeters.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
+| [Old Horny MILFs](https://www.oldhornymilfs.com) | `oldhornymilfs.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
+| [Picking Up Pussy](https://www.pickinguppussy.com) | `pickinguppussy.com`, `pickinguppussy.com/teen-babes/{name}/{id}` | Score Group | No | Score Group, table-driven `scoregroup` package |
+| [Porn Loser](https://www.pornloser.com) | `pornloser.com`, `pornloser.com/amateur-girls/{name}/{id}` | Score Group | No | Score Group, table-driven `scoregroup` package |
+| [Porn Mega Load](https://www.pornmegaload.com) | `pornmegaload.com`, `pornmegaload.com/porn-models/{name}/{id}` | Score Group | No | Score Group, table-driven `scoregroup` package |
+| [Renee Ross Videos](https://www.reneerossvideos.com) | `reneerossvideos.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
+| [Roxi Red](https://www.roxired.com) | `roxired.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
+| [SaRenna's World](https://www.sarennasworld.com) | `sarennasworld.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
+| [Score Classics](https://www.scoreclassics.com) | `scoreclassics.com`, `scoreclassics.com/classic-boob-models/{name}/{id}` | Score Group | No | Score Group, table-driven `scoregroup` package |
+| [Scoreland](https://www.scoreland.com) | `scoreland.com`, `scoreland.com/big-boob-models/{name}/{id}` | Score Group | No | Score Group, table-driven `scoregroup` package |
+| [Scoreland 2](https://www.scoreland2.com) | `scoreland2.com`, `scoreland2.com/big-boob-models/{name}/{id}` | Score Group | No | Score Group, table-driven `scoregroup` package |
+| [Score Videos](https://www.scorevideos.com) | `scorevideos.com`, `scorevideos.com/porn-models/{name}/{id}` | Score Group | No | Score Group, table-driven `scoregroup` package |
+| [Sha Rizel Videos](https://www.sharizelvideos.com) | `sharizelvideos.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
+| [Silver Sluts](https://www.silversluts.com) | `silversluts.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
+| [Stacy Vandenberg Boobs](https://www.stacyvandenbergboobs.com) | `stacyvandenbergboobs.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
+| [Tawny Peaks](https://www.tawny-peaks.com) | `tawny-peaks.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
+| [Tiffany Towers](https://www.tiffany-towers.com) | `tiffany-towers.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
+| [Tits And Tugs](https://www.titsandtugs.com) | `titsandtugs.com`, `titsandtugs.com/big-boob-models/{name}/{id}` | Score Group | No | Score Group, table-driven `scoregroup` package |
+| [TNA Tryouts](https://www.tnatryouts.com) | `tnatryouts.com`, `tnatryouts.com/teen-babes/{name}/{id}` | Score Group | No | Score Group, table-driven `scoregroup` package |
+| [Valory Irene](https://www.valoryirene.com) | `valoryirene.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
+| [XL Girls](https://www.xlgirls.com) | `xlgirls.com`, `xlgirls.com/bbw-models/{name}/{id}` | Score Group | No | Score Group, table-driven `scoregroup` package |
+| [Your Mom Loves Anal](https://www.yourmomlovesanal.com) | `yourmomlovesanal.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
+| [Your Mom's Got Big Tits](https://www.yourmomsgotbigtits.com) | `yourmomsgotbigtits.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
+| [Your Wife My Meat](https://www.yourwifemymeat.com) | `yourwifemymeat.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
 | [A POV Story](https://apovstory.com) | `apovstory.com` | PHP tour site | No | HTML listing + detail pages, category extraction |
 | [Aunt Judy's](https://www.auntjudysxxx.com) | `auntjudysxxx.com`, `auntjudysxxx.com/tour/categories/movies.html`, `auntjudysxxx.com/tour/models/{slug}.html` | JEBN CMS | No | HTML listing (24/page, `movies_N_d.html`) + detail page worker pool for title/description/tags/duration, model page support, ~1000+ scenes |
 | [APClips](https://apclips.com) | `apclips.com/{creator_slug}` | Custom HTML | Yes | HTML listing (60/page, `sort=date-new`) + detail pages for dates/tags, price tracking |
@@ -113,7 +205,7 @@ Scrapers that share a platform use common utility packages to avoid duplication:
 |---------|----------|---------|
 | `ayloutil` | Aylo/Juan (REST API, instance token auth) | Babes, BangBros, Brazzers, Digital Playground, Mofos, PropertySex, Reality Kings, TransAngels, Twistys |
 | `gammautil` | Gamma Entertainment (Algolia search API) | Burning Angel, Evil Angel, Filthy Kings, Gangbang Creampie, Girlfriends Films, Gloryhole Secrets, Lethal Hardcore, Mommy Blows Best, Pure Taboo, Rocco Siffredi, Taboo Heat, Wicked |
-| `scoregrouputil` | Score Group (HTML listing + detail pages, `meta name="Date"` for dates, `updates-tag` links for tags) | 50 Plus MILFs |
+| `scoregrouputil` | Score Group (HTML listing + detail pages, `meta name="Date"` for dates, `updates-tag` links for tags) | 93 sites via table-driven `scoregroup` package (Scoreland, XL Girls, 18Eighteen, Leg Sex, …) |
 | `povrutil` | POVR/WankzVR (export JSON + HTML listing pages) | BrasilVR, MilfVR, TranzVR, WankzVR |
 | `railwayutil` | Railway/Express/MongoDB (single JSON API call, all videos in one response, no auth, no dates, performer extraction from title) | Smoking Erotica, Smoking Models, Spanking Glamour |
 | `sexmexutil` | SexMex Pro CMS (HTML scraping, pagination). **Quirk:** their CMS returns HTTP 500 with valid HTML on some pages (e.g. model pages), so `fetchPage` accepts 500 responses instead of using `httpx.Do`. | Exposed Latinas, SexMex, Trans Queens |

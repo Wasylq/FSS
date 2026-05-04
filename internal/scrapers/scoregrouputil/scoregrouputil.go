@@ -171,12 +171,12 @@ type listingScene struct {
 }
 
 var (
-	sceneStartRe = regexp.MustCompile(`class="li-item compact video"`)
-	sceneLinkRe  = regexp.MustCompile(`href="(https?://[^"]*?/(\d+)/\?[^"]*)"[^>]*>\s*(?:<[^>]+>\s*)*<div class="lazyload-wrap`)
-	titleRe      = regexp.MustCompile(`class="i-title[^"]*">\s*([^<]+)`)
+	sceneStartRe = regexp.MustCompile(`class="li-item (?:compact video|video-wide[^"]*|movie)"`)
+	sceneLinkRe  = regexp.MustCompile(`href="(https?://[^"]*?/(\d+)/?(?:\?[^"]*)?)"`)
+	titleRe      = regexp.MustCompile(`class="i-title[^"]*">\s*([^<\s][^<]*)`)
 	modelRe      = regexp.MustCompile(`class="i-model"[^>]*>([^<]+)`)
 	durationRe   = regexp.MustCompile(`class="time-ol[^"]*"[^>]*>(\d+):(\d+)\s*mins?`)
-	thumbRe      = regexp.MustCompile(`src="(https?://[^"]*posting_\d+[^"]*\.jpg)"`)
+	thumbRe      = regexp.MustCompile(`src="((?:https?:)?//[^"]*(?:posting_\d+|scoreuniverse\.com/)[^"]*\.(?:jpg|png|webp))"`)
 )
 
 func parseListingPage(body []byte, siteBase string) []listingScene {
@@ -278,9 +278,10 @@ func hasNextPage(body []byte, current int) bool {
 }
 
 var (
-	metaDateRe = regexp.MustCompile(`(?:itemprop="uploadDate"|name="Date")\s+content="([^"]+)"`)
-	ogDescRe   = regexp.MustCompile(`property="og:description"\s+content="([^"]+)"`)
-	tagRe      = regexp.MustCompile(`href="[^"]*updates-tag/([^/]+)/\d+/[^"]*"[^>]*class="btn btn-ol-2[^"]*"[^>]*>\s*([^<]+)`)
+	metaDateRe    = regexp.MustCompile(`(?:itemprop="uploadDate"|name="Date")\s+content="([^"]+)"`)
+	visibleDateRe = regexp.MustCompile(`class="label">Date:\s*</span>\s*<span class="value">([^<]+)</span>`)
+	ogDescRe      = regexp.MustCompile(`property="og:description"\s+content="([^"]+)"`)
+	tagRe         = regexp.MustCompile(`href="[^"]*updates-tag/([^/]+)/\d+/[^"]*"[^>]*class="btn btn-ol-2[^"]*"[^>]*>\s*([^<]+)`)
 )
 
 func (s *Scraper) fetchDetail(ctx context.Context, ls listingScene, delay time.Duration) (models.Scene, error) {
@@ -303,6 +304,11 @@ func (s *Scraper) fetchDetail(ctx context.Context, ls listingScene, delay time.D
 			date = t.UTC()
 		} else if t, err := time.Parse("2006-01-02T15:04:05+00:00", string(m[1])); err == nil {
 			date = t.UTC()
+		}
+	}
+	if date.IsZero() {
+		if m := visibleDateRe.FindSubmatch(body); m != nil {
+			date = parseVisibleDate(string(m[1]))
 		}
 	}
 
@@ -339,6 +345,16 @@ func (s *Scraper) fetchDetail(ctx context.Context, ls listingScene, delay time.D
 		Studio:      s.Config.StudioName,
 		ScrapedAt:   time.Now().UTC(),
 	}, nil
+}
+
+var ordinalSuffixRe = regexp.MustCompile(`(\d+)(?:st|nd|rd|th)`)
+
+func parseVisibleDate(s string) time.Time {
+	cleaned := ordinalSuffixRe.ReplaceAllString(strings.TrimSpace(s), "$1")
+	if t, err := time.Parse("January 2, 2006", cleaned); err == nil {
+		return t.UTC()
+	}
+	return time.Time{}
 }
 
 func (s *Scraper) fetchPage(ctx context.Context, url string) ([]byte, error) {
