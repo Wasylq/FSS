@@ -202,18 +202,18 @@
 
 Scrapers that share a platform use common utility packages to avoid duplication:
 
-| Package | Platform | Used by |
-|---------|----------|---------|
-| `ayloutil` | Aylo/Juan (REST API, instance token auth) | Babes, BangBros, Brazzers, Digital Playground, Mofos, PropertySex, Reality Kings, TransAngels, Twistys |
-| `gammautil` | Gamma Entertainment (Algolia search API) | Burning Angel, Evil Angel, Filthy Kings, Gangbang Creampie, Girlfriends Films, Gloryhole Secrets, Lethal Hardcore, Mommy Blows Best, Pure Taboo, Rocco Siffredi, Taboo Heat, Wicked |
-| `modelcentroutil` | ModelCentro/AdultCentro (JSON API at `/api/content.load`, listing + per-scene detail for tags/description) | 26 sites via table-driven `modelcentro` package (Penny Barber, The Jerky Girls, Mugur Porn, Thicc Vision, …) |
-| `scoregrouputil` | Score Group (HTML listing + detail pages, `meta name="Date"` for dates, `updates-tag` links for tags) | 93 sites via table-driven `scoregroup` package (Scoreland, XL Girls, 18Eighteen, Leg Sex, …) |
-| `povrutil` | POVR/WankzVR (export JSON + HTML listing pages) | BrasilVR, MilfVR, TranzVR, WankzVR |
-| `railwayutil` | Railway/Express/MongoDB (single JSON API call, all videos in one response, no auth, no dates, performer extraction from title) | Smoking Erotica, Smoking Models, Spanking Glamour |
-| `sexmexutil` | SexMex Pro CMS (HTML scraping, pagination). **Quirk:** their CMS returns HTTP 500 with valid HTML on some pages (e.g. model pages), so `fetchPage` accepts 500 responses instead of using `httpx.Do`. | Exposed Latinas, SexMex, Trans Queens |
-| `uptimelyutil` | Up-Timely CMS (HTML listing + detail page worker pool, Japanese metadata, cross-page dedup) | DAS!, Idea Pocket, Madonna, MOODYZ, S1 NO.1 STYLE |
-| `veutil` | WordPress video-elements theme (WP REST API for posts + tags, poster extraction from content) | BoyfriendSharing, BrattyFamily, GoStuckYourself, HugeCockBreak, LittleFromAsia, MommysBoy, MomXXX, MyBadMILFs, DaughterSwap, PervMom, SisLovesMe, YoungerLoverOfMine |
-| `wputil` | WordPress (sitemap + HTML meta parsing) | Anal Therapy, Family Therapy, Mom Comes First, Perfect Girlfriend, Tara Tainton |
+| Util package | Platform | Table-driven package | Sites |
+|---------|----------|---------------------|-------|
+| `ayloutil` | Aylo/Juan (REST API, instance token auth) | `aylo` | 8 sites + BangBros (standalone) + SpiceVids (1001 collections) |
+| `gammautil` | Gamma Entertainment (Algolia search API) | `gamma` | 12 sites |
+| `veutil` | WordPress video-elements theme (WP REST API) | `videoelements` | 12 sites |
+| `scoregrouputil` | Score Group (HTML listing + detail pages) | `scoregroup` | 93 sites |
+| `modelcentroutil` | ModelCentro/AdultCentro (JSON API at `/api/content.load`) | `modelcentro` | 26 sites |
+| `povrutil` | POVR/WankzVR (export JSON + HTML listing) | `povr` | 4 sites |
+| `uptimelyutil` | Up-Timely CMS (HTML listing + detail, Japanese metadata) | `uptimely` | 5 sites |
+| `sexmexutil` | SexMex Pro CMS (HTML scraping). **Quirk:** CMS returns HTTP 500 with valid HTML on some pages. | `sexmexpro` | 3 sites |
+| `railwayutil` | Railway/Express/MongoDB (single JSON API call) | `railway` | 3 sites |
+| `wputil` | WordPress (sitemap + HTML meta parsing) | _(standalone packages)_ | 5 sites (each has custom parsing) |
 
 ## Adding a new scraper
 

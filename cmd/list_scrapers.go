@@ -2,11 +2,14 @@ package cmd
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/spf13/cobra"
 
 	"github.com/Wasylq/FSS/scraper"
 )
+
+var listScrapersMarkdown bool
 
 var listScrapersCmd = &cobra.Command{
 	Use:   "list-scrapers",
@@ -15,6 +18,7 @@ var listScrapersCmd = &cobra.Command{
 }
 
 func init() {
+	listScrapersCmd.Flags().BoolVar(&listScrapersMarkdown, "markdown", false, "output a markdown table")
 	rootCmd.AddCommand(listScrapersCmd)
 }
 
@@ -24,6 +28,18 @@ func runListScrapers(_ *cobra.Command, _ []string) error {
 		fmt.Println("No scrapers registered.")
 		return nil
 	}
+
+	if listScrapersMarkdown {
+		fmt.Printf("# Supported Sites (%d)\n\n", len(all))
+		fmt.Println("| # | ID | URL Patterns |")
+		fmt.Println("|--:|----|-------------|")
+		for i, s := range all {
+			patterns := strings.Join(s.Patterns(), ", ")
+			fmt.Printf("| %d | %s | %s |\n", i+1, s.ID(), patterns)
+		}
+		return nil
+	}
+
 	for _, s := range all {
 		fmt.Printf("%s:\n", s.ID())
 		for _, p := range s.Patterns() {
