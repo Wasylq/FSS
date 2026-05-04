@@ -19,13 +19,24 @@ type siteConfig struct {
 
 var sites = []siteConfig{
 	{"babes", "babes.com", "Babes", []string{"babes.com/model/{id}/{slug}"}},
+	{"bigstr", "czechhunter.com", "BigStr", nil},
 	{"brazzers", "brazzers.com", "Brazzers", nil},
 	{"digitalplayground", "digitalplayground.com", "Digital Playground", []string{"digitalplayground.com/modelprofile/{id}/{slug}"}},
+	{"erito", "erito.com", "Erito", nil},
+	{"hentaipros", "hentaipros.com", "HentaiPros", nil},
+	{"killergram", "killergram.com", "Killergram", nil},
+	{"letsdoeit", "letsdoeit.com", "LetsDoeIt", nil},
+	{"metro", "shewillcheat.com", "Metro", nil},
+	{"milehigh", "milfed.com", "MileHigh", nil},
 	{"mofos", "mofos.com", "Mofos", []string{"mofos.com/model/{id}/{slug}"}},
 	{"propertysex", "propertysex.com", "PropertySex", nil},
+	{"realitydudes", "realitydudes.com", "RealityDudes", nil},
 	{"realitykings", "realitykings.com", "Reality Kings", []string{"realitykings.com/model/{id}/{slug}"}},
+	{"seancody", "seancody.com", "Sean Cody", nil},
+	{"squirted", "squirted.com", "Squirted", nil},
 	{"transangels", "transangels.com", "TransAngels", nil},
 	{"twistys", "twistys.com", "Twistys", nil},
+	{"whynotbi", "men.com", "WhyNotBi", nil},
 }
 
 type siteScraper struct {
@@ -36,8 +47,8 @@ type siteScraper struct {
 }
 
 func (s *siteScraper) ID() string               { return s.config.SiteID }
-func (s *siteScraper) Patterns() []string        { return s.patterns }
-func (s *siteScraper) MatchesURL(u string) bool  { return s.matchRe.MatchString(u) }
+func (s *siteScraper) Patterns() []string       { return s.patterns }
+func (s *siteScraper) MatchesURL(u string) bool { return s.matchRe.MatchString(u) }
 
 func (s *siteScraper) ListScenes(ctx context.Context, studioURL string, opts scraper.ListOpts) (<-chan scraper.SceneResult, error) {
 	out := make(chan scraper.SceneResult)

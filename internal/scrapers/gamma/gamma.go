@@ -11,24 +11,33 @@ import (
 )
 
 type siteConfig struct {
-	SiteID     string
-	Domain     string
-	StudioName string
+	SiteID      string
+	Domain      string
+	StudioName  string
+	SiteName    string // Algolia availableOnSite filter; defaults to SiteID if empty
+	RefererBase string // override for API key bootstrap (network scrapers)
 }
 
 var sites = []siteConfig{
-	{"burningangel", "burningangel.com", "Burning Angel"},
-	{"evilangel", "evilangel.com", "Evil Angel"},
-	{"filthykings", "filthykings.com", "Filthy Kings"},
-	{"gangbangcreampie", "gangbangcreampie.com", "Gangbang Creampie"},
-	{"girlfriendsfilms", "girlfriendsfilms.com", "Girlfriends Films"},
-	{"gloryholesecrets", "gloryholesecrets.com", "Gloryhole Secrets"},
-	{"lethalhardcore", "lethalhardcore.com", "Lethal Hardcore"},
-	{"mommyblowsbest", "mommyblowsbest.com", "Mommy Blows Best"},
-	{"puretaboo", "puretaboo.com", "Pure Taboo"},
-	{"roccosiffredi", "roccosiffredi.com", "Rocco Siffredi"},
-	{"tabooheat", "tabooheat.com", "Taboo Heat"},
-	{"wicked", "wicked.com", "Wicked"},
+	// Adult Time segment
+	{"burningangel", "burningangel.com", "Burning Angel", "", ""},
+	{"evilangel", "evilangel.com", "Evil Angel", "", ""},
+	{"filthykings", "filthykings.com", "Filthy Kings", "", ""},
+	{"gangbangcreampie", "gangbangcreampie.com", "Gangbang Creampie", "", ""},
+	{"girlfriendsfilms", "girlfriendsfilms.com", "Girlfriends Films", "", ""},
+	{"gloryholesecrets", "gloryholesecrets.com", "Gloryhole Secrets", "", ""},
+	{"lethalhardcore", "lethalhardcore.com", "Lethal Hardcore", "", ""},
+	{"mommyblowsbest", "mommyblowsbest.com", "Mommy Blows Best", "", ""},
+	{"puretaboo", "puretaboo.com", "Pure Taboo", "", ""},
+	{"roccosiffredi", "roccosiffredi.com", "Rocco Siffredi", "", ""},
+	{"tabooheat", "tabooheat.com", "Taboo Heat", "", ""},
+	{"wicked", "wicked.com", "Wicked", "", ""},
+
+	// Dogfart segment (dfxtra) — 17 subsites under dogfartnetwork.com
+	{"dogfartnetwork", "dogfartnetwork.com", "", "", ""},
+
+	// OpenLife segment — 12 subsites under openlife.com
+	{"openlife", "openlife.com", "", "", ""},
 }
 
 type siteScraper struct {
@@ -37,8 +46,8 @@ type siteScraper struct {
 	matchRe *regexp.Regexp
 }
 
-func (s *siteScraper) ID() string              { return s.config.SiteID }
-func (s *siteScraper) Patterns() []string      { return []string{s.config.Domain} }
+func (s *siteScraper) ID() string               { return s.config.SiteID }
+func (s *siteScraper) Patterns() []string       { return []string{s.config.Domain} }
 func (s *siteScraper) MatchesURL(u string) bool { return s.matchRe.MatchString(u) }
 
 func (s *siteScraper) ListScenes(ctx context.Context, studioURL string, opts scraper.ListOpts) (<-chan scraper.SceneResult, error) {
@@ -52,11 +61,17 @@ func init() {
 		escaped := strings.ReplaceAll(cfg.Domain, ".", `\.`)
 		re := regexp.MustCompile(fmt.Sprintf(`^https?://(?:www\.)?%s`, escaped))
 
+		siteName := cfg.SiteName
+		if siteName == "" && cfg.StudioName != "" {
+			siteName = cfg.SiteID
+		}
+
 		gammaCfg := gammautil.SiteConfig{
-			SiteID:     cfg.SiteID,
-			SiteBase:   "https://www." + cfg.Domain,
-			StudioName: cfg.StudioName,
-			SiteName:   cfg.SiteID,
+			SiteID:      cfg.SiteID,
+			SiteBase:    "https://www." + cfg.Domain,
+			StudioName:  cfg.StudioName,
+			SiteName:    siteName,
+			RefererBase: cfg.RefererBase,
 		}
 
 		s := &siteScraper{

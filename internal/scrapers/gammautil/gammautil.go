@@ -30,6 +30,7 @@ type SiteConfig struct {
 	SiteBase    string // e.g. "https://www.puretaboo.com"
 	StudioName  string // e.g. "Pure Taboo"
 	SiteName    string // e.g. "puretaboo" — used in Algolia filter and URL path
+	RefererBase string // override Referer for API key bootstrap (e.g. Dogfart subsites use network domain)
 	AlgoliaHost string // override for testing
 }
 
@@ -54,9 +55,16 @@ func NewScraper(cfg SiteConfig) *Scraper {
 var apiKeyRe = regexp.MustCompile(`"algolia"\s*:\s*\{[^}]*"apiKey"\s*:\s*"([^"]+)"`)
 var actorURLRe = regexp.MustCompile(`/pornstar/view/[^/]+/(\d+)`)
 
+func (s *Scraper) refererBase() string {
+	if s.Config.RefererBase != "" {
+		return s.Config.RefererBase
+	}
+	return s.Config.SiteBase
+}
+
 func (s *Scraper) FetchAPIKey(ctx context.Context) (string, error) {
 	resp, err := httpx.Do(ctx, s.Client, httpx.Request{
-		URL: s.Config.SiteBase + "/en/videos",
+		URL: s.refererBase() + "/en/videos",
 		Headers: map[string]string{
 			"User-Agent": httpx.UserAgentFirefox,
 			"Accept":     "text/html",
@@ -156,7 +164,12 @@ func (s *Scraper) Run(ctx context.Context, studioURL string, opts scraper.ListOp
 }
 
 func (s *Scraper) FetchPage(ctx context.Context, apiKey string, page int, extraFilters ...string) ([]AlgoliaHit, int, error) {
-	parts := []string{fmt.Sprintf("availableOnSite:%s AND upcoming:0", s.Config.SiteName)}
+	var parts []string
+	if s.Config.SiteName != "" {
+		parts = append(parts, fmt.Sprintf("availableOnSite:%s AND upcoming:0", s.Config.SiteName))
+	} else {
+		parts = append(parts, "upcoming:0")
+	}
 	for _, f := range extraFilters {
 		if f != "" {
 			parts = append(parts, f)
@@ -180,7 +193,7 @@ func (s *Scraper) FetchPage(ctx context.Context, apiKey string, page int, extraF
 		Headers: map[string]string{
 			"x-algolia-application-id": AlgoliaAppID,
 			"x-algolia-api-key":        apiKey,
-			"Referer":                  s.Config.SiteBase + "/",
+			"Referer":                  s.refererBase() + "/",
 			"Content-Type":             "application/json",
 		},
 	})
@@ -224,7 +237,16 @@ func ToScene(cfg SiteConfig, studioURL string, hit AlgoliaHit, now time.Time) mo
 	desc = strings.ReplaceAll(desc, "<br />", "\n")
 	desc = html.UnescapeString(desc)
 
-	sceneURL := fmt.Sprintf("%s/en/video/%s/%s/%d", cfg.SiteBase, cfg.SiteName, hit.URLTitle, hit.ClipID)
+	siteName := cfg.SiteName
+	if siteName == "" {
+		siteName = hit.SiteName
+	}
+	sceneURL := fmt.Sprintf("%s/en/video/%s/%s/%d", cfg.SiteBase, siteName, hit.URLTitle, hit.ClipID)
+
+	studio := cfg.StudioName
+	if studio == "" {
+		studio = hit.SiteNamePretty
+	}
 
 	return models.Scene{
 		ID:          strconv.Itoa(hit.ClipID),
@@ -238,7 +260,7 @@ func ToScene(cfg SiteConfig, studioURL string, hit AlgoliaHit, now time.Time) mo
 		Preview:     preview,
 		Performers:  performers,
 		Director:    director,
-		Studio:      cfg.StudioName,
+		Studio:      studio,
 		Tags:        tags,
 		Series:      hit.SerieName,
 		Duration:    hit.Length,

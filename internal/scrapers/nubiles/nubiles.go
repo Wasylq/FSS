@@ -52,6 +52,25 @@ func (s *Scraper) Patterns() []string {
 		"youngermommy.com",
 		"petiteballerinasfucked.com",
 		"nubiles-casting.com",
+		"anilos.com",
+		"brattymilf.com",
+		"brattysis.com",
+		"daddyslilangel.com",
+		"datingmystepson.com",
+		"girlsonlyporn.com",
+		"hotcrazymess.com",
+		"imnotyourmommy.com",
+		"momlover.com",
+		"momsboytoy.com",
+		"momsfamilysecrets.com",
+		"momstight.com",
+		"momswapped.com",
+		"momwantscreampie.com",
+		"momwantstobreed.com",
+		"nfbusty.com",
+		"nubilefilms.com",
+		"teacherfucksteens.com",
+		"thatsitcomshow.com",
 	}
 }
 
@@ -62,7 +81,14 @@ var matchRe = regexp.MustCompile(`^https?://(?:www\.)?(?:` +
 	`petitehdporn\.com|cumswappingsis\.com|familyswap\.xxx|` +
 	`caughtmycoach\.com|detentiongirls\.com|realitysis\.com|` +
 	`shesbreedingmaterial\.com|youngermommy\.com|` +
-	`petiteballerinasfucked\.com)`)
+	`petiteballerinasfucked\.com|` +
+	`anilos\.com|brattymilf\.com|brattysis\.com|` +
+	`daddyslilangel\.com|datingmystepson\.com|girlsonlyporn\.com|` +
+	`hotcrazymess\.com|imnotyourmommy\.com|momlover\.com|` +
+	`momsboytoy\.com|momsfamilysecrets\.com|momstight\.com|` +
+	`momswapped\.com|momwantscreampie\.com|momwantstobreed\.com|` +
+	`nfbusty\.com|nubilefilms\.com|teacherfucksteens\.com|` +
+	`thatsitcomshow\.com)`)
 
 func (s *Scraper) MatchesURL(u string) bool {
 	return matchRe.MatchString(u)

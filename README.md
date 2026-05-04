@@ -9,15 +9,15 @@ Scrapes all scenes and metadata from a studio URL. Designed to be easily extende
 
 ## Supported sites
 
-**1220 sites** across 15+ platforms — [full list with URL patterns →](docs/scrapers.md)
+**1235 sites** across 15+ platforms — [full list with URL patterns →](docs/scrapers.md)
 
 | Platform | Count | Examples |
 |----------|------:|---------|
 | Score Group | 93 | Scoreland, XL Girls, 18Eighteen, Leg Sex, Naughty Mag, 50 Plus MILFs, … |
-| Gamma/Algolia | 12 | Burning Angel, Evil Angel, Pure Taboo, Wicked, … |
+| Gamma/Algolia | 14 | Burning Angel, Dogfart Network, Evil Angel, OpenLife, Pure Taboo, Wicked, … |
 | WP video-elements | 12 | DaughterSwap, MommysBoy, PervMom, SisLovesMe, … |
 | SpiceVids collections | 1001 | AdamAndEveVOD, Crunchboy, 1111Customs, AdultTime, NewSensations, … (Aylo marketplace) |
-| Aylo/Juan | 10 | Babes, BangBros, Brazzers, Reality Kings, SpiceVids, … |
+| Aylo/Juan | 21 | Babes, BangBros, BigStr, Brazzers, Erito, HentaiPros, Killergram, LetsDoeIt, Metro, MileHigh, Reality Kings, Sean Cody, SpiceVids, WhyNotBi, … |
 | WordPress | 5 | Anal Therapy, Family Therapy, Tara Tainton, … |
 | POVR/WankzVR | 4 | BrasilVR, MilfVR, TranzVR, WankzVR |
 | Up-Timely CMS | 5 | DAS!, Idea Pocket, Madonna, MOODYZ, S1 NO.1 STYLE |
@@ -25,7 +25,7 @@ Scrapes all scenes and metadata from a studio URL. Designed to be easily extende
 | ModelCentro | 26 | Penny Barber, The Jerky Girls, Mugur Porn, Thicc Vision, Cum Trainer, Monster Males, … |
 | Railway/Express | 3 | Smoking Erotica, Smoking Models, Spanking Glamour |
 | Stashbox | 1+ | StashDB, any stashbox instance (config-driven) |
-| Standalone | 45 | APClips, Clips4Sale, DEEP'S, Fakings, Glory Quest, GrandparentsX, Jules Jordan, Kink, KM Produce, ManyVids, Naked News, Pornhub, Pure CFNM, r18.dev, Takara TV, VENUS, … |
+| Standalone | 47 | APClips, Clips4Sale, Crunchboy, DEEP'S, Fakings, Glory Quest, GrandparentsX, Jules Jordan, Kink, KM Produce, Lucas Entertainment, ManyVids, Naked News, Pornhub, Pure CFNM, r18.dev, Takara TV, VENUS, … |
 
 ## Install
 

@@ -103,6 +103,7 @@
 | [Brazzers](https://www.brazzers.com) | `brazzers.com`, `brazzers.com/pornstar/{id}/{slug}`, `brazzers.com/category/{id}/{slug}`, `brazzers.com/site/{id}/{slug}`, `brazzers.com/series/{id}/{slug}` | Aylo/Juan | No | REST API, filter by performer/category/sub-site/series, uses `ayloutil` |
 | [Charlee Chase](https://charleechaselive.com) | `charleechaselive.com/videos` | Custom | No | HTML scraping, listing + detail pages, performer extraction from title |
 | [Clips4Sale](https://www.clips4sale.com) | `clips4sale.com/studio/{id}/{slug}` | Clips4Sale | Yes | Multi-page JSON, categories, all-page enumeration |
+| [Crunchboy](https://www.crunchboy.com) | `crunchboy.com`, `crunchboy.com/en/videos/{studio}` | PornSiteManager | No | JSON-LD ItemList on listing pages + HTML enrichment for duration/studio, 12/page, ~4700 scenes |
 | [DEEP'S](https://deeps.net) | `deeps.net/item`, `deeps.net/item/index.php?w_{actress}`, `deeps.net/item/index.php?d_{director}`, `deeps.net/item/index.php?s_{series}`, `deeps.net/item/index.php?c_{category}` | Custom PHP | Yes (JPY) | HTML listing (32+50/page) + detail page worker pool, actress/director/series/category filtering, price/duration/tags, ~2600 titles |
 | [DAS!](https://dasdas.jp) | `dasdas.jp/works/list/series/{id}`, `dasdas.jp/works/list/release`, `dasdas.jp/works/list/date/{date}`, `dasdas.jp/works/list/genre/{id}`, `dasdas.jp/works/list/label/{id}`, `dasdas.jp/actress/detail/{id}` | Up-Timely CMS | No | Thin wrapper around `uptimelyutil` |
 | [Anal Therapy](https://analtherapyxxx.com) | `analtherapyxxx.com` | WordPress | No | Sitemap-driven, JSON-LD VideoObject fallback, uses `wputil` |
@@ -121,6 +122,7 @@
 | [IWantClips](https://www.iwantclips.com) | `iwantclips.com/store/{id}/{username}` | IWantClips | Yes | JSON API, double HTML-unescaping |
 | [Jules Jordan](https://www.julesjordan.com/trial/) | `julesjordan.com/trial/`, `julesjordan.com/trial/categories/movies.html`, `julesjordan.com/trial/models/{slug}.html`, `julesjordan.com/trial/dvds/dvds.html` | ElevatedX CMS | No | HTML scraping, listing + detail page worker pool, 3 modes: scene listing (paginated), model page, DVD listing (two-level: DVD list → DVD detail → scene URLs) |
 | [Lady Sonia](https://tour.lady-sonia.com) | `lady-sonia.com` | KB Productions/Next.js | No | `__NEXT_DATA__` JSON parsing, 1500+ scenes, listing-only (no detail pages needed) |
+| [Lucas Entertainment](https://www.lucasentertainment.com) | `lucasentertainment.com` | WordPress REST API | No | WP JSON API with `?categories=10` (Scenes), 100/page, ~2400 scenes, performer extraction from title heuristic, OG image + embedded media thumbnails |
 | [LoyalFans](https://www.loyalfans.com) | `loyalfans.com/{creator_slug}` | LoyalFans API | No | POST `/api/v2/advanced-search`, cursor-based `page_token` pagination (20/page), session via `/api/v2/system-status`, filters results by owner slug |
 | [Kink](https://www.kink.com) | `kink.com`, `kink.com/channel/{slug}`, `kink.com/model/{id}/{slug}`, `kink.com/tag/{slug}`, `kink.com/series/{slug}` | Kink | No | HTML scraping, 51 channels, filter by channel/performer/tag/series, detail page worker pool for tags/description/duration, age gate cookie bypass, JSON-LD + data-setup parsing |
 | [KM Produce](https://www.km-produce.com) | `km-produce.com`, `km-produce.com/works-vr`, `km-produce.com/works-sell`, `km-produce.com/works/tag/{slug}`, `km-produce.com/works/category/{name}`, `km-produce.com/{actress_slug}` | WordPress | Yes (JPY) | Main page scrapes both VR + sell catalogs (~16k titles), paginated listing + detail page worker pool, actress profile pages (single-page), tag/category/label filtering, price tracking |
@@ -180,6 +182,19 @@
 | [Lethal Hardcore](https://www.lethalhardcore.com) | `lethalhardcore.com` | Gamma/Algolia | No | Algolia search API, uses `gammautil` |
 | [Rocco Siffredi](https://www.roccosiffredi.com) | `roccosiffredi.com` | Gamma/Algolia | No | Algolia search API, uses `gammautil` |
 | [Wicked](https://www.wicked.com) | `wicked.com` | Gamma/Algolia | No | Algolia search API, uses `gammautil` |
+| [Dogfart Network](https://www.dogfartnetwork.com) | `dogfartnetwork.com` | Gamma/Algolia | No | Algolia search API (dfxtra segment), 17 subsites, network-level scraper, uses `gammautil` |
+| [OpenLife](https://www.openlife.com) | `openlife.com` | Gamma/Algolia | No | Algolia search API (openlife segment), 12 subsites, network-level scraper, uses `gammautil` |
+| [BigStr](https://www.czechhunter.com) | `czechhunter.com`, `czechhunter.com/pornstar/{id}/{slug}`, `czechhunter.com/category/{id}/{slug}`, `czechhunter.com/site/{id}/{slug}`, `czechhunter.com/series/{id}/{slug}` | Aylo/Juan | No | REST API, uses `ayloutil` |
+| [Erito](https://www.erito.com) | `erito.com`, `erito.com/pornstar/{id}/{slug}`, `erito.com/category/{id}/{slug}`, `erito.com/site/{id}/{slug}`, `erito.com/series/{id}/{slug}` | Aylo/Juan | No | REST API, uses `ayloutil` |
+| [HentaiPros](https://www.hentaipros.com) | `hentaipros.com`, `hentaipros.com/pornstar/{id}/{slug}`, `hentaipros.com/category/{id}/{slug}`, `hentaipros.com/site/{id}/{slug}`, `hentaipros.com/series/{id}/{slug}` | Aylo/Juan | No | REST API, uses `ayloutil` |
+| [Killergram](https://www.killergram.com) | `killergram.com`, `killergram.com/pornstar/{id}/{slug}`, `killergram.com/category/{id}/{slug}`, `killergram.com/site/{id}/{slug}`, `killergram.com/series/{id}/{slug}` | Aylo/Juan | No | REST API, uses `ayloutil` |
+| [LetsDoeIt](https://www.letsdoeit.com) | `letsdoeit.com`, `letsdoeit.com/pornstar/{id}/{slug}`, `letsdoeit.com/category/{id}/{slug}`, `letsdoeit.com/site/{id}/{slug}`, `letsdoeit.com/series/{id}/{slug}` | Aylo/Juan | No | REST API, uses `ayloutil` |
+| [Metro](https://www.shewillcheat.com) | `shewillcheat.com`, `shewillcheat.com/pornstar/{id}/{slug}`, `shewillcheat.com/category/{id}/{slug}`, `shewillcheat.com/site/{id}/{slug}`, `shewillcheat.com/series/{id}/{slug}` | Aylo/Juan | No | REST API, uses `ayloutil` |
+| [MileHigh](https://www.milfed.com) | `milfed.com`, `milfed.com/pornstar/{id}/{slug}`, `milfed.com/category/{id}/{slug}`, `milfed.com/site/{id}/{slug}`, `milfed.com/series/{id}/{slug}` | Aylo/Juan | No | REST API, uses `ayloutil` |
+| [RealityDudes](https://www.realitydudes.com) | `realitydudes.com`, `realitydudes.com/pornstar/{id}/{slug}`, `realitydudes.com/category/{id}/{slug}`, `realitydudes.com/site/{id}/{slug}`, `realitydudes.com/series/{id}/{slug}` | Aylo/Juan | No | REST API, uses `ayloutil` |
+| [Sean Cody](https://www.seancody.com) | `seancody.com`, `seancody.com/pornstar/{id}/{slug}`, `seancody.com/category/{id}/{slug}`, `seancody.com/site/{id}/{slug}`, `seancody.com/series/{id}/{slug}` | Aylo/Juan | No | REST API, uses `ayloutil` |
+| [Squirted](https://www.squirted.com) | `squirted.com`, `squirted.com/pornstar/{id}/{slug}`, `squirted.com/category/{id}/{slug}`, `squirted.com/site/{id}/{slug}`, `squirted.com/series/{id}/{slug}` | Aylo/Juan | No | REST API, uses `ayloutil` |
+| [WhyNotBi](https://www.men.com) | `men.com`, `men.com/pornstar/{id}/{slug}`, `men.com/category/{id}/{slug}`, `men.com/site/{id}/{slug}`, `men.com/series/{id}/{slug}` | Aylo/Juan | No | REST API, uses `ayloutil` |
 | [PropertySex](https://www.propertysex.com) | `propertysex.com`, `propertysex.com/pornstar/{id}/{slug}`, `propertysex.com/category/{id}/{slug}`, `propertysex.com/site/{id}/{slug}`, `propertysex.com/series/{id}/{slug}` | Aylo/Juan | No | REST API, filter by performer/category/sub-site/series, uses `ayloutil` |
 | [TransAngels](https://www.transangels.com) | `transangels.com`, `transangels.com/pornstar/{id}/{slug}`, `transangels.com/category/{id}/{slug}`, `transangels.com/site/{id}/{slug}`, `transangels.com/series/{id}/{slug}` | Aylo/Juan | No | REST API, filter by performer/category/sub-site/series, uses `ayloutil` |
 | [Twistys](https://www.twistys.com) | `twistys.com`, `twistys.com/pornstar/{id}/{slug}`, `twistys.com/category/{id}/{slug}`, `twistys.com/site/{id}/{slug}`, `twistys.com/series/{id}/{slug}` | Aylo/Juan | No | REST API, filter by performer/category/sub-site/series, uses `ayloutil` |
@@ -204,8 +219,8 @@ Scrapers that share a platform use common utility packages to avoid duplication:
 
 | Util package | Platform | Table-driven package | Sites |
 |---------|----------|---------------------|-------|
-| `ayloutil` | Aylo/Juan (REST API, instance token auth) | `aylo` | 8 sites + BangBros (standalone) + SpiceVids (1001 collections) |
-| `gammautil` | Gamma Entertainment (Algolia search API) | `gamma` | 12 sites |
+| `ayloutil` | Aylo/Juan (REST API, instance token auth) | `aylo` | 19 sites + BangBros (standalone) + SpiceVids (1001 collections) |
+| `gammautil` | Gamma Entertainment (Algolia search API, 3 segments: adulttime, dfxtra, openlife) | `gamma` | 14 sites (12 Adult Time + Dogfart Network + OpenLife) |
 | `veutil` | WordPress video-elements theme (WP REST API) | `videoelements` | 12 sites |
 | `scoregrouputil` | Score Group (HTML listing + detail pages) | `scoregroup` | 93 sites |
 | `modelcentroutil` | ModelCentro/AdultCentro (JSON API at `/api/content.load`) | `modelcentro` | 26 sites |
