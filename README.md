@@ -9,14 +9,15 @@ Scrapes all scenes and metadata from a studio URL. Designed to be easily extende
 
 ## Supported sites
 
-**194 sites** across 15+ platforms — [full list with URL patterns →](docs/scrapers.md)
+**1195 sites** across 15+ platforms — [full list with URL patterns →](docs/scrapers.md)
 
 | Platform | Count | Examples |
 |----------|------:|---------|
 | Score Group | 93 | Scoreland, XL Girls, 18Eighteen, Leg Sex, Naughty Mag, 50 Plus MILFs, … |
 | Gamma/Algolia | 12 | Burning Angel, Evil Angel, Pure Taboo, Wicked, … |
 | WP video-elements | 12 | DaughterSwap, MommysBoy, PervMom, SisLovesMe, … |
-| Aylo/Juan | 9 | Babes, BangBros, Brazzers, Reality Kings, … |
+| SpiceVids collections | 1001 | AdamAndEveVOD, Crunchboy, 1111Customs, AdultTime, NewSensations, … (Aylo marketplace) |
+| Aylo/Juan | 10 | Babes, BangBros, Brazzers, Reality Kings, SpiceVids, … |
 | WordPress | 5 | Anal Therapy, Family Therapy, Tara Tainton, … |
 | POVR/WankzVR | 4 | BrasilVR, MilfVR, TranzVR, WankzVR |
 | Up-Timely CMS | 5 | DAS!, Idea Pocket, Madonna, MOODYZ, S1 NO.1 STYLE |

@@ -29,6 +29,7 @@ type SiteConfig struct {
 	SiteBase   string
 	StudioName string
 	APIHost    string
+	ScenePath  string // URL path segment for scenes (default: "video")
 }
 
 type Scraper struct {
@@ -73,7 +74,7 @@ var (
 	// /modelprofile/ over /model/.
 	pornstarRe = regexp.MustCompile(`/(?:modelprofile|pornstar|model)/(\d+)`)
 	categoryRe = regexp.MustCompile(`/category/(\d+)`)
-	siteRe     = regexp.MustCompile(`/site/(\d+)`)
+	siteRe     = regexp.MustCompile(`/(?:site|collection)/(\d+)`)
 	seriesRe   = regexp.MustCompile(`/series/(\d+)`)
 )
 
@@ -366,7 +367,11 @@ func ToScene(cfg SiteConfig, studioURL string, rel Release, now time.Time) model
 		series = rel.Collections[0].Name
 	}
 
-	sceneURL := fmt.Sprintf("%s/video/%d/%s", cfg.SiteBase, rel.ID, Slugify(rel.Title))
+	scenePath := cfg.ScenePath
+	if scenePath == "" {
+		scenePath = "video"
+	}
+	sceneURL := fmt.Sprintf("%s/%s/%d/%s", cfg.SiteBase, scenePath, rel.ID, Slugify(rel.Title))
 
 	return models.Scene{
 		ID:          strconv.Itoa(rel.ID),

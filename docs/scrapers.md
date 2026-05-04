@@ -164,6 +164,7 @@
 | [Smoking Erotica](https://smokingerotica.com) | `smokingerotica.com/#/models`, `smokingerotica.com/#/models/{name}` | Railway/Express | No | Thin wrapper around `railwayutil` |
 | [Smoking Models](https://smokingmodels.com) | `smokingmodels.com/#/models`, `smokingmodels.com/#/models/{name}` | Railway/Express | No | Thin wrapper around `railwayutil` |
 | [Spanking Glamour](https://spankingglamour.com) | `spankingglamour.com/#/models`, `spankingglamour.com/#/models/{name}` | Railway/Express | No | Thin wrapper around `railwayutil` |
+| [SpiceVids](https://www.spicevids.com) | `spicevids.com`, `spicevids.com/model/{id}/{slug}`, `spicevids.com/collection/{id}/{slug}`, `spicevids.com/series/{id}/{slug}` | Aylo/Juan | No | Thin wrapper around `ayloutil`; marketplace with 1000 registered collections (table-driven) plus generic fallback; each collection is a separate scraper with `sv-{name}` SiteID |
 | [Sofie Marie](https://sofiemariexxx.com) | `sofiemariexxx.com`, `sofiemariexxx.com/models/{slug}.html`, `sofiemariexxx.com/dvds/{slug}.html` | ELXComplete/Andomark | No | HTML scraping, paginated listing (movies category), model pages via `sets.php` pagination, DVD pages single-fetch |
 | [Trans Queens](https://transqueens.com) | `transqueens.com/tour/updates`, `transqueens.com/tour/models/{slug}.html`, `transqueens.com/tour/categories/{slug}.html` | SexMex Pro CMS | No | Thin wrapper around `sexmexutil` |
 | [TranzVR](https://www.tranzvr.com) | `tranzvr.com` | POVR/WankzVR | No | Thin wrapper around `povrutil` |

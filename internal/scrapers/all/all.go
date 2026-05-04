@@ -91,6 +91,7 @@ import (
 	_ "github.com/Wasylq/FSS/internal/scrapers/smokingmodels"
 	_ "github.com/Wasylq/FSS/internal/scrapers/sofiemarie"
 	_ "github.com/Wasylq/FSS/internal/scrapers/spankingglamour"
+	_ "github.com/Wasylq/FSS/internal/scrapers/spicevids"
 	_ "github.com/Wasylq/FSS/internal/scrapers/stashbox"
 	_ "github.com/Wasylq/FSS/internal/scrapers/tabooheat"
 	_ "github.com/Wasylq/FSS/internal/scrapers/takaratv"
