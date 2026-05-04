@@ -4,7 +4,7 @@ import (
 	"encoding/xml"
 	"time"
 
-	"github.com/Wasylq/FSS/internal/stash"
+	"github.com/Wasylq/FSS/match"
 )
 
 type Movie struct {
@@ -28,7 +28,7 @@ type Actor struct {
 	Name string `xml:"name"`
 }
 
-func FromMergedScene(m stash.MergedScene) Movie {
+func FromMergedScene(m match.MergedScene) Movie {
 	mov := Movie{
 		Title:  m.Title,
 		URLs:   m.URLs,

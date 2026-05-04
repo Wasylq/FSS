@@ -154,7 +154,7 @@ No validation or dynamic reload. The Stash API key can also come from `FSS_STASH
 
 ## Stash Integration
 
-**Files:** `internal/stash/client.go`, `internal/stash/match.go`, `internal/stash/merge.go`
+**Files:** `stash/client.go`, `match/match.go`, `match/merge.go`
 
 Three-layer design:
 

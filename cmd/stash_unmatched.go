@@ -9,7 +9,7 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/Wasylq/FSS/internal/stash"
+	"github.com/Wasylq/FSS/stash"
 )
 
 var stashUnmatchedCmd = &cobra.Command{

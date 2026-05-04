@@ -245,7 +245,7 @@ These are **never run in CI** (Cloudflare blocks shared GitHub-runner IP ranges,
 
 #### Stash integration tests
 
-The Stash integration tests (`internal/stash/integration_test.go`) verify that the GraphQL client works against your real Stash instance. They are **read-only** — no tags, performers, studios, or scenes are created or modified.
+The Stash integration tests (`stash/integration_test.go`) verify that the GraphQL client works against your real Stash instance. They are **read-only** — no tags, performers, studios, or scenes are created or modified.
 
 ```bash
 # Default: connects to http://localhost:9999, no auth

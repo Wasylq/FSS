@@ -175,3 +175,105 @@ for r := range ch {
 ```
 
 All scrapers respect `ctx.Done()` on every page fetch and channel send — cancellation is immediate with no goroutine leaks.
+
+## Matching & Merging (`match`)
+
+The `match` package provides filename-to-title matching and cross-site scene merging — the same engine used by `fss stash import` and `fss identify`.
+
+```go
+import (
+    "github.com/Wasylq/FSS/match"
+    _ "github.com/Wasylq/FSS/internal/scrapers/manyvids"
+)
+
+// Load scenes from FSS JSON files.
+scenes, err := match.LoadJSONFiles([]string{"manyvids.json", "clips4sale.json"})
+// or: scenes, err := match.LoadJSONDir("./data")
+
+// Build a title index.
+idx := match.BuildIndex(scenes)
+
+// Match a filename (duration in seconds, 0 = unknown).
+result := idx.Match("Fostering the Bully.mp4", 605.0)
+
+switch result.Confidence {
+case match.MatchExact:
+    fmt.Println("Exact match:", result.Scenes[0].Title)
+case match.MatchSubstring:
+    fmt.Println("Substring match:", result.Scenes[0].Title)
+case match.MatchAmbiguous:
+    fmt.Printf("Ambiguous: %d candidates\n", result.Candidates)
+case match.MatchNone:
+    fmt.Println("No match")
+}
+
+// Merge cross-site scenes into a single metadata record.
+merged := match.MergeScenes(result.Scenes, time.Time{})
+fmt.Println(merged.Title, merged.URLs, merged.Performers)
+```
+
+**Key types:** `SceneIndex`, `MatchResult`, `MatchConfidence`, `MergedScene`.
+
+## NFO Generation (`nfo`)
+
+The `nfo` package generates Kodi-style `.nfo` XML files from merged scene metadata.
+
+```go
+import "github.com/Wasylq/FSS/nfo"
+
+mov := nfo.FromMergedScene(merged) // merged is a match.MergedScene
+data, err := nfo.Marshal(mov)
+os.WriteFile("scene.nfo", data, 0o644)
+```
+
+**Key types:** `Movie`, `Thumb`, `Actor`.
+
+## Identify (`identify`)
+
+The `identify` package scans a directory of video files, matches them against an FSS scene index, and optionally writes `.nfo` sidecar files.
+
+```go
+import "github.com/Wasylq/FSS/identify"
+
+videos, _ := identify.FindVideos("/path/to/videos")
+results := identify.Run(videos, idx, identify.Options{
+    Apply: true,  // write .nfo files (false = dry-run)
+    Force: false, // don't overwrite existing .nfo
+})
+stats := identify.Summarize(results)
+fmt.Printf("%d matched, %d unmatched\n", stats.Matched, stats.Unmatched)
+```
+
+**Key types:** `Result`, `Options`, `Stats`.
+
+## Stash Client (`stash`)
+
+The `stash` package provides a GraphQL client for interacting with a [Stash](https://stashapp.cc/) instance.
+
+```go
+import "github.com/Wasylq/FSS/stash"
+
+client := stash.NewClient("http://localhost:9999", "optional-api-key")
+
+// Ping to verify connectivity.
+err := client.Ping(ctx)
+
+// Query scenes.
+scenes, total, err := client.FindScenes(ctx, stash.FindScenesFilter{
+    PerformerName: "Bettie Bondage",
+}, 1, 25)
+
+// Update a scene.
+title := "New Title"
+err = client.UpdateScene(ctx, stash.SceneUpdateInput{
+    ID:    "42",
+    Title: &title,
+})
+
+// Ensure entities exist (create if missing).
+tagID, _ := client.EnsureTag(ctx, "fss_import")
+perfID, _ := client.EnsurePerformer(ctx, "Bettie Bondage")
+studioID, _ := client.EnsureStudio(ctx, "Bettie Bondage")
+```
+
+**Key types:** `Client`, `StashScene`, `FindScenesFilter`, `SceneUpdateInput`.

@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/Wasylq/FSS/internal/stash"
+	"github.com/Wasylq/FSS/match"
 	"github.com/Wasylq/FSS/models"
 )
 
@@ -71,7 +71,7 @@ func TestRunDryRun(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	idx := stash.BuildIndex([]models.Scene{
+	idx := match.BuildIndex([]models.Scene{
 		scene("1", "manyvids", "Fostering the Bully"),
 	})
 
@@ -101,7 +101,7 @@ func TestRunApply(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	idx := stash.BuildIndex([]models.Scene{
+	idx := match.BuildIndex([]models.Scene{
 		scene("1", "manyvids", "Fostering the Bully"),
 	})
 
@@ -138,7 +138,7 @@ func TestRunSkipsExistingNFO(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	idx := stash.BuildIndex([]models.Scene{
+	idx := match.BuildIndex([]models.Scene{
 		scene("1", "site", "scene"),
 	})
 
@@ -165,7 +165,7 @@ func TestRunForceOverwritesNFO(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	idx := stash.BuildIndex([]models.Scene{
+	idx := match.BuildIndex([]models.Scene{
 		scene("1", "site", "scene"),
 	})
 
@@ -186,7 +186,7 @@ func TestRunNoMatch(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	idx := stash.BuildIndex([]models.Scene{
+	idx := match.BuildIndex([]models.Scene{
 		scene("1", "site", "Completely Different Title"),
 	})
 
@@ -194,17 +194,17 @@ func TestRunNoMatch(t *testing.T) {
 	if len(results) != 1 {
 		t.Fatalf("got %d results, want 1", len(results))
 	}
-	if results[0].Confidence != stash.MatchNone {
+	if results[0].Confidence != match.MatchNone {
 		t.Errorf("confidence = %v, want NONE", results[0].Confidence)
 	}
 }
 
 func TestSummarize(t *testing.T) {
 	results := []Result{
-		{Confidence: stash.MatchExact, Scene: &stash.MergedScene{}},
-		{Confidence: stash.MatchSubstring, Scene: &stash.MergedScene{}},
-		{Confidence: stash.MatchNone},
-		{Confidence: stash.MatchAmbiguous},
+		{Confidence: match.MatchExact, Scene: &match.MergedScene{}},
+		{Confidence: match.MatchSubstring, Scene: &match.MergedScene{}},
+		{Confidence: match.MatchNone},
+		{Confidence: match.MatchAmbiguous},
 		{Skipped: true, SkipReason: "nfo exists"},
 	}
 
@@ -229,8 +229,8 @@ func TestSummarize(t *testing.T) {
 func TestWriteReport(t *testing.T) {
 	dir := t.TempDir()
 	results := []Result{
-		{VideoPath: filepath.Join(dir, "good-scene.mp4"), Confidence: stash.MatchExact, Scene: &stash.MergedScene{}},
-		{VideoPath: filepath.Join(dir, "no-match.mp4"), Confidence: stash.MatchNone},
+		{VideoPath: filepath.Join(dir, "good-scene.mp4"), Confidence: match.MatchExact, Scene: &match.MergedScene{}},
+		{VideoPath: filepath.Join(dir, "no-match.mp4"), Confidence: match.MatchNone},
 		{VideoPath: filepath.Join(dir, "has-nfo.mp4"), Skipped: true, SkipReason: "nfo exists"},
 	}
 
@@ -257,7 +257,7 @@ func TestWriteReport(t *testing.T) {
 func TestWriteReportSkipsWhenAllMatched(t *testing.T) {
 	dir := t.TempDir()
 	results := []Result{
-		{VideoPath: filepath.Join(dir, "matched.mp4"), Confidence: stash.MatchExact, Scene: &stash.MergedScene{}},
+		{VideoPath: filepath.Join(dir, "matched.mp4"), Confidence: match.MatchExact, Scene: &match.MergedScene{}},
 	}
 
 	if err := WriteReport(dir, results); err != nil {

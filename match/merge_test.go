@@ -1,4 +1,4 @@
-package stash
+package match
 
 import (
 	"testing"

@@ -5,11 +5,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Wasylq/FSS/internal/stash"
+	"github.com/Wasylq/FSS/match"
 )
 
 func TestFromMergedScene(t *testing.T) {
-	m := stash.MergedScene{
+	m := match.MergedScene{
 		Title:       "Test Scene",
 		Description: "A test scene.",
 		Date:        time.Date(2024, 3, 15, 0, 0, 0, 0, time.UTC),
@@ -43,7 +43,7 @@ func TestFromMergedScene(t *testing.T) {
 }
 
 func TestFromMergedSceneNoDate(t *testing.T) {
-	m := stash.MergedScene{Title: "No Date"}
+	m := match.MergedScene{Title: "No Date"}
 	mov := FromMergedScene(m)
 	if mov.Premiered != "" {
 		t.Errorf("premiered = %q, want empty", mov.Premiered)
@@ -51,7 +51,7 @@ func TestFromMergedSceneNoDate(t *testing.T) {
 }
 
 func TestFromMergedSceneNoThumbnail(t *testing.T) {
-	m := stash.MergedScene{Title: "No Thumb"}
+	m := match.MergedScene{Title: "No Thumb"}
 	mov := FromMergedScene(m)
 	if len(mov.Thumbnails) != 0 {
 		t.Errorf("thumbnails = %d, want 0", len(mov.Thumbnails))

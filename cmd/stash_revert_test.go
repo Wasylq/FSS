@@ -9,7 +9,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Wasylq/FSS/internal/stash"
+	"github.com/Wasylq/FSS/stash"
 )
 
 func TestParseRevertFields(t *testing.T) {

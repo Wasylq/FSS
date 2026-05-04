@@ -6,8 +6,8 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/Wasylq/FSS/internal/identify"
-	"github.com/Wasylq/FSS/internal/stash"
+	"github.com/Wasylq/FSS/identify"
+	"github.com/Wasylq/FSS/match"
 	"github.com/Wasylq/FSS/models"
 )
 
@@ -53,10 +53,10 @@ func runIdentify(cmd *cobra.Command, args []string) error {
 	var fssScenes []models.Scene
 	if len(jsonFiles) > 0 {
 		fmt.Printf(" %d file(s)...", len(jsonFiles))
-		fssScenes, err = stash.LoadJSONFiles(jsonFiles)
+		fssScenes, err = match.LoadJSONFiles(jsonFiles)
 	} else {
 		fmt.Printf(" from %s...", dir)
-		fssScenes, err = stash.LoadJSONDir(dir)
+		fssScenes, err = match.LoadJSONDir(dir)
 	}
 	if err != nil {
 		return fmt.Errorf("loading FSS data: %w", err)
@@ -67,7 +67,7 @@ func runIdentify(cmd *cobra.Command, args []string) error {
 	}
 	fmt.Printf("Loaded %d FSS scenes\n", len(fssScenes))
 
-	idx := stash.BuildIndex(fssScenes)
+	idx := match.BuildIndex(fssScenes)
 
 	// --- find videos ---
 	fmt.Printf("Scanning %s for video files...\n", absDir)

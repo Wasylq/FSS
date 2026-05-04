@@ -24,5 +24,4 @@ GoReleaser produces `.deb` and `.rpm` packages attached to each GitHub Release, 
 
 - **`--nfo-dir`**: Write `.nfo` files to a `.nfo/` subdirectory instead of next to the video, keeping the video folder clean. The Stash NFO scraper supports both locations.
 - **ffprobe duration**: Use `ffprobe` (if available) to read video file durations for better matching accuracy, especially for the trailing-number pass which requires duration to disambiguate. Fall back to duration=0 if not installed.
-- **Importable package**: Move `internal/identify` to a top-level `identify` package so external Go code can use it as a library. Requires also extracting the matching engine from `internal/stash`.
 

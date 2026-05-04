@@ -14,8 +14,9 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/Wasylq/FSS/internal/stash"
+	"github.com/Wasylq/FSS/match"
 	"github.com/Wasylq/FSS/models"
+	"github.com/Wasylq/FSS/stash"
 )
 
 var stashImportCmd = &cobra.Command{
@@ -104,10 +105,10 @@ func runStashImport(cmd *cobra.Command, _ []string) error {
 	var err error
 	if len(jsonFiles) > 0 {
 		fmt.Printf(" %d file(s)...", len(jsonFiles))
-		fssScenes, err = stash.LoadJSONFiles(jsonFiles)
+		fssScenes, err = match.LoadJSONFiles(jsonFiles)
 	} else {
 		fmt.Printf(" from %s...", dir)
-		fssScenes, err = stash.LoadJSONDir(dir)
+		fssScenes, err = match.LoadJSONDir(dir)
 	}
 	if err != nil {
 		return fmt.Errorf("loading FSS data: %w", err)
@@ -118,7 +119,7 @@ func runStashImport(cmd *cobra.Command, _ []string) error {
 	}
 	fmt.Printf("Loaded %d FSS scenes\n", len(fssScenes))
 
-	idx := stash.BuildIndex(fssScenes)
+	idx := match.BuildIndex(fssScenes)
 
 	// --- resolve flags ---
 	apply, _ := cmd.Flags().GetBool("apply")
@@ -228,10 +229,10 @@ func runStashImport(cmd *cobra.Command, _ []string) error {
 		result := idx.Match(filename, fileDuration)
 
 		switch result.Confidence {
-		case stash.MatchNone:
+		case match.MatchNone:
 			stats.skipped++
 			continue
-		case stash.MatchAmbiguous:
+		case match.MatchAmbiguous:
 			stats.ambiguous++
 			fmt.Printf("  AMBIGUOUS  %-50s  →  %d candidates, skipped\n\n", truncate(filename, 50), result.Candidates)
 			continue
@@ -245,7 +246,7 @@ func runStashImport(cmd *cobra.Command, _ []string) error {
 			existingDate, _ = time.Parse("2006-01-02", ss.Date)
 		}
 
-		merged := stash.MergeScenes(result.Scenes, existingDate)
+		merged := match.MergeScenes(result.Scenes, existingDate)
 		sites := strings.Join(merged.Sites, " + ")
 		stashBase := stashURL(cmd)
 		fmt.Printf("  %-10s %-50s  →  %q (%s)\n", result.Confidence, truncate(filename, 50), merged.Title, sites)
@@ -259,12 +260,12 @@ func runStashImport(cmd *cobra.Command, _ []string) error {
 			allTags = append(allTags, stashboxTag)
 		}
 		if resolutionTags {
-			allTags = append(allTags, stash.ResolutionTags(merged.Width)...)
+			allTags = append(allTags, match.ResolutionTags(merged.Width)...)
 		}
 
 		// Merge URLs with existing.
 		existingURLs := ss.URLs
-		mergedURLs := stash.MergeURLs(existingURLs, merged.URLs)
+		mergedURLs := match.MergeURLs(existingURLs, merged.URLs)
 
 		// Check if there's anything to change.
 		changes := buildChanges(ss, merged, mergedURLs, allTags, setCover)
@@ -577,7 +578,7 @@ func printFailureSummary(failures []importFailure) {
 	}
 }
 
-func buildChanges(ss stash.StashScene, merged stash.MergedScene, mergedURLs []string, newTags []string, setCover bool) map[string]changelogFieldDiff {
+func buildChanges(ss stash.StashScene, merged match.MergedScene, mergedURLs []string, newTags []string, setCover bool) map[string]changelogFieldDiff {
 	changes := map[string]changelogFieldDiff{}
 
 	if merged.Title != "" && merged.Title != ss.Title {

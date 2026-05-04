@@ -8,8 +8,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/Wasylq/FSS/internal/nfo"
-	"github.com/Wasylq/FSS/internal/stash"
+	"github.com/Wasylq/FSS/match"
+	"github.com/Wasylq/FSS/nfo"
 )
 
 var videoExtensions = map[string]bool{
@@ -29,8 +29,8 @@ var videoExtensions = map[string]bool{
 type Result struct {
 	VideoPath  string
 	NFOPath    string
-	Confidence stash.MatchConfidence
-	Scene      *stash.MergedScene
+	Confidence match.MatchConfidence
+	Scene      *match.MergedScene
 	Skipped    bool
 	SkipReason string
 }
@@ -59,7 +59,7 @@ func FindVideos(dir string) ([]string, error) {
 	return videos, err
 }
 
-func Run(videos []string, idx *stash.SceneIndex, opts Options) []Result {
+func Run(videos []string, idx *match.SceneIndex, opts Options) []Result {
 	var results []Result
 
 	for _, vpath := range videos {
@@ -71,7 +71,7 @@ func Run(videos []string, idx *stash.SceneIndex, opts Options) []Result {
 				results = append(results, Result{
 					VideoPath:  vpath,
 					NFOPath:    nfoPath,
-					Confidence: stash.MatchNone,
+					Confidence: match.MatchNone,
 					Skipped:    true,
 					SkipReason: "nfo exists",
 				})
@@ -80,7 +80,7 @@ func Run(videos []string, idx *stash.SceneIndex, opts Options) []Result {
 		}
 
 		mr := idx.Match(basename, 0)
-		if mr.Confidence == stash.MatchNone || mr.Confidence == stash.MatchAmbiguous {
+		if mr.Confidence == match.MatchNone || mr.Confidence == match.MatchAmbiguous {
 			results = append(results, Result{
 				VideoPath:  vpath,
 				NFOPath:    nfoPath,
@@ -89,7 +89,7 @@ func Run(videos []string, idx *stash.SceneIndex, opts Options) []Result {
 			continue
 		}
 
-		merged := stash.MergeScenes(mr.Scenes, time.Time{})
+		merged := match.MergeScenes(mr.Scenes, time.Time{})
 		r := Result{
 			VideoPath:  vpath,
 			NFOPath:    nfoPath,
@@ -125,9 +125,9 @@ func Summarize(results []Result) Stats {
 		switch {
 		case r.Skipped:
 			s.Skipped++
-		case r.Confidence == stash.MatchNone:
+		case r.Confidence == match.MatchNone:
 			s.Unmatched++
-		case r.Confidence == stash.MatchAmbiguous:
+		case r.Confidence == match.MatchAmbiguous:
 			s.Ambiguous++
 		default:
 			s.Matched++
@@ -149,7 +149,7 @@ func WriteReport(dir string, results []Result) error {
 		}
 		if r.Skipped {
 			skipped = append(skipped, fmt.Sprintf("%s (%s)", rel, r.SkipReason))
-		} else if r.Confidence == stash.MatchNone || r.Confidence == stash.MatchAmbiguous {
+		} else if r.Confidence == match.MatchNone || r.Confidence == match.MatchAmbiguous {
 			unmatched = append(unmatched, rel)
 		}
 	}
@@ -182,7 +182,7 @@ func nfoPathFor(videoPath string) string {
 	return videoPath[:len(videoPath)-len(ext)] + ".nfo"
 }
 
-func writeNFO(path string, m stash.MergedScene) error {
+func writeNFO(path string, m match.MergedScene) error {
 	mov := nfo.FromMergedScene(m)
 	data, err := nfo.Marshal(mov)
 	if err != nil {
