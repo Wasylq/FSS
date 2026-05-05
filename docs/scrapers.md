@@ -131,7 +131,52 @@
 | [Madonna](https://madonna-av.com) | `madonna-av.com/works/list/series/{id}`, `madonna-av.com/works/list/release`, `madonna-av.com/works/list/date/{date}`, `madonna-av.com/works/list/genre/{id}`, `madonna-av.com/works/list/label/{id}`, `madonna-av.com/actress/detail/{id}` | Up-Timely CMS | No | Thin wrapper around `uptimelyutil` |
 | [ManyVids](https://www.manyvids.com) | `manyvids.com/Profile/{id}/{slug}/Store/Videos` | ManyVids | Yes | JSON API, detail-page worker pool |
 | [Mature.nl](https://www.mature.nl) | `mature.nl/en/updates`, `mature.nl/en/model/{id}`, `mature.nl/en/niche/{id}/{page}/{slug}` | Custom | No | HTML scraping, paginated listing + detail page worker pool for model URLs |
-| [MYLF](https://www.mylf.com) | `mylf.com`, `mylf.com/models/{slug}`, `mylf.com/series/{slug}`, `mylf.com/categories/{name}` | TeamSkeet/PSM | No | Public Elasticsearch API, filter by model/series/category |
+| [TeamSkeet](https://www.teamskeet.com) | `teamskeet.com`, `teamskeet.com/models/{slug}`, `teamskeet.com/series/{slug}`, `teamskeet.com/categories/{name}` | TeamSkeet/PSM | No | Public Elasticsearch API (`ts_network` index, 203 series, ~14.6k scenes), table-driven `teamskeet` package using `teamskeetutil` |
+| [MYLF](https://www.mylf.com) | `mylf.com`, `mylf.com/models/{slug}`, `mylf.com/series/{slug}`, `mylf.com/categories/{name}` | TeamSkeet/PSM | No | TeamSkeet, `mylf_bundle` ES index (28 series) |
+| [Family Strokes](https://www.familystrokes.com) | `familystrokes.com`, `familystrokes.com/models/{slug}`, `familystrokes.com/series/{slug}`, `familystrokes.com/categories/{name}` | TeamSkeet/PSM | No | TeamSkeet, `familybundle` ES index |
+| [Freeuse](https://www.freeuse.com) | `freeuse.com`, `freeuse.com/models/{slug}`, `freeuse.com/series/{slug}`, `freeuse.com/categories/{name}` | TeamSkeet/PSM | No | TeamSkeet, `freeusebundle` ES index |
+| [Pervz](https://www.pervz.com) | `pervz.com`, `pervz.com/models/{slug}`, `pervz.com/series/{slug}`, `pervz.com/categories/{name}` | TeamSkeet/PSM | No | TeamSkeet, `pervbundle` ES index |
+| [Shoplyfter](https://www.shoplyfter.com) | `shoplyfter.com`, `shoplyfter.com/models/{slug}`, `shoplyfter.com/series/{slug}`, `shoplyfter.com/categories/{name}` | TeamSkeet/PSM | No | TeamSkeet, `pervbundle` ES index |
+| [Swappz](https://www.swappz.com) | `swappz.com`, `swappz.com/models/{slug}`, `swappz.com/series/{slug}`, `swappz.com/categories/{name}` | TeamSkeet/PSM | No | TeamSkeet, `swap_bundle` ES index |
+| [Bad MILFs](https://www.badmilfs.com) | `badmilfs.com` | TeamSkeet/PSM | No | TeamSkeet, `ts_network` index |
+| [BFFs](https://www.bffs.com) | `bffs.com` | TeamSkeet/PSM | No | TeamSkeet, `ts_network` index |
+| [Black Valley Girls](https://www.blackvalleygirls.com) | `blackvalleygirls.com` | TeamSkeet/PSM | No | TeamSkeet, `ts_network` index |
+| [Brace Faced](https://www.bracefaced.com) | `bracefaced.com` | TeamSkeet/PSM | No | TeamSkeet, `ts_network` index |
+| [Breeding Material](https://www.breedingmaterial.com) | `breedingmaterial.com` | TeamSkeet/PSM | No | TeamSkeet, `ts_network` index |
+| [CFNM Teens](https://www.cfnmteens.com) | `cfnmteens.com` | TeamSkeet/PSM | No | TeamSkeet, `ts_network` index |
+| [Dad Crush](https://www.dadcrush.com) | `dadcrush.com` | TeamSkeet/PSM | No | TeamSkeet, `ts_network` index |
+| [Daughter Swap](https://www.daughterswap.com) | `daughterswap.com` | TeamSkeet/PSM | No | TeamSkeet, `ts_network` index |
+| [Dyked](https://www.dyked.com) | `dyked.com` | TeamSkeet/PSM | No | TeamSkeet, `ts_network` index |
+| [Exxxtra Small](https://www.exxxtrasmall.com) | `exxxtrasmall.com` | TeamSkeet/PSM | No | TeamSkeet, `ts_network` index |
+| [Foster Tapes](https://www.fostertapes.com) | `fostertapes.com` | TeamSkeet/PSM | No | TeamSkeet, `ts_network` index |
+| [Freaky Fembots](https://www.freakyfembots.com) | `freakyfembots.com` | TeamSkeet/PSM | No | TeamSkeet, `ts_network` index |
+| [Freeuse Fantasy](https://www.freeusefantasy.com) | `freeusefantasy.com` | TeamSkeet/PSM | No | TeamSkeet, `ts_network` index |
+| [Ginger Patch](https://www.gingerpatch.com) | `gingerpatch.com` | TeamSkeet/PSM | No | TeamSkeet, `ts_network` index |
+| [Hijab Hookup](https://www.hijabhookup.com) | `hijabhookup.com` | TeamSkeet/PSM | No | TeamSkeet, `ts_network` index |
+| [Innocent High](https://www.innocenthigh.com) | `innocenthigh.com` | TeamSkeet/PSM | No | TeamSkeet, `ts_network` index |
+| [Little Asians](https://www.littleasians.com) | `littleasians.com` | TeamSkeet/PSM | No | TeamSkeet, `ts_network` index |
+| [Mormon Girlz](https://www.mormongirlz.com) | `mormongirlz.com` | TeamSkeet/PSM | No | TeamSkeet, `ts_network` index |
+| [My Babysitter's Club](https://www.mybabysittersclub.com) | `mybabysittersclub.com` | TeamSkeet/PSM | No | TeamSkeet, `ts_network` index |
+| [Not My Grandpa](https://www.notmygrandpa.com) | `notmygrandpa.com` | TeamSkeet/PSM | No | TeamSkeet, `ts_network` index |
+| [Oye Loca](https://www.oyeloca.com) | `oyeloca.com` | TeamSkeet/PSM | No | TeamSkeet, `ts_network` index |
+| [Perv Doctor](https://www.pervdoctor.com) | `pervdoctor.com` | TeamSkeet/PSM | No | TeamSkeet, `ts_network` index |
+| [Perv Mom](https://www.pervmom.com) | `pervmom.com` | TeamSkeet/PSM | No | TeamSkeet, `ts_network` index |
+| [Perv Therapy](https://www.pervtherapy.com) | `pervtherapy.com` | TeamSkeet/PSM | No | TeamSkeet, `ts_network` index |
+| [POV Life](https://www.povlife.com) | `povlife.com` | TeamSkeet/PSM | No | TeamSkeet, `ts_network` index |
+| [Punish Teens](https://www.punishteens.com) | `punishteens.com` | TeamSkeet/PSM | No | TeamSkeet, `ts_network` index |
+| [She's New](https://www.shesnew.com) | `shesnew.com` | TeamSkeet/PSM | No | TeamSkeet, `ts_network` index |
+| [Sis Loves Me](https://www.sislovesme.com) | `sislovesme.com` | TeamSkeet/PSM | No | TeamSkeet, `ts_network` index |
+| [Sis Swap](https://www.sisswap.com) | `sisswap.com` | TeamSkeet/PSM | No | TeamSkeet, `ts_network` index |
+| [Stay Home POV](https://www.stayhomepov.com) | `stayhomepov.com` | TeamSkeet/PSM | No | TeamSkeet, `ts_network` index |
+| [Submissived](https://www.submissived.com) | `submissived.com` | TeamSkeet/PSM | No | TeamSkeet, `ts_network` index |
+| [Teen Curves](https://www.teencurves.com) | `teencurves.com` | TeamSkeet/PSM | No | TeamSkeet, `ts_network` index |
+| [Teen Pies](https://www.teenpies.com) | `teenpies.com` | TeamSkeet/PSM | No | TeamSkeet, `ts_network` index |
+| [Teens Love Anal](https://www.teensloveanal.com) | `teensloveanal.com` | TeamSkeet/PSM | No | TeamSkeet, `ts_network` index |
+| [Teens Love Black Cocks](https://www.teensloveblackcocks.com) | `teensloveblackcocks.com` | TeamSkeet/PSM | No | TeamSkeet, `ts_network` index |
+| [The Real Workout](https://www.therealworkout.com) | `therealworkout.com` | TeamSkeet/PSM | No | TeamSkeet, `ts_network` index |
+| [Thickumz](https://www.thickumz.com) | `thickumz.com` | TeamSkeet/PSM | No | TeamSkeet, `ts_network` index |
+| [Tiny Sis](https://www.tinysis.com) | `tinysis.com` | TeamSkeet/PSM | No | TeamSkeet, `ts_network` index |
+| [Titty Attack](https://www.tittyattack.com) | `tittyattack.com` | TeamSkeet/PSM | No | TeamSkeet, `ts_network` index |
 | [Pure Mature](https://puremature.com) | `puremature.com`, `puremature.com/models/{slug}` | AMA Multimedia | No | JSON REST API, filter by model, resolution from download options |
 | [MilfVR](https://www.milfvr.com) | `milfvr.com` | POVR/WankzVR | No | Export JSON + listing page dates, uses `povrutil` |
 | [MissaX](https://www.missax.com) | `missax.com` | Custom | No | HTML scraping, listing + detail page worker pool |

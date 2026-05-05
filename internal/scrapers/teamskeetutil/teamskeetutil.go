@@ -1,4 +1,4 @@
-package mylf
+package teamskeetutil
 
 import (
 	"context"
@@ -17,49 +17,91 @@ import (
 )
 
 const (
-	esEndpoint = "https://tours-store.psmcdn.net/mylf_bundle/_search"
-	siteBase   = "https://www.mylf.com"
-	pageSize   = 30
+	esBase   = "https://tours-store.psmcdn.net"
+	pageSize = 30
 )
+
+type SiteConfig struct {
+	SiteID   string
+	Domain   string
+	SiteBase string
+	Index    string // ES index name (e.g. "ts_network", "mylf_bundle")
+}
 
 type Scraper struct {
 	client *http.Client
+	Config SiteConfig
 }
 
-func New() *Scraper {
+func NewScraper(cfg SiteConfig) *Scraper {
 	return &Scraper{
 		client: httpx.NewClient(30 * time.Second),
+		Config: cfg,
 	}
 }
 
-func init() {
-	scraper.Register(New())
-}
+func (s *Scraper) Run(ctx context.Context, studioURL string, opts scraper.ListOpts, out chan<- scraper.SceneResult) {
+	defer close(out)
 
-func (s *Scraper) ID() string { return "mylf" }
+	kind, value := classifyURL(studioURL)
+	baseQuery := buildQuery(kind, value)
+	now := time.Now().UTC()
 
-func (s *Scraper) Patterns() []string {
-	return []string{
-		"mylf.com",
-		"mylf.com/models/{slug}",
-		"mylf.com/series/{slug}",
-		"mylf.com/categories/{name}",
+	for from := 0; ; from += pageSize {
+		if ctx.Err() != nil {
+			return
+		}
+		if from > 0 && opts.Delay > 0 {
+			select {
+			case <-time.After(opts.Delay):
+			case <-ctx.Done():
+				return
+			}
+		}
+
+		baseQuery["from"] = from
+		baseQuery["size"] = pageSize
+
+		result, err := s.search(ctx, baseQuery)
+		if err != nil {
+			select {
+			case out <- scraper.Error(fmt.Errorf("from=%d: %w", from, err)):
+			case <-ctx.Done():
+			}
+			return
+		}
+
+		if from == 0 && result.Hits.Total.Value > 0 {
+			select {
+			case out <- scraper.Progress(result.Hits.Total.Value):
+			case <-ctx.Done():
+				return
+			}
+		}
+
+		if len(result.Hits.Hits) == 0 {
+			return
+		}
+
+		for _, hit := range result.Hits.Hits {
+			id := strconv.Itoa(hit.Source.ItemID)
+
+			if len(opts.KnownIDs) > 0 && opts.KnownIDs[id] {
+				select {
+				case out <- scraper.StoppedEarly():
+				case <-ctx.Done():
+				}
+				return
+			}
+
+			scene := hitToScene(hit.Source, studioURL, s.Config.SiteBase, now)
+			select {
+			case out <- scraper.Scene(scene):
+			case <-ctx.Done():
+				return
+			}
+		}
 	}
-}
-
-var (
-	matchRe     = regexp.MustCompile(`^https?://(?:www\.)?mylf\.com`)
-	stripTagsRe = regexp.MustCompile(`<[^>]+>`)
-)
-
-func (s *Scraper) MatchesURL(u string) bool {
-	return matchRe.MatchString(u)
-}
-
-func (s *Scraper) ListScenes(ctx context.Context, studioURL string, opts scraper.ListOpts) (<-chan scraper.SceneResult, error) {
-	out := make(chan scraper.SceneResult)
-	go s.run(ctx, studioURL, opts, out)
-	return out, nil
 }
 
 type filterKind int
@@ -117,75 +159,12 @@ func buildQuery(kind filterKind, value string) map[string]any {
 	}
 }
 
-func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOpts, out chan<- scraper.SceneResult) {
-	defer close(out)
-
-	kind, value := classifyURL(studioURL)
-	baseQuery := buildQuery(kind, value)
-	now := time.Now().UTC()
-
-	for from := 0; ; from += pageSize {
-		if ctx.Err() != nil {
-			return
-		}
-		if from > 0 && opts.Delay > 0 {
-			select {
-			case <-time.After(opts.Delay):
-			case <-ctx.Done():
-				return
-			}
-		}
-
-		baseQuery["from"] = from
-		baseQuery["size"] = pageSize
-
-		result, err := s.search(ctx, baseQuery)
-		if err != nil {
-			select {
-			case out <- scraper.Error(fmt.Errorf("from=%d: %w", from, err)):
-			case <-ctx.Done():
-			}
-			return
-		}
-
-		if from == 0 && result.Hits.Total.Value > 0 {
-			select {
-			case out <- scraper.Progress(result.Hits.Total.Value):
-			case <-ctx.Done():
-				return
-			}
-		}
-
-		if len(result.Hits.Hits) == 0 {
-			return
-		}
-
-		for _, hit := range result.Hits.Hits {
-			id := strconv.Itoa(hit.Source.ItemID)
-
-			if len(opts.KnownIDs) > 0 && opts.KnownIDs[id] {
-				select {
-				case out <- scraper.StoppedEarly():
-				case <-ctx.Done():
-				}
-				return
-			}
-
-			scene := hitToScene(hit.Source, studioURL, now)
-			select {
-			case out <- scraper.Scene(scene):
-			case <-ctx.Done():
-				return
-			}
-		}
-	}
-}
-
 func (s *Scraper) search(ctx context.Context, query map[string]any) (*esResponse, error) {
-	return s.searchURL(ctx, esEndpoint, query)
+	url := esBase + "/" + s.Config.Index + "/_search"
+	return s.searchWithURL(ctx, url, query)
 }
 
-func (s *Scraper) searchURL(ctx context.Context, url string, query map[string]any) (*esResponse, error) {
+func (s *Scraper) searchWithURL(ctx context.Context, url string, query map[string]any) (*esResponse, error) {
 	body, err := json.Marshal(query)
 	if err != nil {
 		return nil, err
@@ -197,7 +176,7 @@ func (s *Scraper) searchURL(ctx context.Context, url string, query map[string]an
 		Body:   body,
 		Headers: map[string]string{
 			"Content-Type": "application/json",
-			"Origin":       siteBase,
+			"Origin":       s.Config.SiteBase,
 			"User-Agent":   httpx.UserAgentFirefox,
 		},
 	})
@@ -246,7 +225,9 @@ type esModel struct {
 	Name   string `json:"name"`
 }
 
-func hitToScene(src esScene, studioURL string, now time.Time) models.Scene {
+var stripTagsRe = regexp.MustCompile(`<[^>]+>`)
+
+func hitToScene(src esScene, studioURL, siteBase string, now time.Time) models.Scene {
 	id := strconv.Itoa(src.ItemID)
 
 	var performers []string
@@ -263,7 +244,7 @@ func hitToScene(src esScene, studioURL string, now time.Time) models.Scene {
 
 	scene := models.Scene{
 		ID:          id,
-		SiteID:      "mylf",
+		SiteID:      src.Site.NickName,
 		StudioURL:   studioURL,
 		Title:       src.Title,
 		URL:         siteBase + "/videos/" + src.ID,
