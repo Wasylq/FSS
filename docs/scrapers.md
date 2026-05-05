@@ -271,6 +271,13 @@
 | [SisLovesMe](https://mysislovesme.com) | `mysislovesme.com` | WP video-elements | No | WP REST API, uses `veutil` |
 | [YoungerLoverOfMine](https://youngerloverofmine.com) | `youngerloverofmine.com` | WP video-elements | No | WP REST API, uses `veutil` |
 | [GirlsWhoLie](https://girlswholie.tube) | `girlswholie.tube` | WP video-elements | No | WP REST API, uses `veutil` |
+| [Wank It Now](https://www.wankitnow.com) | `wankitnow.com` | Wank It Now (Next.js) | No | Next.js `_next/data` JSON API, date-sorted, network hub, uses `wankitnowutil` |
+| [Bopping Babes](https://www.boppingbabes.com) | `boppingbabes.com` | Wank It Now (Next.js) | No | Next.js `_next/data` JSON API, uses `wankitnowutil` |
+| [Downblouse Jerk](https://www.downblousejerk.com) | `downblousejerk.com` | Wank It Now (Next.js) | No | Next.js `_next/data` JSON API, uses `wankitnowutil` |
+| [Lingerie Tales](https://www.lingerietales.com) | `lingerietales.com` | Wank It Now (Next.js) | No | Next.js `_next/data` JSON API, uses `wankitnowutil` |
+| [Real Bikini Girls](https://www.realbikinigirls.com) | `realbikinigirls.com` | Wank It Now (Next.js) | No | Next.js `_next/data` JSON API, uses `wankitnowutil` |
+| [Upskirt Jerk](https://www.upskirtjerk.com) | `upskirtjerk.com` | Wank It Now (Next.js) | No | Next.js `_next/data` JSON API, uses `wankitnowutil` |
+| [Wank It Now VR](https://wankitnowvr.com) | `wankitnowvr.com` | Laravel (custom) | No | HTML listing (12/page), standalone scraper, ~1300 scenes |
 
 ## Shared scraper packages
 
@@ -287,6 +294,7 @@ Scrapers that share a platform use common utility packages to avoid duplication:
 | `uptimelyutil` | Up-Timely CMS (HTML listing + detail, Japanese metadata) | `uptimely` | 5 sites |
 | `sexmexutil` | SexMex Pro CMS (HTML scraping). **Quirk:** CMS returns HTTP 500 with valid HTML on some pages. | `sexmexpro` | 3 sites |
 | `railwayutil` | Railway/Express/MongoDB (single JSON API call) | `railway` | 3 sites |
+| `wankitnowutil` | Wank It Now network (Next.js `_next/data` JSON API, buildId bootstrap) | `wankitnow` | 6 sites |
 | `wputil` | WordPress (sitemap + HTML meta parsing) | _(standalone packages)_ | 5 sites (each has custom parsing) |
 
 ## Adding a new scraper
