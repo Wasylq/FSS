@@ -15,6 +15,7 @@ import (
 	_ "github.com/Wasylq/FSS/internal/scrapers/clips4sale"
 	_ "github.com/Wasylq/FSS/internal/scrapers/crunchboy"
 	_ "github.com/Wasylq/FSS/internal/scrapers/deeps"
+	_ "github.com/Wasylq/FSS/internal/scrapers/dorcelclub"
 	_ "github.com/Wasylq/FSS/internal/scrapers/fakings"
 	_ "github.com/Wasylq/FSS/internal/scrapers/familytherapy"
 	_ "github.com/Wasylq/FSS/internal/scrapers/fancentro"
