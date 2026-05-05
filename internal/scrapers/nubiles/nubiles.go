@@ -71,6 +71,12 @@ func (s *Scraper) Patterns() []string {
 		"nubilefilms.com",
 		"teacherfucksteens.com",
 		"thatsitcomshow.com",
+		"bountyhunterporn.com",
+		"cheatingsis.com",
+		"driverxxx.com",
+		"lilsis.com",
+		"nubilesunscripted.com",
+		"smashed.xxx",
 	}
 }
 
@@ -88,7 +94,8 @@ var matchRe = regexp.MustCompile(`^https?://(?:www\.)?(?:` +
 	`momsboytoy\.com|momsfamilysecrets\.com|momstight\.com|` +
 	`momswapped\.com|momwantscreampie\.com|momwantstobreed\.com|` +
 	`nfbusty\.com|nubilefilms\.com|teacherfucksteens\.com|` +
-	`thatsitcomshow\.com)`)
+	`thatsitcomshow\.com|bountyhunterporn\.com|cheatingsis\.com|` +
+	`driverxxx\.com|lilsis\.com|nubilesunscripted\.com|smashed\.xxx)`)
 
 func (s *Scraper) MatchesURL(u string) bool {
 	return matchRe.MatchString(u)

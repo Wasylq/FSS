@@ -188,7 +188,7 @@
 | [Over 40 Handjobs](https://www.over40handjobs.com) | `over40handjobs.com`, `over40handjobs.com/updates.htm`, `over40handjobs.com/models/*.html` | Custom | No | HTML listing (8/page, ~40 pages) + detail page worker pool for performers, model page support, NATS param stripping |
 | [Naughty America](https://www.naughtyamerica.com) | `naughtyamerica.com`, `naughtyamericavr.com`, `myfriendshotmom.com`, `mysistershotfriend.com`, `tonightsgirlfriend.com`, `thundercock.com` | Naughty America | No | Open JSON API at api.naughtyapi.com, ~15k scenes, 50+ sub-sites, VR support |
 | [New Sensations](https://www.newsensations.com) | `newsensations.com`, `newsensations.com/tour_ns/categories/movies_{page}_d.html`, `newsensations.com/tour_ns/models/{name}.html`, `newsensations.com/tour_ns/categories/{category}_{page}_d.html` | Custom | No | HTML listing (21/page) + detail page worker pool for date/duration/tags/series, model and category page support |
-| [Nubiles Network](https://nubiles-porn.com) | `nubiles-porn.com`, `nubiles.net`, `momsteachsex.com`, `stepsiblingscaught.com`, `myfamilypies.com`, `princesscum.com`, + 14 more | EdgeCms | No | HTML scraping, 20+ network sites, detail page worker pool for tags/description, filter by model or category |
+| [Nubiles Network](https://nubiles-porn.com) | `nubiles-porn.com`, `nubiles.net`, `momsteachsex.com`, `stepsiblingscaught.com`, `myfamilypies.com`, `princesscum.com`, + 20 more | EdgeCms | No | HTML scraping, 26+ network sites, detail page worker pool for tags/description, filter by model or category |
 | [MyDirtyHobby](https://www.mydirtyhobby.com) | `mydirtyhobby.com/profil/{id}-{username}` | MyDirtyHobby | No | JSON API with auth headers |
 | [Naked News](https://www.nakednews.com) | `nakednews.com/archives`, `nakednews.com/archives?segmentid={id}`, `nakednews.com/archives?anchorid={id}`, `nakednews.com/naked-news-anchor-{slug}-a{id}`, `nakednews.com/{year}/{month}`, `nakednews.com/auditions`, `nakednews.com/clip-store` | Custom REST API | No | JSON listing API (100/page, 0-indexed) + detail API worker pool for performers/tags/description, filter by anchor/segment type/date/auditions, 500ms default delay |
 | ModelCentro sites (26) | `{domain}/videos` | ModelCentro | No | Table-driven via `modelcentroutil`: Backalley Toonz, Big Johnny XXX, Black Money Erotica, Black Pynk, Cum Trainer, Facial Casting, Lisa Rivera XO, Monster Males, Mugur Porn, Naughty Colombia, Nerds of Porn, Peccatrici Produzioni, Penny Barber, Pervs MILFs n Teens, Porn Valley Girls, Porntugal, Ric Porter, Sexy Nina Rivera, Suk My Dick, Super Hot Films, The Jerky Girls, Thicc Vision, THICQ, Throat Wars, Wet Wet Girls, Yung Dumb Sluts |
@@ -262,6 +262,7 @@
 | [PervMom](https://mypervmom.com) | `mypervmom.com` | WP video-elements | No | WP REST API, uses `veutil` |
 | [SisLovesMe](https://mysislovesme.com) | `mysislovesme.com` | WP video-elements | No | WP REST API, uses `veutil` |
 | [YoungerLoverOfMine](https://youngerloverofmine.com) | `youngerloverofmine.com` | WP video-elements | No | WP REST API, uses `veutil` |
+| [GirlsWhoLie](https://girlswholie.tube) | `girlswholie.tube` | WP video-elements | No | WP REST API, uses `veutil` |
 
 ## Shared scraper packages
 
@@ -271,7 +272,7 @@ Scrapers that share a platform use common utility packages to avoid duplication:
 |---------|----------|---------------------|-------|
 | `ayloutil` | Aylo/Juan (REST API, instance token auth) | `aylo` | 19 sites + BangBros (standalone) + SpiceVids |
 | `gammautil` | Gamma Entertainment (Algolia search API, 3 segments: adulttime, dfxtra, openlife) | `gamma` | 16 sites (14 Adult Time + Dogfart Network + OpenLife) |
-| `veutil` | WordPress video-elements theme (WP REST API) | `videoelements` | 12 sites |
+| `veutil` | WordPress video-elements theme (WP REST API) | `videoelements` | 13 sites |
 | `scoregrouputil` | Score Group (HTML listing + detail pages) | `scoregroup` | 93 sites |
 | `modelcentroutil` | ModelCentro/AdultCentro (JSON API at `/api/content.load`) | `modelcentro` | 26 sites |
 | `povrutil` | POVR/WankzVR (export JSON + HTML listing) | `povr` | 4 sites |

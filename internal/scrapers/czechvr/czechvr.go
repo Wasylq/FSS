@@ -314,16 +314,16 @@ func findPostBlocks(page string) []string {
 }
 
 var (
-	detailTitleRe    = regexp.MustCompile(`(?s)<h1>(.*?)</h1>`)
-	detailDateRe     = regexp.MustCompile(`<div class="datum">([^<]+)</div>`)
-	detailTimeRe     = regexp.MustCompile(`<div class="cas">(\d+):(\d+)</div>`)
-	detailDescRe     = regexp.MustCompile(`(?s)<div class="text">\s*(.*?)\s*</div>`)
-	detailActorsRe   = regexp.MustCompile(`(?s)<div class="modelky">(.*?)<div class="cistic">\s*</div>\s*</div>`)
-	detailActorRe    = regexp.MustCompile(`<span>([^<]+)</span>`)
-	detailTagsRe     = regexp.MustCompile(`(?s)<div id="Tagy"[^>]*>(.*?)<div class="cistic">`)
-	detailTagRe      = regexp.MustCompile(`>([^<]+)</a></div>`)
-	detailPosterRe   = regexp.MustCompile(`poster="([^"]+)"`)
-	detailPreviewRe  = regexp.MustCompile(`<source src="(https://preview\.[^"]+\.mp4[^"]*)"`)
+	detailTitleRe   = regexp.MustCompile(`(?s)<h1>(.*?)</h1>`)
+	detailDateRe    = regexp.MustCompile(`<div class="datum">([^<]+)</div>`)
+	detailTimeRe    = regexp.MustCompile(`<div class="cas">(\d+):(\d+)</div>`)
+	detailDescRe    = regexp.MustCompile(`(?s)<div class="text">\s*(.*?)\s*</div>`)
+	detailActorsRe  = regexp.MustCompile(`(?s)<div class="modelky">(.*?)<div class="cistic">\s*</div>\s*</div>`)
+	detailActorRe   = regexp.MustCompile(`<span>([^<]+)</span>`)
+	detailTagsRe    = regexp.MustCompile(`(?s)<div id="Tagy"[^>]*>(.*?)<div class="cistic">`)
+	detailTagRe     = regexp.MustCompile(`>([^<]+)</a></div>`)
+	detailPosterRe  = regexp.MustCompile(`poster="([^"]+)"`)
+	detailPreviewRe = regexp.MustCompile(`<source src="(https://preview\.[^"]+\.mp4[^"]*)"`)
 )
 
 func (s *siteScraper) fetchDetail(ctx context.Context, item workItem, studioURL string, delay time.Duration) (models.Scene, error) {

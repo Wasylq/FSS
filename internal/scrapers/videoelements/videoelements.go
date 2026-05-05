@@ -29,6 +29,7 @@ var sites = []siteConfig{
 	{"mypervmom", "mypervmom.com", "PervMom", 1},
 	{"mysislovesme", "mysislovesme.com", "SisLovesMe", 1},
 	{"youngerloverofmine", "youngerloverofmine.com", "YoungerLoverOfMine", 1},
+	{"girlswholie", "girlswholie.tube", "GirlsWhoLie", 1},
 }
 
 func init() {
