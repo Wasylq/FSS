@@ -192,14 +192,12 @@ func (s *siteScraper) scrapeSitemap(ctx context.Context, studioURL string, opts 
 }
 
 var (
-	cardRe       = regexp.MustCompile(`(?s)<a name="post(\d+)"></a>\s*<div class="postTag[^"]*">.*?</div>\s*</div>\s*</div>`)
 	cardURLRe    = regexp.MustCompile(`href="\./detail-(\d+)-([^"]+)"`)
 	cardTitleRe  = regexp.MustCompile(`<h2><a[^>]+>([^<]+)</a></h2>`)
 	cardActorsRe = regexp.MustCompile(`(?s)<div class="featuring">(.*?)</div>`)
 	cardActorRe  = regexp.MustCompile(`>([^<]+)</a>`)
 	cardDateRe   = regexp.MustCompile(`class="datum">([^<]+)<`)
 	cardTimeRe   = regexp.MustCompile(`class="cas"><span[^>]*>(\d+):(\d+)</span>`)
-	cardThumbRe  = regexp.MustCompile(`class="imgvid lazyload[^"]*"\s*/>`)
 	cardThumbSrc = regexp.MustCompile(`data-src="([^"]+)"`)
 	cardVideoRe  = regexp.MustCompile(`<source src="([^"]+\.mp4[^"]*)"`)
 )
@@ -326,7 +324,6 @@ var (
 	detailTagRe      = regexp.MustCompile(`>([^<]+)</a></div>`)
 	detailPosterRe   = regexp.MustCompile(`poster="([^"]+)"`)
 	detailPreviewRe  = regexp.MustCompile(`<source src="(https://preview\.[^"]+\.mp4[^"]*)"`)
-	detailSiteAbbrRe = regexp.MustCompile(`<div class="cas">([A-Z]{2,4})</div>`)
 )
 
 func (s *siteScraper) fetchDetail(ctx context.Context, item workItem, studioURL string, delay time.Duration) (models.Scene, error) {
