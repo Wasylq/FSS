@@ -134,7 +134,7 @@
 | [MilfVR](https://www.milfvr.com) | `milfvr.com` | POVR/WankzVR | No | Export JSON + listing page dates, uses `povrutil` |
 | [MissaX](https://www.missax.com) | `missax.com` | Custom | No | HTML scraping, listing + detail page worker pool |
 | [Mommy Blows Best](https://www.mommyblowsbest.com) | `mommyblowsbest.com` | Gamma/Algolia | No | Algolia search API, uses `gammautil` |
-| [Mofos](https://www.mofos.com) | `mofos.com`, `mofos.com/pornstar/{id}/{slug}`, `mofos.com/category/{id}/{slug}`, `mofos.com/site/{id}/{slug}`, `mofos.com/series/{id}/{slug}` | Aylo/Juan | No | REST API, filter by performer/category/sub-site/series, uses `ayloutil` |
+| [Mofos](https://www.mofos.com) | `mofos.com`, `mofos.com/model/{id}/{slug}`, `mofos.com/sites/{slug}`, `mofos.com/scenes?tags={id}`, `mofos.com/site/{id}/{slug}`, `mofos.com/series/{id}/{slug}` | Aylo/Juan | No | REST API, filter by performer/sub-site (by slug or ID)/tag/series, uses `ayloutil` |
 | [MOODYZ](https://moodyz.com) | `moodyz.com/works/list/series/{id}`, `moodyz.com/works/list/release`, `moodyz.com/works/list/date/{date}`, `moodyz.com/works/list/genre/{id}`, `moodyz.com/works/list/label/{id}`, `moodyz.com/actress/detail/{id}` | Up-Timely CMS | No | Thin wrapper around `uptimelyutil` |
 | [Mom Comes First](https://momcomesfirst.com) | `momcomesfirst.com` | WordPress | No | Sitemap-driven, JSON-LD VideoObject, uses `wputil` |
 | [OopsFamily](https://oopsfamily.com) | `oopsfamily.com`, `oopsfamily.com/model/{slug}`, `oopsfamily.com/tag/{slug}` | FapHouse/Custom | No | HTML listing + detail page JSON-LD worker pool for dates/tags, model/tag filtering, 4K |

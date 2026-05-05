@@ -63,6 +63,7 @@ const (
 type Filter struct {
 	Type FilterType
 	ID   int
+	Slug string // for slug-based lookups that need API resolution
 }
 
 var (
@@ -76,6 +77,7 @@ var (
 	categoryRe = regexp.MustCompile(`/category/(\d+)`)
 	siteRe     = regexp.MustCompile(`/(?:site|collection)/(\d+)`)
 	seriesRe   = regexp.MustCompile(`/series/(\d+)`)
+	siteSlugRe = regexp.MustCompile(`/sites/([a-z0-9-]+)`)
 )
 
 func ParseFilter(rawURL string) Filter {
@@ -94,6 +96,16 @@ func ParseFilter(rawURL string) Filter {
 	if m := seriesRe.FindStringSubmatch(rawURL); m != nil {
 		id, _ := strconv.Atoi(m[1])
 		return Filter{Type: FilterSeries, ID: id}
+	}
+	if u, err := url.Parse(rawURL); err == nil {
+		if tagID := u.Query().Get("tags"); tagID != "" {
+			if id, err := strconv.Atoi(tagID); err == nil {
+				return Filter{Type: FilterTag, ID: id}
+			}
+		}
+	}
+	if m := siteSlugRe.FindStringSubmatch(rawURL); m != nil {
+		return Filter{Type: FilterCollection, Slug: m[1]}
 	}
 	return Filter{Type: FilterAll}
 }
@@ -117,6 +129,55 @@ func (s *Scraper) FetchToken(ctx context.Context) (string, error) {
 		}
 	}
 	return "", fmt.Errorf("instance_token cookie not found")
+}
+
+func (s *Scraper) resolveCollectionSlug(ctx context.Context, token string, slug string) (int, error) {
+	apiURL := fmt.Sprintf("%s/v1/collections?limit=100", s.APIHost)
+	resp, err := httpx.Do(ctx, s.Client, httpx.Request{
+		URL: apiURL,
+		Headers: map[string]string{
+			"Instance": token,
+			"Accept":   "application/json",
+		},
+	})
+	if err != nil {
+		return 0, fmt.Errorf("fetching collections: %w", err)
+	}
+	defer func() { _ = resp.Body.Close() }()
+
+	var result struct {
+		Result []struct {
+			ID   int    `json:"id"`
+			Name string `json:"name"`
+		} `json:"result"`
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+		return 0, fmt.Errorf("decoding collections: %w", err)
+	}
+
+	for _, c := range result.Result {
+		if slugify(c.Name) == slug {
+			return c.ID, nil
+		}
+	}
+	return 0, fmt.Errorf("collection %q not found", slug)
+}
+
+func slugify(name string) string {
+	s := strings.ToLower(name)
+	s = strings.Map(func(r rune) rune {
+		if r >= 'a' && r <= 'z' || r >= '0' && r <= '9' {
+			return r
+		}
+		if r == ' ' || r == '-' {
+			return '-'
+		}
+		return -1
+	}, s)
+	for strings.Contains(s, "--") {
+		s = strings.ReplaceAll(s, "--", "-")
+	}
+	return strings.Trim(s, "-")
 }
 
 func (s *Scraper) FetchPage(ctx context.Context, token string, filter Filter, page int) ([]Release, int, error) {
@@ -248,6 +309,19 @@ func (s *Scraper) Run(ctx context.Context, studioURL string, opts scraper.ListOp
 	}
 
 	filter := ParseFilter(studioURL)
+
+	if filter.Slug != "" {
+		id, err := s.resolveCollectionSlug(ctx, token, filter.Slug)
+		if err != nil {
+			select {
+			case out <- scraper.Error(err):
+			case <-ctx.Done():
+			}
+			return
+		}
+		filter.ID = id
+		filter.Slug = ""
+	}
 
 	if filter.Type == FilterSeries {
 		s.runSeries(ctx, studioURL, opts, out, token, filter.ID)
