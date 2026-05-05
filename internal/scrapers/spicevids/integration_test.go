@@ -15,8 +15,8 @@ func TestLiveCollection(t *testing.T) {
 	if err != nil {
 		t.Fatalf("no scraper matched %s: %v", url, err)
 	}
-	if s.ID() != "sv-adamandevevod" {
-		t.Fatalf("expected sv-adamandevevod, got %s", s.ID())
+	if s.ID() != "spicevids" {
+		t.Fatalf("expected spicevids, got %s", s.ID())
 	}
 	testutil.RunLiveScrape(t, s, url, 2)
 }
@@ -28,7 +28,7 @@ func TestLiveGeneric(t *testing.T) {
 		t.Fatalf("no scraper matched %s: %v", url, err)
 	}
 	if s.ID() != "spicevids" {
-		t.Fatalf("expected spicevids generic, got %s", s.ID())
+		t.Fatalf("expected spicevids, got %s", s.ID())
 	}
 	testutil.RunLiveScrape(t, s, url, 2)
 }

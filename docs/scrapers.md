@@ -155,7 +155,7 @@
 | Stashbox (any instance) | `{instance}/performers/{id}`, `{instance}/studios/{id}` | Stashbox GraphQL | No | GraphQL API (100/page), filter by performer or studio (incl. sub-studios via `parentStudio`), full metadata (cast/tags/duration/director/images), API key per instance via config, 500ms default delay, SiteID derived from hostname |
 | [See Mom Suck](https://www.seemomsuck.com) | `seemomsuck.com`, `seemomsuck.com/models/{name}.html` | 3rdShiftVideo/ThickCash | No | HTML scraping, listing-only (no detail pages), model page support, ~1500 scenes, no dates available on tour pages |
 | [Reagan Foxx](https://www.reaganfoxx.com) | `reaganfoxx.com`, `reaganfoxx.com/scenes/{id}/{slug}.html` | Adult Empire Stores (Ravana LLC) | Yes (USD) | HTML listing (52/page, `?page=N`) + detail page worker pool for dates/tags/price, `AgeConfirmed` cookie, ~174 scenes |
-| [Reality Kings](https://www.realitykings.com) | `realitykings.com`, `realitykings.com/pornstar/{id}/{slug}`, `realitykings.com/category/{id}/{slug}`, `realitykings.com/site/{id}/{slug}`, `realitykings.com/series/{id}/{slug}` | Aylo/Juan | No | REST API, filter by performer/category/sub-site/series, uses `ayloutil` |
+| [Reality Kings](https://www.realitykings.com) | `realitykings.com`, `rk.com`, `realitykings.com/pornstar/{id}/{slug}`, `realitykings.com/category/{id}/{slug}`, `realitykings.com/site/{id}/{slug}`, `realitykings.com/series/{id}/{slug}` | Aylo/Juan | No | REST API, filter by performer/category/sub-site/series, uses `ayloutil` |
 | [Rocket Inc](https://rocket-inc.net) | `rocket-inc.net/works/`, `rocket-inc.net/works_actress/{slug}/` | WordPress | No | HTML scraping, listing + detail page worker pool for Japanese metadata (performers/director/tags/series/duration), full catalog via `/works/` or per-actress via `/works_actress/` |
 | [Taboo Heat](https://www.tabooheat.com) | `tabooheat.com` | Gamma/Algolia | No | Thin wrapper around `gammautil` |
 | [Takara TV](https://www.takara-tv.jp) | `takara-tv.jp`, `takara-tv.jp/search.php?ac={id}`, `takara-tv.jp/search.php?lb={id}` | Custom PHP | No | HTML listing (20/page, `search.php` pagination) + detail page worker pool, actress/label search, performer extraction from title or model field, ~1100 scenes |
@@ -166,7 +166,7 @@
 | [Smoking Erotica](https://smokingerotica.com) | `smokingerotica.com/#/models`, `smokingerotica.com/#/models/{name}` | Railway/Express | No | Thin wrapper around `railwayutil` |
 | [Smoking Models](https://smokingmodels.com) | `smokingmodels.com/#/models`, `smokingmodels.com/#/models/{name}` | Railway/Express | No | Thin wrapper around `railwayutil` |
 | [Spanking Glamour](https://spankingglamour.com) | `spankingglamour.com/#/models`, `spankingglamour.com/#/models/{name}` | Railway/Express | No | Thin wrapper around `railwayutil` |
-| [SpiceVids](https://www.spicevids.com) | `spicevids.com`, `spicevids.com/model/{id}/{slug}`, `spicevids.com/collection/{id}/{slug}`, `spicevids.com/series/{id}/{slug}` | Aylo/Juan | No | Thin wrapper around `ayloutil`; marketplace with 1000 registered collections (table-driven) plus generic fallback; each collection is a separate scraper with `sv-{name}` SiteID |
+| [SpiceVids](https://www.spicevids.com) | `spicevids.com`, `spicevids.com/model/{id}/{slug}`, `spicevids.com/collection/{id}/{slug}`, `spicevids.com/category/{id}/{slug}`, `spicevids.com/series/{id}/{slug}` | Aylo/Juan | No | Single scraper using `ayloutil`; handles any SpiceVids URL (models, collections, categories, series) |
 | [Sofie Marie](https://sofiemariexxx.com) | `sofiemariexxx.com`, `sofiemariexxx.com/models/{slug}.html`, `sofiemariexxx.com/dvds/{slug}.html` | ELXComplete/Andomark | No | HTML scraping, paginated listing (movies category), model pages via `sets.php` pagination, DVD pages single-fetch |
 | [Trans Queens](https://transqueens.com) | `transqueens.com/tour/updates`, `transqueens.com/tour/models/{slug}.html`, `transqueens.com/tour/categories/{slug}.html` | SexMex Pro CMS | No | Thin wrapper around `sexmexutil` |
 | [TranzVR](https://www.tranzvr.com) | `tranzvr.com` | POVR/WankzVR | No | Thin wrapper around `povrutil` |
@@ -175,6 +175,8 @@
 | [Xes.pl](https://xes.pl) | `xes.pl`, `xes.pl/katalog_filmow,{page}.html`, `xes.pl/aktor,{slug},{id},{page}.html`, `xes.pl/produkcja,{slug},{page}.html`, `xes.pl/filtr,{category},{page}.html` | Custom | Yes (PTS) | HTML listing (18/page) + detail page worker pool, catalog/performer/producer/filter modes, price tracking in points, ~3100 scenes |
 | [Xev Bellringer](https://www.xevunleashed.com) | `xevunleashed.com`, `xevunleashed.com/categories/movies.html` | JEBN CMS | Yes (USD) | HTML listing (10/page, `movies_{N}.html`) + detail page worker pool for description/tags, price tracking, ~343 scenes, slug-based IDs |
 | [WankzVR](https://www.wankzvr.com) | `wankzvr.com` | POVR/WankzVR | No | Export JSON + listing page dates, uses `povrutil` |
+| [Adult Time](https://www.adulttime.com) | `adulttime.com` | Gamma/Algolia | No | Algolia search API (adulttime segment), full catalog, network-level scraper, uses `gammautil` |
+| [Adult Time Originals](https://www.adulttime.com/en/channel/adult-time-originals) | `adulttime.com/en/channel/adult-time-originals` | Gamma/Algolia | No | Algolia search API, `availableOnSite:adulttimeoriginals` filter, uses `gammautil` |
 | [Burning Angel](https://www.burningangel.com) | `burningangel.com` | Gamma/Algolia | No | Algolia search API, uses `gammautil` |
 | [Filthy Kings](https://www.filthykings.com) | `filthykings.com` | Gamma/Algolia | No | Algolia search API, uses `gammautil` |
 | [Gangbang Creampie](https://www.gangbangcreampie.com) | `gangbangcreampie.com` | Gamma/Algolia | No | Algolia search API, uses `gammautil` |
@@ -219,8 +221,8 @@ Scrapers that share a platform use common utility packages to avoid duplication:
 
 | Util package | Platform | Table-driven package | Sites |
 |---------|----------|---------------------|-------|
-| `ayloutil` | Aylo/Juan (REST API, instance token auth) | `aylo` | 19 sites + BangBros (standalone) + SpiceVids (1001 collections) |
-| `gammautil` | Gamma Entertainment (Algolia search API, 3 segments: adulttime, dfxtra, openlife) | `gamma` | 14 sites (12 Adult Time + Dogfart Network + OpenLife) |
+| `ayloutil` | Aylo/Juan (REST API, instance token auth) | `aylo` | 19 sites + BangBros (standalone) + SpiceVids |
+| `gammautil` | Gamma Entertainment (Algolia search API, 3 segments: adulttime, dfxtra, openlife) | `gamma` | 16 sites (14 Adult Time + Dogfart Network + OpenLife) |
 | `veutil` | WordPress video-elements theme (WP REST API) | `videoelements` | 12 sites |
 | `scoregrouputil` | Score Group (HTML listing + detail pages) | `scoregroup` | 93 sites |
 | `modelcentroutil` | ModelCentro/AdultCentro (JSON API at `/api/content.load`) | `modelcentro` | 26 sites |

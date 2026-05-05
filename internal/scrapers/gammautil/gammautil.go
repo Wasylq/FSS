@@ -54,6 +54,7 @@ func NewScraper(cfg SiteConfig) *Scraper {
 
 var apiKeyRe = regexp.MustCompile(`"algolia"\s*:\s*\{[^}]*"apiKey"\s*:\s*"([^"]+)"`)
 var actorURLRe = regexp.MustCompile(`/pornstar/view/[^/]+/(\d+)`)
+var serieURLRe = regexp.MustCompile(`/en/serie/(\d+)/`)
 
 func (s *Scraper) refererBase() string {
 	if s.Config.RefererBase != "" {
@@ -102,6 +103,8 @@ func (s *Scraper) Run(ctx context.Context, studioURL string, opts scraper.ListOp
 	extraFilter := ""
 	if m := actorURLRe.FindStringSubmatch(studioURL); m != nil {
 		extraFilter = "actors.actor_id:" + m[1]
+	} else if m := serieURLRe.FindStringSubmatch(studioURL); m != nil {
+		extraFilter = "serie_id:" + m[1]
 	}
 
 	for page := 0; ; page++ {

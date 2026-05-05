@@ -16,28 +16,35 @@ type siteConfig struct {
 	StudioName  string
 	SiteName    string // Algolia availableOnSite filter; defaults to SiteID if empty
 	RefererBase string // override for API key bootstrap (network scrapers)
+	MatchRe     string // optional: override the default domain-based match regex
 }
 
 var sites = []siteConfig{
-	// Adult Time segment
-	{"burningangel", "burningangel.com", "Burning Angel", "", ""},
-	{"evilangel", "evilangel.com", "Evil Angel", "", ""},
-	{"filthykings", "filthykings.com", "Filthy Kings", "", ""},
-	{"gangbangcreampie", "gangbangcreampie.com", "Gangbang Creampie", "", ""},
-	{"girlfriendsfilms", "girlfriendsfilms.com", "Girlfriends Films", "", ""},
-	{"gloryholesecrets", "gloryholesecrets.com", "Gloryhole Secrets", "", ""},
-	{"lethalhardcore", "lethalhardcore.com", "Lethal Hardcore", "", ""},
-	{"mommyblowsbest", "mommyblowsbest.com", "Mommy Blows Best", "", ""},
-	{"puretaboo", "puretaboo.com", "Pure Taboo", "", ""},
-	{"roccosiffredi", "roccosiffredi.com", "Rocco Siffredi", "", ""},
-	{"tabooheat", "tabooheat.com", "Taboo Heat", "", ""},
-	{"wicked", "wicked.com", "Wicked", "", ""},
+	// Adult Time segment — originals (more specific match, must be before adulttime)
+	{"adulttimeoriginals", "adulttime.com", "Adult Time Originals", "adulttime", "", `^https?://(?:www\.)?adulttime\.com/en/(?:studio|channel)/adult-time(?:-originals)?(?:/|$)`},
+
+	// Adult Time segment — full catalog (all content in the segment)
+	{"adulttime", "adulttime.com", "", "", "", ""},
+
+	// Adult Time segment — individual sites
+	{"burningangel", "burningangel.com", "Burning Angel", "", "", ""},
+	{"evilangel", "evilangel.com", "Evil Angel", "", "", ""},
+	{"filthykings", "filthykings.com", "Filthy Kings", "", "", ""},
+	{"gangbangcreampie", "gangbangcreampie.com", "Gangbang Creampie", "", "", ""},
+	{"girlfriendsfilms", "girlfriendsfilms.com", "Girlfriends Films", "", "", ""},
+	{"gloryholesecrets", "gloryholesecrets.com", "Gloryhole Secrets", "", "", ""},
+	{"lethalhardcore", "lethalhardcore.com", "Lethal Hardcore", "", "", ""},
+	{"mommyblowsbest", "mommyblowsbest.com", "Mommy Blows Best", "", "", ""},
+	{"puretaboo", "puretaboo.com", "Pure Taboo", "", "", ""},
+	{"roccosiffredi", "roccosiffredi.com", "Rocco Siffredi", "", "", ""},
+	{"tabooheat", "tabooheat.com", "Taboo Heat", "", "", ""},
+	{"wicked", "wicked.com", "Wicked", "", "", ""},
 
 	// Dogfart segment (dfxtra) — 17 subsites under dogfartnetwork.com
-	{"dogfartnetwork", "dogfartnetwork.com", "", "", ""},
+	{"dogfartnetwork", "dogfartnetwork.com", "", "", "", ""},
 
 	// OpenLife segment — 12 subsites under openlife.com
-	{"openlife", "openlife.com", "", "", ""},
+	{"openlife", "openlife.com", "", "", "", ""},
 }
 
 type siteScraper struct {
@@ -58,8 +65,13 @@ func (s *siteScraper) ListScenes(ctx context.Context, studioURL string, opts scr
 
 func init() {
 	for _, cfg := range sites {
-		escaped := strings.ReplaceAll(cfg.Domain, ".", `\.`)
-		re := regexp.MustCompile(fmt.Sprintf(`^https?://(?:www\.)?%s`, escaped))
+		var re *regexp.Regexp
+		if cfg.MatchRe != "" {
+			re = regexp.MustCompile(cfg.MatchRe)
+		} else {
+			escaped := strings.ReplaceAll(cfg.Domain, ".", `\.`)
+			re = regexp.MustCompile(fmt.Sprintf(`^https?://(?:www\.)?%s`, escaped))
+		}
 
 		siteName := cfg.SiteName
 		if siteName == "" && cfg.StudioName != "" {
