@@ -208,7 +208,15 @@
 | [Taboo Heat](https://www.tabooheat.com) | `tabooheat.com` | Gamma/Algolia | No | Thin wrapper around `gammautil` |
 | [Takara TV](https://www.takara-tv.jp) | `takara-tv.jp`, `takara-tv.jp/search.php?ac={id}`, `takara-tv.jp/search.php?lb={id}` | Custom PHP | No | HTML listing (20/page, `search.php` pagination) + detail page worker pool, actress/label search, performer extraction from title or model field, ~1100 scenes |
 | [Tara Tainton](https://taratainton.com) | `taratainton.com` | WordPress | Yes | Sitemap-driven, HTML meta parsing, uses `wputil` |
-| [Evil Angel](https://www.evilangel.com) | `evilangel.com` | Gamma/Algolia | No | Algolia search API, ~20k scenes, uses `gammautil` |
+| [Evil Angel](https://www.evilangel.com) | `evilangel.com` | Gamma/Algolia | No | Algolia search API (evilangel segment), ~20k scenes, uses `gammautil` |
+| [TS Factor](https://www.tsfactor.com) | `tsfactor.com` | Gamma/Algolia | No | Algolia search API (evilangel segment), uses `gammautil` |
+| [PansexualX](https://www.pansexualx.com) | `pansexualx.com` | Gamma/Algolia | No | Algolia search API (evilangel segment), uses `gammautil` |
+| [TransgressiveXXX](https://www.transgressivexxx.com) | `transgressivexxx.com` | Gamma/Algolia | No | Algolia search API (evilangel segment), uses `gammautil` |
+| [Buttman](https://www.buttman.com) | `buttman.com` | Gamma/Algolia | No | Algolia search API (evilangelnetwork segment), uses `gammautil` |
+| [AnalTriXXX](https://www.analtrixxx.com) | `analtrixxx.com` | Gamma/Algolia | No | Algolia search API (evilangelnetwork segment), uses `gammautil` |
+| [Jonni Darkko XXX](https://www.jonnidarkkoxxx.com) | `jonnidarkkoxxx.com` | Gamma/Algolia | No | Algolia search API (evilangelnetwork segment), uses `gammautil` |
+| [Latex Playtime](https://www.latexplaytime.com) | `latexplaytime.com` | Gamma/Algolia | No | Algolia search API (evilangelnetwork segment), uses `gammautil` |
+| [Transsexual Angel](https://www.transsexualangel.com) | `transsexualangel.com` | Gamma/Algolia | No | Algolia search API (evilangelnetwork segment), uses `gammautil` |
 | [Exposed Latinas](https://exposedlatinas.com) | `exposedlatinas.com/tour/updates`, `exposedlatinas.com/tour/models/{slug}.html`, `exposedlatinas.com/tour/categories/{slug}.html` | SexMex Pro CMS | No | Thin wrapper around `sexmexutil` |
 | [SexMex](https://sexmex.xxx) | `sexmex.xxx/tour/updates`, `sexmex.xxx/tour/models/{slug}.html`, `sexmex.xxx/tour/categories/{slug}.html` | SexMex Pro CMS | No | HTML scraping with regex, pagination, model/category/full-studio modes, uses `sexmexutil` |
 | [Smoking Erotica](https://smokingerotica.com) | `smokingerotica.com/#/models`, `smokingerotica.com/#/models/{name}` | Railway/Express | No | Thin wrapper around `railwayutil` |
@@ -271,7 +279,7 @@ Scrapers that share a platform use common utility packages to avoid duplication:
 | Util package | Platform | Table-driven package | Sites |
 |---------|----------|---------------------|-------|
 | `ayloutil` | Aylo/Juan (REST API, instance token auth) | `aylo` | 19 sites + BangBros (standalone) + SpiceVids |
-| `gammautil` | Gamma Entertainment (Algolia search API, 3 segments: adulttime, dfxtra, openlife) | `gamma` | 16 sites (14 Adult Time + Dogfart Network + OpenLife) |
+| `gammautil` | Gamma Entertainment (Algolia search API, 5 segments: adulttime, evilangel, evilangelnetwork, dfxtra, openlife) | `gamma` | 24 sites |
 | `veutil` | WordPress video-elements theme (WP REST API) | `videoelements` | 13 sites |
 | `scoregrouputil` | Score Group (HTML listing + detail pages) | `scoregroup` | 93 sites |
 | `modelcentroutil` | ModelCentro/AdultCentro (JSON API at `/api/content.load`) | `modelcentro` | 26 sites |

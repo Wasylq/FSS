@@ -29,6 +29,16 @@ var sites = []siteConfig{
 	// Adult Time segment — individual sites
 	{"burningangel", "burningangel.com", "Burning Angel", "", "", ""},
 	{"evilangel", "evilangel.com", "Evil Angel", "", "", ""},
+	{"tsfactor", "tsfactor.com", "TS Factor", "tsfactor", "", ""},
+	{"pansexualx", "pansexualx.com", "PansexualX", "pansexualx", "", ""},
+	{"transgressivexxx", "transgressivexxx.com", "TransgressiveXXX", "transgressivexxx", "", ""},
+
+	// Evil Angel Network segment (evilangelnetwork) — director-branded sub-sites
+	{"buttman", "buttman.com", "Buttman", "buttman", "", ""},
+	{"analtrixxx", "analtrixxx.com", "AnalTriXXX", "analtrixxx", "", ""},
+	{"jonnidarkkoxxx", "jonnidarkkoxxx.com", "Jonni Darkko XXX", "jonnidarkkoxxx", "", ""},
+	{"latexplaytime", "latexplaytime.com", "Latex Playtime", "latexplaytime", "", ""},
+	{"transsexualangel", "transsexualangel.com", "Transsexual Angel", "transsexualangel", "", ""},
 	{"filthykings", "filthykings.com", "Filthy Kings", "", "", ""},
 	{"gangbangcreampie", "gangbangcreampie.com", "Gangbang Creampie", "", "", ""},
 	{"girlfriendsfilms", "girlfriendsfilms.com", "Girlfriends Films", "", "", ""},
