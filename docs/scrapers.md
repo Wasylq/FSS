@@ -102,6 +102,8 @@
 | [BAM Visions](https://tour.bamvisions.com) | `tour.bamvisions.com` | Custom PHP | No | HTML listing (`/categories/movies/{page}/latest/`, 10/page), date-sorted, ~494 scenes |
 | [BangBros](https://www.bangbros.com) | `bangbros.com`, `bangbros.com/model/{id}/{slug}`, `bangbros.com/category/{slug}`, `bangbros.com/websites/{slug}`, `bangbros.com/site/{id}/{slug}`, `bangbros.com/series/{id}/{slug}` | Aylo/Juan | No | REST API, slug-to-ID resolution for `/websites/` and `/category/` URLs, uses `ayloutil` |
 | [Brazzers](https://www.brazzers.com) | `brazzers.com`, `brazzers.com/pornstar/{id}/{slug}`, `brazzers.com/category/{id}/{slug}`, `brazzers.com/site/{id}/{slug}`, `brazzers.com/series/{id}/{slug}` | Aylo/Juan | No | REST API, filter by performer/category/sub-site/series, uses `ayloutil` |
+| [Cherry Pimps](https://cherrypimps.com) | `cherrypimps.com`, `cherrypimps.com/series/{slug}`, `cherrypimps.com/categories/{slug}`, `cherrypimps.com/models/{name}.html` | Elevated X | No | HTML listing (25/page full, 24/page series/category), model page (single page, all scenes), date-sorted, ~7.5k scenes, uses `cherrypimpsutil` |
+| [Wild on Cam](https://wildoncam.com) | `wildoncam.com`, `wildoncam.com/series/{slug}`, `wildoncam.com/categories/{slug}`, `wildoncam.com/models/{name}.html` | Elevated X | No | Same platform as Cherry Pimps, uses `cherrypimpsutil` |
 | [Charlee Chase](https://charleechaselive.com) | `charleechaselive.com/videos` | Custom | No | HTML scraping, listing + detail pages, performer extraction from title |
 | [Clips4Sale](https://www.clips4sale.com) | `clips4sale.com/studio/{id}/{slug}` | Clips4Sale | Yes | Multi-page JSON, categories, all-page enumeration |
 | [Crunchboy](https://www.crunchboy.com) | `crunchboy.com`, `crunchboy.com/en/videos/{studio}` | PornSiteManager | No | JSON-LD ItemList on listing pages + HTML enrichment for duration/studio, 12/page, ~4700 scenes |
@@ -288,6 +290,7 @@ Scrapers that share a platform use common utility packages to avoid duplication:
 | Util package | Platform | Table-driven package | Sites |
 |---------|----------|---------------------|-------|
 | `ayloutil` | Aylo/Juan (REST API, instance token auth) | `aylo` | 19 sites + BangBros (standalone) + SpiceVids |
+| `cherrypimpsutil` | Cherry Pimps/BLT Innovations (Elevated X CMS, HTML listing) | `cherrypimps` | 2 sites |
 | `gammautil` | Gamma Entertainment (Algolia search API, 5 segments: adulttime, evilangel, evilangelnetwork, dfxtra, openlife) | `gamma` | 24 sites |
 | `veutil` | WordPress video-elements theme (WP REST API) | `videoelements` | 13 sites |
 | `scoregrouputil` | Score Group (HTML listing + detail pages) | `scoregroup` | 93 sites |
