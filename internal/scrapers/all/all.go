@@ -5,6 +5,7 @@
 package all
 
 import (
+	_ "github.com/Wasylq/FSS/internal/scrapers/alternadudes"
 	_ "github.com/Wasylq/FSS/internal/scrapers/analacrobats"
 	_ "github.com/Wasylq/FSS/internal/scrapers/analtherapy"
 	_ "github.com/Wasylq/FSS/internal/scrapers/apclips"
@@ -50,6 +51,7 @@ import (
 	_ "github.com/Wasylq/FSS/internal/scrapers/oopsfamily"
 	_ "github.com/Wasylq/FSS/internal/scrapers/over40handjobs"
 	_ "github.com/Wasylq/FSS/internal/scrapers/perfectgirlfriend"
+	_ "github.com/Wasylq/FSS/internal/scrapers/pissinghd"
 	_ "github.com/Wasylq/FSS/internal/scrapers/pornhub"
 	_ "github.com/Wasylq/FSS/internal/scrapers/povr"
 	_ "github.com/Wasylq/FSS/internal/scrapers/purecfnm"
