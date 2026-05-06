@@ -131,11 +131,11 @@ func TestBuildIDRegex(t *testing.T) {
 
 func newTestServer(scenes []sceneJSON, totalPages int) *httptest.Server {
 	return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		switch {
-		case r.URL.Path == "/":
+		switch r.URL.Path {
+		case "/":
 			w.Header().Set("Content-Type", "text/html")
 			_, _ = fmt.Fprint(w, `<script>{"buildId":"test-build-123"}</script>`)
-		case r.URL.Path == "/_next/data/test-build-123/videos.json":
+		case "/_next/data/test-build-123/videos.json":
 			w.Header().Set("Content-Type", "application/json")
 			resp := nextDataResponse{}
 			resp.PageProps.Contents.Total = len(scenes)

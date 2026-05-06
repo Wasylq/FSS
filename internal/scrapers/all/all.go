@@ -5,11 +5,13 @@
 package all
 
 import (
+	_ "github.com/Wasylq/FSS/internal/scrapers/analacrobats"
 	_ "github.com/Wasylq/FSS/internal/scrapers/analtherapy"
 	_ "github.com/Wasylq/FSS/internal/scrapers/apclips"
 	_ "github.com/Wasylq/FSS/internal/scrapers/apovstory"
 	_ "github.com/Wasylq/FSS/internal/scrapers/auntjudys"
 	_ "github.com/Wasylq/FSS/internal/scrapers/aylo"
+	_ "github.com/Wasylq/FSS/internal/scrapers/bamvisions"
 	_ "github.com/Wasylq/FSS/internal/scrapers/bangbros"
 	_ "github.com/Wasylq/FSS/internal/scrapers/charleechase"
 	_ "github.com/Wasylq/FSS/internal/scrapers/clips4sale"
