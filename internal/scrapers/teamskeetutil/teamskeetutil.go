@@ -29,8 +29,9 @@ type SiteConfig struct {
 }
 
 type Scraper struct {
-	client *http.Client
-	Config SiteConfig
+	client    *http.Client
+	Config    SiteConfig
+	esBaseURL string // override for testing; defaults to esBase
 }
 
 func NewScraper(cfg SiteConfig) *Scraper {
@@ -45,13 +46,15 @@ func (s *Scraper) Run(ctx context.Context, studioURL string, opts scraper.ListOp
 
 	kind, value := classifyURL(studioURL)
 	baseQuery := buildQuery(kind, value)
+	baseQuery["size"] = pageSize
 	now := time.Now().UTC()
 
-	for from := 0; ; from += pageSize {
+	var searchAfter []json.RawMessage
+	for page := 0; ; page++ {
 		if ctx.Err() != nil {
 			return
 		}
-		if from > 0 && opts.Delay > 0 {
+		if page > 0 && opts.Delay > 0 {
 			select {
 			case <-time.After(opts.Delay):
 			case <-ctx.Done():
@@ -59,19 +62,20 @@ func (s *Scraper) Run(ctx context.Context, studioURL string, opts scraper.ListOp
 			}
 		}
 
-		baseQuery["from"] = from
-		baseQuery["size"] = pageSize
+		if searchAfter != nil {
+			baseQuery["search_after"] = searchAfter
+		}
 
 		result, err := s.search(ctx, baseQuery)
 		if err != nil {
 			select {
-			case out <- scraper.Error(fmt.Errorf("from=%d: %w", from, err)):
+			case out <- scraper.Error(fmt.Errorf("page %d: %w", page, err)):
 			case <-ctx.Done():
 			}
 			return
 		}
 
-		if from == 0 && result.Hits.Total.Value > 0 {
+		if page == 0 && result.Hits.Total.Value > 0 {
 			select {
 			case out <- scraper.Progress(result.Hits.Total.Value):
 			case <-ctx.Done():
@@ -101,6 +105,12 @@ func (s *Scraper) Run(ctx context.Context, studioURL string, opts scraper.ListOp
 				return
 			}
 		}
+
+		lastHit := result.Hits.Hits[len(result.Hits.Hits)-1]
+		if len(lastHit.Sort) == 0 {
+			return
+		}
+		searchAfter = lastHit.Sort
 	}
 }
 
@@ -155,12 +165,17 @@ func buildQuery(kind filterKind, value string) map[string]any {
 		},
 		"sort": []any{
 			map[string]any{"publishedDate": map[string]any{"order": "desc"}},
+			map[string]any{"itemId": map[string]any{"order": "desc"}},
 		},
 	}
 }
 
 func (s *Scraper) search(ctx context.Context, query map[string]any) (*esResponse, error) {
-	url := esBase + "/" + s.Config.Index + "/_search"
+	base := s.esBaseURL
+	if base == "" {
+		base = esBase
+	}
+	url := base + "/" + s.Config.Index + "/_search"
 	return s.searchWithURL(ctx, url, query)
 }
 
@@ -197,10 +212,13 @@ type esResponse struct {
 		Total struct {
 			Value int `json:"value"`
 		} `json:"total"`
-		Hits []struct {
-			Source esScene `json:"_source"`
-		} `json:"hits"`
+		Hits []esHit `json:"hits"`
 	} `json:"hits"`
+}
+
+type esHit struct {
+	Source esScene           `json:"_source"`
+	Sort   []json.RawMessage `json:"sort"`
 }
 
 type esScene struct {

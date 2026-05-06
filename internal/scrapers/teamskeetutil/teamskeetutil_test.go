@@ -8,6 +8,8 @@ import (
 	"net/http/httptest"
 	"testing"
 	"time"
+
+	"github.com/Wasylq/FSS/scraper"
 )
 
 func TestClassifyURL(t *testing.T) {
@@ -154,20 +156,22 @@ func TestParseDate(t *testing.T) {
 }
 
 func fakeESResponse(scenes []esScene, total int) []byte {
-	type hit struct {
-		Source esScene `json:"_source"`
-	}
 	resp := struct {
 		Hits struct {
 			Total struct {
 				Value int `json:"value"`
 			} `json:"total"`
-			Hits []hit `json:"hits"`
+			Hits []esHit `json:"hits"`
 		} `json:"hits"`
 	}{}
 	resp.Hits.Total.Value = total
 	for _, s := range scenes {
-		resp.Hits.Hits = append(resp.Hits.Hits, hit{Source: s})
+		dateBytes, _ := json.Marshal(s.PublishedDate)
+		idBytes, _ := json.Marshal(s.ItemID)
+		resp.Hits.Hits = append(resp.Hits.Hits, esHit{
+			Source: s,
+			Sort:   []json.RawMessage{dateBytes, idBytes},
+		})
 	}
 	data, _ := json.Marshal(resp)
 	return data
@@ -181,6 +185,81 @@ func makeScene(id int, title string) esScene {
 		PublishedDate: "2026-04-20T00:00:00",
 		Models:        []esModel{{Name: "Test Model"}},
 		Tags:          []string{"MILF"},
+	}
+}
+
+func TestRunUsesSearchAfter(t *testing.T) {
+	var requests []map[string]any
+
+	page1Scenes := make([]esScene, pageSize)
+	for i := range page1Scenes {
+		page1Scenes[i] = makeScene(1000-i, fmt.Sprintf("Scene %d", i))
+		page1Scenes[i].Site.Name = "TestSite"
+		page1Scenes[i].Site.NickName = "testsite"
+	}
+	page2Scenes := []esScene{makeScene(500, "Last Scene")}
+	page2Scenes[0].Site.Name = "TestSite"
+	page2Scenes[0].Site.NickName = "testsite"
+
+	page1 := fakeESResponse(page1Scenes, pageSize+1)
+	page2 := fakeESResponse(page2Scenes, pageSize+1)
+	empty := fakeESResponse(nil, pageSize+1)
+
+	call := 0
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		var body map[string]any
+		_ = json.NewDecoder(r.Body).Decode(&body)
+		requests = append(requests, body)
+		switch call {
+		case 0:
+			_, _ = w.Write(page1)
+		case 1:
+			_, _ = w.Write(page2)
+		default:
+			_, _ = w.Write(empty)
+		}
+		call++
+	}))
+	defer ts.Close()
+
+	s := &Scraper{
+		client:    ts.Client(),
+		Config:    SiteConfig{Index: "test", SiteBase: ts.URL, Domain: "test.com", SiteID: "test"},
+		esBaseURL: ts.URL,
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	out := make(chan scraper.SceneResult, 100)
+	go s.Run(ctx, ts.URL, scraper.ListOpts{Workers: 3}, out)
+
+	var scenes int
+	for r := range out {
+		if r.Kind == scraper.KindScene {
+			scenes++
+		}
+	}
+
+	if scenes != pageSize+1 {
+		t.Errorf("got %d scenes, want %d", scenes, pageSize+1)
+	}
+	if len(requests) < 2 {
+		t.Fatalf("got %d requests, want at least 2", len(requests))
+	}
+
+	if _, ok := requests[0]["from"]; ok {
+		t.Error("first request should not have 'from' (using search_after)")
+	}
+	if _, ok := requests[0]["search_after"]; ok {
+		t.Error("first request should not have search_after")
+	}
+
+	if _, ok := requests[1]["search_after"]; !ok {
+		t.Error("second request missing search_after cursor")
+	}
+	if _, ok := requests[1]["from"]; ok {
+		t.Error("second request should not have 'from'")
 	}
 }
 
