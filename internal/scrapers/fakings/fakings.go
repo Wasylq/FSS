@@ -33,10 +33,13 @@ func (s *Scraper) Patterns() []string {
 		"fakings.com/serie/{slug}",
 		"fakings.com/actrices-porno/{slug}",
 		"fakings.com/categoria/{slug}",
+		"madlifes.com",
+		"nigged.com",
+		"pepeporn.com",
 	}
 }
 
-var matchRe = regexp.MustCompile(`^https?://(?:www\.)?fakings\.com`)
+var matchRe = regexp.MustCompile(`^https?://(?:www\.)?(?:fakings|madlifes|nigged|pepeporn)\.com`)
 
 func (s *Scraper) MatchesURL(u string) bool {
 	return matchRe.MatchString(u)
