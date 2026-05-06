@@ -38,8 +38,9 @@ func ValidateScene(t *testing.T, s models.Scene) {
 	} else if u, err := url.Parse(s.URL); err != nil || u.Scheme == "" || u.Host == "" {
 		t.Errorf("scene %q has malformed URL %q", s.ID, s.URL)
 	}
+	// Date is unavailable on some sites (e.g. AlternaDudes); warn but don't fail.
 	if s.Date.IsZero() {
-		t.Errorf("scene %q has zero Date", s.ID)
+		t.Logf("scene %q has zero Date", s.ID)
 	}
 	// Duration is sometimes unavailable from list endpoints; warn but don't fail.
 	if s.Duration < 0 || s.Duration > 24*60*60 {
