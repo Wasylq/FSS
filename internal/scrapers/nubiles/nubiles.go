@@ -157,13 +157,12 @@ func baseURL(rawURL string) string {
 	return m
 }
 
+func modelProfileURL(base string, f filter) string {
+	return fmt.Sprintf("%s/model/profile/%s/%s", base, f.id, f.slug)
+}
+
 func listingURL(base string, f filter, offset int) string {
 	switch f.mode {
-	case filterModel:
-		if offset == 0 {
-			return fmt.Sprintf("%s/video/model/%s/%s", base, f.id, f.slug)
-		}
-		return fmt.Sprintf("%s/video/model/%s/%s/%d", base, f.id, f.slug, offset)
 	case filterCategory:
 		if offset == 0 {
 			return fmt.Sprintf("%s/video/category/%s/%s", base, f.id, f.slug)
@@ -227,6 +226,53 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 		}()
 	}
 
+	if f.mode == filterModel {
+		s.runModel(ctx, base, f, opts, work, out)
+	} else {
+		s.runPaginated(ctx, base, f, opts, work, out)
+	}
+
+	close(work)
+	wg.Wait()
+}
+
+func (s *Scraper) runModel(ctx context.Context, base string, f filter, opts scraper.ListOpts, work chan<- listEntry, out chan<- scraper.SceneResult) {
+	pageURL := modelProfileURL(base, f)
+	entries, _, err := s.fetchListing(ctx, pageURL)
+	if err != nil {
+		select {
+		case out <- scraper.Error(err):
+		case <-ctx.Done():
+		}
+		return
+	}
+
+	if len(entries) > 0 {
+		select {
+		case out <- scraper.Progress(len(entries)):
+		case <-ctx.Done():
+			return
+		}
+	}
+
+	for _, e := range entries {
+		if len(opts.KnownIDs) > 0 && opts.KnownIDs[e.id] {
+			select {
+			case out <- scraper.StoppedEarly():
+			case <-ctx.Done():
+			}
+			return
+		}
+		select {
+		case work <- e:
+		case <-ctx.Done():
+			return
+		}
+	}
+}
+
+func (s *Scraper) runPaginated(ctx context.Context, base string, f filter, opts scraper.ListOpts, work chan<- listEntry, out chan<- scraper.SceneResult) {
+	seen := make(map[string]bool)
 	sentTotal := false
 	for offset := 0; ; offset += 12 {
 		if ctx.Err() != nil {
@@ -268,6 +314,10 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 		cancelled := false
 		hitKnown := false
 		for _, e := range entries {
+			if seen[e.id] {
+				continue
+			}
+			seen[e.id] = true
 			if len(opts.KnownIDs) > 0 && opts.KnownIDs[e.id] {
 				hitKnown = true
 				break
@@ -296,9 +346,6 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 			break
 		}
 	}
-
-	close(work)
-	wg.Wait()
 }
 
 var (
@@ -320,11 +367,11 @@ func (s *Scraper) fetchListing(ctx context.Context, pageURL string) ([]listEntry
 		return nil, 0, err
 	}
 
-	// Parse total pages from the LAST "N of M" match (the main grid, not featured)
 	totalPages := 0
-	if matches := paginationRe.FindAllSubmatch(body, -1); len(matches) > 0 {
-		last := matches[len(matches)-1]
-		totalPages, _ = strconv.Atoi(string(last[2]))
+	for _, m := range paginationRe.FindAllSubmatch(body, -1) {
+		if n, _ := strconv.Atoi(string(m[2])); n > totalPages {
+			totalPages = n
+		}
 	}
 
 	figures := gridItemRe.FindAll(body, -1)

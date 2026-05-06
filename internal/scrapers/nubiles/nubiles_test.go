@@ -38,6 +38,12 @@ func TestMatchesURL(t *testing.T) {
 		{"https://youngermommy.com", true},
 		{"https://petiteballerinasfucked.com", true},
 		{"https://nubiles-casting.com", true},
+		{"https://deeplush.com", true},
+		{"https://www.glowingdesire.com", true},
+		{"https://thepovgod.com", true},
+		{"https://cheatingmommy.com", true},
+		{"https://doublepies.com", true},
+		{"https://milfcoach.com", true},
 		{"https://www.brazzers.com", false},
 		{"https://example.com", false},
 	}
@@ -79,8 +85,6 @@ func TestListingURL(t *testing.T) {
 	}{
 		{filter{mode: filterAll}, 0, "https://nubiles-porn.com/video/gallery"},
 		{filter{mode: filterAll}, 12, "https://nubiles-porn.com/video/gallery/12"},
-		{filter{mode: filterModel, id: "4854", slug: "cherie-deville"}, 0, "https://nubiles-porn.com/video/model/4854/cherie-deville"},
-		{filter{mode: filterModel, id: "4854", slug: "cherie-deville"}, 12, "https://nubiles-porn.com/video/model/4854/cherie-deville/12"},
 		{filter{mode: filterCategory, id: "3", slug: "milf"}, 0, "https://nubiles-porn.com/video/category/3/milf"},
 		{filter{mode: filterCategory, id: "3", slug: "milf"}, 24, "https://nubiles-porn.com/video/category/3/milf/24"},
 	}
@@ -89,6 +93,15 @@ func TestListingURL(t *testing.T) {
 		if got != c.want {
 			t.Errorf("listingURL(%v, %d) = %q, want %q", c.f, c.offset, got, c.want)
 		}
+	}
+}
+
+func TestModelProfileURL(t *testing.T) {
+	f := filter{mode: filterModel, id: "4854", slug: "cherie-deville"}
+	got := modelProfileURL("https://nubiles-porn.com", f)
+	want := "https://nubiles-porn.com/model/profile/4854/cherie-deville"
+	if got != want {
+		t.Errorf("modelProfileURL = %q, want %q", got, want)
 	}
 }
 
@@ -250,6 +263,29 @@ func TestListScenes(t *testing.T) {
 
 	scenes := testutil.CollectScenes(t, ch)
 
+	if len(scenes) != 2 {
+		t.Errorf("got %d scenes, want 2", len(scenes))
+	}
+}
+
+func TestListScenesModelProfile(t *testing.T) {
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case "/model/profile/100/alice":
+			_, _ = fmt.Fprint(w, listingHTML)
+		default:
+			_, _ = fmt.Fprint(w, detailHTML)
+		}
+	}))
+	defer ts.Close()
+
+	s := &Scraper{client: ts.Client()}
+	ch, err := s.ListScenes(context.Background(), ts.URL+"/model/profile/100/alice", scraper.ListOpts{Workers: 1})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	scenes := testutil.CollectScenes(t, ch)
 	if len(scenes) != 2 {
 		t.Errorf("got %d scenes, want 2", len(scenes))
 	}
