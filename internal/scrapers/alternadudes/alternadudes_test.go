@@ -97,8 +97,8 @@ func newTestServer(pages [][]string, detail string) *httptest.Server {
 	return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/html")
 
-		switch {
-		case r.URL.Path == "/trailers/Test-Scene.html":
+		switch r.URL.Path {
+		case "/trailers/Test-Scene.html":
 			_, _ = fmt.Fprint(w, detail)
 
 		default:

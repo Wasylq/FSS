@@ -33,6 +33,7 @@ import (
 	_ "github.com/Wasylq/FSS/internal/scrapers/iwantclips"
 	_ "github.com/Wasylq/FSS/internal/scrapers/jerkoffinstructions"
 	_ "github.com/Wasylq/FSS/internal/scrapers/julesjordan"
+	_ "github.com/Wasylq/FSS/internal/scrapers/karups"
 	_ "github.com/Wasylq/FSS/internal/scrapers/kink"
 	_ "github.com/Wasylq/FSS/internal/scrapers/kmproduce"
 	_ "github.com/Wasylq/FSS/internal/scrapers/ladysonia"
