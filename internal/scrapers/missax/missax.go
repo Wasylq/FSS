@@ -109,6 +109,9 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 			case <-ctx.Done():
 				break
 			}
+			if ctx.Err() != nil {
+				break
+			}
 		}
 
 		entries, err := s.fetchPage(ctx, page)
