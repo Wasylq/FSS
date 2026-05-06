@@ -72,11 +72,17 @@ func (s *Scraper) Patterns() []string {
 		"teacherfucksteens.com",
 		"thatsitcomshow.com",
 		"bountyhunterporn.com",
+		"cheatingmommy.com",
 		"cheatingsis.com",
+		"deeplush.com",
+		"doublepies.com",
 		"driverxxx.com",
+		"glowingdesire.com",
 		"lilsis.com",
+		"milfcoach.com",
 		"nubilesunscripted.com",
 		"smashed.xxx",
+		"thepovgod.com",
 	}
 }
 
@@ -94,8 +100,10 @@ var matchRe = regexp.MustCompile(`^https?://(?:www\.)?(?:` +
 	`momsboytoy\.com|momsfamilysecrets\.com|momstight\.com|` +
 	`momswapped\.com|momwantscreampie\.com|momwantstobreed\.com|` +
 	`nfbusty\.com|nubilefilms\.com|teacherfucksteens\.com|` +
-	`thatsitcomshow\.com|bountyhunterporn\.com|cheatingsis\.com|` +
-	`driverxxx\.com|lilsis\.com|nubilesunscripted\.com|smashed\.xxx)`)
+	`thatsitcomshow\.com|bountyhunterporn\.com|cheatingmommy\.com|` +
+	`cheatingsis\.com|deeplush\.com|doublepies\.com|driverxxx\.com|` +
+	`glowingdesire\.com|lilsis\.com|milfcoach\.com|` +
+	`nubilesunscripted\.com|smashed\.xxx|thepovgod\.com)`)
 
 func (s *Scraper) MatchesURL(u string) bool {
 	return matchRe.MatchString(u)
@@ -297,6 +305,7 @@ var (
 	gridItemRe   = regexp.MustCompile(`(?s)<figure\b[^>]*>.*?</figcaption>\s*</figure>`)
 	watchLinkRe  = regexp.MustCompile(`/video/watch/(\d+)/([^"]+)`)
 	imgSrcsetRe  = regexp.MustCompile(`data-srcset="([^"]+)"`)
+	imgSrcRe     = regexp.MustCompile(`data-src="([^"]+)"`)
 	previewSrcRe = regexp.MustCompile(`data-preview-src="([^"]+)"`)
 	titleRe      = regexp.MustCompile(`(?s)<span class="title">\s*<a[^>]*>\s*(.*?)\s*</a>`)
 	modelLinkRe  = regexp.MustCompile(`class="model"[^>]*>([^<]+)</a>`)
@@ -343,6 +352,8 @@ func (s *Scraper) fetchListing(ctx context.Context, pageURL string) ([]listEntry
 
 		if m := imgSrcsetRe.FindSubmatch(fig); m != nil {
 			e.thumbnail = bestSrcset(html.UnescapeString(string(m[1])))
+		} else if m := imgSrcRe.FindSubmatch(fig); m != nil {
+			e.thumbnail = html.UnescapeString(string(m[1]))
 		}
 
 		if m := previewSrcRe.FindSubmatch(fig); m != nil {
