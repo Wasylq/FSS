@@ -21,6 +21,7 @@ type SiteConfig struct {
 	Studio   string
 	Patterns []string
 	MatchRe  *regexp.Regexp
+	BaseURL  string // optional override for testing; defaults to "https://www." + Domain
 }
 
 type Scraper struct {
@@ -39,6 +40,13 @@ func (s *Scraper) ID() string         { return s.cfg.ID }
 func (s *Scraper) Patterns() []string { return s.cfg.Patterns }
 func (s *Scraper) MatchesURL(u string) bool {
 	return s.cfg.MatchRe.MatchString(u)
+}
+
+func (s *Scraper) siteBase() string {
+	if s.cfg.BaseURL != "" {
+		return s.cfg.BaseURL
+	}
+	return "https://www." + s.cfg.Domain
 }
 
 func (s *Scraper) ListScenes(ctx context.Context, _ string, opts scraper.ListOpts) (<-chan scraper.SceneResult, error) {
@@ -81,9 +89,8 @@ type modelSlugEntry struct {
 var buildIDRe = regexp.MustCompile(`"buildId"\s*:\s*"([^"]+)"`)
 
 func (s *Scraper) fetchBuildID(ctx context.Context) (string, error) {
-	siteBase := "https://www." + s.cfg.Domain
 	resp, err := httpx.Do(ctx, s.client, httpx.Request{
-		URL: siteBase + "/",
+		URL: s.siteBase() + "/",
 		Headers: map[string]string{
 			"User-Agent": httpx.UserAgentChrome,
 		},
@@ -106,7 +113,7 @@ func (s *Scraper) fetchBuildID(ctx context.Context) (string, error) {
 }
 
 func (s *Scraper) fetchPage(ctx context.Context, buildID string, page int) (*nextDataResponse, error) {
-	u := fmt.Sprintf("https://www.%s/_next/data/%s/videos.json?page=%d", s.cfg.Domain, buildID, page)
+	u := fmt.Sprintf("%s/_next/data/%s/videos.json?page=%d", s.siteBase(), buildID, page)
 	resp, err := httpx.Do(ctx, s.client, httpx.Request{
 		URL: u,
 		Headers: map[string]string{
@@ -137,7 +144,7 @@ func (s *Scraper) run(ctx context.Context, opts scraper.ListOpts, out chan<- scr
 		return
 	}
 
-	siteBase := "https://www." + s.cfg.Domain
+	siteBase := s.siteBase()
 	now := time.Now().UTC()
 
 	for page := 1; ; page++ {
