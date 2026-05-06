@@ -399,7 +399,7 @@ func (s *Scraper) queryScenes(ctx context.Context, inst instance, input map[stri
 	defer func() { _ = resp.Body.Close() }()
 
 	var gqlResp gqlResponse
-	if err := json.NewDecoder(resp.Body).Decode(&gqlResp); err != nil {
+	if err := httpx.DecodeJSON(resp.Body, &gqlResp); err != nil {
 		return gqlResponse{}, fmt.Errorf("decoding response: %w", err)
 	}
 	if len(gqlResp.Errors) > 0 {

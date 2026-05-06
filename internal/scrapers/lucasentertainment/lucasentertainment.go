@@ -2,7 +2,6 @@ package lucasentertainment
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"html"
 	"net/http"
@@ -146,7 +145,7 @@ func (s *Scraper) fetchPage(ctx context.Context, page int) ([]wpPost, int, error
 	total, _ := strconv.Atoi(resp.Header.Get("X-WP-Total"))
 
 	var posts []wpPost
-	if err := json.NewDecoder(resp.Body).Decode(&posts); err != nil {
+	if err := httpx.DecodeJSON(resp.Body, &posts); err != nil {
 		return nil, 0, fmt.Errorf("decoding response: %w", err)
 	}
 	return posts, total, nil

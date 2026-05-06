@@ -201,7 +201,7 @@ func (s *Scraper) searchWithURL(ctx context.Context, url string, query map[strin
 	defer func() { _ = resp.Body.Close() }()
 
 	var result esResponse
-	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+	if err := httpx.DecodeJSON(resp.Body, &result); err != nil {
 		return nil, fmt.Errorf("decoding response: %w", err)
 	}
 	return &result, nil

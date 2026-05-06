@@ -206,7 +206,7 @@ func (s *Scraper) FetchPage(ctx context.Context, apiKey string, page int, extraF
 	defer func() { _ = resp.Body.Close() }()
 
 	var result AlgoliaResponse
-	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+	if err := httpx.DecodeJSON(resp.Body, &result); err != nil {
 		return nil, 0, fmt.Errorf("decoding algolia response: %w", err)
 	}
 	return result.Hits, result.NbHits, nil

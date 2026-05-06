@@ -2,7 +2,6 @@ package iwantclips
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"html"
@@ -246,7 +245,7 @@ func (s *Scraper) fetchPage(ctx context.Context, apiKey, tsBase, memberID string
 	defer func() { _ = resp.Body.Close() }()
 
 	var ts tsResponse
-	if err := json.NewDecoder(resp.Body).Decode(&ts); err != nil {
+	if err := httpx.DecodeJSON(resp.Body, &ts); err != nil {
 		return nil, 0, fmt.Errorf("decoding response: %w", err)
 	}
 

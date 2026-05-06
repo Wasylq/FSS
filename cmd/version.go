@@ -2,12 +2,12 @@ package cmd
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"net/http"
 	"strings"
 	"time"
 
+	"github.com/Wasylq/FSS/internal/httpx"
 	"github.com/spf13/cobra"
 )
 
@@ -70,7 +70,7 @@ func fetchLatestRelease() (string, error) {
 	var release struct {
 		TagName string `json:"tag_name"`
 	}
-	if err := json.NewDecoder(resp.Body).Decode(&release); err != nil {
+	if err := httpx.DecodeJSON(resp.Body, &release); err != nil {
 		return "", err
 	}
 	return release.TagName, nil

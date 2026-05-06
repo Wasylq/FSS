@@ -2,7 +2,6 @@ package manyvids
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"html"
 	"net/http"
@@ -184,7 +183,7 @@ func (s *Scraper) fetchPage(ctx context.Context, cid string, page int) ([]listEn
 	defer func() { _ = resp.Body.Close() }()
 
 	var lr listResponse
-	if err := json.NewDecoder(resp.Body).Decode(&lr); err != nil {
+	if err := httpx.DecodeJSON(resp.Body, &lr); err != nil {
 		return nil, 0, fmt.Errorf("decoding list response: %w", err)
 	}
 
@@ -207,7 +206,7 @@ func (s *Scraper) fetchDetail(ctx context.Context, studioURL, id, previewURL str
 	defer func() { _ = resp.Body.Close() }()
 
 	var dr detailResponse
-	if err := json.NewDecoder(resp.Body).Decode(&dr); err != nil {
+	if err := httpx.DecodeJSON(resp.Body, &dr); err != nil {
 		return models.Scene{}, fmt.Errorf("decoding detail for %s: %w", id, err)
 	}
 

@@ -4,7 +4,6 @@ package veutil
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"html"
 	"net/http"
@@ -167,7 +166,7 @@ func (s *Scraper) fetchAllTags(ctx context.Context) (map[int]string, error) {
 		var tags []wpTag
 		err = func() error {
 			defer func() { _ = resp.Body.Close() }()
-			return json.NewDecoder(resp.Body).Decode(&tags)
+			return httpx.DecodeJSON(resp.Body, &tags)
 		}()
 		if err != nil {
 			return nil, fmt.Errorf("tags decode: %w", err)
@@ -203,7 +202,7 @@ func (s *Scraper) fetchPosts(ctx context.Context, page int) ([]wpPost, int, erro
 	total, _ := strconv.Atoi(resp.Header.Get("X-WP-Total"))
 
 	var posts []wpPost
-	if err := json.NewDecoder(resp.Body).Decode(&posts); err != nil {
+	if err := httpx.DecodeJSON(resp.Body, &posts); err != nil {
 		return nil, 0, fmt.Errorf("decode: %w", err)
 	}
 

@@ -2,7 +2,6 @@ package povrutil
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"net/http"
 	"regexp"
@@ -188,7 +187,7 @@ func (s *Scraper) fetchExport(ctx context.Context) ([]exportVideo, error) {
 	defer func() { _ = resp.Body.Close() }()
 
 	var videos []exportVideo
-	if err := json.NewDecoder(resp.Body).Decode(&videos); err != nil {
+	if err := httpx.DecodeJSON(resp.Body, &videos); err != nil {
 		return nil, fmt.Errorf("decode: %w", err)
 	}
 	return videos, nil

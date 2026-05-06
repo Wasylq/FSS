@@ -2,7 +2,6 @@ package fancentro
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"net/http"
 	"regexp"
@@ -190,7 +189,7 @@ func (s *Scraper) fetchPage(ctx context.Context, slug string, page int) ([]apiCl
 	defer func() { _ = resp.Body.Close() }()
 
 	var ar apiResponse
-	if err := json.NewDecoder(resp.Body).Decode(&ar); err != nil {
+	if err := httpx.DecodeJSON(resp.Body, &ar); err != nil {
 		return nil, 0, 0, fmt.Errorf("parse page %d: %w", page, err)
 	}
 

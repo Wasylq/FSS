@@ -177,7 +177,7 @@ func (s *Scraper) FetchListing(ctx context.Context, offset int) ([]APIScene, int
 	defer func() { _ = resp.Body.Close() }()
 
 	var ar APIResponse
-	if err := json.NewDecoder(resp.Body).Decode(&ar); err != nil {
+	if err := httpx.DecodeJSON(resp.Body, &ar); err != nil {
 		return nil, 0, fmt.Errorf("parse listing: %w", err)
 	}
 
@@ -207,7 +207,7 @@ func (s *Scraper) FetchDetail(ctx context.Context, id int) (*APIScene, error) {
 	defer func() { _ = resp.Body.Close() }()
 
 	var ar APIResponse
-	if err := json.NewDecoder(resp.Body).Decode(&ar); err != nil {
+	if err := httpx.DecodeJSON(resp.Body, &ar); err != nil {
 		return nil, fmt.Errorf("parse detail %d: %w", id, err)
 	}
 

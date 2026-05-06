@@ -212,7 +212,7 @@ func (s *Scraper) fetchPage(ctx context.Context, slug, pageToken string, cookies
 	defer func() { _ = resp.Body.Close() }()
 
 	var result searchResponse
-	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+	if err := httpx.DecodeJSON(resp.Body, &result); err != nil {
 		return nil, "", fmt.Errorf("decoding search response: %w", err)
 	}
 	if !result.Success {

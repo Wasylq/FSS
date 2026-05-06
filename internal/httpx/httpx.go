@@ -6,6 +6,7 @@ package httpx
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -35,6 +36,11 @@ func ReadBody(body io.ReadCloser) ([]byte, error) {
 		return nil, fmt.Errorf("response body exceeds %d bytes", MaxPageBytes)
 	}
 	return data, nil
+}
+
+// DecodeJSON JSON-decodes from r into v, reading at most MaxPageBytes.
+func DecodeJSON(r io.Reader, v any) error {
+	return json.NewDecoder(io.LimitReader(r, MaxPageBytes)).Decode(v)
 }
 
 // sharedTransport is reused across all scrapers so TCP/TLS connections are

@@ -2,7 +2,6 @@ package wankitnowutil
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"net/http"
 	"regexp"
@@ -126,7 +125,7 @@ func (s *Scraper) fetchPage(ctx context.Context, buildID string, page int) (*nex
 	defer func() { _ = resp.Body.Close() }()
 
 	var data nextDataResponse
-	if err := json.NewDecoder(resp.Body).Decode(&data); err != nil {
+	if err := httpx.DecodeJSON(resp.Body, &data); err != nil {
 		return nil, fmt.Errorf("decode page %d: %w", page, err)
 	}
 	return &data, nil

@@ -2,7 +2,6 @@ package puremature
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"net/http"
 	"regexp"
@@ -156,7 +155,7 @@ func (s *Scraper) fetch(ctx context.Context, url string) (*apiResponse, error) {
 	defer func() { _ = resp.Body.Close() }()
 
 	var result apiResponse
-	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+	if err := httpx.DecodeJSON(resp.Body, &result); err != nil {
 		return nil, fmt.Errorf("decoding response: %w", err)
 	}
 	return &result, nil

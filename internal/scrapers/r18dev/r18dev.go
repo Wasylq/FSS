@@ -2,7 +2,6 @@ package r18dev
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -347,5 +346,5 @@ func (s *Scraper) fetchJSON(ctx context.Context, rawURL string, v any) error {
 		return err
 	}
 	defer func() { _ = resp.Body.Close() }()
-	return json.NewDecoder(resp.Body).Decode(v)
+	return httpx.DecodeJSON(resp.Body, v)
 }

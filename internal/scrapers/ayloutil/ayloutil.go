@@ -151,7 +151,7 @@ func (s *Scraper) resolveCollectionSlug(ctx context.Context, token string, slug 
 			Name string `json:"name"`
 		} `json:"result"`
 	}
-	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+	if err := httpx.DecodeJSON(resp.Body, &result); err != nil {
 		return 0, fmt.Errorf("decoding collections: %w", err)
 	}
 
@@ -211,7 +211,7 @@ func (s *Scraper) FetchPage(ctx context.Context, token string, filter Filter, pa
 	defer func() { _ = resp.Body.Close() }()
 
 	var result ReleasesResponse
-	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+	if err := httpx.DecodeJSON(resp.Body, &result); err != nil {
 		return nil, 0, fmt.Errorf("decoding releases: %w", err)
 	}
 	return result.Result, result.Meta.Total, nil
@@ -243,7 +243,7 @@ func (s *Scraper) fetchSeries(ctx context.Context, token string, seriesID int) (
 		var result ReleasesResponse
 		err = func() error {
 			defer func() { _ = resp.Body.Close() }()
-			return json.NewDecoder(resp.Body).Decode(&result)
+			return httpx.DecodeJSON(resp.Body, &result)
 		}()
 		if err != nil {
 			return nil, 0, fmt.Errorf("decoding series: %w", err)

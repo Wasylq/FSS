@@ -203,7 +203,7 @@ func (s *Scraper) fetchPage(ctx context.Context, uid, page int) ([]mdhItem, int,
 	defer func() { _ = resp.Body.Close() }()
 
 	var lr listResponse
-	if err := json.NewDecoder(resp.Body).Decode(&lr); err != nil {
+	if err := httpx.DecodeJSON(resp.Body, &lr); err != nil {
 		return nil, 0, 0, fmt.Errorf("decoding response: %w", err)
 	}
 	return lr.Items, lr.Total, lr.TotalPages, nil

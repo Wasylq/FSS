@@ -2,7 +2,6 @@ package bangbros
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"net/url"
 	"regexp"
@@ -121,7 +120,7 @@ func (s *Scraper) resolveCollectionID(ctx context.Context, slug string) (int, er
 			} `json:"collections"`
 		} `json:"result"`
 	}
-	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+	if err := httpx.DecodeJSON(resp.Body, &result); err != nil {
 		return 0, fmt.Errorf("decoding collection search for %q: %w", slug, err)
 	}
 	for _, scene := range result.Result {
@@ -159,7 +158,7 @@ func (s *Scraper) resolveTagID(ctx context.Context, slug string) (int, error) {
 			Name string `json:"name"`
 		} `json:"result"`
 	}
-	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+	if err := httpx.DecodeJSON(resp.Body, &result); err != nil {
 		return 0, fmt.Errorf("decoding tag search for %q: %w", slug, err)
 	}
 	if len(result.Result) == 0 {

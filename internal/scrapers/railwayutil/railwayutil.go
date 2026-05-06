@@ -2,7 +2,6 @@ package railwayutil
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -118,7 +117,7 @@ func (s *Scraper) fetchAll(ctx context.Context) ([]APIVideo, error) {
 	defer func() { _ = resp.Body.Close() }()
 
 	var videos []APIVideo
-	if err := json.NewDecoder(resp.Body).Decode(&videos); err != nil {
+	if err := httpx.DecodeJSON(resp.Body, &videos); err != nil {
 		return nil, fmt.Errorf("decode: %w", err)
 	}
 	return videos, nil

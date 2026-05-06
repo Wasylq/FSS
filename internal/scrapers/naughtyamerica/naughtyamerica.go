@@ -156,7 +156,7 @@ func (s *Scraper) fetchPage(ctx context.Context, page int) (*apiResponse, error)
 	defer func() { _ = resp.Body.Close() }()
 
 	var result apiResponse
-	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+	if err := httpx.DecodeJSON(resp.Body, &result); err != nil {
 		return nil, fmt.Errorf("decoding response: %w", err)
 	}
 	return &result, nil

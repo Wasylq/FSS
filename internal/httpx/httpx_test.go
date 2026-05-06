@@ -260,6 +260,21 @@ func TestReadBody_overLimit(t *testing.T) {
 	}
 }
 
+func TestDecodeJSON(t *testing.T) {
+	t.Parallel()
+	r := strings.NewReader(`{"name":"test","value":42}`)
+	var v struct {
+		Name  string `json:"name"`
+		Value int    `json:"value"`
+	}
+	if err := DecodeJSON(r, &v); err != nil {
+		t.Fatalf("DecodeJSON: %v", err)
+	}
+	if v.Name != "test" || v.Value != 42 {
+		t.Errorf("got %+v", v)
+	}
+}
+
 func contains(s, substr string) bool {
 	for i := 0; i+len(substr) <= len(s); i++ {
 		if s[i:i+len(substr)] == substr {
