@@ -138,6 +138,36 @@ func TestMergeScenesSingle(t *testing.T) {
 	}
 }
 
+func TestMergeScenesEmpty(t *testing.T) {
+	m := MergeScenes(nil, time.Time{})
+	if m.Title != "" {
+		t.Errorf("Title = %q, want empty", m.Title)
+	}
+	if !m.Date.IsZero() {
+		t.Errorf("Date = %v, want zero", m.Date)
+	}
+	if len(m.URLs) != 0 {
+		t.Errorf("URLs len = %d, want 0", len(m.URLs))
+	}
+	if len(m.Tags) != 0 {
+		t.Errorf("Tags len = %d, want 0", len(m.Tags))
+	}
+	if len(m.Performers) != 0 {
+		t.Errorf("Performers len = %d, want 0", len(m.Performers))
+	}
+	if len(m.Sites) != 0 {
+		t.Errorf("Sites len = %d, want 0", len(m.Sites))
+	}
+}
+
+func TestMergeScenesEmptyWithExistingDate(t *testing.T) {
+	existing := time.Date(2026, 3, 1, 0, 0, 0, 0, time.UTC)
+	m := MergeScenes(nil, existing)
+	if !m.Date.Equal(existing) {
+		t.Errorf("Date = %v, want %v", m.Date, existing)
+	}
+}
+
 func TestResolutionTags(t *testing.T) {
 	cases := []struct {
 		width int

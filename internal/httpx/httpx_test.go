@@ -6,6 +6,7 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -172,6 +173,91 @@ func TestDo_setsCustomHeaders(t *testing.T) {
 		t.Fatalf("Do: %v", err)
 	}
 	_ = resp.Body.Close()
+}
+
+func TestDo_retriesOn429ThenSucceeds(t *testing.T) {
+	t.Parallel()
+	var calls int32
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		n := atomic.AddInt32(&calls, 1)
+		if n == 1 {
+			w.WriteHeader(http.StatusTooManyRequests)
+			return
+		}
+		_, _ = w.Write([]byte("ok"))
+	}))
+	defer ts.Close()
+
+	resp, err := Do(context.Background(), ts.Client(), Request{URL: ts.URL})
+	if err != nil {
+		t.Fatalf("Do: %v", err)
+	}
+	defer func() { _ = resp.Body.Close() }()
+
+	body, _ := io.ReadAll(resp.Body)
+	if string(body) != "ok" {
+		t.Errorf("body = %q", body)
+	}
+	if got := atomic.LoadInt32(&calls); got != 2 {
+		t.Errorf("expected 2 calls (1 rate-limit + 1 success), got %d", got)
+	}
+}
+
+func TestDo_exhaustsAllRetries(t *testing.T) {
+	t.Parallel()
+	var calls int32
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		atomic.AddInt32(&calls, 1)
+		w.WriteHeader(http.StatusInternalServerError)
+	}))
+	defer ts.Close()
+
+	_, err := Do(context.Background(), ts.Client(), Request{URL: ts.URL, MaxAttempts: 2})
+	if err == nil {
+		t.Fatal("expected error after exhausting retries")
+	}
+	if got := atomic.LoadInt32(&calls); got != 2 {
+		t.Errorf("expected 2 calls, got %d", got)
+	}
+	var se *StatusError
+	if !errors.As(err, &se) {
+		t.Errorf("expected StatusError in chain, got: %v", err)
+	}
+}
+
+func TestReadBody_underLimit(t *testing.T) {
+	t.Parallel()
+	body := io.NopCloser(strings.NewReader("hello world"))
+	data, err := ReadBody(body)
+	if err != nil {
+		t.Fatalf("ReadBody: %v", err)
+	}
+	if string(data) != "hello world" {
+		t.Errorf("got %q", data)
+	}
+}
+
+func TestReadBody_atExactLimit(t *testing.T) {
+	t.Parallel()
+	payload := strings.Repeat("x", MaxPageBytes)
+	body := io.NopCloser(strings.NewReader(payload))
+	data, err := ReadBody(body)
+	if err != nil {
+		t.Fatalf("ReadBody: %v", err)
+	}
+	if len(data) != MaxPageBytes {
+		t.Errorf("got %d bytes, want %d", len(data), MaxPageBytes)
+	}
+}
+
+func TestReadBody_overLimit(t *testing.T) {
+	t.Parallel()
+	payload := strings.Repeat("x", MaxPageBytes+1)
+	body := io.NopCloser(strings.NewReader(payload))
+	_, err := ReadBody(body)
+	if err == nil {
+		t.Fatal("expected error for oversized body")
+	}
 }
 
 func contains(s, substr string) bool {

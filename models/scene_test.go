@@ -112,6 +112,30 @@ func TestAddPriceOnSale(t *testing.T) {
 	}
 }
 
+func TestAddPriceNegativeRegular(t *testing.T) {
+	var s Scene
+	now := time.Now().UTC()
+	s.AddPrice(PriceSnapshot{Date: now, Regular: -5.00})
+	if s.LowestPrice != -5.00 {
+		t.Errorf("LowestPrice = %v, want -5.00", s.LowestPrice)
+	}
+	if len(s.PriceHistory) != 1 {
+		t.Errorf("PriceHistory len = %d, want 1", len(s.PriceHistory))
+	}
+}
+
+func TestAddPriceZeroRegularNotFree(t *testing.T) {
+	var s Scene
+	now := time.Now().UTC()
+	s.AddPrice(PriceSnapshot{Date: now, Regular: 0, IsFree: false})
+	if s.LowestPriceDate != nil {
+		t.Error("zero regular + not free should not set LowestPriceDate")
+	}
+	if len(s.PriceHistory) != 1 {
+		t.Errorf("PriceHistory len = %d, want 1 (still recorded)", len(s.PriceHistory))
+	}
+}
+
 func TestEffective(t *testing.T) {
 	cases := []struct {
 		name string

@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/base64"
+	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -164,6 +165,324 @@ func TestDownloadCoverImage_detectsContentTypeWhenMissing(t *testing.T) {
 	}
 	if !strings.HasPrefix(got, "data:image/png;base64,") {
 		t.Errorf("expected detected image/png, got prefix of: %s", got[:40])
+	}
+}
+
+func newTestClient(t *testing.T, handler http.HandlerFunc) (*Client, *httptest.Server) {
+	t.Helper()
+	ts := httptest.NewServer(handler)
+	t.Cleanup(ts.Close)
+	c := &Client{
+		url:  ts.URL + "/graphql",
+		http: ts.Client(),
+	}
+	return c, ts
+}
+
+func graphqlHandler(t *testing.T, responses map[string]string) http.HandlerFunc {
+	t.Helper()
+	return func(w http.ResponseWriter, r *http.Request) {
+		var req graphqlRequest
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			t.Errorf("decoding request: %v", err)
+			http.Error(w, "bad request", 400)
+			return
+		}
+		for key, resp := range responses {
+			if strings.Contains(req.Query, key) {
+				w.Header().Set("Content-Type", "application/json")
+				_, _ = w.Write([]byte(resp))
+				return
+			}
+		}
+		t.Errorf("unmatched query: %s", req.Query)
+		http.Error(w, "no match", 500)
+	}
+}
+
+func TestFindScenes(t *testing.T) {
+	c, _ := newTestClient(t, graphqlHandler(t, map[string]string{
+		"findScenes": `{"data":{"findScenes":{"count":2,"scenes":[
+			{"id":"1","title":"Scene One","files":[{"basename":"one.mp4","path":"/v/one.mp4","duration":120}],"tags":[],"performers":[],"stash_ids":[]},
+			{"id":"2","title":"Scene Two","files":[],"tags":[{"id":"10","name":"anal"}],"performers":[{"id":"20","name":"Alice"}],"stash_ids":[]}
+		]}}}`,
+	}))
+
+	scenes, count, err := c.FindScenes(context.Background(), FindScenesFilter{}, 1, 25)
+	if err != nil {
+		t.Fatalf("FindScenes: %v", err)
+	}
+	if count != 2 {
+		t.Errorf("count = %d, want 2", count)
+	}
+	if len(scenes) != 2 {
+		t.Fatalf("got %d scenes, want 2", len(scenes))
+	}
+	if scenes[0].Title != "Scene One" {
+		t.Errorf("title = %q", scenes[0].Title)
+	}
+	if len(scenes[1].Tags) != 1 || scenes[1].Tags[0].Name != "anal" {
+		t.Errorf("tags = %v", scenes[1].Tags)
+	}
+	if len(scenes[1].Performers) != 1 || scenes[1].Performers[0].Name != "Alice" {
+		t.Errorf("performers = %v", scenes[1].Performers)
+	}
+}
+
+func TestFindAllScenes(t *testing.T) {
+	var calls int
+	c, _ := newTestClient(t, func(w http.ResponseWriter, r *http.Request) {
+		calls++
+		w.Header().Set("Content-Type", "application/json")
+		// perPage is 100 in FindAllScenes. First page returns 100, second returns 1.
+		if calls == 1 {
+			scenes := make([]string, 100)
+			for i := range scenes {
+				scenes[i] = `{"id":"` + strings.Repeat("a", i+1) + `","title":"S","files":[],"tags":[],"performers":[],"stash_ids":[]}`
+			}
+			_, _ = w.Write([]byte(`{"data":{"findScenes":{"count":101,"scenes":[` + strings.Join(scenes, ",") + `]}}}`))
+		} else {
+			_, _ = w.Write([]byte(`{"data":{"findScenes":{"count":101,"scenes":[
+				{"id":"last","title":"Last","files":[],"tags":[],"performers":[],"stash_ids":[]}
+			]}}}`))
+		}
+	})
+
+	var progressCalls int
+	scenes, err := c.FindAllScenes(context.Background(), FindScenesFilter{}, func(fetched, total int) {
+		progressCalls++
+	})
+	if err != nil {
+		t.Fatalf("FindAllScenes: %v", err)
+	}
+	if len(scenes) != 101 {
+		t.Errorf("got %d scenes, want 101", len(scenes))
+	}
+	if progressCalls != 2 {
+		t.Errorf("progress called %d times, want 2", progressCalls)
+	}
+}
+
+func TestFindAllScenes_cancellation(t *testing.T) {
+	c, _ := newTestClient(t, func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		scenes := make([]string, 100)
+		for i := range scenes {
+			scenes[i] = `{"id":"` + string(rune('0'+i%10)) + `","title":"S","files":[],"tags":[],"performers":[],"stash_ids":[]}`
+		}
+		_, _ = w.Write([]byte(`{"data":{"findScenes":{"count":500,"scenes":[` + strings.Join(scenes, ",") + `]}}}`))
+	})
+
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+
+	_, err := c.FindAllScenes(ctx, FindScenesFilter{}, nil)
+	if err == nil {
+		t.Fatal("expected error on cancelled context")
+	}
+}
+
+func TestEnsureTag_findsExisting(t *testing.T) {
+	c, _ := newTestClient(t, graphqlHandler(t, map[string]string{
+		"findTags": `{"data":{"findTags":{"tags":[{"id":"42","name":"blowjob"}]}}}`,
+	}))
+
+	id, err := c.EnsureTag(context.Background(), "blowjob")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if id != "42" {
+		t.Errorf("id = %q, want 42", id)
+	}
+}
+
+func TestEnsureTag_createsWhenMissing(t *testing.T) {
+	var calls int
+	c, _ := newTestClient(t, func(w http.ResponseWriter, r *http.Request) {
+		calls++
+		w.Header().Set("Content-Type", "application/json")
+		var req graphqlRequest
+		_ = json.NewDecoder(r.Body).Decode(&req)
+		switch {
+		case strings.Contains(req.Query, "findTags"):
+			_, _ = w.Write([]byte(`{"data":{"findTags":{"tags":[]}}}`))
+		case strings.Contains(req.Query, "tagCreate"):
+			_, _ = w.Write([]byte(`{"data":{"tagCreate":{"id":"99"}}}`))
+		}
+	})
+
+	id, err := c.EnsureTag(context.Background(), "new-tag")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if id != "99" {
+		t.Errorf("id = %q, want 99", id)
+	}
+}
+
+func TestEnsurePerformer_findsExisting(t *testing.T) {
+	c, _ := newTestClient(t, graphqlHandler(t, map[string]string{
+		"findPerformers": `{"data":{"findPerformers":{"performers":[{"id":"7","name":"Alice"}]}}}`,
+	}))
+
+	id, err := c.EnsurePerformer(context.Background(), "Alice")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if id != "7" {
+		t.Errorf("id = %q, want 7", id)
+	}
+}
+
+func TestEnsurePerformer_createsWhenMissing(t *testing.T) {
+	c, _ := newTestClient(t, func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		var req graphqlRequest
+		_ = json.NewDecoder(r.Body).Decode(&req)
+		switch {
+		case strings.Contains(req.Query, "findPerformers"):
+			_, _ = w.Write([]byte(`{"data":{"findPerformers":{"performers":[]}}}`))
+		case strings.Contains(req.Query, "performerCreate"):
+			_, _ = w.Write([]byte(`{"data":{"performerCreate":{"id":"88"}}}`))
+		}
+	})
+
+	id, err := c.EnsurePerformer(context.Background(), "New Performer")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if id != "88" {
+		t.Errorf("id = %q, want 88", id)
+	}
+}
+
+func TestEnsureStudio_findsExisting(t *testing.T) {
+	c, _ := newTestClient(t, graphqlHandler(t, map[string]string{
+		"findStudios": `{"data":{"findStudios":{"studios":[{"id":"5","name":"Brazzers"}]}}}`,
+	}))
+
+	id, err := c.EnsureStudio(context.Background(), "Brazzers")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if id != "5" {
+		t.Errorf("id = %q, want 5", id)
+	}
+}
+
+func TestEnsureStudio_createsWhenMissing(t *testing.T) {
+	c, _ := newTestClient(t, func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		var req graphqlRequest
+		_ = json.NewDecoder(r.Body).Decode(&req)
+		switch {
+		case strings.Contains(req.Query, "findStudios"):
+			_, _ = w.Write([]byte(`{"data":{"findStudios":{"studios":[]}}}`))
+		case strings.Contains(req.Query, "studioCreate"):
+			_, _ = w.Write([]byte(`{"data":{"studioCreate":{"id":"77"}}}`))
+		}
+	})
+
+	id, err := c.EnsureStudio(context.Background(), "New Studio")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if id != "77" {
+		t.Errorf("id = %q, want 77", id)
+	}
+}
+
+func TestUpdateScene(t *testing.T) {
+	c, _ := newTestClient(t, graphqlHandler(t, map[string]string{
+		"sceneUpdate": `{"data":{"sceneUpdate":{"id":"1"}}}`,
+	}))
+
+	title := "Updated Title"
+	err := c.UpdateScene(context.Background(), SceneUpdateInput{
+		ID:    "1",
+		Title: &title,
+	})
+	if err != nil {
+		t.Fatalf("UpdateScene: %v", err)
+	}
+}
+
+func TestUpdateScene_serverError(t *testing.T) {
+	c, _ := newTestClient(t, func(w http.ResponseWriter, _ *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{"errors":[{"message":"scene not found"}]}`))
+	})
+
+	title := "X"
+	err := c.UpdateScene(context.Background(), SceneUpdateInput{ID: "999", Title: &title})
+	if err == nil {
+		t.Fatal("expected error")
+	}
+	if !strings.Contains(err.Error(), "scene not found") {
+		t.Errorf("error = %v", err)
+	}
+}
+
+func TestPing(t *testing.T) {
+	c, _ := newTestClient(t, graphqlHandler(t, map[string]string{
+		"systemStatus": `{"data":{"systemStatus":{"status":"OK"}}}`,
+	}))
+
+	if err := c.Ping(context.Background()); err != nil {
+		t.Fatalf("Ping: %v", err)
+	}
+}
+
+func TestFindSceneByID(t *testing.T) {
+	c, _ := newTestClient(t, graphqlHandler(t, map[string]string{
+		"findScene": `{"data":{"findScene":{"id":"42","title":"Found Scene","files":[],"tags":[],"performers":[],"stash_ids":[]}}}`,
+	}))
+
+	scene, found, err := c.FindSceneByID(context.Background(), "42")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !found {
+		t.Fatal("expected found=true")
+	}
+	if scene.Title != "Found Scene" {
+		t.Errorf("title = %q", scene.Title)
+	}
+}
+
+func TestFindSceneByID_notFound(t *testing.T) {
+	c, _ := newTestClient(t, graphqlHandler(t, map[string]string{
+		"findScene": `{"data":{"findScene":null}}`,
+	}))
+
+	_, found, err := c.FindSceneByID(context.Background(), "999")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if found {
+		t.Error("expected found=false")
+	}
+}
+
+func TestClientSendsApiKeyHeader(t *testing.T) {
+	var gotKey string
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		gotKey = r.Header.Get("ApiKey")
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{"data":{"systemStatus":{"status":"OK"}}}`))
+	}))
+	defer ts.Close()
+
+	c := &Client{
+		url:    ts.URL + "/graphql",
+		apiKey: "test-key-123",
+		http:   ts.Client(),
+	}
+	if err := c.Ping(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+	if gotKey != "test-key-123" {
+		t.Errorf("ApiKey header = %q, want test-key-123", gotKey)
 	}
 }
 
