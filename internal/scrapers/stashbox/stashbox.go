@@ -405,7 +405,11 @@ func (s *Scraper) queryScenes(ctx context.Context, inst instance, input map[stri
 	if len(gqlResp.Errors) > 0 {
 		msgs := make([]string, len(gqlResp.Errors))
 		for i, e := range gqlResp.Errors {
-			msgs[i] = e.Message
+			msg := e.Message
+			if inst.apiKey != "" {
+				msg = strings.ReplaceAll(msg, inst.apiKey, "[redacted]")
+			}
+			msgs[i] = msg
 		}
 		return gqlResponse{}, fmt.Errorf("graphql error: %s", strings.Join(msgs, "; "))
 	}
