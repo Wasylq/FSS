@@ -72,7 +72,9 @@ func (s *Scraper) Run(ctx context.Context, studioURL string, opts scraper.ListOp
 
 	singlePage := s.isModelURL(studioURL)
 
+	wg.Add(1)
 	go func() {
+		defer wg.Done()
 		defer close(work)
 		for page := 1; ; page++ {
 			var url string
