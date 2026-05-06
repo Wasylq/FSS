@@ -63,7 +63,7 @@ func init() {
 	}
 }
 
-func (s *Scraper) ID() string               { return s.cfg.id }
+func (s *Scraper) ID() string { return s.cfg.id }
 func (s *Scraper) Patterns() []string {
 	return []string{s.cfg.pattern, s.cfg.pattern + "/model/{slug}.html"}
 }
@@ -79,9 +79,9 @@ func (s *Scraper) ListScenes(ctx context.Context, studioURL string, opts scraper
 }
 
 var (
-	cardRe    = regexp.MustCompile(`(?s)<div class="item-inside">\s*<a href="([^"]+)">\s*<div class="thumb">\s*<img src="([^"]+)"[^>]*>\s*<div class="meta">\s*<span class="title">([^<]+)</span>\s*<span class="date">([^<]+)</span>`)
-	sceneIDRe = regexp.MustCompile(`-(\d+)\.html`)
-	maxPageRe = regexp.MustCompile(`href="page(\d+)\.html"`)
+	cardRe     = regexp.MustCompile(`(?s)<div class="item-inside">\s*<a href="([^"]+)">\s*<div class="thumb">\s*<img src="([^"]+)"[^>]*>\s*<div class="meta">\s*<span class="title">([^<]+)</span>\s*<span class="date">([^<]+)</span>`)
+	sceneIDRe  = regexp.MustCompile(`-(\d+)\.html`)
+	maxPageRe  = regexp.MustCompile(`href="page(\d+)\.html"`)
 	modelURLRe = regexp.MustCompile(`/model/[^/]+\.html`)
 
 	videoSectionRe = regexp.MustCompile(`(?s)<div class="listing-videos[^"]*"[^>]*>(.*)</div>`)

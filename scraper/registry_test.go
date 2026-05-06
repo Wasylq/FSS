@@ -11,8 +11,8 @@ type fakeScraper struct {
 	matchFn  func(string) bool
 }
 
-func (f *fakeScraper) ID() string         { return f.id }
-func (f *fakeScraper) Patterns() []string  { return f.patterns }
+func (f *fakeScraper) ID() string               { return f.id }
+func (f *fakeScraper) Patterns() []string       { return f.patterns }
 func (f *fakeScraper) MatchesURL(u string) bool { return f.matchFn(u) }
 func (f *fakeScraper) ListScenes(_ context.Context, _ string, _ ListOpts) (<-chan SceneResult, error) {
 	return nil, nil
