@@ -53,7 +53,7 @@ func TestMatchesURL(t *testing.T) {
 		{"https://grandparentsx.com", true},
 		{"http://grandparentsx.com/", true},
 		{"https://www.grandparentsx.com/", true},
-		{"https://grandparentsx.com/some/path", false},
+		{"https://grandparentsx.com/some/path", true},
 		{"https://example.com/", false},
 	}
 	for _, tt := range tests {

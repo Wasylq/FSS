@@ -32,7 +32,7 @@ func (s *Scraper) Patterns() []string {
 	}
 }
 
-var matchRe = regexp.MustCompile(`^https?://(?:www\.)?grandparentsx\.com/?$`)
+var matchRe = regexp.MustCompile(`^https?://(?:www\.)?grandparentsx\.com(?:/|$)`)
 
 func (s *Scraper) MatchesURL(u string) bool { return matchRe.MatchString(u) }
 
@@ -164,7 +164,7 @@ func (item sceneItem) toScene(studioURL string) models.Scene {
 
 	if item.date != "" {
 		if t, err := time.Parse("January 02, 2006", item.date); err == nil {
-			scene.Date = t
+			scene.Date = t.UTC()
 		}
 	}
 
