@@ -167,11 +167,11 @@ func TestKnownIDs(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	scenes, stopped := testutil.CollectScenesWithStop(t, ch)
-	if len(scenes) != 1 {
-		t.Fatalf("got %d scenes, want 1", len(scenes))
+	scenes := testutil.CollectScenes(t, ch)
+	if len(scenes) != 2 {
+		t.Fatalf("got %d scenes, want 2 (known ID skipped, not stopped early)", len(scenes))
 	}
-	if !stopped {
-		t.Error("expected StoppedEarly")
+	if scenes[0].ID != "aaa" || scenes[1].ID != "ccc" {
+		t.Errorf("scenes = [%s, %s], want [aaa, ccc]", scenes[0].ID, scenes[1].ID)
 	}
 }

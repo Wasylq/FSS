@@ -88,11 +88,7 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 	now := time.Now().UTC()
 	for _, v := range filtered {
 		if opts.KnownIDs[v.ID] {
-			select {
-			case out <- scraper.StoppedEarly():
-			case <-ctx.Done():
-			}
-			return
+			continue
 		}
 		scene := s.toScene(studioURL, v, now)
 		select {
