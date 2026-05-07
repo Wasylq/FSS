@@ -269,6 +269,10 @@ func RunWorkerPool(ctx context.Context, client *http.Client, headers map[string]
 		}
 	}
 
+	if opts.Workers <= 0 {
+		opts.Workers = 3
+	}
+
 	work := make(chan SitemapURL, opts.Workers)
 	var wg sync.WaitGroup
 
