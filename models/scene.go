@@ -35,7 +35,7 @@ type Scene struct {
 	// Core
 	Title       string    `json:"title"`
 	URL         string    `json:"url"`
-	Date        time.Time `json:"date"`
+	Date        time.Time `json:"date,omitzero"`
 	Description string    `json:"description,omitempty"`
 
 	// Media
