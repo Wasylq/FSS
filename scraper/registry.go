@@ -6,7 +6,13 @@ var registered []StudioScraper
 
 // Register adds a scraper to the global registry.
 // Call this from an init() function in each scraper package.
+// Panics if a scraper with the same ID is already registered.
 func Register(s StudioScraper) {
+	for _, existing := range registered {
+		if existing.ID() == s.ID() {
+			panic(fmt.Sprintf("duplicate scraper ID: %s", s.ID()))
+		}
+	}
 	registered = append(registered, s)
 }
 
