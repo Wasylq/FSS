@@ -57,7 +57,10 @@ func runScrape(cmd *cobra.Command, args []string) error {
 	if outputFlag != "" {
 		outputStr = outputFlag
 	}
-	formats := parseFormats(outputStr)
+	formats, err := parseFormats(outputStr)
+	if err != nil {
+		return err
+	}
 
 	outDir, _ := cmd.Flags().GetString("out")
 	if outDir == "" {
@@ -365,17 +368,23 @@ func carryOverPriceHistory(fresh, existing models.Scene) models.Scene {
 }
 
 // parseFormats splits "json,csv" into ["json","csv"], trimming spaces and deduplicating.
-func parseFormats(s string) []string {
+func parseFormats(s string) ([]string, error) {
 	seen := map[string]bool{}
 	var out []string
 	for _, f := range strings.Split(s, ",") {
 		f = strings.TrimSpace(f)
-		if f != "" && !seen[f] {
+		if f == "" {
+			continue
+		}
+		if f != "json" && f != "csv" {
+			return nil, fmt.Errorf("unknown output format %q (valid: json, csv)", f)
+		}
+		if !seen[f] {
 			seen[f] = true
 			out = append(out, f)
 		}
 	}
-	return out
+	return out, nil
 }
 
 // mergeSiteDelays returns a single map of scraper-ID → delay-ms by overlaying
