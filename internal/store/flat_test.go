@@ -211,7 +211,7 @@ func TestFlatMarkDeleted(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if err := f.MarkDeleted(flatTestURL, []string{"1"}); err != nil {
+	if err := f.MarkDeleted(flatTestURL, "test", []string{"1"}); err != nil {
 		t.Fatalf("MarkDeleted: %v", err)
 	}
 
@@ -235,13 +235,13 @@ func TestFlatMarkDeletedIdempotent(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if err := f.MarkDeleted(flatTestURL, []string{"1"}); err != nil {
+	if err := f.MarkDeleted(flatTestURL, "test", []string{"1"}); err != nil {
 		t.Fatal(err)
 	}
 	got1, _ := f.Load(flatTestURL)
 	firstDeleted := *got1[0].DeletedAt
 
-	if err := f.MarkDeleted(flatTestURL, []string{"1"}); err != nil {
+	if err := f.MarkDeleted(flatTestURL, "test", []string{"1"}); err != nil {
 		t.Fatal(err)
 	}
 	got2, _ := f.Load(flatTestURL)
@@ -257,7 +257,7 @@ func TestFlatMarkDeletedNonexistentID(t *testing.T) {
 	if err := f.Save(flatTestURL, testScenes(now)); err != nil {
 		t.Fatal(err)
 	}
-	if err := f.MarkDeleted(flatTestURL, []string{"nonexistent"}); err != nil {
+	if err := f.MarkDeleted(flatTestURL, "test", []string{"nonexistent"}); err != nil {
 		t.Fatal(err)
 	}
 

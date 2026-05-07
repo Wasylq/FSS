@@ -12,7 +12,7 @@ type Store interface {
 	Save(studioURL string, scenes []models.Scene) error
 
 	// MarkDeleted soft-deletes scenes by ID — sets DeletedAt, does not remove records.
-	MarkDeleted(studioURL string, ids []string) error
+	MarkDeleted(studioURL, siteID string, ids []string) error
 
 	// Export writes scenes for a studio URL to a file in the given format ("json" or "csv").
 	// Used when SQLite is the source of truth and flat files are requested as output.

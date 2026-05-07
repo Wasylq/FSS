@@ -70,7 +70,7 @@ func (f *Flat) Save(studioURL string, scenes []models.Scene) error {
 	return nil
 }
 
-func (f *Flat) MarkDeleted(studioURL string, ids []string) error {
+func (f *Flat) MarkDeleted(studioURL, _ string, ids []string) error {
 	scenes, err := f.Load(studioURL)
 	if err != nil {
 		return err

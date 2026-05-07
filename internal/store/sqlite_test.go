@@ -304,7 +304,7 @@ func TestSQLiteMarkDeleted(t *testing.T) {
 	if err := s.Save(testStudioURL, scenes); err != nil {
 		t.Fatal(err)
 	}
-	if err := s.MarkDeleted(testStudioURL, []string{"1"}); err != nil {
+	if err := s.MarkDeleted(testStudioURL, "manyvids", []string{"1"}); err != nil {
 		t.Fatal(err)
 	}
 
@@ -325,7 +325,7 @@ func TestSQLiteMarkDeleted(t *testing.T) {
 
 	// Mark deleted is idempotent — calling again should not change DeletedAt.
 	firstDeletedAt := *byID["1"].DeletedAt
-	if err := s.MarkDeleted(testStudioURL, []string{"1"}); err != nil {
+	if err := s.MarkDeleted(testStudioURL, "manyvids", []string{"1"}); err != nil {
 		t.Fatal(err)
 	}
 	loaded2, _ := s.Load(testStudioURL)

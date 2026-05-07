@@ -292,7 +292,7 @@ func (s *SQLite) Save(studioURL string, scenes []models.Scene) error {
 	return tx.Commit()
 }
 
-func (s *SQLite) MarkDeleted(studioURL string, ids []string) error {
+func (s *SQLite) MarkDeleted(studioURL, siteID string, ids []string) error {
 	now := timeStr(time.Now().UTC())
 	tx, err := s.db.Begin()
 	if err != nil {
@@ -301,8 +301,8 @@ func (s *SQLite) MarkDeleted(studioURL string, ids []string) error {
 	defer func() { _ = tx.Rollback() }()
 	for _, id := range ids {
 		if _, err := tx.Exec(
-			`UPDATE scenes SET deleted_at = ? WHERE id = ? AND studio_url = ? AND deleted_at IS NULL`,
-			now, id, studioURL,
+			`UPDATE scenes SET deleted_at = ? WHERE id = ? AND site_id = ? AND studio_url = ? AND deleted_at IS NULL`,
+			now, id, siteID, studioURL,
 		); err != nil {
 			return err
 		}
