@@ -66,8 +66,11 @@ func pageURL(siteBase, slug string, page int) string {
 	if page == 1 {
 		return fmt.Sprintf("%s/tour/%s.html", siteBase, slug)
 	}
-	parts := strings.SplitN(slug, "/", 2)
-	return fmt.Sprintf("%s/tour/%s/%s_%d_d.html", siteBase, parts[0], parts[1], page)
+	dir, base, ok := strings.Cut(slug, "/")
+	if !ok {
+		return fmt.Sprintf("%s/tour/%s_%d_d.html", siteBase, slug, page)
+	}
+	return fmt.Sprintf("%s/tour/%s/%s_%d_d.html", siteBase, dir, base, page)
 }
 
 // ---- runner ----
