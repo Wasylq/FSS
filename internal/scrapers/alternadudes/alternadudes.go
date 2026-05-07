@@ -58,6 +58,7 @@ var (
 	detailDescRe = regexp.MustCompile(`(?s)<h4>([^<]+)</h4>`)
 	detailTagsRe = regexp.MustCompile(`<meta\s+name="keywords"\s+content="([^"]*)"`)
 	ogImageRe    = regexp.MustCompile(`<meta\s+property="og:image"\s+content="([^"]*)"`)
+	baseURLRe    = regexp.MustCompile(`^(https?://[^/]+)`)
 )
 
 type listEntry struct {
@@ -122,7 +123,7 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 
 	base := siteBase
 	if strings.HasPrefix(studioURL, "http") {
-		if m := regexp.MustCompile(`^(https?://[^/]+)`).FindString(studioURL); m != "" {
+		if m := baseURLRe.FindString(studioURL); m != "" {
 			base = m
 		}
 	}
