@@ -376,7 +376,7 @@ func runStashImport(cmd *cobra.Command, _ []string) error {
 				input.StudioID = &sid
 			}
 		}
-		if organized {
+		if organized && fieldAllowed(allowedFields, "organized") {
 			input.Organized = &organized
 		}
 		if fieldAllowed(allowedFields, "cover") && setCover && merged.Thumbnail != "" {
@@ -729,6 +729,7 @@ func truncate(s string, max int) string {
 var validImportFields = map[string]bool{
 	"title": true, "details": true, "date": true, "urls": true,
 	"tags": true, "performers": true, "studio": true, "cover": true,
+	"organized": true,
 }
 
 func parseFieldsFlag(fields []string) (map[string]bool, error) {
