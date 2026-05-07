@@ -1,7 +1,6 @@
 package loyalfans
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -126,16 +125,16 @@ func (s *Scraper) run(ctx context.Context, studioURL, slug string, opts scraper.
 }
 
 func (s *Scraper) initSession(ctx context.Context) ([]*http.Cookie, error) {
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, s.base+"/api/v2/system-status", nil)
-	if err != nil {
-		return nil, err
-	}
-	req.Header.Set("Accept", "application/json")
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Origin", s.base)
-	req.Header.Set("User-Agent", httpx.UserAgentChrome)
-
-	resp, err := s.client.Do(req)
+	resp, err := httpx.Do(ctx, s.client, httpx.Request{
+		Method: http.MethodPost,
+		URL:    s.base + "/api/v2/system-status",
+		Headers: map[string]string{
+			"Accept":       "application/json",
+			"Content-Type": "application/json",
+			"Origin":       s.base,
+			"User-Agent":   httpx.UserAgentChrome,
+		},
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -178,6 +177,14 @@ type video struct {
 	Hashtags []string `json:"hashtags"`
 }
 
+func cookieHeader(cookies []*http.Cookie) string {
+	parts := make([]string, len(cookies))
+	for i, c := range cookies {
+		parts[i] = c.Name + "=" + c.Value
+	}
+	return strings.Join(parts, "; ")
+}
+
 func (s *Scraper) fetchPage(ctx context.Context, slug, pageToken string, cookies []*http.Cookie) ([]video, string, error) {
 	body := searchRequest{
 		Query: slug,
@@ -192,20 +199,22 @@ func (s *Scraper) fetchPage(ctx context.Context, slug, pageToken string, cookies
 		return nil, "", err
 	}
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, s.base+"/api/v2/advanced-search?ngsw-bypass=true", bytes.NewReader(bodyJSON))
-	if err != nil {
-		return nil, "", err
+	headers := map[string]string{
+		"Accept":       "application/json",
+		"Content-Type": "application/json",
+		"Origin":       s.base,
+		"Referer":      s.base + "/" + slug,
+		"User-Agent":   httpx.UserAgentChrome,
 	}
-	req.Header.Set("Accept", "application/json")
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Origin", s.base)
-	req.Header.Set("Referer", s.base+"/"+slug)
-	req.Header.Set("User-Agent", httpx.UserAgentChrome)
-	for _, c := range cookies {
-		req.AddCookie(c)
+	if len(cookies) > 0 {
+		headers["Cookie"] = cookieHeader(cookies)
 	}
 
-	resp, err := s.client.Do(req)
+	resp, err := httpx.Do(ctx, s.client, httpx.Request{
+		URL:     s.base + "/api/v2/advanced-search?ngsw-bypass=true",
+		Body:    bodyJSON,
+		Headers: headers,
+	})
 	if err != nil {
 		return nil, "", fmt.Errorf("loyalfans search page: %w", err)
 	}
