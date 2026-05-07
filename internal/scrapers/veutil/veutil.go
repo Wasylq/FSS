@@ -47,7 +47,7 @@ func (s *Scraper) MatchesURL(u string) bool { return s.Cfg.MatchRe.MatchString(u
 
 func (s *Scraper) ListScenes(ctx context.Context, studioURL string, opts scraper.ListOpts) (<-chan scraper.SceneResult, error) {
 	out := make(chan scraper.SceneResult)
-	go s.run(ctx, opts, out)
+	go s.run(ctx, studioURL, opts, out)
 	return out, nil
 }
 
@@ -73,7 +73,7 @@ type wpTag struct {
 
 // ---- runner ----
 
-func (s *Scraper) run(ctx context.Context, opts scraper.ListOpts, out chan<- scraper.SceneResult) {
+func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOpts, out chan<- scraper.SceneResult) {
 	defer close(out)
 
 	tagMap, err := s.fetchAllTags(ctx)
@@ -128,7 +128,7 @@ func (s *Scraper) run(ctx context.Context, opts scraper.ListOpts, out chan<- scr
 				break
 			}
 
-			scene := s.postToScene(p, tagMap, now)
+			scene := s.postToScene(studioURL, p, tagMap, now)
 			select {
 			case out <- scraper.Scene(scene):
 			case <-ctx.Done():
@@ -220,7 +220,7 @@ func extractPoster(content string) string {
 	return ""
 }
 
-func (s *Scraper) postToScene(p wpPost, tagMap map[int]string, now time.Time) models.Scene {
+func (s *Scraper) postToScene(studioURL string, p wpPost, tagMap map[int]string, now time.Time) models.Scene {
 	title := html.UnescapeString(p.Title.Rendered)
 
 	var date time.Time
@@ -245,7 +245,7 @@ func (s *Scraper) postToScene(p wpPost, tagMap map[int]string, now time.Time) mo
 	return models.Scene{
 		ID:         strconv.Itoa(p.ID),
 		SiteID:     s.Cfg.ID,
-		StudioURL:  s.Cfg.SiteBase,
+		StudioURL:  studioURL,
 		Title:      title,
 		URL:        url,
 		Date:       date,

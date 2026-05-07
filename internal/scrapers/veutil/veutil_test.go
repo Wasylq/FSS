@@ -69,7 +69,7 @@ func TestPostToScene(t *testing.T) {
 		Tags:    []int{10, 20},
 	}
 
-	scene := s.postToScene(p, tagMap, fixedTime())
+	scene := s.postToScene("https://mypervmom.com", p, tagMap, fixedTime())
 
 	if scene.ID != "2319" {
 		t.Errorf("ID = %q", scene.ID)
