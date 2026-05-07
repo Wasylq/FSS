@@ -1,0 +1,336 @@
+package pornworld
+
+import (
+	"context"
+	"encoding/json"
+	"fmt"
+	"html"
+	"net/http"
+	"regexp"
+	"strings"
+	"sync"
+	"time"
+
+	"github.com/Wasylq/FSS/internal/httpx"
+	"github.com/Wasylq/FSS/models"
+	"github.com/Wasylq/FSS/scraper"
+)
+
+type Scraper struct {
+	client *http.Client
+	base   string
+}
+
+func New() *Scraper {
+	return &Scraper{
+		client: httpx.NewClient(30 * time.Second),
+		base:   "https://pornworld.com",
+	}
+}
+
+func init() {
+	scraper.Register(New())
+}
+
+func (s *Scraper) ID() string { return "pornworld" }
+
+func (s *Scraper) Patterns() []string {
+	return []string{
+		"pornworld.com",
+		"pornworld.com/watch/{id}/{slug}",
+		"pornworld.com/model/{id}/{slug}",
+	}
+}
+
+var matchRe = regexp.MustCompile(`^https?://(?:www\.)?(?:` +
+	`pornworld\.com|` +
+	`ddfnetwork\.com|` +
+	`1by-day\.com|` +
+	`ddfbusty\.com|` +
+	`eurogirlsongirls\.com|` +
+	`handsonhardcore\.com|` +
+	`hotlegsandfeet\.com|` +
+	`houseoftaboo\.com|` +
+	`onlyblowjob\.com|` +
+	`bustyworld\.com)`)
+
+func (s *Scraper) MatchesURL(u string) bool {
+	return matchRe.MatchString(u)
+}
+
+func (s *Scraper) ListScenes(ctx context.Context, studioURL string, opts scraper.ListOpts) (<-chan scraper.SceneResult, error) {
+	if opts.Workers <= 0 {
+		opts.Workers = 4
+	}
+	out := make(chan scraper.SceneResult)
+	go s.run(ctx, studioURL, opts, out)
+	return out, nil
+}
+
+type listEntry struct {
+	id         string
+	title      string
+	url        string
+	thumbnail  string
+	date       time.Time
+	duration   string
+	performers []string
+}
+
+func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOpts, out chan<- scraper.SceneResult) {
+	defer close(out)
+
+	work := make(chan listEntry, opts.Workers)
+	var wg sync.WaitGroup
+
+	for i := 0; i < opts.Workers; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			for entry := range work {
+				if opts.Delay > 0 {
+					select {
+					case <-time.After(opts.Delay):
+					case <-ctx.Done():
+						return
+					}
+				}
+				scene, err := s.fetchDetail(ctx, entry)
+				if err != nil {
+					select {
+					case out <- scraper.Error(err):
+					case <-ctx.Done():
+						return
+					}
+					continue
+				}
+				select {
+				case out <- scraper.Scene(scene):
+				case <-ctx.Done():
+					return
+				}
+			}
+		}()
+	}
+
+	s.runPaginated(ctx, opts, work, out)
+
+	close(work)
+	wg.Wait()
+}
+
+func (s *Scraper) runPaginated(ctx context.Context, opts scraper.ListOpts, work chan<- listEntry, out chan<- scraper.SceneResult) {
+	sentTotal := false
+	for page := 1; ; page++ {
+		if ctx.Err() != nil {
+			break
+		}
+		if page > 1 && opts.Delay > 0 {
+			select {
+			case <-time.After(opts.Delay):
+			case <-ctx.Done():
+				return
+			}
+		}
+
+		pageURL := fmt.Sprintf("%s/videos?page=%d", s.base, page)
+		entries, err := s.fetchListing(ctx, pageURL)
+		if err != nil {
+			select {
+			case out <- scraper.Error(fmt.Errorf("page %d: %w", page, err)):
+			case <-ctx.Done():
+			}
+			break
+		}
+
+		if len(entries) == 0 {
+			break
+		}
+
+		if !sentTotal {
+			sentTotal = true
+			select {
+			case out <- scraper.Progress(len(entries) * 600):
+			case <-ctx.Done():
+				return
+			}
+		}
+
+		hitKnown := false
+		for _, e := range entries {
+			if opts.KnownIDs[e.id] {
+				hitKnown = true
+				break
+			}
+			select {
+			case work <- e:
+			case <-ctx.Done():
+				return
+			}
+		}
+		if hitKnown {
+			select {
+			case out <- scraper.StoppedEarly():
+			case <-ctx.Done():
+			}
+			break
+		}
+	}
+}
+
+var (
+	cardRe      = regexp.MustCompile(`(?s)<article class="card scene">.*?</article>`)
+	cardHrefRe  = regexp.MustCompile(`href="(?:https?:)?//pornworld\.com(/watch/(\d+-\d+)/[^"]+)"`)
+	cardTitleRe = regexp.MustCompile(`<p class="card-title[^"]*">\s*<a[^>]*title="([^"]*)"`)
+	cardDateRe  = regexp.MustCompile(`<div class="release-date">([^<]+)</div>`)
+	cardDurRe   = regexp.MustCompile(`(?s)<span class="video-duration">.*?</i>\s*([^<]+)</span>`)
+	cardPerfRe  = regexp.MustCompile(`(?s)<div class="starring[^"]*">\s*<span>(.*?)</span>`)
+	cardPerfLRe = regexp.MustCompile(`title="([^"]+)"`)
+	cardImgRe   = regexp.MustCompile(`<img class="card-img[^"]*"[^>]*data-src="([^"]+)"`)
+)
+
+func (s *Scraper) fetchListing(ctx context.Context, pageURL string) ([]listEntry, error) {
+	body, err := s.fetchHTML(ctx, pageURL)
+	if err != nil {
+		return nil, err
+	}
+	return parseListing(body), nil
+}
+
+func parseListing(body []byte) []listEntry {
+	cards := cardRe.FindAll(body, -1)
+	entries := make([]listEntry, 0, len(cards))
+
+	for _, card := range cards {
+		hm := cardHrefRe.FindSubmatch(card)
+		if hm == nil {
+			continue
+		}
+
+		e := listEntry{
+			url: string(hm[1]),
+			id:  string(hm[2]),
+		}
+
+		if m := cardTitleRe.FindSubmatch(card); m != nil {
+			e.title = html.UnescapeString(string(m[1]))
+		}
+
+		if m := cardDateRe.FindSubmatch(card); m != nil {
+			raw := strings.TrimSpace(string(m[1]))
+			if t, err := time.Parse("2006 Jan, 02", raw); err == nil {
+				e.date = t.UTC()
+			}
+		}
+
+		if m := cardDurRe.FindSubmatch(card); m != nil {
+			e.duration = strings.TrimSpace(string(m[1]))
+		}
+
+		if m := cardPerfRe.FindSubmatch(card); m != nil {
+			for _, pm := range cardPerfLRe.FindAllSubmatch(m[1], -1) {
+				e.performers = append(e.performers, html.UnescapeString(string(pm[1])))
+			}
+		}
+
+		if m := cardImgRe.FindSubmatch(card); m != nil {
+			e.thumbnail = html.UnescapeString(string(m[1]))
+		}
+
+		entries = append(entries, e)
+	}
+	return entries
+}
+
+type jsonLD struct {
+	Type        string `json:"@type"`
+	Name        string `json:"name"`
+	Description string `json:"description"`
+}
+
+var (
+	jsonLDRe  = regexp.MustCompile(`(?s)<script type="application/ld\+json">\s*(\{.*?\})\s*</script>`)
+	detailTag = regexp.MustCompile(`<a href="/videos\?tags=[^"]*" class="link-secondary">([^<]+)</a>`)
+)
+
+func (s *Scraper) fetchDetail(ctx context.Context, entry listEntry) (models.Scene, error) {
+	detailURL := s.base + entry.url
+
+	body, err := s.fetchHTML(ctx, detailURL)
+	if err != nil {
+		return models.Scene{}, fmt.Errorf("detail %s: %w", entry.id, err)
+	}
+
+	now := time.Now().UTC()
+	scene := models.Scene{
+		ID:         entry.id,
+		SiteID:     "pornworld",
+		StudioURL:  s.base,
+		Title:      entry.title,
+		URL:        detailURL,
+		Thumbnail:  entry.thumbnail,
+		Duration:   parseDuration(entry.duration),
+		Performers: entry.performers,
+		ScrapedAt:  now,
+	}
+
+	if !entry.date.IsZero() {
+		scene.Date = entry.date
+	}
+
+	if m := jsonLDRe.FindSubmatch(body); m != nil {
+		var ld jsonLD
+		if err := json.Unmarshal(m[1], &ld); err == nil && ld.Type == "VideoObject" {
+			if ld.Description != "" {
+				scene.Description = html.UnescapeString(ld.Description)
+			}
+		}
+	}
+
+	for _, m := range detailTag.FindAllSubmatch(body, -1) {
+		scene.Tags = append(scene.Tags, html.UnescapeString(string(m[1])))
+	}
+
+	return scene, nil
+}
+
+func parseDuration(raw string) int {
+	raw = strings.TrimSpace(raw)
+	parts := strings.Split(raw, ":")
+	switch len(parts) {
+	case 2:
+		m := atoi(parts[0])
+		s := atoi(parts[1])
+		return m*60 + s
+	case 3:
+		h := atoi(parts[0])
+		m := atoi(parts[1])
+		s := atoi(parts[2])
+		return h*3600 + m*60 + s
+	}
+	return 0
+}
+
+func atoi(s string) int {
+	n := 0
+	for _, c := range s {
+		if c >= '0' && c <= '9' {
+			n = n*10 + int(c-'0')
+		}
+	}
+	return n
+}
+
+func (s *Scraper) fetchHTML(ctx context.Context, rawURL string) ([]byte, error) {
+	resp, err := httpx.Do(ctx, s.client, httpx.Request{
+		URL: rawURL,
+		Headers: map[string]string{
+			"User-Agent": httpx.UserAgentFirefox,
+		},
+	})
+	if err != nil {
+		return nil, err
+	}
+	defer func() { _ = resp.Body.Close() }()
+	return httpx.ReadBody(resp.Body)
+}

@@ -204,6 +204,7 @@
 | [Perfect Girlfriend](https://perfectgirlfriend.com) | `perfectgirlfriend.com` | WordPress | No | Sitemap-driven, JSON-LD VideoObject fallback, uses `wputil` |
 | [PissingHD](https://tour.pissinghd.com) | `pissinghd.com` | YourPornPartner | No | Tour page scraping, ~30 public scenes, limited metadata (no dates/performers) |
 | [Pornhub](https://www.pornhub.com) | `pornhub.com/pornstar/{slug}`, `pornhub.com/channels/{slug}` | Pornhub | Free | HTML scraping, minimal fields |
+| [PornWorld / DDF Network](https://pornworld.com) | `pornworld.com`, `pornworld.com/watch/{id}/{slug}`, `pornworld.com/model/{id}/{slug}` | Custom HTML | No | HTML listing (24/page) + JSON-LD detail pages, worker pool for tags/description, matches legacy DDF domains (ddfnetwork.com, 1by-day.com, ddfbusty.com, etc.) |
 | [Pure CFNM](https://www.purecfnm.com) | `purecfnm.com`, `purecfnm.com/categories/{slug}_{page}_d.html`, `purecfnm.com/models/{slug}.html` | JEBN CMS | No | HTML listing (28/page, `{slug}_N_d.html`) listing-only (no detail pages), model pages provide description/tags, 6-site network, 500ms default delay |
 | [Pure Taboo](https://www.puretaboo.com) | `puretaboo.com` | Gamma/Algolia | No | Algolia search API, uses `gammautil` |
 | [Queensnake](https://queensnake.com) | `queensnake.com` | Custom | No | HTML scraping, 0-indexed paginated listing, `cLegalAge` cookie for age gate, performer extraction from title/tags, listing-only (no detail pages needed) |
