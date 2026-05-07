@@ -8,7 +8,6 @@ import (
 	"regexp"
 	"strings"
 	"time"
-	"unicode"
 
 	"github.com/Wasylq/FSS/models"
 )
@@ -415,13 +414,4 @@ func countCodepoints(s string) int {
 		n++
 	}
 	return n
-}
-
-// StripCommonPrefixes removes common filename prefixes like resolution tags,
-// site names etc. that might appear before the actual title.
-func StripCommonPrefixes(s string) string {
-	s = strings.TrimLeftFunc(s, func(r rune) bool {
-		return unicode.IsSpace(r) || r == '-' || r == '_'
-	})
-	return s
 }
