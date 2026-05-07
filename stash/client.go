@@ -243,10 +243,6 @@ func (c *Client) FindScenes(ctx context.Context, filter FindScenesFilter, page, 
 	}
 
 	if filter.PerformerName != "" {
-		sceneFilter["performers"] = map[string]any{
-			"value":    []string{},
-			"modifier": "INCLUDES_ALL",
-		}
 		perfID, found, err := c.FindPerformerByName(ctx, filter.PerformerName)
 		if err != nil {
 			return nil, 0, fmt.Errorf("finding performer %q: %w", filter.PerformerName, err)
