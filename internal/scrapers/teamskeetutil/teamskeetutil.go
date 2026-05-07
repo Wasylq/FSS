@@ -274,7 +274,6 @@ func hitToScene(src esScene, studioURL, siteBase string, now time.Time) models.S
 		Studio:      src.Site.Name,
 		ScrapedAt:   now,
 	}
-	scene.AddPrice(models.PriceSnapshot{Date: now, IsFree: false})
 	return scene
 }
 
