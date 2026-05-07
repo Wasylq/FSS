@@ -122,7 +122,8 @@
 | [FapHouse](https://faphouse.com) | `faphouse.com/models/{slug}`, `faphouse.com/studios/{slug}` | Custom HTML | Yes | HTML listing (60/page, `sort=new`) + detail pages with embedded JSON (`view-state-data`) for dates/performers/categories, price tracking for VOD content, xHamster ecosystem |
 | [Gloryhole Secrets](https://www.gloryholesecrets.com) | `gloryholesecrets.com` | Gamma/Algolia | No | Algolia search API, uses `gammautil` |
 | [Glory Quest](https://www.gloryquest.tv) | `gloryquest.tv`, `gloryquest.tv/search.php?KeyWord={keyword}` | Custom PHP | Yes (JPY) | Single-page listing via `search.php` (~589 titles), detail page worker pool, keyword search for actress/director/series, price/duration/tags |
-| [GrandparentsX](https://grandparentsx.com) | `grandparentsx.com` | AdultPrime | No | Single-page tour site, all ~44 scenes on homepage, listing-only (no detail pages), dates/durations on newer videos |
+| Adult Prime (97 studios) | `adultprime.com/studios/studio/{Slug}`, `adultprime.com/studios/videos?website={Slug}` | Adult Prime | No | Table-driven `adultprime` package using `adultprimeutil`, list+detail with worker pool, 24/page, performers/tags/description from detail pages. 97 studios incl. Club SweetHearts (8.5k scenes), Digital Desire, Young Busty, Submissed, Jim Slip, etc. |
+| [GrandparentsX](https://grandparentsx.com) | `grandparentsx.com` | AdultPrime | No | Single-page tour site, all ~44 scenes on homepage, listing-only (no detail pages), dates/durations on newer videos. Also available via the `adultprime` platform scraper. |
 | [House of Fyre](https://www.houseofyre.com) | `houseofyre.com`, `houseofyre.com/models/{name}.html` | ElevatedX | Yes | HTML listing + detail page worker pool for description/tags, price tracking, ~450 scenes |
 | [BrasilVR](https://www.brasilvr.com) | `brasilvr.com` | POVR/WankzVR | No | Export JSON + listing page dates, uses `povrutil` |
 | [Idea Pocket](https://ideapocket.com) | `ideapocket.com/works/list/series/{id}`, `ideapocket.com/works/list/release`, `ideapocket.com/works/list/date/{date}`, `ideapocket.com/works/list/genre/{id}`, `ideapocket.com/works/list/label/{id}`, `ideapocket.com/actress/detail/{id}` | Up-Timely CMS | No | Thin wrapper around `uptimelyutil` |
@@ -294,6 +295,7 @@ Scrapers that share a platform use common utility packages to avoid duplication:
 
 | Util package | Platform | Table-driven package | Sites |
 |---------|----------|---------------------|-------|
+| `adultprimeutil` | Adult Prime (HTML listing + detail pages, `var params` pagination) | `adultprime` | 97 studios |
 | `ayloutil` | Aylo/Juan (REST API, instance token auth) | `aylo` | 19 sites + BangBros (standalone) + SpiceVids |
 | `cherrypimpsutil` | Cherry Pimps/BLT Innovations (Elevated X CMS, HTML listing) | `cherrypimps` | 2 sites |
 | `gammautil` | Gamma Entertainment (Algolia search API, 5 segments: adulttime, evilangel, evilangelnetwork, dfxtra, openlife) | `gamma` | 24 sites |

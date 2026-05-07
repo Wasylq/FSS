@@ -5,6 +5,7 @@
 package all
 
 import (
+	_ "github.com/Wasylq/FSS/internal/scrapers/adultprime"
 	_ "github.com/Wasylq/FSS/internal/scrapers/alternadudes"
 	_ "github.com/Wasylq/FSS/internal/scrapers/analacrobats"
 	_ "github.com/Wasylq/FSS/internal/scrapers/analtherapy"
