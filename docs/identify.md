@@ -56,6 +56,23 @@ The video directory is scanned **recursively**. Files are identified by extensio
 
 No magic-byte sniffing — extension-based detection is fast, works on network shares, and is consistent across platforms.
 
+## Duration filtering
+
+If `ffprobe` (part of FFmpeg) is installed and on `PATH`, `fss identify` probes each video file for its duration and uses it to disambiguate same-title scenes. This is optional — matching works without it, but duration filtering reduces false positives when multiple scenes share similar titles.
+
+Install FFmpeg to enable this:
+
+```bash
+# Debian/Ubuntu
+sudo apt install ffmpeg
+
+# macOS
+brew install ffmpeg
+
+# Windows (winget)
+winget install FFmpeg
+```
+
 ## Matching
 
 The same three-pass matching engine used by `fss stash import` matches each video filename against FSS scene titles. See [stash.md — Matching strategy](stash.md#matching-strategy) for details.

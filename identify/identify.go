@@ -4,7 +4,9 @@ import (
 	"fmt"
 	"io/fs"
 	"os"
+	"os/exec"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"time"
 
@@ -79,7 +81,7 @@ func Run(videos []string, idx *match.SceneIndex, opts Options) []Result {
 			}
 		}
 
-		mr := idx.Match(basename, 0)
+		mr := idx.Match(basename, probeDuration(vpath))
 		if mr.Confidence == match.MatchNone || mr.Confidence == match.MatchAmbiguous {
 			results = append(results, Result{
 				VideoPath:  vpath,
@@ -189,4 +191,24 @@ func writeNFO(path string, m match.MergedScene) error {
 		return fmt.Errorf("marshalling NFO: %w", err)
 	}
 	return os.WriteFile(path, data, 0o644)
+}
+
+// probeDuration returns the file's duration in seconds via ffprobe, or 0 if
+// ffprobe is not installed or fails. Best-effort: matching still works without
+// duration, it just can't disambiguate same-title scenes.
+func probeDuration(path string) float64 {
+	out, err := exec.Command("ffprobe",
+		"-v", "error",
+		"-show_entries", "format=duration",
+		"-of", "default=noprint_wrappers=1:nokey=1",
+		path,
+	).Output()
+	if err != nil {
+		return 0
+	}
+	dur, err := strconv.ParseFloat(strings.TrimSpace(string(out)), 64)
+	if err != nil {
+		return 0
+	}
+	return dur
 }

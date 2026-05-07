@@ -170,6 +170,9 @@ fss identify /path/to/videos --dir ./data
 
 # Write .nfo files next to matched videos
 fss identify /path/to/videos --dir ./data --apply
+
+# Optional: install ffprobe (FFmpeg) for duration-based disambiguation
+sudo apt install ffmpeg  # or: brew install ffmpeg
 ```
 
 ### Stash integration
