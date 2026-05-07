@@ -21,6 +21,7 @@ func TestMatchesURL(t *testing.T) {
 		{"https://www.missax.com", true},
 		{"https://missax.com/tour/categories/movies_1_d.html", true},
 		{"https://www.missax.com/tour/trailers/Some-Scene.html", true},
+		{"https://www.missax.com/tour/models/ActorA.html", true},
 		{"https://www.manyvids.com/Profile/123/foo", false},
 		{"https://example.com", false},
 	}
@@ -231,6 +232,38 @@ func TestListScenesKnownIDs(t *testing.T) {
 	}
 	if len(scenes) != 1 || scenes[0].ID != "1001" {
 		t.Errorf("got scenes %v, want [1001]", scenes)
+	}
+}
+
+func TestListScenesModel(t *testing.T) {
+	var ts *httptest.Server
+	ts = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch {
+		case strings.Contains(r.URL.Path, "/tour/models/"):
+			_, _ = fmt.Fprintf(w, fixtureListPage, ts.URL, ts.URL)
+		case strings.Contains(r.URL.Path, "trailers/"):
+			_, _ = w.Write([]byte(fixtureDetailPage))
+		default:
+			http.NotFound(w, r)
+		}
+	}))
+	defer ts.Close()
+
+	s := &Scraper{client: ts.Client(), siteBase: ts.URL}
+	modelURL := ts.URL + "/tour/models/ActorA.html"
+	ch, err := s.ListScenes(context.Background(), modelURL, scraper.ListOpts{Workers: 1})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	scenes := testutil.CollectScenes(t, ch)
+	if len(scenes) != 2 {
+		t.Fatalf("got %d scenes, want 2", len(scenes))
+	}
+	for _, sc := range scenes {
+		if sc.StudioURL != modelURL {
+			t.Errorf("StudioURL = %q, want %q", sc.StudioURL, modelURL)
+		}
 	}
 }
 

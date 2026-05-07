@@ -224,6 +224,45 @@ func TestListScenesKnownIDs(t *testing.T) {
 	}
 }
 
+func TestPerformerFromSlug(t *testing.T) {
+	if got := performerFromSlug("cherie-deville"); got != "cherie deville" {
+		t.Errorf("got %q, want %q", got, "cherie deville")
+	}
+}
+
+func TestListScenesPerformer(t *testing.T) {
+	scenes := []scene{
+		{
+			ID: 700, Title: "Filtered Scene", Length: 900,
+			PublishedDate: "2026-04-01 07:00:00",
+			SceneURL:      "https://www.naughtyamerica.com/scene/filtered-700",
+			SiteName:      "My Friend's Hot Mom",
+			Performers:    map[string][]string{"female": {"Cherie Deville"}},
+		},
+	}
+
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Query().Get("performer") != "cherie deville" {
+			t.Errorf("expected performer=cherie deville, got performer=%s", r.URL.Query().Get("performer"))
+		}
+		resp := apiResponse{CurrentPage: 1, LastPage: 1, Total: 1, PerPage: 100, Data: scenes}
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(resp)
+	}))
+	defer ts.Close()
+
+	s := &Scraper{client: ts.Client(), apiURL: ts.URL}
+	ch, err := s.ListScenes(context.Background(), "https://www.naughtyamerica.com/pornstar/cherie-deville", scraper.ListOpts{})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	results := testutil.CollectScenes(t, ch)
+	if len(results) != 1 || results[0].Title != "Filtered Scene" {
+		t.Errorf("scenes = %v", results)
+	}
+}
+
 func fixedTime() (t time.Time) {
 	t, _ = time.Parse(time.RFC3339, "2026-04-24T12:00:00Z")
 	return

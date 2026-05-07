@@ -32,8 +32,16 @@ func New() *Scraper {
 
 func init() { scraper.Register(New()) }
 
-func (s *Scraper) ID() string         { return siteID }
-func (s *Scraper) Patterns() []string { return []string{"analacrobats.com"} }
+func (s *Scraper) ID() string { return siteID }
+func (s *Scraper) Patterns() []string {
+	return []string{
+		"analacrobats.com",
+		"analacrobats.com/models/{slug}.html",
+	}
+}
+
+var modelRe = regexp.MustCompile(`/models/[^/]+\.html`)
+
 func (s *Scraper) MatchesURL(u string) bool {
 	return matchRe.MatchString(u)
 }
@@ -144,6 +152,43 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 
 	now := time.Now().UTC()
 
+	if modelRe.MatchString(studioURL) {
+		s.scrapeModelPage(ctx, studioURL, opts, out, now)
+	} else {
+		s.scrapeListing(ctx, studioURL, opts, out, now)
+	}
+}
+
+func (s *Scraper) scrapeModelPage(ctx context.Context, studioURL string, opts scraper.ListOpts, out chan<- scraper.SceneResult, now time.Time) {
+	body, err := s.fetchPage(ctx, studioURL)
+	if err != nil {
+		select {
+		case out <- scraper.Error(err):
+		case <-ctx.Done():
+		}
+		return
+	}
+	scenes := parseListingPage(body)
+	if len(scenes) > 0 {
+		select {
+		case out <- scraper.Progress(len(scenes)):
+		case <-ctx.Done():
+			return
+		}
+	}
+	for _, item := range scenes {
+		if opts.KnownIDs[item.id] {
+			continue
+		}
+		select {
+		case out <- scraper.Scene(item.toScene(studioURL, s.base, now)):
+		case <-ctx.Done():
+			return
+		}
+	}
+}
+
+func (s *Scraper) scrapeListing(ctx context.Context, studioURL string, opts scraper.ListOpts, out chan<- scraper.SceneResult, now time.Time) {
 	for page := 1; ; page++ {
 		if ctx.Err() != nil {
 			return

@@ -166,6 +166,66 @@ const fixtureListPage = `<!DOCTYPE html><html><body>
 	</div>
 </body></html>`
 
+const fixtureModelPage = `<!DOCTYPE html><html><body>
+<h1>Reagan Foxx</h1>
+<div class="videoBlock" data-setid="117">
+	<div class="videoPic">
+<div class="b117_videothumb_123">
+	<a href="%s/trailers/Making-a-Man-II.html"></a>
+	<img src="/content//contentthumbs/15/99/1599-2x.jpg" alt="" class="video_placeholder" />
+	<video width="100%%" height="100%%" loop muted poster="/content//contentthumbs/15/99/1599-2x.jpg">
+		<source src='/videothumbs/apov_makingaman2_preview_sm.mp4' type="video/mp4" />
+	</video>
+</div>
+	</div>
+	<div class="updateDetails">
+		<div class="updateDetails_left">
+			<div class="updateDetails_title">
+				<a href="%s/trailers/Making-a-Man-II.html" title="Making a Man II">Making a Man II</a>
+			</div>
+			<div class="updateDetails_models">
+				<a href="%s/models/ReaganFoxx.html">Reagan Foxx</a>
+			</div>
+		</div><!--//updateDetails_left-->
+		<div class="updateDetails_right">
+			<div class="updateDetails_rating">
+				<i class="fa fa-star-o"></i> 9.0 | 32:06
+			</div>
+			<div class="updateDetails_date">
+				September 1, 2023
+			</div>
+		</div><!--//updateDetails_right-->
+	</div><!--//updateDetails-->
+	</div>
+
+<div class="videoBlock" data-setid="116">
+	<div class="videoPic">
+<div class="b116_videothumb_456">
+	<a href="%s/trailers/Another-Scene.html"></a>
+	<img src="/content//contentthumbs/15/98/1598-2x.jpg" alt="" class="video_placeholder" />
+</div>
+	</div>
+	<div class="updateDetails">
+		<div class="updateDetails_left">
+			<div class="updateDetails_title">
+				<a href="%s/trailers/Another-Scene.html" title="Another Scene">Another Scene</a>
+			</div>
+			<div class="updateDetails_models">
+				<a href="%s/models/ReaganFoxx.html">Reagan Foxx</a>
+			</div>
+		</div><!--//updateDetails_left-->
+		<div class="updateDetails_right">
+			<div class="updateDetails_rating">
+				<i class="fa fa-star-o"></i> 8.5 | 25:30
+			</div>
+			<div class="updateDetails_date">
+				August 15, 2023
+			</div>
+		</div><!--//updateDetails_right-->
+	</div><!--//updateDetails-->
+	</div>
+</body></html>`
+
 const fixtureDetailPage = `<!DOCTYPE html><html><head>
 <meta property="og:description" content="A compelling scene description with details about the plot."/>
 </head><body>
@@ -298,6 +358,65 @@ func TestListScenes(t *testing.T) {
 
 	if len(scenes) != 2 {
 		t.Fatalf("got %d scenes, want 2", len(scenes))
+	}
+}
+
+func TestListScenesModel(t *testing.T) {
+	var ts *httptest.Server
+	ts = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch {
+		case strings.Contains(r.URL.Path, "/models/"):
+			_, _ = fmt.Fprintf(w, fixtureModelPage, ts.URL, ts.URL, ts.URL, ts.URL, ts.URL, ts.URL)
+		case strings.Contains(r.URL.Path, "trailers/"):
+			_, _ = w.Write([]byte(fixtureDetailPage))
+		default:
+			http.NotFound(w, r)
+		}
+	}))
+	defer ts.Close()
+
+	s := &Scraper{client: ts.Client(), siteBase: ts.URL}
+	modelURL := ts.URL + "/models/ReaganFoxx.html"
+	ch, err := s.ListScenes(context.Background(), modelURL, scraper.ListOpts{Workers: 1})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	scenes := testutil.CollectScenes(t, ch)
+	if len(scenes) != 2 {
+		t.Fatalf("got %d scenes, want 2", len(scenes))
+	}
+	if scenes[0].StudioURL != modelURL && scenes[1].StudioURL != modelURL {
+		t.Error("expected StudioURL to be the model URL")
+	}
+}
+
+func TestListScenesModelKnownIDs(t *testing.T) {
+	var ts *httptest.Server
+	ts = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch {
+		case strings.Contains(r.URL.Path, "/models/"):
+			_, _ = fmt.Fprintf(w, fixtureModelPage, ts.URL, ts.URL, ts.URL, ts.URL, ts.URL, ts.URL)
+		case strings.Contains(r.URL.Path, "trailers/"):
+			_, _ = w.Write([]byte(fixtureDetailPage))
+		default:
+			http.NotFound(w, r)
+		}
+	}))
+	defer ts.Close()
+
+	s := &Scraper{client: ts.Client(), siteBase: ts.URL}
+	ch, err := s.ListScenes(context.Background(), ts.URL+"/models/ReaganFoxx.html", scraper.ListOpts{
+		Workers:  1,
+		KnownIDs: map[string]bool{"116": true},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	scenes := testutil.CollectScenes(t, ch)
+	if len(scenes) != 1 {
+		t.Fatalf("got %d scenes, want 1 (skip known ID 116)", len(scenes))
 	}
 }
 

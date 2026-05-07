@@ -37,10 +37,16 @@ func init() {
 func (s *Scraper) ID() string { return "missax" }
 
 func (s *Scraper) Patterns() []string {
-	return []string{"missax.com"}
+	return []string{
+		"missax.com",
+		"missax.com/tour/models/{name}.html",
+	}
 }
 
-var matchRe = regexp.MustCompile(`^https?://(?:www\.)?missax\.com`)
+var (
+	matchRe = regexp.MustCompile(`^https?://(?:www\.)?missax\.com`)
+	modelRe = regexp.MustCompile(`/tour/models/`)
+)
 
 func (s *Scraper) MatchesURL(u string) bool {
 	return matchRe.MatchString(u)
@@ -99,6 +105,45 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 		}()
 	}
 
+	if modelRe.MatchString(studioURL) {
+		s.produceModel(ctx, studioURL, opts, out, work)
+	} else {
+		s.produceListing(ctx, opts, out, work)
+	}
+
+	close(work)
+	wg.Wait()
+}
+
+func (s *Scraper) produceModel(ctx context.Context, studioURL string, opts scraper.ListOpts, out chan<- scraper.SceneResult, work chan<- listEntry) {
+	entries, err := s.fetchURL(ctx, studioURL)
+	if err != nil {
+		select {
+		case out <- scraper.Error(err):
+		case <-ctx.Done():
+		}
+		return
+	}
+	if len(entries) > 0 {
+		select {
+		case out <- scraper.Progress(len(entries)):
+		case <-ctx.Done():
+			return
+		}
+	}
+	for _, e := range entries {
+		if opts.KnownIDs[e.id] {
+			continue
+		}
+		select {
+		case work <- e:
+		case <-ctx.Done():
+			return
+		}
+	}
+}
+
+func (s *Scraper) produceListing(ctx context.Context, opts scraper.ListOpts, out chan<- scraper.SceneResult, work chan<- listEntry) {
 	for page := 1; ; page++ {
 		if ctx.Err() != nil {
 			break
@@ -161,9 +206,6 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 			break
 		}
 	}
-
-	close(work)
-	wg.Wait()
 }
 
 // estimateTotal is a rough guess since the site doesn't expose total count.
@@ -182,8 +224,7 @@ var (
 	performerRe  = regexp.MustCompile(`>([^<]+)</a>`)
 )
 
-func (s *Scraper) fetchPage(ctx context.Context, page int) ([]listEntry, error) {
-	pageURL := fmt.Sprintf("%s/tour/categories/movies_%d_d.html", s.siteBase, page)
+func (s *Scraper) fetchURL(ctx context.Context, pageURL string) ([]listEntry, error) {
 	resp, err := httpx.Do(ctx, s.client, httpx.Request{
 		URL: pageURL,
 		Headers: map[string]string{
@@ -200,6 +241,14 @@ func (s *Scraper) fetchPage(ctx context.Context, page int) ([]listEntry, error) 
 		return nil, err
 	}
 
+	return parsePage(body), nil
+}
+
+func (s *Scraper) fetchPage(ctx context.Context, page int) ([]listEntry, error) {
+	return s.fetchURL(ctx, fmt.Sprintf("%s/tour/categories/movies_%d_d.html", s.siteBase, page))
+}
+
+func parsePage(body []byte) []listEntry {
 	blocks := sceneBlockRe.FindAllSubmatch(body, -1)
 	entries := make([]listEntry, 0, len(blocks))
 
@@ -237,7 +286,7 @@ func (s *Scraper) fetchPage(ctx context.Context, page int) ([]listEntry, error) 
 		entries = append(entries, entry)
 	}
 
-	return entries, nil
+	return entries
 }
 
 var (

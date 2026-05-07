@@ -32,8 +32,13 @@ func New() *Scraper {
 
 func init() { scraper.Register(New()) }
 
-func (s *Scraper) ID() string         { return siteID }
-func (s *Scraper) Patterns() []string { return []string{"tour.bamvisions.com"} }
+func (s *Scraper) ID() string { return siteID }
+func (s *Scraper) Patterns() []string {
+	return []string{
+		"tour.bamvisions.com",
+		"tour.bamvisions.com/models/{name}.html",
+	}
+}
 func (s *Scraper) MatchesURL(u string) bool {
 	return matchRe.MatchString(u)
 }
@@ -54,6 +59,7 @@ var (
 	durationRe = regexp.MustCompile(`Length:\s*</strong>\s*(\d+:\d{2})`)
 	perfLinkRe = regexp.MustCompile(`<a[^>]+>([^<]+)</a>`)
 	lastPageRe = regexp.MustCompile(`/categories/movies/(\d+)/latest/">&gt;&gt;`)
+	modelRe    = regexp.MustCompile(`/models/[^/]+\.html`)
 )
 
 type sceneItem struct {
@@ -149,6 +155,43 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 
 	now := time.Now().UTC()
 
+	if modelRe.MatchString(studioURL) {
+		s.scrapeModelPage(ctx, studioURL, opts, out, now)
+	} else {
+		s.scrapeListing(ctx, studioURL, opts, out, now)
+	}
+}
+
+func (s *Scraper) scrapeModelPage(ctx context.Context, studioURL string, opts scraper.ListOpts, out chan<- scraper.SceneResult, now time.Time) {
+	body, err := s.fetchPage(ctx, studioURL)
+	if err != nil {
+		select {
+		case out <- scraper.Error(err):
+		case <-ctx.Done():
+		}
+		return
+	}
+	scenes := parseListingPage(body, s.base)
+	if len(scenes) > 0 {
+		select {
+		case out <- scraper.Progress(len(scenes)):
+		case <-ctx.Done():
+			return
+		}
+	}
+	for _, item := range scenes {
+		if opts.KnownIDs[item.id] {
+			continue
+		}
+		select {
+		case out <- scraper.Scene(item.toScene(studioURL, s.base, now)):
+		case <-ctx.Done():
+			return
+		}
+	}
+}
+
+func (s *Scraper) scrapeListing(ctx context.Context, studioURL string, opts scraper.ListOpts, out chan<- scraper.SceneResult, now time.Time) {
 	for page := 1; ; page++ {
 		if ctx.Err() != nil {
 			return

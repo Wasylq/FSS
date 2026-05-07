@@ -37,10 +37,16 @@ func init() {
 func (s *Scraper) ID() string { return "apovstory" }
 
 func (s *Scraper) Patterns() []string {
-	return []string{"apovstory.com"}
+	return []string{
+		"apovstory.com",
+		"apovstory.com/models/{name}.html",
+	}
 }
 
-var matchRe = regexp.MustCompile(`^https?://(?:www\.)?apovstory\.com`)
+var (
+	matchRe = regexp.MustCompile(`^https?://(?:www\.)?apovstory\.com`)
+	modelRe = regexp.MustCompile(`/models/[^/]+\.html`)
+)
 
 func (s *Scraper) MatchesURL(u string) bool {
 	return matchRe.MatchString(u)
@@ -103,6 +109,46 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 		}()
 	}
 
+	if modelRe.MatchString(studioURL) {
+		s.produceModel(ctx, studioURL, opts, out, work)
+	} else {
+		s.produceListing(ctx, studioURL, opts, out, work)
+	}
+
+	close(work)
+	wg.Wait()
+}
+
+func (s *Scraper) produceModel(ctx context.Context, studioURL string, opts scraper.ListOpts, out chan<- scraper.SceneResult, work chan<- listEntry) {
+	body, err := s.fetchBody(ctx, studioURL)
+	if err != nil {
+		select {
+		case out <- scraper.Error(err):
+		case <-ctx.Done():
+		}
+		return
+	}
+	entries := parseEntries(body, s.siteBase)
+	if len(entries) > 0 {
+		select {
+		case out <- scraper.Progress(len(entries)):
+		case <-ctx.Done():
+			return
+		}
+	}
+	for _, e := range entries {
+		if opts.KnownIDs[e.id] {
+			continue
+		}
+		select {
+		case work <- e:
+		case <-ctx.Done():
+			return
+		}
+	}
+}
+
+func (s *Scraper) produceListing(ctx context.Context, studioURL string, opts scraper.ListOpts, out chan<- scraper.SceneResult, work chan<- listEntry) {
 	for page := 1; ; page++ {
 		if ctx.Err() != nil {
 			break
@@ -162,9 +208,6 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 			break
 		}
 	}
-
-	close(work)
-	wg.Wait()
 }
 
 func estimateTotal(firstPageCount int) int {
@@ -186,8 +229,16 @@ var (
 
 func (s *Scraper) fetchPage(ctx context.Context, page int) ([]listEntry, error) {
 	pageURL := fmt.Sprintf("%s/updates/page_%d.html", s.siteBase, page)
+	body, err := s.fetchBody(ctx, pageURL)
+	if err != nil {
+		return nil, err
+	}
+	return parseEntries(body, s.siteBase), nil
+}
+
+func (s *Scraper) fetchBody(ctx context.Context, u string) ([]byte, error) {
 	resp, err := httpx.Do(ctx, s.client, httpx.Request{
-		URL: pageURL,
+		URL: u,
 		Headers: map[string]string{
 			"User-Agent": httpx.UserAgentFirefox,
 		},
@@ -196,12 +247,10 @@ func (s *Scraper) fetchPage(ctx context.Context, page int) ([]listEntry, error) 
 		return nil, err
 	}
 	defer func() { _ = resp.Body.Close() }()
+	return httpx.ReadBody(resp.Body)
+}
 
-	body, err := httpx.ReadBody(resp.Body)
-	if err != nil {
-		return nil, err
-	}
-
+func parseEntries(body []byte, siteBase string) []listEntry {
 	section := body
 	if m := latestSectionRe.FindSubmatch(body); m != nil {
 		section = m[1]
@@ -223,10 +272,10 @@ func (s *Scraper) fetchPage(ctx context.Context, page int) ([]listEntry, error) 
 			entry.title = html.UnescapeString(string(m[1]))
 		}
 		if m := thumbURLRe.FindSubmatch(content); m != nil {
-			entry.thumbnail = s.siteBase + string(m[1])
+			entry.thumbnail = siteBase + string(m[1])
 		}
 		if m := previewRe.FindSubmatch(content); m != nil {
-			entry.preview = s.siteBase + string(m[1])
+			entry.preview = siteBase + string(m[1])
 		}
 		if m := modelsBlockRe.FindSubmatch(content); m != nil {
 			for _, pm := range performerRe.FindAllSubmatch(m[1], -1) {
@@ -247,7 +296,7 @@ func (s *Scraper) fetchPage(ctx context.Context, page int) ([]listEntry, error) 
 		entries = append(entries, entry)
 	}
 
-	return entries, nil
+	return entries
 }
 
 var (

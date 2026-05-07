@@ -175,6 +175,53 @@ func TestKnownIDs(t *testing.T) {
 	}
 }
 
+func TestModelPage(t *testing.T) {
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/html")
+		switch r.URL.Path {
+		case "/models/SomeModel.html":
+			cards := ""
+			for _, id := range []string{"500", "600"} {
+				cards += fmt.Sprintf(`<div class="item col-lg-4 col-md-4 col-12 padx">
+  <div class="product-item">
+    <div class="pi-img-wrapper">
+      <a href="/trailers/Test-Scene.html">
+        <img src="/content/contentthumbs/00/00/%s-1x.jpg" alt="Scene %s" class="img-fluid">
+      </a>
+    </div>
+  </div>
+</div>`, id, id)
+			}
+			_, _ = fmt.Fprint(w, cards)
+		case "/trailers/Test-Scene.html":
+			_, _ = fmt.Fprint(w, detailPage)
+		default:
+			http.NotFound(w, r)
+		}
+	}))
+	defer ts.Close()
+
+	s := &Scraper{client: ts.Client()}
+	modelURL := ts.URL + "/models/SomeModel.html"
+	ch, err := s.ListScenes(context.Background(), modelURL, scraper.ListOpts{
+		Workers: 1,
+		Delay:   time.Millisecond,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	got := testutil.CollectScenes(t, ch)
+	if len(got) != 2 {
+		t.Fatalf("got %d scenes, want 2", len(got))
+	}
+	for _, sc := range got {
+		if sc.StudioURL != modelURL {
+			t.Errorf("StudioURL = %q, want %q", sc.StudioURL, modelURL)
+		}
+	}
+}
+
 func TestPagination(t *testing.T) {
 	ts := newTestServer([][]string{{"10", "20"}, {"30"}}, detailPage)
 	defer ts.Close()

@@ -179,6 +179,77 @@ func TestToScene(t *testing.T) {
 	}
 }
 
+func TestListScenesTag(t *testing.T) {
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case "/wp-json/wp/v2/tags":
+			if r.URL.Query().Get("slug") == "derek-kage" {
+				_, _ = fmt.Fprint(w, `[{"id":42}]`)
+				return
+			}
+			_, _ = fmt.Fprint(w, `[]`)
+		case "/wp-json/wp/v2/posts":
+			if r.URL.Query().Get("tags") != "42" {
+				t.Errorf("expected tags=42, got tags=%s", r.URL.Query().Get("tags"))
+			}
+			w.Header().Set("X-WP-Total", "1")
+			_, _ = fmt.Fprint(w, `[`+testAPIResponse[1:len(testAPIResponse)-1]+`]`) // reuse second post only
+		default:
+			http.NotFound(w, r)
+		}
+	}))
+	defer ts.Close()
+
+	s := &Scraper{client: ts.Client(), base: ts.URL}
+	tagURL := ts.URL + "/tag/derek-kage/"
+	ch, err := s.ListScenes(context.Background(), tagURL, scraper.ListOpts{})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	var scenes int
+	for r := range ch {
+		switch r.Kind {
+		case scraper.KindScene:
+			scenes++
+		case scraper.KindError:
+			t.Fatalf("unexpected error: %v", r.Err)
+		}
+	}
+	if scenes == 0 {
+		t.Error("expected at least one scene")
+	}
+}
+
+func TestResolveTagNotFound(t *testing.T) {
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case "/wp-json/wp/v2/tags":
+			_, _ = fmt.Fprint(w, `[]`)
+		default:
+			http.NotFound(w, r)
+		}
+	}))
+	defer ts.Close()
+
+	s := &Scraper{client: ts.Client(), base: ts.URL}
+	tagURL := ts.URL + "/tag/nonexistent/"
+	ch, err := s.ListScenes(context.Background(), tagURL, scraper.ListOpts{})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	var gotError bool
+	for r := range ch {
+		if r.Kind == scraper.KindError {
+			gotError = true
+		}
+	}
+	if !gotError {
+		t.Error("expected error for nonexistent tag")
+	}
+}
+
 func TestKnownIDsStopEarly(t *testing.T) {
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("X-WP-Total", "2")

@@ -1,11 +1,13 @@
 package wankitnowvr
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
+	"github.com/Wasylq/FSS/internal/scrapers/testutil"
 	"github.com/Wasylq/FSS/scraper"
 )
 
@@ -73,20 +75,28 @@ func TestParseDuration(t *testing.T) {
 	}
 }
 
-func TestFetchPageIntegration(t *testing.T) {
+func TestListScenesModel(t *testing.T) {
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		switch r.URL.Path {
-		case "/videos":
-			w.Header().Set("Content-Type", "text/html")
-			_, _ = fmt.Fprint(w, testHTML)
-		default:
-			http.NotFound(w, r)
-		}
+		w.Header().Set("Content-Type", "text/html")
+		_, _ = fmt.Fprint(w, testHTML)
 	}))
 	defer ts.Close()
 
-	cards := parseListingPage([]byte(testHTML))
-	if len(cards) != 1 {
-		t.Fatalf("expected 1 card, got %d", len(cards))
+	s := &Scraper{client: ts.Client()}
+	modelURL := ts.URL + "/models/tamsin+riley/147"
+	ch, err := s.ListScenes(context.Background(), modelURL, scraper.ListOpts{})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	results := testutil.CollectScenes(t, ch)
+	if len(results) != 1 {
+		t.Fatalf("got %d scenes, want 1", len(results))
+	}
+	if results[0].StudioURL != modelURL {
+		t.Errorf("StudioURL = %q, want %q", results[0].StudioURL, modelURL)
+	}
+	if results[0].Title != "Which Toy?" {
+		t.Errorf("Title = %q, want %q", results[0].Title, "Which Toy?")
 	}
 }

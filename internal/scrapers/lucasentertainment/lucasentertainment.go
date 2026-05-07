@@ -41,10 +41,14 @@ func (s *Scraper) ID() string { return "lucasentertainment" }
 func (s *Scraper) Patterns() []string {
 	return []string{
 		"lucasentertainment.com",
+		"lucasentertainment.com/tag/{slug}",
 	}
 }
 
-var matchRe = regexp.MustCompile(`^https?://(?:www\.)?lucasentertainment\.com`)
+var (
+	matchRe = regexp.MustCompile(`^https?://(?:www\.)?lucasentertainment\.com`)
+	tagRe   = regexp.MustCompile(`/tag/([^/]+)`)
+)
 
 func (s *Scraper) MatchesURL(u string) bool {
 	return matchRe.MatchString(u)
@@ -80,8 +84,43 @@ type wpPost struct {
 	} `json:"_embedded"`
 }
 
+type wpTag struct {
+	ID int `json:"id"`
+}
+
+func (s *Scraper) resolveTag(ctx context.Context, slug string) (int, error) {
+	u := fmt.Sprintf("%s/wp-json/wp/v2/tags?slug=%s", s.base, slug)
+	resp, err := httpx.Do(ctx, s.client, httpx.Request{
+		URL:     u,
+		Headers: map[string]string{"User-Agent": httpx.UserAgentFirefox, "Accept": "application/json"},
+	})
+	if err != nil {
+		return 0, err
+	}
+	defer func() { _ = resp.Body.Close() }()
+
+	var tags []wpTag
+	if err := httpx.DecodeJSON(resp.Body, &tags); err != nil {
+		return 0, fmt.Errorf("decoding tags: %w", err)
+	}
+	if len(tags) == 0 {
+		return 0, fmt.Errorf("tag not found: %s", slug)
+	}
+	return tags[0].ID, nil
+}
+
 func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOpts, out chan<- scraper.SceneResult) {
 	defer close(out)
+
+	var tagFilter string
+	if m := tagRe.FindStringSubmatch(studioURL); m != nil {
+		tagID, err := s.resolveTag(ctx, m[1])
+		if err != nil {
+			send(ctx, out, scraper.Error(fmt.Errorf("resolving tag: %w", err)))
+			return
+		}
+		tagFilter = fmt.Sprintf("&tags=%d", tagID)
+	}
 
 	for page := 1; ; page++ {
 		if ctx.Err() != nil {
@@ -95,7 +134,7 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 			}
 		}
 
-		posts, total, err := s.fetchPage(ctx, page)
+		posts, total, err := s.fetchPage(ctx, page, tagFilter)
 		if err != nil {
 			send(ctx, out, scraper.Error(fmt.Errorf("page %d: %w", page, err)))
 			return
@@ -128,8 +167,8 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 	}
 }
 
-func (s *Scraper) fetchPage(ctx context.Context, page int) ([]wpPost, int, error) {
-	u := fmt.Sprintf("%s%s?categories=%d&per_page=%d&page=%d&orderby=date&order=desc&_embed", s.base, apiPath, sceneCategoryID, perPage, page)
+func (s *Scraper) fetchPage(ctx context.Context, page int, filter string) ([]wpPost, int, error) {
+	u := fmt.Sprintf("%s%s?categories=%d&per_page=%d&page=%d&orderby=date&order=desc&_embed%s", s.base, apiPath, sceneCategoryID, perPage, page, filter)
 	resp, err := httpx.Do(ctx, s.client, httpx.Request{
 		URL: u,
 		Headers: map[string]string{

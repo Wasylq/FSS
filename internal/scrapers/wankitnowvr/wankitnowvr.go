@@ -27,24 +27,69 @@ func New() *Scraper {
 
 func init() { scraper.Register(New()) }
 
-func (s *Scraper) ID() string         { return "wankitnowvr" }
-func (s *Scraper) Patterns() []string { return []string{"wankitnowvr.com"} }
+func (s *Scraper) ID() string { return "wankitnowvr" }
+func (s *Scraper) Patterns() []string {
+	return []string{
+		"wankitnowvr.com",
+		"wankitnowvr.com/models/{slug}/{id}",
+	}
+}
 
-var matchRe = regexp.MustCompile(`^https?://(?:www\.)?wankitnowvr\.com`)
+var (
+	matchRe = regexp.MustCompile(`^https?://(?:www\.)?wankitnowvr\.com`)
+	modelRe = regexp.MustCompile(`/models/`)
+)
 
 func (s *Scraper) MatchesURL(u string) bool { return matchRe.MatchString(u) }
 
-func (s *Scraper) ListScenes(ctx context.Context, _ string, opts scraper.ListOpts) (<-chan scraper.SceneResult, error) {
+func (s *Scraper) ListScenes(ctx context.Context, studioURL string, opts scraper.ListOpts) (<-chan scraper.SceneResult, error) {
 	out := make(chan scraper.SceneResult)
-	go s.run(ctx, opts, out)
+	go s.run(ctx, studioURL, opts, out)
 	return out, nil
 }
 
-func (s *Scraper) run(ctx context.Context, opts scraper.ListOpts, out chan<- scraper.SceneResult) {
+func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOpts, out chan<- scraper.SceneResult) {
 	defer close(out)
 
 	now := time.Now().UTC()
 
+	if modelRe.MatchString(studioURL) {
+		s.scrapeModelPage(ctx, studioURL, opts, out, now)
+	} else {
+		s.scrapeListing(ctx, studioURL, opts, out, now)
+	}
+}
+
+func (s *Scraper) scrapeModelPage(ctx context.Context, studioURL string, opts scraper.ListOpts, out chan<- scraper.SceneResult, now time.Time) {
+	body, err := s.fetchURL(ctx, studioURL)
+	if err != nil {
+		select {
+		case out <- scraper.Error(err):
+		case <-ctx.Done():
+		}
+		return
+	}
+	cards := parseListingPage(body)
+	if len(cards) > 0 {
+		select {
+		case out <- scraper.Progress(len(cards)):
+		case <-ctx.Done():
+			return
+		}
+	}
+	for _, c := range cards {
+		if opts.KnownIDs[c.id] {
+			continue
+		}
+		select {
+		case out <- scraper.Scene(buildScene(c, studioURL, now)):
+		case <-ctx.Done():
+			return
+		}
+	}
+}
+
+func (s *Scraper) scrapeListing(ctx context.Context, studioURL string, opts scraper.ListOpts, out chan<- scraper.SceneResult, now time.Time) {
 	for page := 1; ; page++ {
 		if ctx.Err() != nil {
 			return
@@ -88,9 +133,8 @@ func (s *Scraper) run(ctx context.Context, opts scraper.ListOpts, out chan<- scr
 				stoppedEarly = true
 				break
 			}
-			scene := buildScene(c, now)
 			select {
-			case out <- scraper.Scene(scene):
+			case out <- scraper.Scene(buildScene(c, studioURL, now)):
 			case <-ctx.Done():
 				return
 			}
@@ -107,7 +151,10 @@ func (s *Scraper) run(ctx context.Context, opts scraper.ListOpts, out chan<- scr
 }
 
 func (s *Scraper) fetchPage(ctx context.Context, page int) ([]byte, error) {
-	u := fmt.Sprintf("%s/videos?page=%d", siteBase, page)
+	return s.fetchURL(ctx, fmt.Sprintf("%s/videos?page=%d", siteBase, page))
+}
+
+func (s *Scraper) fetchURL(ctx context.Context, u string) ([]byte, error) {
 	resp, err := httpx.Do(ctx, s.client, httpx.Request{
 		URL: u,
 		Headers: map[string]string{
@@ -203,11 +250,11 @@ func parseDuration(s string) int {
 	return total
 }
 
-func buildScene(c listingCard, now time.Time) models.Scene {
+func buildScene(c listingCard, studioURL string, now time.Time) models.Scene {
 	return models.Scene{
 		ID:         c.id,
 		SiteID:     "wankitnowvr",
-		StudioURL:  siteBase,
+		StudioURL:  studioURL,
 		Title:      c.title,
 		URL:        fmt.Sprintf("%s/videos/%s/%s", siteBase, c.slug, c.id),
 		Thumbnail:  c.thumbnail,

@@ -38,6 +38,7 @@ func (s *Scraper) ID() string { return "naughtyamerica" }
 func (s *Scraper) Patterns() []string {
 	return []string{
 		"naughtyamerica.com",
+		"naughtyamerica.com/pornstar/{slug}",
 		"naughtyamericavr.com",
 		"myfriendshotmom.com",
 		"mysistershotfriend.com",
@@ -46,7 +47,14 @@ func (s *Scraper) Patterns() []string {
 	}
 }
 
-var matchRe = regexp.MustCompile(`^https?://(?:www\.)?(?:naughtyamerica(?:vr)?|myfriendshotmom|mysistershotfriend|tonightsgirlfriend|thundercock)\.com`)
+var (
+	matchRe    = regexp.MustCompile(`^https?://(?:www\.)?(?:naughtyamerica(?:vr)?|myfriendshotmom|mysistershotfriend|tonightsgirlfriend|thundercock)\.com`)
+	pornstarRe = regexp.MustCompile(`/pornstar/([a-z0-9-]+)`)
+)
+
+func performerFromSlug(slug string) string {
+	return strings.ReplaceAll(slug, "-", " ")
+}
 
 func (s *Scraper) MatchesURL(u string) bool {
 	return matchRe.MatchString(u)
@@ -85,6 +93,11 @@ type scene struct {
 func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOpts, out chan<- scraper.SceneResult) {
 	defer close(out)
 
+	var filter string
+	if m := pornstarRe.FindStringSubmatch(studioURL); m != nil {
+		filter = "&performer=" + strings.ReplaceAll(performerFromSlug(m[1]), " ", "+")
+	}
+
 	for page := 1; ; page++ {
 		if ctx.Err() != nil {
 			return
@@ -97,7 +110,7 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 			}
 		}
 
-		resp, err := s.fetchPage(ctx, page)
+		resp, err := s.fetchPage(ctx, page, filter)
 		if err != nil {
 			select {
 			case out <- scraper.Error(fmt.Errorf("page %d: %w", page, err)):
@@ -141,8 +154,8 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 	}
 }
 
-func (s *Scraper) fetchPage(ctx context.Context, page int) (*apiResponse, error) {
-	u := fmt.Sprintf("%s?page=%d", s.apiURL, page)
+func (s *Scraper) fetchPage(ctx context.Context, page int, filter string) (*apiResponse, error) {
+	u := fmt.Sprintf("%s?page=%d%s", s.apiURL, page, filter)
 	resp, err := httpx.Do(ctx, s.client, httpx.Request{
 		URL: u,
 		Headers: map[string]string{

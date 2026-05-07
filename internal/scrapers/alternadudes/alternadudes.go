@@ -29,10 +29,16 @@ func init() { scraper.Register(New()) }
 func (s *Scraper) ID() string { return "alternadudes" }
 
 func (s *Scraper) Patterns() []string {
-	return []string{"alternadudes.com"}
+	return []string{
+		"alternadudes.com",
+		"alternadudes.com/models/{name}.html",
+	}
 }
 
-var matchRe = regexp.MustCompile(`^https?://(?:www\.)?alternadudes\.com`)
+var (
+	matchRe = regexp.MustCompile(`^https?://(?:www\.)?alternadudes\.com`)
+	modelRe = regexp.MustCompile(`/models/[^/]+\.html`)
+)
 
 func (s *Scraper) MatchesURL(u string) bool { return matchRe.MatchString(u) }
 
@@ -153,6 +159,51 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 		}()
 	}
 
+	if modelRe.MatchString(studioURL) {
+		s.produceModel(ctx, studioURL, opts, out, work)
+	} else {
+		s.produceListing(ctx, base, opts, out, work)
+	}
+
+	close(work)
+	wg.Wait()
+}
+
+func (s *Scraper) produceModel(ctx context.Context, studioURL string, opts scraper.ListOpts, out chan<- scraper.SceneResult, work chan<- listEntry) {
+	body, err := s.fetchPage(ctx, studioURL)
+	if err != nil {
+		select {
+		case out <- scraper.Error(err):
+		case <-ctx.Done():
+		}
+		return
+	}
+	entries := parseListingPage(body)
+	if len(entries) > 0 {
+		select {
+		case out <- scraper.Progress(len(entries)):
+		case <-ctx.Done():
+			return
+		}
+	}
+	seen := make(map[string]bool)
+	for _, e := range entries {
+		if seen[e.id] {
+			continue
+		}
+		seen[e.id] = true
+		if opts.KnownIDs[e.id] {
+			continue
+		}
+		select {
+		case work <- e:
+		case <-ctx.Done():
+			return
+		}
+	}
+}
+
+func (s *Scraper) produceListing(ctx context.Context, base string, opts scraper.ListOpts, out chan<- scraper.SceneResult, work chan<- listEntry) {
 	seen := make(map[string]bool)
 	for page := 1; ; page++ {
 		if ctx.Err() != nil {
@@ -223,9 +274,6 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 			break
 		}
 	}
-
-	close(work)
-	wg.Wait()
 }
 
 func (s *Scraper) processEntry(ctx context.Context, base, studioURL string, entry listEntry) models.Scene {

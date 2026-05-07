@@ -229,6 +229,50 @@ func TestListScenesKnownIDs(t *testing.T) {
 	}
 }
 
+func TestListScenesModel(t *testing.T) {
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/html")
+		_, _ = w.Write(buildPage([]int{10, 20, 30}, 1))
+	}))
+	defer ts.Close()
+
+	s := &Scraper{client: ts.Client(), base: ts.URL}
+	modelURL := ts.URL + "/models/jane-doe-13.html"
+	ch, err := s.ListScenes(context.Background(), modelURL, scraper.ListOpts{})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	results := testutil.CollectScenes(t, ch)
+	if len(results) != 3 {
+		t.Fatalf("got %d scenes, want 3", len(results))
+	}
+	if results[0].StudioURL != modelURL {
+		t.Errorf("StudioURL = %q, want %q", results[0].StudioURL, modelURL)
+	}
+}
+
+func TestListScenesModelKnownIDs(t *testing.T) {
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/html")
+		_, _ = w.Write(buildPage([]int{10, 20, 30}, 1))
+	}))
+	defer ts.Close()
+
+	s := &Scraper{client: ts.Client(), base: ts.URL}
+	ch, err := s.ListScenes(context.Background(), ts.URL+"/models/jane-doe-13.html", scraper.ListOpts{
+		KnownIDs: map[string]bool{"20": true},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	results := testutil.CollectScenes(t, ch)
+	if len(results) != 2 {
+		t.Fatalf("got %d scenes, want 2 (skip known ID 20)", len(results))
+	}
+}
+
 func TestListScenesPagination(t *testing.T) {
 	page1 := []int{1, 2, 3}
 	page2 := []int{4, 5}
