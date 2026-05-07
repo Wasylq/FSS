@@ -237,6 +237,9 @@ func (s *Scraper) run(ctx context.Context, studioURL string, inst instance, enti
 	}
 
 	for page := 1; ; page++ {
+		if ctx.Err() != nil {
+			return
+		}
 		if page > 1 {
 			select {
 			case <-time.After(delay):
