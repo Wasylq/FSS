@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"runtime"
+	"strings"
 
 	"github.com/adrg/xdg"
 	"gopkg.in/yaml.v3"
@@ -115,5 +116,32 @@ func Load() (*Config, error) {
 		return nil, fmt.Errorf("parsing config %s: %w", path, err)
 	}
 
+	if err := cfg.Validate(); err != nil {
+		return nil, fmt.Errorf("config %s: %w", path, err)
+	}
+
 	return cfg, nil
+}
+
+func (c *Config) Validate() error {
+	if c.Workers < 0 {
+		return fmt.Errorf("workers must be non-negative, got %d", c.Workers)
+	}
+	if c.Delay < 0 {
+		return fmt.Errorf("delay must be non-negative, got %d", c.Delay)
+	}
+	for name, d := range c.SiteDelays {
+		if d < 0 {
+			return fmt.Errorf("site_delays[%s] must be non-negative, got %d", name, d)
+		}
+	}
+	if c.Output != "" {
+		for _, f := range strings.Split(c.Output, ",") {
+			f = strings.TrimSpace(f)
+			if f != "" && f != "json" && f != "csv" {
+				return fmt.Errorf("unknown output format %q (valid: json, csv)", f)
+			}
+		}
+	}
+	return nil
 }

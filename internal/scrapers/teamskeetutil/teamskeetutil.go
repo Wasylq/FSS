@@ -155,8 +155,7 @@ func buildQuery(kind filterKind, value string) map[string]any {
 		must = append(must, map[string]any{"term": map[string]any{"site.nickName.keyword": value}})
 	case filterCategory:
 		tag := strings.ReplaceAll(value, "-", " ")
-		tag = titleCase(tag)
-		must = append(must, map[string]any{"term": map[string]any{"tags.keyword": tag}})
+		must = append(must, map[string]any{"match_phrase": map[string]any{"tags": tag}})
 	}
 
 	return map[string]any{
@@ -277,16 +276,6 @@ func hitToScene(src esScene, studioURL, siteBase string, now time.Time) models.S
 	}
 	scene.AddPrice(models.PriceSnapshot{Date: now, IsFree: false})
 	return scene
-}
-
-func titleCase(s string) string {
-	words := strings.Fields(s)
-	for i, w := range words {
-		if len(w) > 0 {
-			words[i] = strings.ToUpper(w[:1]) + w[1:]
-		}
-	}
-	return strings.Join(words, " ")
 }
 
 func parseDate(s string) time.Time {

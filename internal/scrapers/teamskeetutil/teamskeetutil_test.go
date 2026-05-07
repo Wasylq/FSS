@@ -66,7 +66,7 @@ func TestBuildQuery(t *testing.T) {
 	t.Run("category", func(t *testing.T) {
 		q := buildQuery(filterCategory, "amateur")
 		data, _ := json.Marshal(q)
-		if !jsonContains(string(data), `"tags.keyword"`) {
+		if !jsonContains(string(data), `"match_phrase"`) || !jsonContains(string(data), `"tags":"amateur"`) {
 			t.Error("missing category filter")
 		}
 	})
