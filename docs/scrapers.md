@@ -218,6 +218,7 @@
 | [Taboo Heat](https://www.tabooheat.com) | `tabooheat.com` | Gamma/Algolia | No | Thin wrapper around `gammautil` |
 | [Takara TV](https://www.takara-tv.jp) | `takara-tv.jp`, `takara-tv.jp/search.php?ac={id}`, `takara-tv.jp/search.php?lb={id}` | Custom PHP | No | HTML listing (20/page, `search.php` pagination) + detail page worker pool, actress/label search, performer extraction from title or model field, ~1100 scenes |
 | [Tara Tainton](https://taratainton.com) | `taratainton.com` | WordPress | Yes | Sitemap-driven, HTML meta parsing, uses `wputil` |
+| Teen Mega World (36 studios) | `{domain}/categories/movies`, `{domain}/trailers/{slug}`, `teenmegaworld.net/categories/{slug}` | Teen Mega World | No | Table-driven `tmw` package using `tmwutil`, list+detail with worker pool, HTML listing + OG meta detail pages. 36 subsites incl. Beauty Angels (775 scenes), TMW VR Net (839), Teen Sex Movs (748), Fuck Studies (329), Anal Angels (293), Ex GF Box (235), etc. |
 | [Evil Angel](https://www.evilangel.com) | `evilangel.com` | Gamma/Algolia | No | Algolia search API (evilangel segment), ~20k scenes, uses `gammautil` |
 | [TS Factor](https://www.tsfactor.com) | `tsfactor.com` | Gamma/Algolia | No | Algolia search API (evilangel segment), uses `gammautil` |
 | [PansexualX](https://www.pansexualx.com) | `pansexualx.com` | Gamma/Algolia | No | Algolia search API (evilangel segment), uses `gammautil` |
@@ -306,6 +307,7 @@ Scrapers that share a platform use common utility packages to avoid duplication:
 | `uptimelyutil` | Up-Timely CMS (HTML listing + detail, Japanese metadata) | `uptimely` | 5 sites |
 | `sexmexutil` | SexMex Pro CMS (HTML scraping). **Quirk:** CMS returns HTTP 500 with valid HTML on some pages. | `sexmexpro` | 3 sites |
 | `railwayutil` | Railway/Express/MongoDB (single JSON API call) | `railway` | 3 sites |
+| `tmwutil` | Teen Mega World (HTML listing + OG meta detail pages, date-sorted pagination) | `tmw` | 36 sites |
 | `wankitnowutil` | Wank It Now network (Next.js `_next/data` JSON API, buildId bootstrap) | `wankitnow` | 6 sites |
 | `wputil` | WordPress (sitemap + HTML meta parsing) | _(standalone packages)_ | 5 sites (each has custom parsing) |
 
