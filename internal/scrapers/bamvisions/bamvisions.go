@@ -38,9 +38,9 @@ func (s *Scraper) MatchesURL(u string) bool {
 	return matchRe.MatchString(u)
 }
 
-func (s *Scraper) ListScenes(ctx context.Context, _ string, opts scraper.ListOpts) (<-chan scraper.SceneResult, error) {
+func (s *Scraper) ListScenes(ctx context.Context, studioURL string, opts scraper.ListOpts) (<-chan scraper.SceneResult, error) {
 	out := make(chan scraper.SceneResult)
-	go s.run(ctx, opts, out)
+	go s.run(ctx, studioURL, opts, out)
 	return out, nil
 }
 
@@ -144,7 +144,7 @@ func parseLastPage(body []byte) int {
 	return 0
 }
 
-func (s *Scraper) run(ctx context.Context, opts scraper.ListOpts, out chan<- scraper.SceneResult) {
+func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOpts, out chan<- scraper.SceneResult) {
 	defer close(out)
 
 	now := time.Now().UTC()
@@ -197,7 +197,7 @@ func (s *Scraper) run(ctx context.Context, opts scraper.ListOpts, out chan<- scr
 				return
 			}
 			select {
-			case out <- scraper.Scene(item.toScene(s.base, now)):
+			case out <- scraper.Scene(item.toScene(studioURL, s.base, now)):
 			case <-ctx.Done():
 				return
 			}
@@ -205,7 +205,7 @@ func (s *Scraper) run(ctx context.Context, opts scraper.ListOpts, out chan<- scr
 	}
 }
 
-func (item sceneItem) toScene(base string, now time.Time) models.Scene {
+func (item sceneItem) toScene(studioURL, base string, now time.Time) models.Scene {
 	url := item.url
 	if strings.HasPrefix(url, "/") {
 		url = base + url
@@ -213,7 +213,7 @@ func (item sceneItem) toScene(base string, now time.Time) models.Scene {
 	return models.Scene{
 		ID:         item.id,
 		SiteID:     siteID,
-		StudioURL:  base,
+		StudioURL:  studioURL,
 		Title:      item.title,
 		URL:        url,
 		Thumbnail:  item.thumb,
