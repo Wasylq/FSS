@@ -120,7 +120,7 @@ func (s *Scraper) run(ctx context.Context, studioURL, slug string, opts scraper.
 		}
 
 		for _, c := range cards {
-			if opts.KnownIDs != nil && opts.KnownIDs[c.id] {
+			if opts.KnownIDs[c.id] {
 				send(ctx, out, scraper.StoppedEarly())
 				return
 			}

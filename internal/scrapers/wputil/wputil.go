@@ -314,7 +314,7 @@ func RunWorkerPool(ctx context.Context, client *http.Client, headers map[string]
 				if skip {
 					continue
 				}
-				if len(opts.KnownIDs) > 0 && opts.KnownIDs[scene.ID] {
+				if opts.KnownIDs[scene.ID] {
 					continue
 				}
 				select {

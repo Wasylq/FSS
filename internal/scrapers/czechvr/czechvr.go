@@ -171,7 +171,7 @@ func (s *siteScraper) scrapeSitemap(ctx context.Context, studioURL string, opts 
 		}
 
 		id := m[2]
-		if len(opts.KnownIDs) > 0 && opts.KnownIDs[id] {
+		if opts.KnownIDs[id] {
 			select {
 			case out <- scraper.StoppedEarly():
 			case <-ctx.Done():
@@ -222,7 +222,7 @@ func (s *siteScraper) scrapeModelPage(ctx context.Context, pageURL string, opts 
 	}
 
 	for _, item := range items {
-		if len(opts.KnownIDs) > 0 && opts.KnownIDs[item.id] {
+		if opts.KnownIDs[item.id] {
 			select {
 			case out <- scraper.StoppedEarly():
 			case <-ctx.Done():

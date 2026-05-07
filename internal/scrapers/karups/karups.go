@@ -196,7 +196,7 @@ func (s *Scraper) runModel(ctx context.Context, studioURL string, opts scraper.L
 		if ctx.Err() != nil {
 			return
 		}
-		if len(opts.KnownIDs) > 0 && opts.KnownIDs[e.id] {
+		if opts.KnownIDs[e.id] {
 			select {
 			case out <- scraper.StoppedEarly():
 			case <-ctx.Done():
@@ -294,7 +294,7 @@ func (s *Scraper) runPaginated(ctx context.Context, studioURL string, opts scrap
 				continue
 			}
 			seen[e.id] = true
-			if len(opts.KnownIDs) > 0 && opts.KnownIDs[e.id] {
+			if opts.KnownIDs[e.id] {
 				hitKnown = true
 				break
 			}

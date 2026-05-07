@@ -256,7 +256,7 @@ func (s *Scraper) runModel(ctx context.Context, base string, f filter, opts scra
 	}
 
 	for _, e := range entries {
-		if len(opts.KnownIDs) > 0 && opts.KnownIDs[e.id] {
+		if opts.KnownIDs[e.id] {
 			select {
 			case out <- scraper.StoppedEarly():
 			case <-ctx.Done():
@@ -318,7 +318,7 @@ func (s *Scraper) runPaginated(ctx context.Context, base string, f filter, opts 
 				continue
 			}
 			seen[e.id] = true
-			if len(opts.KnownIDs) > 0 && opts.KnownIDs[e.id] {
+			if opts.KnownIDs[e.id] {
 				hitKnown = true
 				break
 			}

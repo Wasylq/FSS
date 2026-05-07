@@ -154,7 +154,7 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 		now := time.Now().UTC()
 		for _, v := range videos {
 			scene := v.toScene(studioURL, now)
-			if len(opts.KnownIDs) > 0 && opts.KnownIDs[scene.ID] {
+			if opts.KnownIDs[scene.ID] {
 				select {
 				case out <- scraper.StoppedEarly():
 				case <-ctx.Done():
@@ -209,7 +209,7 @@ func (s *Scraper) runActress(ctx context.Context, pc pageConfig, studioURL strin
 		if performer != "" {
 			scene.Performers = []string{performer}
 		}
-		if len(opts.KnownIDs) > 0 && opts.KnownIDs[scene.ID] {
+		if opts.KnownIDs[scene.ID] {
 			select {
 			case out <- scraper.StoppedEarly():
 			case <-ctx.Done():

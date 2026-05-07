@@ -139,7 +139,7 @@ func (s *Scraper) run(ctx context.Context, studioURL, cid string, opts scraper.L
 		cancelled := false
 		hitKnown := false
 		for _, e := range entries {
-			if len(opts.KnownIDs) > 0 && opts.KnownIDs[e.id] {
+			if opts.KnownIDs[e.id] {
 				// Content is sorted newest-first; a known ID means everything
 				// from this point is already stored.
 				hitKnown = true

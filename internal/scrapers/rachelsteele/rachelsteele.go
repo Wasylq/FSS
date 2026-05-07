@@ -182,7 +182,7 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 				continue
 			}
 			id := strconv.Itoa(vid.ID)
-			if len(opts.KnownIDs) > 0 && opts.KnownIDs[id] {
+			if opts.KnownIDs[id] {
 				hitKnown = true
 				break
 			}

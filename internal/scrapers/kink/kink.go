@@ -152,7 +152,7 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 		cancelled := false
 		hitKnown := false
 		for _, e := range entries {
-			if len(opts.KnownIDs) > 0 && opts.KnownIDs[e.id] {
+			if opts.KnownIDs[e.id] {
 				hitKnown = true
 				break
 			}
@@ -223,7 +223,7 @@ func (s *Scraper) runSeries(ctx context.Context, lc listingConfig, opts scraper.
 		if ctx.Err() != nil {
 			return
 		}
-		if len(opts.KnownIDs) > 0 && opts.KnownIDs[id] {
+		if opts.KnownIDs[id] {
 			select {
 			case out <- scraper.StoppedEarly():
 			case <-ctx.Done():

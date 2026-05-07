@@ -100,7 +100,7 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 		for _, item := range items {
 			id := strconv.Itoa(item.ID)
 
-			if len(opts.KnownIDs) > 0 && opts.KnownIDs[id] {
+			if opts.KnownIDs[id] {
 				send(ctx, out, scraper.StoppedEarly())
 				return
 			}

@@ -150,7 +150,7 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 			}
 			seen[item.id] = true
 
-			if len(opts.KnownIDs) > 0 && opts.KnownIDs[item.id] {
+			if opts.KnownIDs[item.id] {
 				select {
 				case out <- scraper.StoppedEarly():
 				case <-ctx.Done():

@@ -90,7 +90,7 @@ func (s *Scraper) Run(ctx context.Context, studioURL string, opts scraper.ListOp
 		for _, hit := range result.Hits.Hits {
 			id := strconv.Itoa(hit.Source.ItemID)
 
-			if len(opts.KnownIDs) > 0 && opts.KnownIDs[id] {
+			if opts.KnownIDs[id] {
 				select {
 				case out <- scraper.StoppedEarly():
 				case <-ctx.Done():

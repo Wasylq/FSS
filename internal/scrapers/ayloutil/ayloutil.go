@@ -365,7 +365,7 @@ func (s *Scraper) Run(ctx context.Context, studioURL string, opts scraper.ListOp
 		now := time.Now().UTC()
 		for _, rel := range releases {
 			id := strconv.Itoa(rel.ID)
-			if len(opts.KnownIDs) > 0 && opts.KnownIDs[id] {
+			if opts.KnownIDs[id] {
 				select {
 				case out <- scraper.StoppedEarly():
 				case <-ctx.Done():
@@ -408,7 +408,7 @@ func (s *Scraper) runSeries(ctx context.Context, studioURL string, opts scraper.
 	now := time.Now().UTC()
 	for _, rel := range releases {
 		id := strconv.Itoa(rel.ID)
-		if len(opts.KnownIDs) > 0 && opts.KnownIDs[id] {
+		if opts.KnownIDs[id] {
 			select {
 			case out <- scraper.StoppedEarly():
 			case <-ctx.Done():

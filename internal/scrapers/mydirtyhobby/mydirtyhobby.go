@@ -118,7 +118,7 @@ func (s *Scraper) run(ctx context.Context, studioURL string, uid int, nick strin
 		hitKnown := false
 		for _, item := range items {
 			id := strconv.Itoa(item.UVID)
-			if len(opts.KnownIDs) > 0 && opts.KnownIDs[id] {
+			if opts.KnownIDs[id] {
 				hitKnown = true
 				break
 			}

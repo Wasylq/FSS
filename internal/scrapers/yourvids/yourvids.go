@@ -141,7 +141,7 @@ func (s *Scraper) run(ctx context.Context, studioURL, slug string, opts scraper.
 		hitKnown := false
 		for _, v := range resp.Data.Videos {
 			id := strconv.Itoa(v.ID)
-			if len(opts.KnownIDs) > 0 && opts.KnownIDs[id] {
+			if opts.KnownIDs[id] {
 				hitKnown = true
 				stoppedEarly = true
 				break

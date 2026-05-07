@@ -241,7 +241,7 @@ func (s *Scraper) runDVD(ctx context.Context, studioURL string, opts scraper.Lis
 
 func (s *Scraper) emitScenes(ctx context.Context, scenes []parsedScene, studioURL string, now time.Time, opts scraper.ListOpts, out chan<- scraper.SceneResult) (stopped bool) {
 	for _, ps := range scenes {
-		if len(opts.KnownIDs) > 0 && opts.KnownIDs[ps.id] {
+		if opts.KnownIDs[ps.id] {
 			select {
 			case out <- scraper.StoppedEarly():
 			case <-ctx.Done():

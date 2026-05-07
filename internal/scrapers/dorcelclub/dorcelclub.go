@@ -172,7 +172,7 @@ func (s *Scraper) scrapeHTMLPage(ctx context.Context, pageURL string, opts scrap
 	}
 
 	for _, item := range items {
-		if len(opts.KnownIDs) > 0 && opts.KnownIDs[item.id] {
+		if opts.KnownIDs[item.id] {
 			select {
 			case out <- scraper.StoppedEarly():
 			case <-ctx.Done():
@@ -228,7 +228,7 @@ func (s *Scraper) paginateAJAX(ctx context.Context, basePath, sorting string, op
 		}
 
 		for _, item := range items {
-			if len(opts.KnownIDs) > 0 && opts.KnownIDs[item.id] {
+			if opts.KnownIDs[item.id] {
 				select {
 				case out <- scraper.StoppedEarly():
 				case <-ctx.Done():

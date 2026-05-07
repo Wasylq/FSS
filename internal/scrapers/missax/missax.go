@@ -138,7 +138,7 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 		cancelled := false
 		hitKnown := false
 		for _, e := range entries {
-			if len(opts.KnownIDs) > 0 && opts.KnownIDs[e.id] {
+			if opts.KnownIDs[e.id] {
 				hitKnown = true
 				break
 			}

@@ -169,7 +169,7 @@ func (s *Scraper) paginateCategory(ctx context.Context, category, sort string, o
 		}
 
 		for _, item := range items {
-			if len(opts.KnownIDs) > 0 && opts.KnownIDs[item.id] {
+			if opts.KnownIDs[item.id] {
 				select {
 				case out <- scraper.StoppedEarly():
 				case <-ctx.Done():
@@ -208,7 +208,7 @@ func (s *Scraper) scrapeListingPage(ctx context.Context, pageURL string, opts sc
 	}
 
 	for _, item := range items {
-		if len(opts.KnownIDs) > 0 && opts.KnownIDs[item.id] {
+		if opts.KnownIDs[item.id] {
 			select {
 			case out <- scraper.StoppedEarly():
 			case <-ctx.Done():

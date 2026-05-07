@@ -91,7 +91,7 @@ func (s *Scraper) run(ctx context.Context, opts scraper.ListOpts, out chan<- scr
 
 		stoppedEarly := false
 		for _, c := range cards {
-			if len(opts.KnownIDs) > 0 && opts.KnownIDs[c.id] {
+			if opts.KnownIDs[c.id] {
 				stoppedEarly = true
 				break
 			}

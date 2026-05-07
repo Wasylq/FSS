@@ -113,7 +113,7 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 
 		now := time.Now().UTC()
 		for _, item := range items {
-			if opts.KnownIDs != nil && opts.KnownIDs[item.id] {
+			if opts.KnownIDs[item.id] {
 				send(ctx, out, scraper.StoppedEarly())
 				return
 			}

@@ -100,7 +100,7 @@ func (s *Scraper) run(ctx context.Context, studioURL, slug string, opts scraper.
 				continue
 			}
 			scene := toScene(studioURL, slug, v)
-			if opts.KnownIDs != nil && opts.KnownIDs[scene.ID] {
+			if opts.KnownIDs[scene.ID] {
 				send(ctx, out, scraper.StoppedEarly())
 				return
 			}

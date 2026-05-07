@@ -124,7 +124,7 @@ func (s *Scraper) run(ctx context.Context, studioURL, typePath, slug string, opt
 
 		for i := range cards {
 			c := &cards[i]
-			if opts.KnownIDs != nil && opts.KnownIDs[c.id] {
+			if opts.KnownIDs[c.id] {
 				send(ctx, out, scraper.StoppedEarly())
 				return
 			}

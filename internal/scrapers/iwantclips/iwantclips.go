@@ -133,7 +133,7 @@ func (s *Scraper) run(ctx context.Context, studioURL, memberID string, opts scra
 		now := time.Now().UTC()
 		hitKnown := false
 		for _, doc := range docs {
-			if len(opts.KnownIDs) > 0 && opts.KnownIDs[doc.ContentID] {
+			if opts.KnownIDs[doc.ContentID] {
 				hitKnown = true
 				break
 			}

@@ -140,7 +140,7 @@ func (s *Scraper) runPaginated(ctx context.Context, studioURL string, opts scrap
 		}
 
 		for _, c := range cards {
-			if len(opts.KnownIDs) > 0 && opts.KnownIDs[c.id] {
+			if opts.KnownIDs[c.id] {
 				select {
 				case out <- scraper.StoppedEarly():
 				case <-ctx.Done():
@@ -197,7 +197,7 @@ func (s *Scraper) runModel(ctx context.Context, studioURL string, modelID string
 					}
 				}
 
-				if len(opts.KnownIDs) > 0 && opts.KnownIDs[updateID] {
+				if opts.KnownIDs[updateID] {
 					select {
 					case out <- scraper.StoppedEarly():
 					case <-ctx.Done():

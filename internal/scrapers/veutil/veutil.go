@@ -123,7 +123,7 @@ func (s *Scraper) run(ctx context.Context, opts scraper.ListOpts, out chan<- scr
 		stoppedEarly := false
 		for _, p := range posts {
 			id := strconv.Itoa(p.ID)
-			if len(opts.KnownIDs) > 0 && opts.KnownIDs[id] {
+			if opts.KnownIDs[id] {
 				stoppedEarly = true
 				break
 			}

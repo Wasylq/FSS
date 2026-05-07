@@ -102,7 +102,7 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 
 		now := time.Now().UTC()
 		for _, item := range items {
-			if len(opts.KnownIDs) > 0 && opts.KnownIDs[item.vkey] {
+			if opts.KnownIDs[item.vkey] {
 				select {
 				case out <- scraper.StoppedEarly():
 				case <-ctx.Done():

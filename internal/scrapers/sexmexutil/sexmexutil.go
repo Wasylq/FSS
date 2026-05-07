@@ -119,7 +119,7 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 		stoppedEarly := false
 		for _, c := range cards {
 			scene := s.cardToScene(studioURL, c, now)
-			if len(opts.KnownIDs) > 0 && opts.KnownIDs[scene.ID] {
+			if opts.KnownIDs[scene.ID] {
 				stoppedEarly = true
 				break
 			}

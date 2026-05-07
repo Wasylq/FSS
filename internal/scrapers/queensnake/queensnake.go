@@ -93,7 +93,7 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 		}
 
 		for _, ps := range scenes {
-			if len(opts.KnownIDs) > 0 && opts.KnownIDs[ps.filmID] {
+			if opts.KnownIDs[ps.filmID] {
 				select {
 				case out <- scraper.StoppedEarly():
 				case <-ctx.Done():

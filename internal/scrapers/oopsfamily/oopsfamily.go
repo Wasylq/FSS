@@ -99,7 +99,7 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 		}
 
 		for _, c := range cards {
-			if len(opts.KnownIDs) > 0 && opts.KnownIDs[c.id] {
+			if opts.KnownIDs[c.id] {
 				stoppedEarly = true
 				break
 			}
