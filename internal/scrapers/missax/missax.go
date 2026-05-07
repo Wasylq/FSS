@@ -248,6 +248,7 @@ var (
 	videoSrcRe    = regexp.MustCompile(`<video\s+src="([^"]+)"`)
 	descriptionRe = regexp.MustCompile(`(?s)Video Description:\s*</p>\s*<p[^>]*>\s*(.*?)\s*</p>`)
 	htmlTagRe     = regexp.MustCompile(`<[^>]+>`)
+	ogImageRe     = regexp.MustCompile(`og:image"\s+content="([^"]+)"`)
 )
 
 func (s *Scraper) fetchDetail(ctx context.Context, studioURL string, entry listEntry) (models.Scene, error) {
@@ -311,7 +312,7 @@ func (s *Scraper) fetchDetail(ctx context.Context, studioURL string, entry listE
 	}
 
 	// OG image is often higher quality than listing thumbnail
-	if m := regexp.MustCompile(`og:image"\s+content="([^"]+)"`).FindSubmatch(body); m != nil {
+	if m := ogImageRe.FindSubmatch(body); m != nil {
 		scene.Thumbnail = string(m[1])
 	}
 
