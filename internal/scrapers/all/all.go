@@ -48,6 +48,7 @@ import (
 	_ "github.com/Wasylq/FSS/internal/scrapers/missax"
 	_ "github.com/Wasylq/FSS/internal/scrapers/modelcentro"
 	_ "github.com/Wasylq/FSS/internal/scrapers/momcomesfirst"
+	_ "github.com/Wasylq/FSS/internal/scrapers/mousouzoku"
 	_ "github.com/Wasylq/FSS/internal/scrapers/mydirtyhobby"
 	_ "github.com/Wasylq/FSS/internal/scrapers/nakednews"
 	_ "github.com/Wasylq/FSS/internal/scrapers/naughtyamerica"
