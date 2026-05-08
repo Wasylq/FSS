@@ -264,6 +264,32 @@
 | [WankzVR](https://www.wankzvr.com) | `wankzvr.com` | POVR/WankzVR | No | Export JSON + listing page dates, uses `povrutil` |
 | [Adult Time](https://www.adulttime.com) | `adulttime.com` | Gamma/Algolia | No | Algolia search API (adulttime segment), full catalog, network-level scraper, uses `gammautil` |
 | [Adult Time Originals](https://www.adulttime.com/en/channel/adult-time-originals) | `adulttime.com/en/channel/adult-time-originals` | Gamma/Algolia | No | Algolia search API, `availableOnSite:adulttimeoriginals` filter, uses `gammautil` |
+| [Accidental Gangbang](https://www.accidentalgangbang.com) | `accidentalgangbang.com` | Gamma/Algolia | No | Algolia search API (adulttime segment), uses `gammautil` |
+| [Age and Beauty](https://www.ageandbeauty.com) | `ageandbeauty.com` | Gamma/Algolia | No | Algolia search API (adulttime segment), uses `gammautil` |
+| [ASMR Fantasy](https://www.asmrfantasy.com) | `asmrfantasy.com` | Gamma/Algolia | No | Algolia search API (adulttime segment), uses `gammautil` |
+| [Be the Cuck](https://www.bethecuck.com) | `bethecuck.com` | Gamma/Algolia | No | Algolia search API (adulttime segment), uses `gammautil` |
+| [F.U.T.A Sentai Squad](https://www.futasentaisquad.com) | `futasentaisquad.com` | Gamma/Algolia | No | Algolia search API (adulttime segment), uses `gammautil` |
+| [Female Submission](https://www.femalesubmission.com) | `femalesubmission.com` | Gamma/Algolia | No | Algolia search API (adulttime segment), uses `gammautil` |
+| [Femboyish](https://www.femboyish.com) | `femboyish.com` | Gamma/Algolia | No | Algolia search API (adulttime segment), uses `gammautil` |
+| [Futa World](https://www.futaworld.com) | `futaworld.com` | Gamma/Algolia | No | Algolia search API (adulttime segment), uses `gammautil` |
+| [Future Darkly](https://www.futuredarkly.com) | `futuredarkly.com` | Gamma/Algolia | No | Algolia search API (adulttime segment), uses `gammautil` |
+| [Girlcore](https://www.girlcore.com) | `girlcore.com` | Gamma/Algolia | No | Algolia search API (adulttime segment), uses `gammautil` |
+| [Girls Under Arrest](https://www.girlsunderarrest.com) | `girlsunderarrest.com` | Gamma/Algolia | No | Algolia search API (adulttime segment), uses `gammautil` |
+| [Hentai Sex School](https://www.hentaisexschool.com) | `hentaisexschool.com` | Gamma/Algolia | No | Algolia search API (adulttime segment), uses `gammautil` |
+| [HeteroFlexible](https://www.heteroflexible.com) | `heteroflexible.com` | Gamma/Algolia | No | Algolia search API (adulttime segment), uses `gammautil` |
+| [Is This Real?!](https://www.isthisreal.com) | `isthisreal.com` | Gamma/Algolia | No | Algolia search API (adulttime segment), uses `gammautil` |
+| [Jerk Buddies](https://www.jerk-buddies.com) | `jerk-buddies.com` | Gamma/Algolia | No | Algolia search API (adulttime segment), uses `gammautil` |
+| [Lady Gonzo](https://www.ladygonzo.com) | `ladygonzo.com` | Gamma/Algolia | No | Algolia search API (adulttime segment), uses `gammautil` |
+| [Lez Be Bad](https://www.lezbebad.com) | `lezbebad.com` | Gamma/Algolia | No | Algolia search API (adulttime segment), uses `gammautil` |
+| [Modern-Day Sins](https://www.moderndaysins.com) | `moderndaysins.com` | Gamma/Algolia | No | Algolia search API (adulttime segment), uses `gammautil` |
+| [Oopsie!](https://www.oopsie.com) | `oopsie.com` | Gamma/Algolia | No | Algolia search API (adulttime segment), uses `gammautil` |
+| [Oopsie! Animated](https://www.oopsieanimated.com) | `oopsieanimated.com` | Gamma/Algolia | No | Algolia search API (adulttime segment), uses `gammautil` |
+| [Pretty Dirty](https://www.prettydirty.com) | `prettydirty.com` | Gamma/Algolia | No | Algolia search API (adulttime segment), uses `gammautil` |
+| [Sister Trick](https://www.sistertrick.com) | `sistertrick.com` | Gamma/Algolia | No | Algolia search API (adulttime segment), uses `gammautil` |
+| [Transfixed](https://www.transfixed.com) | `transfixed.com` | Gamma/Algolia | No | Algolia search API (adulttime segment), uses `gammautil` |
+| [True Lesbian](https://www.truelesbian.com) | `truelesbian.com` | Gamma/Algolia | No | Algolia search API (adulttime segment), uses `gammautil` |
+| [UP CLOSE](https://www.getupclose.com) | `getupclose.com` | Gamma/Algolia | No | Algolia search API (adulttime segment), uses `gammautil` |
+| [Up Close VR](https://www.upclosevr.com) | `upclosevr.com` | Gamma/Algolia | No | Algolia search API (adulttime segment), uses `gammautil` |
 | [Burning Angel](https://www.burningangel.com) | `burningangel.com` | Gamma/Algolia | No | Algolia search API, uses `gammautil` |
 | [Filthy Kings](https://www.filthykings.com) | `filthykings.com` | Gamma/Algolia | No | Algolia search API, uses `gammautil` |
 | [Gangbang Creampie](https://www.gangbangcreampie.com) | `gangbangcreampie.com` | Gamma/Algolia | No | Algolia search API, uses `gammautil` |

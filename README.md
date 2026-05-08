@@ -9,12 +9,12 @@ Scrapes all scenes and metadata from a studio URL. Designed to be easily extende
 
 ## Supported sites
 
-**475 sites** across 15+ platforms — [full list with URL patterns →](docs/scrapers.md)
+**501 sites** across 15+ platforms — [full list with URL patterns →](docs/scrapers.md)
 
 | Platform | Count | Examples |
 |----------|------:|---------|
 | Score Group | 93 | Scoreland, XL Girls, 18Eighteen, Leg Sex, Naughty Mag, 50 Plus MILFs, … |
-| Gamma/Algolia | 14 | Burning Angel, Dogfart Network, Evil Angel, OpenLife, Pure Taboo, Wicked, … |
+| Gamma/Algolia | 40 | Adult Time, Burning Angel, Dogfart Network, Evil Angel, Girlcore, Modern-Day Sins, OpenLife, Pretty Dirty, Pure Taboo, Transfixed, Wicked, … |
 | WP video-elements | 12 | DaughterSwap, MommysBoy, PervMom, SisLovesMe, … |
 | SpiceVids collections | 1001 | AdamAndEveVOD, Crunchboy, 1111Customs, AdultTime, NewSensations, … (Aylo marketplace) |
 | Aylo/Juan | 21 | Babes, BangBros, BigStr, Brazzers, Erito, HentaiPros, Killergram, LetsDoeIt, Metro, MileHigh, Reality Kings, Sean Cody, SpiceVids, WhyNotBi, … |
