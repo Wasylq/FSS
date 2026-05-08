@@ -9,7 +9,7 @@ Scrapes all scenes and metadata from a studio URL. Designed to be easily extende
 
 ## Supported sites
 
-**606 sites** across 15+ platforms — [full list with URL patterns →](docs/scrapers.md)
+**610 sites** across 15+ platforms — [full list with URL patterns →](docs/scrapers.md)
 
 | Platform | Count | Examples |
 |----------|------:|---------|
@@ -28,6 +28,7 @@ Scrapes all scenes and metadata from a studio URL. Designed to be easily extende
 | Railway/Express | 3 | Smoking Erotica, Smoking Models, Spanking Glamour |
 | Grooby | 42 | Grooby Girls, TGirls.xxx, Brazilian Transsexuals, TGirl Japan, Grooby VR, Black TGirls, Femout.xxx, Ladyboy.xxx, … |
 | New Sensations | 8 | New Sensations, FamilyXXX, Hot Wife XXX, Girl Girl XXX, Fresh Outta High School, Shane Diesel XXX, … |
+| Wow Network | 4 | WowGirls, Ultra Films, angels.love, sensual.love |
 | Stashbox | 1+ | StashDB, any stashbox instance (config-driven) |
 | Standalone | 51 | Anal Vids, APClips, Bare Back Studios, Clips4Sale, Crunchboy, DEEP'S, Fakings, Glory Quest, GrandparentsX, Jules Jordan, Kink, KM Produce, Lucas Entertainment, ManyVids, Mousouzoku, Naked News, Pornhub, Pure CFNM, r18.dev, Raw Fuck Club, SexLikeReal, Takara TV, VENUS, … |
 

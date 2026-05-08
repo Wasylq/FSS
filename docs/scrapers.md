@@ -372,6 +372,7 @@
 | [Real Bikini Girls](https://www.realbikinigirls.com) | `realbikinigirls.com` | Wank It Now (Next.js) | No | Next.js `_next/data` JSON API, uses `wankitnowutil` |
 | [Upskirt Jerk](https://www.upskirtjerk.com) | `upskirtjerk.com` | Wank It Now (Next.js) | No | Next.js `_next/data` JSON API, uses `wankitnowutil` |
 | [Wank It Now VR](https://wankitnowvr.com) | `wankitnowvr.com`, `wankitnowvr.com/models/{slug}/{id}` | Laravel (custom) | No | HTML listing (12/page), standalone scraper, model page support, ~1300 scenes |
+| Wow Network sites (4) | `{domain}`, `{domain}/tour/whats-new`, `{domain}/tour/trailer/{section}/{slug}` | Custom CMS (Wow) | No | Table-driven via `wownetworkutil`: WowGirls (wowgirls.com + wowporn.com), Ultra Films (ultrafilms.com), angels.love (angels.love), sensual.love (sensual.love). Sitemap-based discovery, JSON-LD on detail pages for title/date/duration, performer extraction from JSON-LD description or listing page, `wowmodels.com` CDN |
 | Grooby (42 sites) | `{domain}/tour/categories/movies.html`, `{domain}/tour/models/{slug}.html` | Grooby CMS | No | Table-driven `grooby` package using `groobyutil`, HTML listing (12-30/page), date-sorted, model page support, NATS platform, ~7k scenes across network. Sites: Asian American TGirls, Asian Tgirl, Black TGirls, Black TGirls Hardcore, Bob's TGirls, Brazil TGirls, Brazilian Transsexuals, Canada TGirl, Euro Tgirls, Femout.xxx, Femoutsex.xxx, Frank's TGirl World, Grooby Archives, Grooby Girls (+ shemaleyum.com), Grooby VR (+ justvr.xxx), GroobyDVD, Krissy4U, Ladyboy Ladyboy, Ladyboy.xxx, Real TGirls, Russian TGirls, TGirl 40, TGirl BBW, TGirl Japan, TGirl Japan Hardcore, TGirl Pornstar, Tgirl Post-Op, tgirlsex.xxx, TGirls Fuck, TGirls Hookup, Tgirls.porn, TGirls.xxx (+ shemale.xxx), TGirl Tops, TGirl X, T.Porn, Third Sex XXX, Transex Domination, Transex POV, Transgasm, Transnificent, TS Casting Couch, UK TGirls |
 
 ## Shared scraper packages
@@ -399,6 +400,7 @@ Scrapers that share a platform use common utility packages to avoid duplication:
 | `tmwutil` | Teen Mega World (HTML listing + OG meta detail pages, date-sorted pagination, hub mode for redirected domains) | `tmw` | 35 sites |
 | `wankitnowutil` | Wank It Now network (Next.js `_next/data` JSON API, buildId bootstrap) | `wankitnow` | 6 sites |
 | `newsensationsutil` | New Sensations NATS CMS (HTML listing with `videothumb_` markers + detail page worker pool) | `newsensations` | 8 sites |
+| `wownetworkutil` | Wow Network (sitemap discovery, JSON-LD detail pages, `wowmodels.com` CDN) | `wownetwork` | 4 sites |
 | `wputil` | WordPress (sitemap + HTML meta parsing) | _(standalone packages)_ | 5 sites (each has custom parsing) |
 
 ## Adding a new scraper
