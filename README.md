@@ -9,7 +9,7 @@ Scrapes all scenes and metadata from a studio URL. Designed to be easily extende
 
 ## Supported sites
 
-**475 sites** across 15+ platforms — [full list with URL patterns →](docs/scrapers.md)
+**476 sites** across 15+ platforms — [full list with URL patterns →](docs/scrapers.md)
 
 | Platform | Count | Examples |
 |----------|------:|---------|
@@ -26,7 +26,7 @@ Scrapes all scenes and metadata from a studio URL. Designed to be easily extende
 | MetArt Network | 16 | MetArt, SexArt, ALS Scan, Viv Thomas, MetArt X, Errotica Archives, Stunning 18, … |
 | Railway/Express | 3 | Smoking Erotica, Smoking Models, Spanking Glamour |
 | Stashbox | 1+ | StashDB, any stashbox instance (config-driven) |
-| Standalone | 48 | APClips, Bare Back Studios, Clips4Sale, Crunchboy, DEEP'S, Fakings, Glory Quest, GrandparentsX, Jules Jordan, Kink, KM Produce, Lucas Entertainment, ManyVids, Naked News, Pornhub, Pure CFNM, r18.dev, Takara TV, VENUS, … |
+| Standalone | 49 | Anal Vids, APClips, Bare Back Studios, Clips4Sale, Crunchboy, DEEP'S, Fakings, Glory Quest, GrandparentsX, Jules Jordan, Kink, KM Produce, Lucas Entertainment, ManyVids, Naked News, Pornhub, Pure CFNM, r18.dev, Takara TV, VENUS, … |
 
 ## Install
 

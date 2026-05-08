@@ -9,6 +9,7 @@ import (
 	_ "github.com/Wasylq/FSS/internal/scrapers/alternadudes"
 	_ "github.com/Wasylq/FSS/internal/scrapers/analacrobats"
 	_ "github.com/Wasylq/FSS/internal/scrapers/analtherapy"
+	_ "github.com/Wasylq/FSS/internal/scrapers/analvids"
 	_ "github.com/Wasylq/FSS/internal/scrapers/apclips"
 	_ "github.com/Wasylq/FSS/internal/scrapers/apovstory"
 	_ "github.com/Wasylq/FSS/internal/scrapers/auntjudys"

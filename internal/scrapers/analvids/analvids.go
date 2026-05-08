@@ -1,0 +1,396 @@
+package analvids
+
+import (
+	"context"
+	"fmt"
+	"html"
+	"net/http"
+	"regexp"
+	"strconv"
+	"strings"
+	"sync"
+	"time"
+
+	"github.com/Wasylq/FSS/internal/httpx"
+	"github.com/Wasylq/FSS/models"
+	"github.com/Wasylq/FSS/scraper"
+)
+
+type Scraper struct {
+	client *http.Client
+	base   string
+}
+
+func New() *Scraper {
+	return &Scraper{
+		client: httpx.NewClient(30 * time.Second),
+		base:   "https://www.analvids.com",
+	}
+}
+
+func init() {
+	scraper.Register(New())
+}
+
+func (s *Scraper) ID() string { return "analvids" }
+
+func (s *Scraper) Patterns() []string {
+	return []string{
+		"analvids.com",
+		"analvids.com/new-videos",
+		"analvids.com/studios/{slug}",
+		"analvids.com/model/{id}/{slug}",
+	}
+}
+
+var matchRe = regexp.MustCompile(`^https?://(?:www\.)?analvids\.com`)
+
+func (s *Scraper) MatchesURL(u string) bool {
+	return matchRe.MatchString(u)
+}
+
+func (s *Scraper) ListScenes(ctx context.Context, studioURL string, opts scraper.ListOpts) (<-chan scraper.SceneResult, error) {
+	out := make(chan scraper.SceneResult)
+	go s.run(ctx, studioURL, opts, out)
+	return out, nil
+}
+
+var (
+	cardSplitRe = regexp.MustCompile(`<div class="card-scene[^"]*"\s*data-content="(\d+)">`)
+	cardIDRe    = regexp.MustCompile(`data-content="(\d+)"`)
+
+	cardHrefRe  = regexp.MustCompile(`<a href="([^"]*?/watch/\d+/[^"]*)"`)
+	cardTitleRe = regexp.MustCompile(`alt="([^"]*)"`)
+	cardThumbRe = regexp.MustCompile(`data-src="([^"]*)"`)
+	cardDurRe   = regexp.MustCompile(`label--time">([^<]*\bmin\b[^<]*)</div>`)
+	cardDateRe  = regexp.MustCompile(`label--time">(\d{4}-\d{2}-\d{2})</div>`)
+
+	detailPerfRe   = regexp.MustCompile(`href="https?://www\.analvids\.com/model/\d+/[^"]*"[^>]*>([^<]+)</a>`)
+	detailDateRe   = regexp.MustCompile(`bi-calendar3.*?</i>\s*(\d{4}-\d{2}-\d{2})`)
+	detailDurRe    = regexp.MustCompile(`bi-clock.*?</i>\s*(\d+:\d+)`)
+	detailTagRe    = regexp.MustCompile(`<a[^>]*href="/genre/[^"]*"[^>]*>([^<]+)</a>`)
+	detailStudioRe = regexp.MustCompile(`(?s)Studio:.*?<a href="/studios/[^"]*">([^<]+)</a>`)
+
+	studioSlugRe = regexp.MustCompile(`/studios/([^/]+)`)
+	modelPathRe  = regexp.MustCompile(`/model/(\d+/[^/]+)`)
+)
+
+type listEntry struct {
+	id    string
+	url   string
+	title string
+	thumb string
+	dur   int
+	date  string
+}
+
+func parseListing(body string) []listEntry {
+	locs := cardSplitRe.FindAllStringIndex(body, -1)
+	if len(locs) == 0 {
+		return nil
+	}
+	out := make([]listEntry, 0, len(locs))
+	for i, loc := range locs {
+		end := len(body)
+		if i+1 < len(locs) {
+			end = locs[i+1][0]
+		}
+		card := body[loc[0]:end]
+		idMatch := cardIDRe.FindStringSubmatch(card)
+		if idMatch == nil {
+			continue
+		}
+		e := listEntry{id: idMatch[1]}
+		if v := cardHrefRe.FindStringSubmatch(card); v != nil {
+			e.url = html.UnescapeString(v[1])
+		}
+		if v := cardTitleRe.FindStringSubmatch(card); v != nil {
+			e.title = html.UnescapeString(v[1])
+		}
+		if v := cardThumbRe.FindStringSubmatch(card); v != nil {
+			e.thumb = html.UnescapeString(v[1])
+		}
+		if v := cardDurRe.FindStringSubmatch(card); v != nil {
+			e.dur = parseDuration(v[1])
+		}
+		if v := cardDateRe.FindStringSubmatch(card); v != nil {
+			e.date = v[1]
+		}
+		if e.id != "" {
+			out = append(out, e)
+		}
+	}
+	return out
+}
+
+func parseDuration(s string) int {
+	s = strings.TrimSpace(s)
+	var total int
+	if m := regexp.MustCompile(`(\d+)\s*h`).FindStringSubmatch(s); m != nil {
+		n, _ := strconv.Atoi(m[1])
+		total += n * 3600
+	}
+	if m := regexp.MustCompile(`(\d+)\s*min`).FindStringSubmatch(s); m != nil {
+		n, _ := strconv.Atoi(m[1])
+		total += n * 60
+	}
+	return total
+}
+
+func parseDurationColon(s string) int {
+	parts := strings.Split(strings.TrimSpace(s), ":")
+	if len(parts) == 2 {
+		m, _ := strconv.Atoi(parts[0])
+		sec, _ := strconv.Atoi(parts[1])
+		return m*60 + sec
+	}
+	if len(parts) == 3 {
+		h, _ := strconv.Atoi(parts[0])
+		m, _ := strconv.Atoi(parts[1])
+		sec, _ := strconv.Atoi(parts[2])
+		return h*3600 + m*60 + sec
+	}
+	return 0
+}
+
+type detailData struct {
+	performers []string
+	tags       []string
+	studio     string
+	date       string
+	duration   int
+}
+
+func parseDetail(body string) detailData {
+	d := detailData{}
+	seen := make(map[string]bool)
+	for _, m := range detailPerfRe.FindAllStringSubmatch(body, -1) {
+		name := strings.TrimSpace(html.UnescapeString(m[1]))
+		if name != "" && !seen[name] {
+			seen[name] = true
+			d.performers = append(d.performers, name)
+		}
+	}
+	if m := detailDateRe.FindStringSubmatch(body); m != nil {
+		d.date = m[1]
+	}
+	if m := detailDurRe.FindStringSubmatch(body); m != nil {
+		d.duration = parseDurationColon(m[1])
+	}
+	tagSeen := make(map[string]bool)
+	for _, m := range detailTagRe.FindAllStringSubmatch(body, -1) {
+		tag := strings.TrimSpace(html.UnescapeString(m[1]))
+		if tag != "" && !tagSeen[tag] {
+			tagSeen[tag] = true
+			d.tags = append(d.tags, tag)
+		}
+	}
+	if m := detailStudioRe.FindStringSubmatch(body); m != nil {
+		d.studio = strings.TrimSpace(html.UnescapeString(m[1]))
+	}
+	return d
+}
+
+func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOpts, out chan<- scraper.SceneResult) {
+	defer close(out)
+
+	pathBase, dateSorted := s.resolveMode(studioURL)
+
+	seen := make(map[string]bool)
+	progressSent := false
+
+	for page := 1; ; page++ {
+		if ctx.Err() != nil {
+			return
+		}
+		if page > 1 && opts.Delay > 0 {
+			select {
+			case <-time.After(opts.Delay):
+			case <-ctx.Done():
+				return
+			}
+		}
+
+		u := pathBase
+		if page > 1 {
+			u += "/" + strconv.Itoa(page)
+		}
+
+		body, err := s.fetch(ctx, u)
+		if err != nil {
+			select {
+			case out <- scraper.Error(fmt.Errorf("page %d: %w", page, err)):
+			case <-ctx.Done():
+			}
+			return
+		}
+
+		entries := parseListing(body)
+		if len(entries) == 0 {
+			return
+		}
+
+		allSeen := true
+		for _, e := range entries {
+			if !seen[e.id] {
+				allSeen = false
+				break
+			}
+		}
+		if allSeen {
+			return
+		}
+
+		if !progressSent {
+			progressSent = true
+			select {
+			case out <- scraper.Progress(0):
+			case <-ctx.Done():
+				return
+			}
+		}
+
+		var work []listEntry
+		stoppedEarly := false
+		for _, e := range entries {
+			if seen[e.id] {
+				continue
+			}
+			seen[e.id] = true
+			if dateSorted && opts.KnownIDs[e.id] {
+				stoppedEarly = true
+				break
+			}
+			work = append(work, e)
+		}
+
+		scenes := s.fetchDetails(ctx, work, opts.Delay, studioURL)
+
+		for _, sc := range scenes {
+			if sc.Err != nil {
+				select {
+				case out <- scraper.Error(sc.Err):
+				case <-ctx.Done():
+				}
+				continue
+			}
+			select {
+			case out <- scraper.Scene(sc.Scene):
+			case <-ctx.Done():
+				return
+			}
+		}
+
+		if stoppedEarly {
+			select {
+			case out <- scraper.StoppedEarly():
+			case <-ctx.Done():
+			}
+			return
+		}
+	}
+}
+
+type sceneOrErr struct {
+	Scene models.Scene
+	Err   error
+}
+
+func (s *Scraper) fetchDetails(ctx context.Context, entries []listEntry, delay time.Duration, studioURL string) []sceneOrErr {
+	results := make([]sceneOrErr, len(entries))
+	var wg sync.WaitGroup
+
+	sem := make(chan struct{}, 4)
+	for i, e := range entries {
+		if ctx.Err() != nil {
+			break
+		}
+		wg.Add(1)
+		sem <- struct{}{}
+		go func(idx int, entry listEntry) {
+			defer wg.Done()
+			defer func() { <-sem }()
+
+			if delay > 0 {
+				select {
+				case <-time.After(delay):
+				case <-ctx.Done():
+					return
+				}
+			}
+
+			body, err := s.fetch(ctx, entry.url)
+			if err != nil {
+				results[idx] = sceneOrErr{Err: fmt.Errorf("detail %s: %w", entry.id, err)}
+				return
+			}
+
+			detail := parseDetail(body)
+			results[idx] = sceneOrErr{Scene: buildScene(entry, detail, studioURL)}
+		}(i, e)
+	}
+	wg.Wait()
+	return results
+}
+
+func buildScene(e listEntry, d detailData, studioURL string) models.Scene {
+	sc := models.Scene{
+		ID:         e.id,
+		SiteID:     "analvids",
+		StudioURL:  studioURL,
+		Title:      e.title,
+		URL:        e.url,
+		Thumbnail:  e.thumb,
+		Performers: d.performers,
+		Tags:       d.tags,
+		Studio:     d.studio,
+		ScrapedAt:  time.Now().UTC(),
+	}
+	if d.duration > 0 {
+		sc.Duration = d.duration
+	} else {
+		sc.Duration = e.dur
+	}
+	dateStr := d.date
+	if dateStr == "" {
+		dateStr = e.date
+	}
+	if dateStr != "" {
+		if t, err := time.Parse("2006-01-02", dateStr); err == nil {
+			sc.Date = t.UTC()
+		}
+	}
+	return sc
+}
+
+func (s *Scraper) resolveMode(studioURL string) (pathBase string, dateSorted bool) {
+	if m := studioSlugRe.FindStringSubmatch(studioURL); m != nil {
+		return s.base + "/studios/" + m[1], false
+	}
+	if m := modelPathRe.FindStringSubmatch(studioURL); m != nil {
+		return s.base + "/model/" + m[1], false
+	}
+	return s.base + "/new-videos", true
+}
+
+func (s *Scraper) fetch(ctx context.Context, u string) (string, error) {
+	if !strings.HasPrefix(u, "http") {
+		u = s.base + u
+	}
+	resp, err := httpx.Do(ctx, s.client, httpx.Request{
+		URL: u,
+		Headers: map[string]string{
+			"User-Agent": httpx.UserAgentFirefox,
+		},
+	})
+	if err != nil {
+		return "", err
+	}
+	defer func() { _ = resp.Body.Close() }()
+
+	b, err := httpx.ReadBody(resp.Body)
+	if err != nil {
+		return "", fmt.Errorf("reading body: %w", err)
+	}
+	return string(b), nil
+}
