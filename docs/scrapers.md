@@ -128,7 +128,7 @@
 | [BrasilVR](https://www.brasilvr.com) | `brasilvr.com` | POVR/WankzVR | No | Export JSON + listing page dates, uses `povrutil` |
 | [Idea Pocket](https://ideapocket.com) | `ideapocket.com/works/list/series/{id}`, `ideapocket.com/works/list/release`, `ideapocket.com/works/list/date/{date}`, `ideapocket.com/works/list/genre/{id}`, `ideapocket.com/works/list/label/{id}`, `ideapocket.com/actress/detail/{id}` | Up-Timely CMS | No | Thin wrapper around `uptimelyutil` |
 | [IWantClips](https://www.iwantclips.com) | `iwantclips.com/store/{id}/{username}` | IWantClips | Yes | JSON API, double HTML-unescaping |
-| [Jules Jordan](https://www.julesjordan.com/trial/) | `julesjordan.com/trial/`, `julesjordan.com/trial/categories/movies.html`, `julesjordan.com/trial/models/{slug}.html`, `julesjordan.com/trial/dvds/dvds.html` | ElevatedX CMS | No | HTML scraping, listing + detail page worker pool, 3 modes: scene listing (paginated), model page, DVD listing (two-level: DVD list → DVD detail → scene URLs) |
+| [Jules Jordan Network](https://www.julesjordan.com/trial/) (5 sites) | `{domain}/trial/`, `{domain}/trial/categories/movies.html`, `{domain}/trial/models/{slug}.html`, `{domain}/trial/dvds/dvds.html` | ElevatedX CMS | No | Table-driven `julesjordan` package via `julesjordanutil`, 3 template variants (JJ/Classic/Modern), listing + detail page worker pool, 3 modes: scene listing, model page, DVD listing. Sites: Jules Jordan, Manuel Ferrara, Girl Girl, Sperm Swallowers, The Ass Factory |
 | [Lady Sonia](https://tour.lady-sonia.com) | `lady-sonia.com` | KB Productions/Next.js | No | `__NEXT_DATA__` JSON parsing, 1500+ scenes, listing-only (no detail pages needed) |
 | [Lucas Entertainment](https://www.lucasentertainment.com) | `lucasentertainment.com`, `lucasentertainment.com/tag/{slug}` | WordPress REST API | No | WP JSON API with `?categories=10` (Scenes), 100/page, ~2400 scenes, performer extraction from title heuristic, OG image + embedded media thumbnails, tag-based filtering for model pages |
 | [LoyalFans](https://www.loyalfans.com) | `loyalfans.com/{creator_slug}` | LoyalFans API | No | POST `/api/v2/advanced-search`, cursor-based `page_token` pagination (20/page), session via `/api/v2/system-status`, filters results by owner slug |
@@ -302,6 +302,7 @@ Scrapers that share a platform use common utility packages to avoid duplication:
 | `ayloutil` | Aylo/Juan (REST API, instance token auth) | `aylo` | 19 sites + BangBros (standalone) + SpiceVids |
 | `cherrypimpsutil` | Cherry Pimps/BLT Innovations (Elevated X CMS, HTML listing) | `cherrypimps` | 2 sites |
 | `gammautil` | Gamma Entertainment (Algolia search API, 5 segments: adulttime, evilangel, evilangelnetwork, dfxtra, openlife) | `gamma` | 24 sites |
+| `julesjordanutil` | Jules Jordan Network (ElevatedX CMS, 3 template variants: JJ/Classic/Modern) | `julesjordan` | 5 sites |
 | `veutil` | WordPress video-elements theme (WP REST API) | `videoelements` | 13 sites |
 | `scoregrouputil` | Score Group (HTML listing + detail pages) | `scoregroup` | 93 sites |
 | `modelcentroutil` | ModelCentro/AdultCentro (JSON API at `/api/content.load`) | `modelcentro` | 26 sites |
