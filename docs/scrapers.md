@@ -302,6 +302,21 @@
 | [Lesbian Factor](https://www.lesbianfactor.com) | `lesbianfactor.com` | Gamma/Algolia | No | Algolia search API (adulttime segment), Devil's Film Network sub-site, uses `gammautil` |
 | [Out of the Family](https://www.outofthefamily.com) | `outofthefamily.com` | Gamma/Algolia | No | Algolia search API (adulttime segment), Devil's Film Network sub-site, uses `gammautil` |
 | [Squirtalicious](https://www.squirtalicious.com) | `squirtalicious.com` | Gamma/Algolia | No | Algolia search API (adulttime segment), Devil's Film Network sub-site, uses `gammautil` |
+| [Fame Digital](https://www.famedigital.com) | `famedigital.com` | Gamma/Algolia | No | Algolia search API (adulttime segment), Fame Digital parent, uses `gammautil` |
+| [Big Fat Creampie](https://www.bigfatcreampie.com) | `bigfatcreampie.com` | Gamma/Algolia | No | Algolia search API (adulttime segment), Fame Digital sub-site, uses `gammautil` |
+| [Bushy Bushy](https://www.bushybushy.com) | `bushybushy.com` | Gamma/Algolia | No | Algolia search API (adulttime segment), Fame Digital sub-site, uses `gammautil` |
+| [Cumshot Oasis](https://www.cumshotoasis.com) | `cumshotoasis.com` | Gamma/Algolia | No | Algolia search API (adulttime segment), Fame Digital sub-site, uses `gammautil` |
+| [Curry Creampie](https://www.currycreampie.com) | `currycreampie.com` | Gamma/Algolia | No | Algolia search API (adulttime segment), Fame Digital sub-site, uses `gammautil` |
+| [Granny Ghetto](https://www.grannyghetto.com) | `grannyghetto.com` | Gamma/Algolia | No | Algolia search API (adulttime segment), Fame Digital sub-site, uses `gammautil` |
+| [Low Art Films](https://www.lowartfilms.com) | `lowartfilms.com` | Gamma/Algolia | No | Algolia search API (adulttime segment), Fame Digital sub-site, uses `gammautil` |
+| [Motherfucker XXX](https://www.motherfuckerxxx.com) | `motherfuckerxxx.com` | Gamma/Algolia | No | Algolia search API (adulttime segment), Fame Digital sub-site, uses `gammautil` |
+| [My Teen Oasis](https://www.myteenoasis.com) | `myteenoasis.com` | Gamma/Algolia | No | Algolia search API (adulttime segment), Fame Digital sub-site, uses `gammautil` |
+| [POV This](https://www.povthis.com) | `povthis.com` | Gamma/Algolia | No | Algolia search API (adulttime segment), Fame Digital sub-site, uses `gammautil` |
+| [Silverstone DVD](https://www.silverstonedvd.com) | `silverstonedvd.com` | Gamma/Algolia | No | Algolia search API (adulttime segment), Fame Digital sub-site, uses `gammautil` |
+| [Silvia Saint](https://www.silviasaint.com) | `silviasaint.com` | Gamma/Algolia | No | Algolia search API (adulttime segment), Fame Digital sub-site, uses `gammautil` |
+| [Tera Patrick](https://www.terapatrick.com) | `terapatrick.com` | Gamma/Algolia | No | Algolia search API (adulttime segment), Fame Digital sub-site, RefererBase override (legacy non-Gamma site), uses `gammautil` |
+| [Transsexual Roadtrip](https://www.transsexualroadtrip.com) | `transsexualroadtrip.com` | Gamma/Algolia | No | Algolia search API (adulttime segment), Fame Digital sub-site, uses `gammautil` |
+| [White Ghetto](https://www.whiteghetto.com) | `whiteghetto.com` | Gamma/Algolia | No | Algolia search API (adulttime segment), Fame Digital sub-site, uses `gammautil` |
 | [Burning Angel](https://www.burningangel.com) | `burningangel.com` | Gamma/Algolia | No | Algolia search API, uses `gammautil` |
 | [Filthy Kings](https://www.filthykings.com) | `filthykings.com` | Gamma/Algolia | No | Algolia search API, uses `gammautil` |
 | [Gangbang Creampie](https://www.gangbangcreampie.com) | `gangbangcreampie.com` | Gamma/Algolia | No | Algolia search API, uses `gammautil` |
@@ -367,7 +382,7 @@ Scrapers that share a platform use common utility packages to avoid duplication:
 | `adultprimeutil` | Adult Prime (HTML listing + detail pages, `var params` pagination) | `adultprime` | 97 studios |
 | `ayloutil` | Aylo/Juan (REST API, instance token auth) | `aylo` | 31 sites + BangBros (standalone) + SpiceVids |
 | `cherrypimpsutil` | Cherry Pimps/BLT Innovations (Elevated X CMS, HTML listing) | `cherrypimps` | 2 sites |
-| `gammautil` | Gamma Entertainment (Algolia search API, 5 segments: adulttime, evilangel, evilangelnetwork, dfxtra, openlife) | `gamma` | 59 sites |
+| `gammautil` | Gamma Entertainment (Algolia search API, 5 segments: adulttime, evilangel, evilangelnetwork, dfxtra, openlife) | `gamma` | 74 sites |
 | `groobyutil` | Grooby CMS (HTML listing, NATS platform, `/tour/categories/movies_{page}_d.html` pagination) | `grooby` | 42 sites |
 | `julesjordanutil` | Jules Jordan Network (ElevatedX CMS, 3 template variants: JJ/Classic/Modern) | `julesjordan` | 5 sites |
 | `metartutil` | MetArt Network (JSON API at `/api/updates`, movies filtered client-side) | `metart` | 13 sites |

@@ -72,6 +72,23 @@ var sites = []siteConfig{
 	{"outofthefamily", "outofthefamily.com", "Out of the Family", "", "", ""},
 	{"squirtalicious", "squirtalicious.com", "Squirtalicious", "", "", ""},
 
+	// Adult Time segment — Fame Digital sub-sites
+	{"famedigital", "famedigital.com", "Fame Digital", "", "", ""},
+	{"bigfatcreampie", "bigfatcreampie.com", "Big Fat Creampie", "", "", ""},
+	{"bushybushy", "bushybushy.com", "Bushy Bushy", "", "", ""},
+	{"cumshotoasis", "cumshotoasis.com", "Cumshot Oasis", "", "", ""},
+	{"currycreampie", "currycreampie.com", "Curry Creampie", "", "", ""},
+	{"grannyghetto", "grannyghetto.com", "Granny Ghetto", "", "", ""},
+	{"lowartfilms", "lowartfilms.com", "Low Art Films", "", "", ""},
+	{"motherfuckerxxx", "motherfuckerxxx.com", "Motherfucker XXX", "", "", ""},
+	{"myteenoasis", "myteenoasis.com", "My Teen Oasis", "", "", ""},
+	{"povthis", "povthis.com", "POV This", "", "", ""},
+	{"silverstonedvd", "silverstonedvd.com", "Silverstone DVD", "", "", ""},
+	{"silviasaint", "silviasaint.com", "Silvia Saint", "", "", ""},
+	{"terapatrick", "terapatrick.com", "Tera Patrick", "terapatrick", "https://www.famedigital.com", ""},
+	{"transsexualroadtrip", "transsexualroadtrip.com", "Transsexual Roadtrip", "", "", ""},
+	{"whiteghetto", "whiteghetto.com", "White Ghetto", "", "", ""},
+
 	// Evil Angel Network segment (evilangelnetwork) — director-branded sub-sites
 	{"buttman", "buttman.com", "Buttman", "buttman", "", ""},
 	{"analtrixxx", "analtrixxx.com", "AnalTriXXX", "analtrixxx", "", ""},
