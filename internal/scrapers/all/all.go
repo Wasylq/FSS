@@ -15,6 +15,7 @@ import (
 	_ "github.com/Wasylq/FSS/internal/scrapers/aylo"
 	_ "github.com/Wasylq/FSS/internal/scrapers/bamvisions"
 	_ "github.com/Wasylq/FSS/internal/scrapers/bangbros"
+	_ "github.com/Wasylq/FSS/internal/scrapers/barebackstudios"
 	_ "github.com/Wasylq/FSS/internal/scrapers/charleechase"
 	_ "github.com/Wasylq/FSS/internal/scrapers/cherrypimps"
 	_ "github.com/Wasylq/FSS/internal/scrapers/clips4sale"
