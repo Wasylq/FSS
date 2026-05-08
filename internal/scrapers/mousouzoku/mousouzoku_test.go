@@ -11,9 +11,9 @@ import (
 )
 
 const fixtureDateArchive = `<html><body>
-<ul class="c-list-date">
-<li><a href="/works/list/date/20260505/">2026年5月5日</a></li>
-<li><a href="/works/list/date/20260428/">2026年4月28日</a></li>
+<ul class="area-list lst-media-date">
+<li class="c-media-item"><a href="/works/list/date/20260505"><p class="ttl-media">2026年5月5日</p></a></li>
+<li class="c-media-item"><a href="/works/list/date/20260428"><p class="ttl-media">2026年4月28日</p></a></li>
 </ul>
 </body></html>`
 

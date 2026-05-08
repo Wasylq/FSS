@@ -71,7 +71,7 @@ var (
 	tagDDRe    = regexp.MustCompile(`(?s)ジャンル.*?</dd>`)
 	btnTextRe  = regexp.MustCompile(`<p class="tx-btn">(.*?)</p>`)
 	coverRe    = regexp.MustCompile(`src="(/contents/works/[^"]+pl\.jpg)[^"]*"`)
-	datePathRe = regexp.MustCompile(`href="(/works/list/date/\d{8}/)"`)
+	datePathRe = regexp.MustCompile(`href="/works/list/date/(\d{8})/?"`)
 )
 
 func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOpts, out chan<- scraper.SceneResult) {
@@ -103,9 +103,10 @@ func (s *Scraper) runDateArchive(ctx context.Context, opts scraper.ListOpts, out
 	seen := map[string]bool{}
 	var dates []string
 	for _, m := range matches {
-		if !seen[m[1]] {
-			seen[m[1]] = true
-			dates = append(dates, m[1])
+		d := m[1]
+		if !seen[d] {
+			seen[d] = true
+			dates = append(dates, "/works/list/date/"+d+"/")
 		}
 	}
 
