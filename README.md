@@ -9,7 +9,7 @@ Scrapes all scenes and metadata from a studio URL. Designed to be easily extende
 
 ## Supported sites
 
-**522 sites** across 15+ platforms — [full list with URL patterns →](docs/scrapers.md)
+**564 sites** across 15+ platforms — [full list with URL patterns →](docs/scrapers.md)
 
 | Platform | Count | Examples |
 |----------|------:|---------|
@@ -25,6 +25,7 @@ Scrapes all scenes and metadata from a studio URL. Designed to be easily extende
 | ModelCentro | 26 | Penny Barber, The Jerky Girls, Mugur Porn, Thicc Vision, Cum Trainer, Monster Males, … |
 | MetArt Network | 13 | MetArt, SexArt, ALS Scan, Viv Thomas, MetArt X, Errotica Archives, Stunning 18, … |
 | Railway/Express | 3 | Smoking Erotica, Smoking Models, Spanking Glamour |
+| Grooby | 42 | Grooby Girls, TGirls.xxx, Brazilian Transsexuals, TGirl Japan, Grooby VR, Black TGirls, Femout.xxx, Ladyboy.xxx, … |
 | Stashbox | 1+ | StashDB, any stashbox instance (config-driven) |
 | Standalone | 52 | Anal Vids, APClips, Bare Back Studios, Clips4Sale, Crunchboy, DEEP'S, Fakings, Glory Quest, GrandparentsX, Jules Jordan, Kink, KM Produce, Lucas Entertainment, ManyVids, Mousouzoku, Naked News, Pornhub, Pure CFNM, r18.dev, Raw Fuck Club, SexLikeReal, Takara TV, VENUS, … |
 

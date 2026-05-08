@@ -32,6 +32,7 @@ import (
 	_ "github.com/Wasylq/FSS/internal/scrapers/gamma"
 	_ "github.com/Wasylq/FSS/internal/scrapers/gloryquest"
 	_ "github.com/Wasylq/FSS/internal/scrapers/grandparentsx"
+	_ "github.com/Wasylq/FSS/internal/scrapers/grooby"
 	_ "github.com/Wasylq/FSS/internal/scrapers/houseofyre"
 	_ "github.com/Wasylq/FSS/internal/scrapers/iwantclips"
 	_ "github.com/Wasylq/FSS/internal/scrapers/jerkoffinstructions"
