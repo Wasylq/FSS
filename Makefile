@@ -21,11 +21,34 @@ build: ## Build the fss binary into ./fss.
 test: ## Run unit tests with race detector (no integration tag).
 	$(GO) test -race -count=1 $(PKGS)
 
+SHELL := /bin/bash
+
 .PHONY: smoke
 smoke: ## Run integration smoke tests against live sites + Stash. Manual only — never in CI.
 	@echo "==> Integration smoke tests (live HTTP, not for CI)"
 	@echo "==> Tests with placeholder URLs will SKIP. Stash tests skip if not reachable."
-	$(GO) test -tags=integration -timeout=$(SMOKE_TIMEOUT) -v ./internal/scrapers/... ./stash/...
+	@$(GO) test -tags=integration -timeout=$(SMOKE_TIMEOUT) -v ./internal/scrapers/... ./stash/... 2>&1 | tee /tmp/fss-smoke.log; \
+	rc=$${PIPESTATUS[0]}; \
+	echo ""; \
+	echo "========================================"; \
+	echo "  SMOKE TEST SUMMARY"; \
+	echo "========================================"; \
+	pass=$$(grep -c '^--- PASS' /tmp/fss-smoke.log || true); \
+	fails=$$(grep -c '^--- FAIL' /tmp/fss-smoke.log || true); \
+	skip=$$(grep -c '^--- SKIP' /tmp/fss-smoke.log || true); \
+	echo "  PASS: $$pass  FAIL: $$fails  SKIP: $$skip"; \
+	echo ""; \
+	if [ "$$fails" -gt 0 ]; then \
+		echo "  Failed tests:"; \
+		grep '^--- FAIL' /tmp/fss-smoke.log | sed 's/^--- FAIL: /    ✗ /' | sed 's/ (.*//' ; \
+		echo ""; \
+		echo "  Failed packages:"; \
+		grep '^FAIL	' /tmp/fss-smoke.log | sed 's/^FAIL/    ✗/' ; \
+		echo ""; \
+	fi; \
+	echo "========================================"; \
+	rm -f /tmp/fss-smoke.log; \
+	exit $$rc
 
 .PHONY: smoke-one
 smoke-one: ## Run smoke for one scraper. Usage: make smoke-one SCRAPER=manyvids

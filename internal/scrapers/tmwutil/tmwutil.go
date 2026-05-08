@@ -21,6 +21,7 @@ type SiteConfig struct {
 	Slug       string // TMW network slug, e.g. "anal-angels" (used in teenmegaworld.net URLs)
 	Domain     string // subsite domain, e.g. "anal-angels.com"
 	StudioName string
+	Hub        bool // true if domain redirects to teenmegaworld.net hub
 }
 
 type Scraper struct {
@@ -29,10 +30,16 @@ type Scraper struct {
 	Config SiteConfig
 }
 
+const hubBase = "https://teenmegaworld.net"
+
 func NewScraper(cfg SiteConfig) *Scraper {
+	base := "https://" + cfg.Domain
+	if cfg.Hub {
+		base = hubBase
+	}
 	return &Scraper{
 		client: httpx.NewClient(30 * time.Second),
-		base:   "https://" + cfg.Domain,
+		base:   base,
 		Config: cfg,
 	}
 }
@@ -54,7 +61,8 @@ func (s *Scraper) MatchesURL(u string) bool {
 	if strings.Contains(lower, "://"+domain) || strings.Contains(lower, "://www."+domain) {
 		return true
 	}
-	return strings.Contains(lower, "teenmegaworld.net/categories/"+slug)
+	return strings.Contains(lower, "teenmegaworld.net/categories/"+slug) ||
+		strings.Contains(lower, "teenmegaworld.net/sites/"+slug)
 }
 
 func (s *Scraper) ListScenes(ctx context.Context, _ string, opts scraper.ListOpts) (<-chan scraper.SceneResult, error) {
@@ -111,7 +119,12 @@ func (s *Scraper) run(ctx context.Context, opts scraper.ListOpts, out chan<- scr
 				return
 			}
 
-			url := fmt.Sprintf("%s/categories/movies_%d_d.html", s.base, page)
+			var url string
+			if s.Config.Hub {
+				url = fmt.Sprintf("%s/categories/%s_%d_d.html", s.base, s.Config.Slug, page)
+			} else {
+				url = fmt.Sprintf("%s/categories/movies_%d_d.html", s.base, page)
+			}
 			body, err := s.fetchPage(ctx, url)
 			if err != nil {
 				select {
@@ -174,7 +187,7 @@ type listingItem struct {
 }
 
 var (
-	cardRe  = regexp.MustCompile(`(?s)<a\s+class="thumb\s+thumb-video[^"]*"\s+href="([^"]+)"[^>]*>(.+?)</a>`)
+	cardRe  = regexp.MustCompile(`(?s)<a\s+class="thumb\s+thumb-(?:video|photo)[^"]*"\s+href="([^"]+)"[^>]*>(.+?)</a>`)
 	slugRe  = regexp.MustCompile(`/trailers/([^/.]+)\.html`)
 	titleRe = regexp.MustCompile(`class="thumb__title-link"[^>]*title="([^"]+)"`)
 	dateRe  = regexp.MustCompile(`<time[^>]*datetime="([^"]+)"`)

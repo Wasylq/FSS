@@ -164,7 +164,7 @@ func buildQuery(kind filterKind, value string) map[string]any {
 		},
 		"sort": []any{
 			map[string]any{"publishedDate": map[string]any{"order": "desc"}},
-			map[string]any{"itemId": map[string]any{"order": "desc"}},
+			map[string]any{"_id": map[string]any{"order": "desc"}},
 		},
 	}
 }

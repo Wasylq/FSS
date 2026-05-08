@@ -302,6 +302,93 @@ func TestDetailParsing(t *testing.T) {
 	}
 }
 
+const fixtureHubListing = `<!DOCTYPE html>
+<html><head></head><body>
+<div class="content-block">
+    <div class="list-page-heading d-flex">
+        <span class="list-page-heading__count clr-main">18</span>
+    </div>
+    <div class="thumb-list">
+        <a class="thumb thumb-photo thumb--loading" href="%s/trailers/Hub-Scene-One.html">
+            <div class="thumb__image__container d-block" data-thumb-scroller>
+                <picture class="thumb__picture thumb__picture--set d-block rounding">
+                    <img class="ani-th thumb__image" srcset="content/contentthumbs/30/03/300303-1x.jpg 1x,content/contentthumbs/30/03/300303-2x.jpg 2x" />
+                </picture>
+            </div>
+            <div class="thumb__info">
+                <header class="thumb__heading d-flex">
+                    <h2 class="thumb__title">
+                        <span class="thumb__title-link" href="%s/trailers/Hub-Scene-One.html" title="Hub Scene One">Hub Scene One</span>
+                    </h2>
+                </header>
+                <ul class="thumb__actor-list actor__list d-flex">
+                    <li class="actor__element">
+                        <span class="actor__name" title="Hub Actor">Hub Actor</span>
+                    </li>
+                </ul>
+                <div class="thumb__detail d-flex">
+                    <span class="thumb__detail__site-link clr-grey">Hub Studio</span>
+                    <time class="thumb__detail__datetime clr-grey" datetime="2026-04-15T08:00:00">April 15, 2026</time>
+                </div>
+            </div>
+        </a>
+    </div>
+</div>
+</body></html>`
+
+func hubListingHTML(base string) string {
+	return fmt.Sprintf(fixtureHubListing, base, base)
+}
+
+func TestListScenesHub(t *testing.T) {
+	var ts *httptest.Server
+	ts = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case "/categories/hubstudio_1_d.html":
+			_, _ = fmt.Fprint(w, hubListingHTML(ts.URL))
+		case "/categories/hubstudio_2_d.html":
+			_, _ = fmt.Fprint(w, `<html><body></body></html>`)
+		case "/trailers/Hub-Scene-One.html":
+			_, _ = fmt.Fprint(w, fixtureDetail)
+		default:
+			http.NotFound(w, r)
+		}
+	}))
+	defer ts.Close()
+
+	s := &Scraper{
+		client: ts.Client(),
+		base:   ts.URL,
+		Config: SiteConfig{
+			SiteID:     "tmw-hubstudio",
+			Slug:       "hubstudio",
+			Domain:     "hubstudio.com",
+			StudioName: "Hub Studio",
+			Hub:        true,
+		},
+	}
+	ch, err := s.ListScenes(context.Background(), ts.URL+"/categories/hubstudio_1_d.html", scraper.ListOpts{})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	var sceneCount int
+	for r := range ch {
+		switch r.Kind {
+		case scraper.KindScene:
+			sceneCount++
+			if r.Scene.ID != "Hub-Scene-One" {
+				t.Errorf("scene ID = %q, want Hub-Scene-One", r.Scene.ID)
+			}
+		case scraper.KindError:
+			t.Errorf("unexpected error: %v", r.Err)
+		}
+	}
+	if sceneCount != 1 {
+		t.Errorf("got %d scenes, want 1", sceneCount)
+	}
+}
+
 func TestMatchesURL(t *testing.T) {
 	s := NewScraper(SiteConfig{
 		SiteID:     "tmw-anal-angels",
@@ -318,6 +405,7 @@ func TestMatchesURL(t *testing.T) {
 		{"https://anal-angels.com/trailers/Some-Scene.html", true},
 		{"https://www.anal-angels.com/categories/movies.html", true},
 		{"https://teenmegaworld.net/categories/anal-angels_1_d.html", true},
+		{"https://teenmegaworld.net/sites/anal-angels", true},
 		{"https://teenmegaworld.net/categories/beauty4k_1_d.html", false},
 		{"https://other-site.com/categories/movies.html", false},
 	}

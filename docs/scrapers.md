@@ -142,7 +142,7 @@
 | [Madonna](https://madonna-av.com) | `madonna-av.com/works/list/series/{id}`, `madonna-av.com/works/list/release`, `madonna-av.com/works/list/date/{date}`, `madonna-av.com/works/list/genre/{id}`, `madonna-av.com/works/list/label/{id}`, `madonna-av.com/actress/detail/{id}` | Up-Timely CMS | No | Thin wrapper around `uptimelyutil` |
 | [ManyVids](https://www.manyvids.com) | `manyvids.com/Profile/{id}/{slug}/Store/Videos` | ManyVids | Yes | JSON API, detail-page worker pool |
 | [Mature.nl](https://www.mature.nl) | `mature.nl/en/updates`, `mature.nl/en/model/{id}`, `mature.nl/en/niche/{id}/{page}/{slug}` | Custom | No | HTML scraping, paginated listing + detail page worker pool for model URLs |
-| [MetArt](https://www.metart.com) | `metart.com` | MetArt Network | No | JSON API, table-driven `metart` package using `metartutil`, 16 sites |
+| [MetArt](https://www.metart.com) | `metart.com` | MetArt Network | No | JSON API, table-driven `metart` package using `metartutil`, 13 sites |
 | [MetArt Network](https://www.metartnetwork.com) | `metartnetwork.com` | MetArt Network | No | MetArt Network aggregator, `metartutil` |
 | [SexArt](https://www.sexart.com) | `sexart.com` | MetArt Network | No | MetArt Network, `metartutil` |
 | [The Life Erotic](https://www.thelifeerotic.com) | `thelifeerotic.com` | MetArt Network | No | MetArt Network, `metartutil` |
@@ -151,9 +151,6 @@
 | [Viv Thomas](https://www.vivthomas.com) | `vivthomas.com` | MetArt Network | No | MetArt Network, `metartutil` |
 | [MetArt X](https://www.metartx.com) | `metartx.com` | MetArt Network | No | MetArt Network, `metartutil` |
 | [Stunning 18](https://www.stunning18.com) | `stunning18.com` | MetArt Network | No | MetArt Network, `metartutil` |
-| [Erotic Beauty](https://www.eroticbeauty.com) | `eroticbeauty.com` | MetArt Network | No | MetArt Network, `metartutil` |
-| [Domai](https://www.domai.com) | `domai.com` | MetArt Network | No | MetArt Network, `metartutil` |
-| [Goddess Nudes](https://www.goddessnudes.com) | `goddessnudes.com` | MetArt Network | No | MetArt Network, `metartutil` |
 | [Rylsky Art](https://www.rylskyart.com) | `rylskyart.com` | MetArt Network | No | MetArt Network, `metartutil` |
 | [Eternal Desire](https://www.eternaldesire.com) | `eternaldesire.com` | MetArt Network | No | MetArt Network, `metartutil` |
 | [Straplez](https://www.straplez.com) | `straplez.com` | MetArt Network | No | MetArt Network, `metartutil` |
@@ -238,7 +235,7 @@
 | [Taboo Heat](https://www.tabooheat.com) | `tabooheat.com` | Gamma/Algolia | No | Thin wrapper around `gammautil` |
 | [Takara TV](https://www.takara-tv.jp) | `takara-tv.jp`, `takara-tv.jp/search.php?ac={id}`, `takara-tv.jp/search.php?lb={id}` | Custom PHP | No | HTML listing (20/page, `search.php` pagination) + detail page worker pool, actress/label search, performer extraction from title or model field, ~1100 scenes |
 | [Tara Tainton](https://taratainton.com) | `taratainton.com` | WordPress | Yes | Sitemap-driven, HTML meta parsing, uses `wputil` |
-| Teen Mega World (36 studios) | `{domain}/categories/movies`, `{domain}/trailers/{slug}`, `teenmegaworld.net/categories/{slug}` | Teen Mega World | No | Table-driven `tmw` package using `tmwutil`, list+detail with worker pool, HTML listing + OG meta detail pages. 36 subsites incl. Beauty Angels (775 scenes), TMW VR Net (839), Teen Sex Movs (748), Fuck Studies (329), Anal Angels (293), Ex GF Box (235), etc. |
+| Teen Mega World (35 studios) | `{domain}/categories/movies`, `{domain}/trailers/{slug}`, `teenmegaworld.net/categories/{slug}` | Teen Mega World | No | Table-driven `tmw` package using `tmwutil`, list+detail with worker pool, HTML listing + OG meta detail pages. Hub mode for sites redirected to teenmegaworld.net. 35 subsites incl. Beauty Angels (775 scenes), TMW VR Net (839), Teen Sex Movs (748), Fuck Studies (329), Anal Angels (293), Ex GF Box (235), etc. |
 | Real Spankings (5 sites) | `{domain}` | Real Spankings Network | No | Table-driven `realspankings` package using `realspankingsutil`, listing-only (no detail pages). Per-site parsing: RSI (page-based, ~3.2k scenes), Spanked Coeds (search API, 1k), STB (year-based, 474), STJ (page-based, 331), Bailey (single page, 30). |
 | [Evil Angel](https://www.evilangel.com) | `evilangel.com` | Gamma/Algolia | No | Algolia search API (evilangel segment), ~20k scenes, uses `gammautil` |
 | [TS Factor](https://www.tsfactor.com) | `tsfactor.com` | Gamma/Algolia | No | Algolia search API (evilangel segment), uses `gammautil` |
@@ -322,7 +319,7 @@ Scrapers that share a platform use common utility packages to avoid duplication:
 | `cherrypimpsutil` | Cherry Pimps/BLT Innovations (Elevated X CMS, HTML listing) | `cherrypimps` | 2 sites |
 | `gammautil` | Gamma Entertainment (Algolia search API, 5 segments: adulttime, evilangel, evilangelnetwork, dfxtra, openlife) | `gamma` | 24 sites |
 | `julesjordanutil` | Jules Jordan Network (ElevatedX CMS, 3 template variants: JJ/Classic/Modern) | `julesjordan` | 5 sites |
-| `metartutil` | MetArt Network (JSON API at `/api/updates`, movies filtered client-side) | `metart` | 16 sites |
+| `metartutil` | MetArt Network (JSON API at `/api/updates`, movies filtered client-side) | `metart` | 13 sites |
 | `veutil` | WordPress video-elements theme (WP REST API) | `videoelements` | 13 sites |
 | `scoregrouputil` | Score Group (HTML listing + detail pages) | `scoregroup` | 93 sites |
 | `modelcentroutil` | ModelCentro/AdultCentro (JSON API at `/api/content.load`) | `modelcentro` | 26 sites |
@@ -331,7 +328,7 @@ Scrapers that share a platform use common utility packages to avoid duplication:
 | `sexmexutil` | SexMex Pro CMS (HTML scraping). **Quirk:** CMS returns HTTP 500 with valid HTML on some pages. | `sexmexpro` | 3 sites |
 | `railwayutil` | Railway/Express/MongoDB (single JSON API call) | `railway` | 3 sites |
 | `realspankingsutil` | Real Spankings Network (PHP CMS, base64 URL params, per-site parsing) | `realspankings` | 5 sites |
-| `tmwutil` | Teen Mega World (HTML listing + OG meta detail pages, date-sorted pagination) | `tmw` | 36 sites |
+| `tmwutil` | Teen Mega World (HTML listing + OG meta detail pages, date-sorted pagination, hub mode for redirected domains) | `tmw` | 35 sites |
 | `wankitnowutil` | Wank It Now network (Next.js `_next/data` JSON API, buildId bootstrap) | `wankitnow` | 6 sites |
 | `wputil` | WordPress (sitemap + HTML meta parsing) | _(standalone packages)_ | 5 sites (each has custom parsing) |
 

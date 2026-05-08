@@ -56,7 +56,7 @@ func (s *Scraper) ListScenes(ctx context.Context, studioURL string, opts scraper
 }
 
 var (
-	cardSplitRe   = regexp.MustCompile(`<div class="[^"]*browse-last-update-item[^"]*"`)
+	cardSplitRe   = regexp.MustCompile(`<div class="[^"]*watch-slide watch-slide-new[^"]*"`)
 	cardVideoRe   = regexp.MustCompile(`<a href="(/video/([A-Za-z0-9]+)-[^"]*)"[^>]*title="([^"]*)"`)
 	cardThumbRe   = regexp.MustCompile(`videoPreviewDemo"[^>]*data-src="([^"]+)"`)
 	cardChannelRe = regexp.MustCompile(`(?s)<div class="browse-channel-name">\s*<a[^>]*title="([^"]*)"`)
@@ -315,20 +315,24 @@ func (s *Scraper) fetchDetails(ctx context.Context, entries []listEntry, delay t
 				return
 			}
 			detail := parseDetail(body)
-			results[idx] = sceneOrErr{Scene: buildScene(entry, detail, studioURL)}
+			results[idx] = sceneOrErr{Scene: buildScene(entry, detail, studioURL, s.base)}
 		}(i, e)
 	}
 	wg.Wait()
 	return results
 }
 
-func buildScene(e listEntry, d detailData, studioURL string) models.Scene {
+func buildScene(e listEntry, d detailData, studioURL string, base string) models.Scene {
+	sceneURL := e.url
+	if !strings.HasPrefix(sceneURL, "http") {
+		sceneURL = base + sceneURL
+	}
 	sc := models.Scene{
 		ID:          e.id,
 		SiteID:      "rawfuckclub",
 		StudioURL:   studioURL,
 		Title:       e.title,
-		URL:         e.url,
+		URL:         sceneURL,
 		Thumbnail:   e.thumb,
 		Performers:  d.performers,
 		Tags:        d.tags,

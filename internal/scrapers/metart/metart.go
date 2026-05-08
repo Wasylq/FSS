@@ -7,11 +7,8 @@ import (
 
 var sites = []metartutil.SiteConfig{
 	{SiteID: "alsscan", Domain: "alsscan.com", StudioName: "ALS Scan"},
-	{SiteID: "domai", Domain: "domai.com", StudioName: "Domai"},
-	{SiteID: "eroticbeauty", Domain: "eroticbeauty.com", StudioName: "Erotic Beauty"},
 	{SiteID: "erroticaarchives", Domain: "errotica-archives.com", StudioName: "Errotica Archives"},
 	{SiteID: "eternaldesire", Domain: "eternaldesire.com", StudioName: "Eternal Desire"},
-	{SiteID: "goddessnudes", Domain: "goddessnudes.com", StudioName: "Goddess Nudes"},
 	{SiteID: "lovehairy", Domain: "lovehairy.com", StudioName: "Love Hairy"},
 	{SiteID: "metart", Domain: "metart.com", StudioName: "MetArt"},
 	{SiteID: "metartnetwork", Domain: "metartnetwork.com", StudioName: "MetArt Network"},
