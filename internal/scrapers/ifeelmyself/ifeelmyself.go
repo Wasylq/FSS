@@ -1,0 +1,286 @@
+package ifeelmyself
+
+import (
+	"context"
+	"fmt"
+	"net/http"
+	"regexp"
+	"strconv"
+	"strings"
+	"time"
+
+	"github.com/Wasylq/FSS/internal/httpx"
+	"github.com/Wasylq/FSS/models"
+	"github.com/Wasylq/FSS/scraper"
+)
+
+const (
+	siteBase     = "https://ifeelmyself.com"
+	pageSize     = 12
+	defaultDelay = 500 * time.Millisecond
+)
+
+type Scraper struct {
+	client *http.Client
+}
+
+func New() *Scraper {
+	return &Scraper{client: httpx.NewClient(30 * time.Second)}
+}
+
+func init() { scraper.Register(New()) }
+
+func (s *Scraper) ID() string { return "ifeelmyself" }
+
+func (s *Scraper) Patterns() []string {
+	return []string{
+		"ifeelmyself.com",
+		"ifeelmyself.com/public/main.php?page=artist_bio&artist_id={id}",
+	}
+}
+
+var matchRe = regexp.MustCompile(`^https?://(?:www\.)?ifeelmyself\.com`)
+
+func (s *Scraper) MatchesURL(u string) bool { return matchRe.MatchString(u) }
+
+func (s *Scraper) ListScenes(ctx context.Context, studioURL string, opts scraper.ListOpts) (<-chan scraper.SceneResult, error) {
+	out := make(chan scraper.SceneResult)
+	go s.run(ctx, studioURL, opts, out)
+	return out, nil
+}
+
+var artistPageRe = regexp.MustCompile(`artist_id=([A-Za-z0-9]+)`)
+
+func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOpts, out chan<- scraper.SceneResult) {
+	defer close(out)
+
+	delay := opts.Delay
+	if delay == 0 {
+		delay = defaultDelay
+	}
+
+	baseURL := siteBase + "/public/main.php?page=view&mode=all"
+	if m := artistPageRe.FindStringSubmatch(studioURL); m != nil {
+		baseURL = siteBase + "/public/main.php?page=artist_bio&artist_id=" + m[1]
+	}
+
+	totalSent := false
+	for offset := 0; ; offset += pageSize {
+		if ctx.Err() != nil {
+			return
+		}
+
+		if offset > 0 {
+			select {
+			case <-time.After(delay):
+			case <-ctx.Done():
+				return
+			}
+		}
+
+		pageURL := fmt.Sprintf("%s&offset=%d", baseURL, offset)
+		scenes, err := s.fetchPage(ctx, pageURL, studioURL)
+		if err != nil {
+			select {
+			case out <- scraper.Error(fmt.Errorf("offset %d: %w", offset, err)):
+			case <-ctx.Done():
+			}
+			return
+		}
+
+		if len(scenes) == 0 {
+			return
+		}
+
+		if !totalSent {
+			select {
+			case out <- scraper.Progress(0):
+			case <-ctx.Done():
+				return
+			}
+			totalSent = true
+		}
+
+		for _, scene := range scenes {
+			if opts.KnownIDs[scene.ID] {
+				select {
+				case out <- scraper.StoppedEarly():
+				case <-ctx.Done():
+				}
+				return
+			}
+			select {
+			case out <- scraper.Scene(scene):
+			case <-ctx.Done():
+				return
+			}
+		}
+	}
+}
+
+var (
+	cardRe      = regexp.MustCompile(`(?s)<table[^>]*class="ThumbTab ppss-scene"[^>]*data-scene-id="(\d+)"[^>]*data-scene-price="([^"]*)"[^>]*>.*?</TABLE>`)
+	performerRe = regexp.MustCompile(`artist_bio&amp;artist_id=([A-Za-z0-9]+)'[^>]*>([^<]+)</a>|artist_bio&artist_id=([A-Za-z0-9]+)'[^>]*>([^<]+)</a>`)
+	titleRe     = regexp.MustCompile(`&nbsp;in&nbsp;\s*\n?\s*"([^"]+)"`)
+	durationRe  = regexp.MustCompile(`(?:4K|HD|SD)\s+Video,\s*(\d+):(\d+)\s*min`)
+	dateRe      = regexp.MustCompile(`(\d{2}\s+\w+\s+\d{4})`)
+	thumbRe     = regexp.MustCompile(`src='(https://bcdn\.ifeelmyself\.com/[^']+)'`)
+	categoryRe  = regexp.MustCompile(`(?s)<b>Categories:</b>(.*?)</table>`)
+	catItemRe   = regexp.MustCompile(`>\s*([A-Za-z][A-Za-z ]+?)\s*<`)
+	tagsRe      = regexp.MustCompile(`class="tags-list-item-tag">([^<]+)<`)
+)
+
+func (s *Scraper) fetchPage(ctx context.Context, pageURL, studioURL string) ([]models.Scene, error) {
+	resp, err := httpx.Do(ctx, s.client, httpx.Request{
+		URL:     pageURL,
+		Headers: map[string]string{"User-Agent": httpx.UserAgentFirefox},
+	})
+	if err != nil {
+		return nil, err
+	}
+	defer func() { _ = resp.Body.Close() }()
+
+	body, err := httpx.ReadBody(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	return parseListingPage(body, studioURL), nil
+}
+
+func parseListingPage(body []byte, studioURL string) []models.Scene {
+	// Find the text before each card for performer/title/date/duration.
+	// Cards are preceded by a DispResults table with metadata.
+	blocks := splitBlocks(body)
+
+	var scenes []models.Scene
+	now := time.Now().UTC()
+
+	for _, block := range blocks {
+		card := cardRe.Find(block)
+		if card == nil {
+			continue
+		}
+
+		idMatch := cardRe.FindSubmatch(block)
+		if idMatch == nil {
+			continue
+		}
+		sceneID := string(idMatch[1])
+		price := string(idMatch[2])
+
+		var performer, performerID string
+		if pm := performerRe.FindSubmatch(block); pm != nil {
+			if pm[1] != nil {
+				performerID = string(pm[1])
+				performer = string(pm[2])
+			} else {
+				performerID = string(pm[3])
+				performer = string(pm[4])
+			}
+		}
+
+		var title string
+		if tm := titleRe.FindSubmatch(block); tm != nil {
+			title = string(tm[1])
+		}
+		if title == "" {
+			title = "Scene #" + sceneID
+		}
+
+		var duration int
+		if dm := durationRe.FindSubmatch(block); dm != nil {
+			mins, _ := strconv.Atoi(string(dm[1]))
+			secs, _ := strconv.Atoi(string(dm[2]))
+			duration = mins*60 + secs
+		}
+
+		var date time.Time
+		if dtm := dateRe.FindSubmatch(block); dtm != nil {
+			date, _ = time.Parse("02 Jan 2006", strings.TrimSpace(string(dtm[1])))
+		}
+
+		var thumbnail string
+		if thm := thumbRe.FindSubmatch(block); thm != nil {
+			thumbnail = string(thm[1])
+		}
+
+		var categories []string
+		if cm := categoryRe.FindSubmatch(block); cm != nil {
+			for _, ci := range catItemRe.FindAllSubmatch(cm[1], -1) {
+				cat := strings.TrimSpace(string(ci[1]))
+				if cat != "" && cat != "Categories" {
+					categories = append(categories, cat)
+				}
+			}
+		}
+
+		var tags []string
+		for _, tm := range tagsRe.FindAllSubmatch(block, -1) {
+			tag := strings.TrimSpace(string(tm[1]))
+			if tag != "" {
+				tags = append(tags, tag)
+			}
+		}
+
+		var performers []string
+		if performer != "" {
+			performers = []string{performer}
+		}
+
+		sceneURL := siteBase + "/public/main.php?page=artist_bio&artist_id=" + performerID
+		if performerID == "" {
+			sceneURL = siteBase + "/public/main.php?page=view&mode=all"
+		}
+
+		scene := models.Scene{
+			ID:          sceneID,
+			SiteID:      "ifeelmyself",
+			StudioURL:   studioURL,
+			Title:       title,
+			URL:         sceneURL,
+			Date:        date.UTC(),
+			Duration:    duration,
+			Description: "",
+			Thumbnail:   thumbnail,
+			Performers:  performers,
+			Studio:      "I Feel Myself",
+			Tags:        tags,
+			Categories:  categories,
+			ScrapedAt:   now,
+		}
+
+		if p, err := strconv.ParseFloat(price, 64); err == nil && p > 0 {
+			scene.AddPrice(models.PriceSnapshot{
+				Date:    now,
+				Regular: p,
+			})
+		}
+
+		scenes = append(scenes, scene)
+	}
+
+	return scenes
+}
+
+var blockSplitRe = regexp.MustCompile(`(?s)<div class="ThumbRec">`)
+
+func splitBlocks(body []byte) [][]byte {
+	locs := blockSplitRe.FindAllIndex(body, -1)
+	if len(locs) == 0 {
+		return nil
+	}
+
+	var blocks [][]byte
+	for i, loc := range locs {
+		start := loc[0]
+		var end int
+		if i+1 < len(locs) {
+			end = locs[i+1][0]
+		} else {
+			end = len(body)
+		}
+		blocks = append(blocks, body[start:end])
+	}
+	return blocks
+}
