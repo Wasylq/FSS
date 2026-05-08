@@ -72,6 +72,7 @@ import (
 	_ "github.com/Wasylq/FSS/internal/scrapers/rocketinc"
 	_ "github.com/Wasylq/FSS/internal/scrapers/scoregroup"
 	_ "github.com/Wasylq/FSS/internal/scrapers/seemomsuck"
+	_ "github.com/Wasylq/FSS/internal/scrapers/sexlikereal"
 	_ "github.com/Wasylq/FSS/internal/scrapers/sexmexpro"
 	_ "github.com/Wasylq/FSS/internal/scrapers/sofiemarie"
 	_ "github.com/Wasylq/FSS/internal/scrapers/spicevids"
