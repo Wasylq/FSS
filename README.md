@@ -9,7 +9,7 @@ Scrapes all scenes and metadata from a studio URL. Designed to be easily extende
 
 ## Supported sites
 
-**586 sites** across 15+ platforms — [full list with URL patterns →](docs/scrapers.md)
+**606 sites** across 15+ platforms — [full list with URL patterns →](docs/scrapers.md)
 
 | Platform | Count | Examples |
 |----------|------:|---------|
@@ -18,6 +18,7 @@ Scrapes all scenes and metadata from a studio URL. Designed to be easily extende
 | WP video-elements | 12 | DaughterSwap, MommysBoy, PervMom, SisLovesMe, … |
 | SpiceVids collections | 1001 | AdamAndEveVOD, Crunchboy, 1111Customs, AdultTime, NewSensations, … (Aylo marketplace) |
 | Aylo/Juan | 33 | Babes, BangBros, BigStr, Brazzers, Dancing Bear, Erito, HentaiPros, Icon Male, Killergram, LetsDoeIt, Metro, MileHigh, Noir Male, Reality Kings, Sean Cody, Sex Selector, SpiceVids, Sweet Sinner, Sweetheart Video, Transsensual, Virtual Porn, WhyNotBi, … |
+| FYC/PornPros | 20 | Passion HD, Tiny4K, POVD, Casting Couch X, Lubed, SpyFam, Cum4K, Exotic4K, WetVR, BBC Pie, … |
 | WordPress | 5 | Anal Therapy, Family Therapy, Tara Tainton, … |
 | POVR/WankzVR | 4 | BrasilVR, MilfVR, TranzVR, WankzVR |
 | Up-Timely CMS | 5 | DAS!, Idea Pocket, Madonna, MOODYZ, S1 NO.1 STYLE |

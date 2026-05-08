@@ -122,6 +122,7 @@
 | [Family Therapy](https://familytherapyxxx.com) | `familytherapyxxx.com` | WordPress | No | Sitemap-driven, Rank Math SEO, performer extraction from title, uses `wputil` |
 | [FanCentro](https://fancentro.com) | `fancentro.com/{model}` | FanCentro | Yes (USD) | REST API (`/api/content/content`), no auth, page-based pagination (24/page), price tracking with discount detection |
 | [FTV MILFs](https://ftvmilfs.com) | `ftvmilfs.com`, `ftvmilfs.com/updates.html`, `ftvmilfs.com/modelssfw.html` | Custom (FTV) | No | Updates listing for latest ~19 scenes (duration/tags), detail pages by sequential ID for all ~610 scenes, reverse enumeration |
+| FYC/PornPros sites (20) | `{domain}`, `{domain}/?page={page}`, `{domain}/models/{slug}` | Nuxt 3 SSR (FYC) | No | Table-driven via `fycutil`: Passion HD (passion-hd.com), Tiny4K (tiny4k.com), POVD (povd.com), Casting Couch X (castingcouch-x.com), Lubed (lubed.com), SpyFam (spyfam.com), Cum4K (cum4k.com), Holed (holed.com), GirlCum (girlcum.com), Exotic4K (exotic4k.com), WetVR (wetvr.com), BBC Pie (bbcpie.com), Fantasy HD (fantasyhd.com), Facials4K (facials4k.com), My Very First Time (myveryfirsttime.com), Anal 4K (anal4k.com), NannySpy (nannyspy.com), Strippers4K (strippers4k.com), Mom 4K (mom4k.com), Porn Pros (pornpros.com). Nuxt 3 `__NUXT_DATA__` devalue format, 12/page, date-sorted, model page support. Pure Mature has a standalone scraper with richer JSON API |
 | [FapHouse](https://faphouse.com) | `faphouse.com/models/{slug}`, `faphouse.com/studios/{slug}` | Custom HTML | Yes | HTML listing (60/page, `sort=new`) + detail pages with embedded JSON (`view-state-data`) for dates/performers/categories, price tracking for VOD content, xHamster ecosystem |
 | [Gloryhole Secrets](https://www.gloryholesecrets.com) | `gloryholesecrets.com` | Gamma/Algolia | No | Algolia search API, uses `gammautil` |
 | [Glory Quest](https://www.gloryquest.tv) | `gloryquest.tv`, `gloryquest.tv/search.php?KeyWord={keyword}` | Custom PHP | Yes (JPY) | Single-page listing via `search.php` (~589 titles), detail page worker pool, keyword search for actress/director/series, price/duration/tags |
@@ -383,6 +384,7 @@ Scrapers that share a platform use common utility packages to avoid duplication:
 | `ayloutil` | Aylo/Juan (REST API, instance token auth) | `aylo` | 31 sites + BangBros (standalone) + SpiceVids |
 | `cherrypimpsutil` | Cherry Pimps/BLT Innovations (Elevated X CMS, HTML listing) | `cherrypimps` | 2 sites |
 | `gammautil` | Gamma Entertainment (Algolia search API, 5 segments: adulttime, evilangel, evilangelnetwork, dfxtra, openlife) | `gamma` | 74 sites |
+| `fycutil` | FYC/PornPros (Nuxt 3 SSR, `__NUXT_DATA__` devalue format, 12/page, model page support) | `fyc` | 20 sites |
 | `groobyutil` | Grooby CMS (HTML listing, NATS platform, `/tour/categories/movies_{page}_d.html` pagination) | `grooby` | 42 sites |
 | `julesjordanutil` | Jules Jordan Network (ElevatedX CMS, 3 template variants: JJ/Classic/Modern) | `julesjordan` | 5 sites |
 | `metartutil` | MetArt Network (JSON API at `/api/updates`, movies filtered client-side) | `metart` | 13 sites |

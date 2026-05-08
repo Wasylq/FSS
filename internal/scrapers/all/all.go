@@ -29,6 +29,7 @@ import (
 	_ "github.com/Wasylq/FSS/internal/scrapers/fancentro"
 	_ "github.com/Wasylq/FSS/internal/scrapers/faphouse"
 	_ "github.com/Wasylq/FSS/internal/scrapers/ftvmilfs"
+	_ "github.com/Wasylq/FSS/internal/scrapers/fyc"
 	_ "github.com/Wasylq/FSS/internal/scrapers/gamma"
 	_ "github.com/Wasylq/FSS/internal/scrapers/gloryquest"
 	_ "github.com/Wasylq/FSS/internal/scrapers/grandparentsx"

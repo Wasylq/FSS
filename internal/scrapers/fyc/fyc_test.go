@@ -1,4 +1,4 @@
-package newsensations
+package fyc
 
 import (
 	"testing"
@@ -7,8 +7,8 @@ import (
 )
 
 func TestSiteCount(t *testing.T) {
-	if len(sites) != 8 {
-		t.Errorf("expected 8 sites, got %d", len(sites))
+	if len(sites) != 20 {
+		t.Errorf("expected 20 sites, got %d", len(sites))
 	}
 }
 

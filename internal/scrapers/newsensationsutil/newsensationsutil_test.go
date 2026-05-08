@@ -207,7 +207,7 @@ func TestDetailDateRe(t *testing.T) {
 				t.Errorf("date = %q, want %q", m[1], tt.wantDate)
 			}
 			dur := 0
-			fmt.Sscanf(m[2], "%d", &dur)
+			_, _ = fmt.Sscanf(m[2], "%d", &dur)
 			if dur != tt.wantDur {
 				t.Errorf("duration = %d, want %d", dur, tt.wantDur)
 			}
