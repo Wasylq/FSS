@@ -140,6 +140,22 @@
 | [Madonna](https://madonna-av.com) | `madonna-av.com/works/list/series/{id}`, `madonna-av.com/works/list/release`, `madonna-av.com/works/list/date/{date}`, `madonna-av.com/works/list/genre/{id}`, `madonna-av.com/works/list/label/{id}`, `madonna-av.com/actress/detail/{id}` | Up-Timely CMS | No | Thin wrapper around `uptimelyutil` |
 | [ManyVids](https://www.manyvids.com) | `manyvids.com/Profile/{id}/{slug}/Store/Videos` | ManyVids | Yes | JSON API, detail-page worker pool |
 | [Mature.nl](https://www.mature.nl) | `mature.nl/en/updates`, `mature.nl/en/model/{id}`, `mature.nl/en/niche/{id}/{page}/{slug}` | Custom | No | HTML scraping, paginated listing + detail page worker pool for model URLs |
+| [MetArt](https://www.metart.com) | `metart.com` | MetArt Network | No | JSON API, table-driven `metart` package using `metartutil`, 16 sites |
+| [MetArt Network](https://www.metartnetwork.com) | `metartnetwork.com` | MetArt Network | No | MetArt Network aggregator, `metartutil` |
+| [SexArt](https://www.sexart.com) | `sexart.com` | MetArt Network | No | MetArt Network, `metartutil` |
+| [The Life Erotic](https://www.thelifeerotic.com) | `thelifeerotic.com` | MetArt Network | No | MetArt Network, `metartutil` |
+| [Errotica Archives](https://www.errotica-archives.com) | `errotica-archives.com` | MetArt Network | No | MetArt Network, `metartutil` |
+| [ALS Scan](https://www.alsscan.com) | `alsscan.com` | MetArt Network | No | MetArt Network, `metartutil` |
+| [Viv Thomas](https://www.vivthomas.com) | `vivthomas.com` | MetArt Network | No | MetArt Network, `metartutil` |
+| [MetArt X](https://www.metartx.com) | `metartx.com` | MetArt Network | No | MetArt Network, `metartutil` |
+| [Stunning 18](https://www.stunning18.com) | `stunning18.com` | MetArt Network | No | MetArt Network, `metartutil` |
+| [Erotic Beauty](https://www.eroticbeauty.com) | `eroticbeauty.com` | MetArt Network | No | MetArt Network, `metartutil` |
+| [Domai](https://www.domai.com) | `domai.com` | MetArt Network | No | MetArt Network, `metartutil` |
+| [Goddess Nudes](https://www.goddessnudes.com) | `goddessnudes.com` | MetArt Network | No | MetArt Network, `metartutil` |
+| [Rylsky Art](https://www.rylskyart.com) | `rylskyart.com` | MetArt Network | No | MetArt Network, `metartutil` |
+| [Eternal Desire](https://www.eternaldesire.com) | `eternaldesire.com` | MetArt Network | No | MetArt Network, `metartutil` |
+| [Straplez](https://www.straplez.com) | `straplez.com` | MetArt Network | No | MetArt Network, `metartutil` |
+| [Love Hairy](https://www.lovehairy.com) | `lovehairy.com` | MetArt Network | No | MetArt Network, `metartutil` |
 | [TeamSkeet](https://www.teamskeet.com) | `teamskeet.com`, `teamskeet.com/models/{slug}`, `teamskeet.com/series/{slug}`, `teamskeet.com/categories/{name}` | TeamSkeet/PSM | No | Public Elasticsearch API (`ts_network` index, 203 series, ~14.6k scenes), table-driven `teamskeet` package using `teamskeetutil` |
 | [MYLF](https://www.mylf.com) | `mylf.com`, `mylf.com/models/{slug}`, `mylf.com/series/{slug}`, `mylf.com/categories/{name}` | TeamSkeet/PSM | No | TeamSkeet, `mylf_bundle` ES index (28 series) |
 | [Family Strokes](https://www.familystrokes.com) | `familystrokes.com`, `familystrokes.com/models/{slug}`, `familystrokes.com/series/{slug}`, `familystrokes.com/categories/{name}` | TeamSkeet/PSM | No | TeamSkeet, `familybundle` ES index |
@@ -303,6 +319,7 @@ Scrapers that share a platform use common utility packages to avoid duplication:
 | `cherrypimpsutil` | Cherry Pimps/BLT Innovations (Elevated X CMS, HTML listing) | `cherrypimps` | 2 sites |
 | `gammautil` | Gamma Entertainment (Algolia search API, 5 segments: adulttime, evilangel, evilangelnetwork, dfxtra, openlife) | `gamma` | 24 sites |
 | `julesjordanutil` | Jules Jordan Network (ElevatedX CMS, 3 template variants: JJ/Classic/Modern) | `julesjordan` | 5 sites |
+| `metartutil` | MetArt Network (JSON API at `/api/updates`, movies filtered client-side) | `metart` | 16 sites |
 | `veutil` | WordPress video-elements theme (WP REST API) | `videoelements` | 13 sites |
 | `scoregrouputil` | Score Group (HTML listing + detail pages) | `scoregroup` | 93 sites |
 | `modelcentroutil` | ModelCentro/AdultCentro (JSON API at `/api/content.load`) | `modelcentro` | 26 sites |

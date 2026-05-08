@@ -42,6 +42,7 @@ import (
 	_ "github.com/Wasylq/FSS/internal/scrapers/lucasentertainment"
 	_ "github.com/Wasylq/FSS/internal/scrapers/manyvids"
 	_ "github.com/Wasylq/FSS/internal/scrapers/maturenl"
+	_ "github.com/Wasylq/FSS/internal/scrapers/metart"
 	_ "github.com/Wasylq/FSS/internal/scrapers/missax"
 	_ "github.com/Wasylq/FSS/internal/scrapers/modelcentro"
 	_ "github.com/Wasylq/FSS/internal/scrapers/momcomesfirst"
