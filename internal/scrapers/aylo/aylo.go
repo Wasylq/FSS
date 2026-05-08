@@ -16,28 +16,34 @@ type siteConfig struct {
 	StudioName    string
 	ExtraPatterns []string // additional patterns before the common ones
 	AltDomains    []string // additional domains that resolve to the same site
+	ScenePath     string   // URL path segment for scenes (default: "video")
 }
 
 var sites = []siteConfig{
-	{"babes", "babes.com", "Babes", []string{"babes.com/model/{id}/{slug}"}, nil},
-	{"bigstr", "czechhunter.com", "BigStr", nil, nil},
-	{"brazzers", "brazzers.com", "Brazzers", nil, nil},
-	{"digitalplayground", "digitalplayground.com", "Digital Playground", []string{"digitalplayground.com/modelprofile/{id}/{slug}"}, []string{"digitalplaygroundnetwork.com"}},
-	{"erito", "erito.com", "Erito", nil, nil},
-	{"hentaipros", "hentaipros.com", "HentaiPros", nil, nil},
-	{"killergram", "killergram.com", "Killergram", nil, nil},
-	{"letsdoeit", "letsdoeit.com", "LetsDoeIt", nil, nil},
-	{"metro", "shewillcheat.com", "Metro", nil, nil},
-	{"milehigh", "milfed.com", "MileHigh", nil, nil},
-	{"mofos", "mofos.com", "Mofos", []string{"mofos.com/model/{id}/{slug}"}, nil},
-	{"propertysex", "propertysex.com", "PropertySex", nil, nil},
-	{"realitydudes", "realitydudes.com", "RealityDudes", nil, nil},
-	{"realitykings", "realitykings.com", "Reality Kings", []string{"realitykings.com/model/{id}/{slug}"}, []string{"rk.com"}},
-	{"seancody", "seancody.com", "Sean Cody", nil, nil},
-	{"squirted", "squirted.com", "Squirted", nil, nil},
-	{"transangels", "transangels.com", "TransAngels", nil, nil},
-	{"twistys", "twistys.com", "Twistys", nil, nil},
-	{"whynotbi", "men.com", "WhyNotBi", nil, nil},
+	{"babes", "babes.com", "Babes", []string{"babes.com/model/{id}/{slug}"}, nil, ""},
+	{"bigstr", "czechhunter.com", "BigStr", nil, nil, ""},
+	{"brazzers", "brazzers.com", "Brazzers", nil, nil, ""},
+	{"digitalplayground", "digitalplayground.com", "Digital Playground", []string{"digitalplayground.com/modelprofile/{id}/{slug}"}, []string{"digitalplaygroundnetwork.com"}, ""},
+	{"erito", "erito.com", "Erito", nil, nil, ""},
+	{"hentaipros", "hentaipros.com", "HentaiPros", nil, nil, ""},
+	{"killergram", "killergram.com", "Killergram", nil, nil, ""},
+	{"letsdoeit", "letsdoeit.com", "LetsDoeIt", nil, nil, ""},
+	{"metro", "shewillcheat.com", "Metro", nil, nil, ""},
+	{"milehigh", "milfed.com", "MileHigh", nil, nil, ""},
+	{"mofos", "mofos.com", "Mofos", []string{"mofos.com/model/{id}/{slug}"}, nil, ""},
+	{"propertysex", "propertysex.com", "PropertySex", nil, nil, ""},
+	{"realitydudes", "realitydudes.com", "RealityDudes", nil, nil, ""},
+	{"realitykings", "realitykings.com", "Reality Kings", []string{"realitykings.com/model/{id}/{slug}"}, []string{"rk.com"}, ""},
+	{"seancody", "seancody.com", "Sean Cody", nil, nil, ""},
+	{"squirted", "squirted.com", "Squirted", nil, nil, ""},
+	{"transangels", "transangels.com", "TransAngels", nil, nil, ""},
+	{"twistys", "twistys.com", "Twistys", nil, nil, ""},
+	{"whynotbi", "men.com", "WhyNotBi", nil, nil, ""},
+
+	// BangBros sub-sites with standalone domains (content also on bangbros.com)
+	{"dancingbear", "dancingbear.com", "Dancing Bear", nil, nil, "scene"},
+	{"sexselector", "sexselector.com", "Sex Selector", nil, nil, "scene"},
+	{"virtualporn", "virtualporn.com", "Virtual Porn", nil, nil, ""},
 }
 
 type siteScraper struct {
@@ -80,6 +86,7 @@ func init() {
 			SiteID:     cfg.SiteID,
 			SiteBase:   "https://www." + cfg.Domain,
 			StudioName: cfg.StudioName,
+			ScenePath:  cfg.ScenePath,
 		}
 
 		s := &siteScraper{
