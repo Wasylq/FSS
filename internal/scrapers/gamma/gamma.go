@@ -61,6 +61,17 @@ var sites = []siteConfig{
 	{"truelesbian", "truelesbian.com", "True Lesbian", "", "", ""},
 	{"upclosevr", "upclosevr.com", "Up Close VR", "", "", ""},
 
+	// Adult Time segment — Devil's Film (Network) sub-sites
+	{"devilsfilm", "devilsfilm.com", "Devil's Film", "", "", ""},
+	{"devilsfilmparodies", "devilsfilmparodies.com", "Devil's Film Parodies", "", "", ""},
+	{"devilsgangbangs", "devilsgangbangs.com", "Devil's Gangbangs", "", "", ""},
+	{"devilstgirls", "devilstgirls.com", "Devil's Tgirls", "", "", ""},
+	{"givemeteens", "givemeteens.com", "Give Me Teens", "", "", ""},
+	{"hairyundies", "hairyundies.com", "Hairy Undies", "", "", ""},
+	{"lesbianfactor", "lesbianfactor.com", "Lesbian Factor", "", "", ""},
+	{"outofthefamily", "outofthefamily.com", "Out of the Family", "", "", ""},
+	{"squirtalicious", "squirtalicious.com", "Squirtalicious", "", "", ""},
+
 	// Evil Angel Network segment (evilangelnetwork) — director-branded sub-sites
 	{"buttman", "buttman.com", "Buttman", "buttman", "", ""},
 	{"analtrixxx", "analtrixxx.com", "AnalTriXXX", "analtrixxx", "", ""},

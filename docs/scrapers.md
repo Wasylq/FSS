@@ -293,6 +293,15 @@
 | [True Lesbian](https://www.truelesbian.com) | `truelesbian.com` | Gamma/Algolia | No | Algolia search API (adulttime segment), uses `gammautil` |
 | [UP CLOSE](https://www.getupclose.com) | `getupclose.com` | Gamma/Algolia | No | Algolia search API (adulttime segment), uses `gammautil` |
 | [Up Close VR](https://www.upclosevr.com) | `upclosevr.com` | Gamma/Algolia | No | Algolia search API (adulttime segment), uses `gammautil` |
+| [Devil's Film](https://www.devilsfilm.com) | `devilsfilm.com` | Gamma/Algolia | No | Algolia search API (adulttime segment), Devil's Film Network parent, uses `gammautil` |
+| [Devil's Film Parodies](https://www.devilsfilmparodies.com) | `devilsfilmparodies.com` | Gamma/Algolia | No | Algolia search API (adulttime segment), Devil's Film Network sub-site, uses `gammautil` |
+| [Devil's Gangbangs](https://www.devilsgangbangs.com) | `devilsgangbangs.com` | Gamma/Algolia | No | Algolia search API (adulttime segment), Devil's Film Network sub-site, uses `gammautil` |
+| [Devil's Tgirls](https://www.devilstgirls.com) | `devilstgirls.com` | Gamma/Algolia | No | Algolia search API (adulttime segment), Devil's Film Network sub-site, uses `gammautil` |
+| [Give Me Teens](https://www.givemeteens.com) | `givemeteens.com` | Gamma/Algolia | No | Algolia search API (adulttime segment), Devil's Film Network sub-site, uses `gammautil` |
+| [Hairy Undies](https://www.hairyundies.com) | `hairyundies.com` | Gamma/Algolia | No | Algolia search API (adulttime segment), Devil's Film Network sub-site, uses `gammautil` |
+| [Lesbian Factor](https://www.lesbianfactor.com) | `lesbianfactor.com` | Gamma/Algolia | No | Algolia search API (adulttime segment), Devil's Film Network sub-site, uses `gammautil` |
+| [Out of the Family](https://www.outofthefamily.com) | `outofthefamily.com` | Gamma/Algolia | No | Algolia search API (adulttime segment), Devil's Film Network sub-site, uses `gammautil` |
+| [Squirtalicious](https://www.squirtalicious.com) | `squirtalicious.com` | Gamma/Algolia | No | Algolia search API (adulttime segment), Devil's Film Network sub-site, uses `gammautil` |
 | [Burning Angel](https://www.burningangel.com) | `burningangel.com` | Gamma/Algolia | No | Algolia search API, uses `gammautil` |
 | [Filthy Kings](https://www.filthykings.com) | `filthykings.com` | Gamma/Algolia | No | Algolia search API, uses `gammautil` |
 | [Gangbang Creampie](https://www.gangbangcreampie.com) | `gangbangcreampie.com` | Gamma/Algolia | No | Algolia search API, uses `gammautil` |
@@ -357,7 +366,7 @@ Scrapers that share a platform use common utility packages to avoid duplication:
 | `adultprimeutil` | Adult Prime (HTML listing + detail pages, `var params` pagination) | `adultprime` | 97 studios |
 | `ayloutil` | Aylo/Juan (REST API, instance token auth) | `aylo` | 31 sites + BangBros (standalone) + SpiceVids |
 | `cherrypimpsutil` | Cherry Pimps/BLT Innovations (Elevated X CMS, HTML listing) | `cherrypimps` | 2 sites |
-| `gammautil` | Gamma Entertainment (Algolia search API, 5 segments: adulttime, evilangel, evilangelnetwork, dfxtra, openlife) | `gamma` | 24 sites |
+| `gammautil` | Gamma Entertainment (Algolia search API, 5 segments: adulttime, evilangel, evilangelnetwork, dfxtra, openlife) | `gamma` | 59 sites |
 | `julesjordanutil` | Jules Jordan Network (ElevatedX CMS, 3 template variants: JJ/Classic/Modern) | `julesjordan` | 5 sites |
 | `metartutil` | MetArt Network (JSON API at `/api/updates`, movies filtered client-side) | `metart` | 13 sites |
 | `veutil` | WordPress video-elements theme (WP REST API) | `videoelements` | 13 sites |
