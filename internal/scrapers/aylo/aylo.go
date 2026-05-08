@@ -29,7 +29,7 @@ var sites = []siteConfig{
 	{"killergram", "killergram.com", "Killergram", nil, nil, ""},
 	{"letsdoeit", "letsdoeit.com", "LetsDoeIt", nil, nil, ""},
 	{"metro", "shewillcheat.com", "Metro", nil, nil, ""},
-	{"milehigh", "milfed.com", "MileHigh", nil, nil, ""},
+	{"milehigh", "milfed.com", "MileHigh", nil, []string{"dilfed.com", "gilfed.com"}, "scene"},
 	{"mofos", "mofos.com", "Mofos", []string{"mofos.com/model/{id}/{slug}"}, nil, ""},
 	{"propertysex", "propertysex.com", "PropertySex", nil, nil, ""},
 	{"realitydudes", "realitydudes.com", "RealityDudes", nil, nil, ""},
@@ -39,6 +39,17 @@ var sites = []siteConfig{
 	{"transangels", "transangels.com", "TransAngels", nil, nil, ""},
 	{"twistys", "twistys.com", "Twistys", nil, nil, ""},
 	{"whynotbi", "men.com", "WhyNotBi", nil, nil, ""},
+
+	// Mile High Media sub-sites
+	{"biempire", "biempire.com", "BiEmpire", nil, nil, "scene"},
+	{"doghousedigital", "doghousedigital.com", "Doghouse Digital", nil, nil, "scene"},
+	{"familysinners", "familysinners.com", "Family Sinners", nil, nil, "scene"},
+	{"iconmale", "iconmale.com", "Icon Male", nil, nil, "scene"},
+	{"noirmale", "noirmale.com", "Noir Male", nil, nil, "scene"},
+	{"realityjunkies", "realityjunkies.com", "Reality Junkies", nil, nil, "scene"},
+	{"sweetsinner", "sweetsinner.com", "Sweet Sinner", nil, nil, "scene"},
+	{"sweetheartvideo", "sweetheartvideo.com", "Sweetheart Video", nil, nil, "scene"},
+	{"transsensual", "transsensual.com", "Transsensual", nil, nil, "scene"},
 
 	// BangBros sub-sites with standalone domains (content also on bangbros.com)
 	{"dancingbear", "dancingbear.com", "Dancing Bear", nil, nil, "scene"},

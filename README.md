@@ -9,7 +9,7 @@ Scrapes all scenes and metadata from a studio URL. Designed to be easily extende
 
 ## Supported sites
 
-**504 sites** across 15+ platforms — [full list with URL patterns →](docs/scrapers.md)
+**513 sites** across 15+ platforms — [full list with URL patterns →](docs/scrapers.md)
 
 | Platform | Count | Examples |
 |----------|------:|---------|
@@ -17,7 +17,7 @@ Scrapes all scenes and metadata from a studio URL. Designed to be easily extende
 | Gamma/Algolia | 40 | Adult Time, Burning Angel, Dogfart Network, Evil Angel, Girlcore, Modern-Day Sins, OpenLife, Pretty Dirty, Pure Taboo, Transfixed, Wicked, … |
 | WP video-elements | 12 | DaughterSwap, MommysBoy, PervMom, SisLovesMe, … |
 | SpiceVids collections | 1001 | AdamAndEveVOD, Crunchboy, 1111Customs, AdultTime, NewSensations, … (Aylo marketplace) |
-| Aylo/Juan | 24 | Babes, BangBros, BigStr, Brazzers, Dancing Bear, Erito, HentaiPros, Killergram, LetsDoeIt, Metro, MileHigh, Reality Kings, Sean Cody, Sex Selector, SpiceVids, Virtual Porn, WhyNotBi, … |
+| Aylo/Juan | 33 | Babes, BangBros, BigStr, Brazzers, Dancing Bear, Erito, HentaiPros, Icon Male, Killergram, LetsDoeIt, Metro, MileHigh, Noir Male, Reality Kings, Sean Cody, Sex Selector, SpiceVids, Sweet Sinner, Sweetheart Video, Transsensual, Virtual Porn, WhyNotBi, … |
 | WordPress | 5 | Anal Therapy, Family Therapy, Tara Tainton, … |
 | POVR/WankzVR | 4 | BrasilVR, MilfVR, TranzVR, WankzVR |
 | Up-Timely CMS | 5 | DAS!, Idea Pocket, Madonna, MOODYZ, S1 NO.1 STYLE |
