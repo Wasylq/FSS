@@ -330,6 +330,11 @@
 | [Wicked](https://www.wicked.com) | `wicked.com` | Gamma/Algolia | No | Algolia search API, uses `gammautil` |
 | [Dogfart Network](https://www.dogfartnetwork.com) | `dogfartnetwork.com` | Gamma/Algolia | No | Algolia search API (dfxtra segment), 17 subsites, network-level scraper, uses `gammautil` |
 | [OpenLife](https://www.openlife.com) | `openlife.com` | Gamma/Algolia | No | Algolia search API (openlife segment), 12 subsites, network-level scraper, uses `gammautil` |
+| [Zero Tolerance Films](https://www.zerotolerancefilms.com) | `zerotolerancefilms.com` | Gamma/Algolia | No | Algolia search API (zerotolerancefilms segment), 5 subsites incl. 3rd Degree Films, Diabolic, Zero Tolerance Partners, uses `gammautil` |
+| [3rd Degree Films](https://www.3rddegreefilms.com) | `3rddegreefilms.com` | Gamma/Algolia | No | Algolia search API (zerotolerancefilms segment), uses `gammautil` |
+| [Diabolic](https://www.diabolic.com) | `diabolic.com` | Gamma/Algolia | No | Algolia search API (zerotolerancefilms segment), uses `gammautil` |
+| [Addicted 2 Girls](https://www.addicted2girls.com) | `addicted2girls.com` | Gamma/Algolia | No | Algolia search API (addicted2girls segment), uses `gammautil` |
+| [BiPhoria](https://www.biphoria.com) | `biphoria.com` | Gamma/Algolia | No | Algolia search API (biphoria segment), uses `gammautil` |
 | [BigStr](https://www.czechhunter.com) | `czechhunter.com`, `czechhunter.com/pornstar/{id}/{slug}`, `czechhunter.com/category/{id}/{slug}`, `czechhunter.com/site/{id}/{slug}`, `czechhunter.com/series/{id}/{slug}` | Aylo/Juan | No | REST API, uses `ayloutil` |
 | [Erito](https://www.erito.com) | `erito.com`, `erito.com/pornstar/{id}/{slug}`, `erito.com/category/{id}/{slug}`, `erito.com/site/{id}/{slug}`, `erito.com/series/{id}/{slug}` | Aylo/Juan | No | REST API, uses `ayloutil` |
 | [HentaiPros](https://www.hentaipros.com) | `hentaipros.com`, `hentaipros.com/pornstar/{id}/{slug}`, `hentaipros.com/category/{id}/{slug}`, `hentaipros.com/site/{id}/{slug}`, `hentaipros.com/series/{id}/{slug}` | Aylo/Juan | No | REST API, uses `ayloutil` |
@@ -387,7 +392,7 @@ Scrapers that share a platform use common utility packages to avoid duplication:
 | `adultprimeutil` | Adult Prime (HTML listing + detail pages, `var params` pagination) | `adultprime` | 97 studios |
 | `ayloutil` | Aylo/Juan (REST API, instance token auth) | `aylo` | 31 sites + BangBros (standalone) + SpiceVids |
 | `cherrypimpsutil` | Cherry Pimps/BLT Innovations (Elevated X CMS, HTML listing) | `cherrypimps` | 2 sites |
-| `gammautil` | Gamma Entertainment (Algolia search API, 5 segments: adulttime, evilangel, evilangelnetwork, dfxtra, openlife) | `gamma` | 74 sites |
+| `gammautil` | Gamma Entertainment (Algolia search API, 8 segments: adulttime, evilangel, evilangelnetwork, dfxtra, openlife, zerotolerancefilms, addicted2girls, biphoria) | `gamma` | 79 sites |
 | `fycutil` | FYC/PornPros (Nuxt 3 SSR, `__NUXT_DATA__` devalue format, 12/page, model page support) | `fyc` | 20 sites |
 | `groobyutil` | Grooby CMS (HTML listing, NATS platform, `/tour/categories/movies_{page}_d.html` pagination) | `grooby` | 42 sites |
 | `julesjordanutil` | Jules Jordan Network (ElevatedX CMS, 3 template variants: JJ/Classic/Modern) | `julesjordan` | 5 sites |

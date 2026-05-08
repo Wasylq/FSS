@@ -111,6 +111,19 @@ var sites = []siteConfig{
 
 	// OpenLife segment — 12 subsites under openlife.com
 	{"openlife", "openlife.com", "", "", "", ""},
+
+	// Zero Tolerance Films segment — network hub (all content in the segment)
+	{"zerotolerancefilms", "zerotolerancefilms.com", "", "", "", ""},
+
+	// Zero Tolerance Films segment — individual sites with own domains
+	{"3rddegreefilms", "3rddegreefilms.com", "3rd Degree Films", "3rddegreefilms", "", ""},
+	{"diabolic", "diabolic.com", "Diabolic", "diabolic", "", ""},
+
+	// Addicted 2 Girls segment (own segment, under Zero Tolerance Films tree)
+	{"addicted2girls", "addicted2girls.com", "Addicted 2 Girls", "", "", ""},
+
+	// BiPhoria segment (own segment, under Zero Tolerance Films tree)
+	{"biphoria", "biphoria.com", "BiPhoria", "", "", ""},
 }
 
 type siteScraper struct {
