@@ -2,13 +2,21 @@ package ayloutil
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
+	"fmt"
 	"io"
+	"net/http"
+	"net/http/httptest"
 	"os"
+	"strconv"
 	"strings"
 	"sync"
 	"testing"
 	"time"
+
+	"github.com/Wasylq/FSS/internal/scrapers/testutil"
+	"github.com/Wasylq/FSS/scraper"
 )
 
 func TestParseFilter(t *testing.T) {
@@ -384,5 +392,599 @@ func TestWarnParseFailure_independentOnces(t *testing.T) {
 	})
 	if !strings.Contains(out, "site-A") || !strings.Contains(out, "site-B") {
 		t.Errorf("each Once should fire independently, got: %s", out)
+	}
+}
+
+// ---- HTTP / orchestration tests ----
+
+func makeRelease(id int) Release {
+	return Release{
+		ID:           id,
+		Type:         "scene",
+		Title:        fmt.Sprintf("Scene %d", id),
+		Description:  fmt.Sprintf("Description for scene %d.", id),
+		DateReleased: fmt.Sprintf("2026-01-%02dT12:00:00+00:00", (id%28)+1),
+		Actors:       []Actor{{ID: id * 10, Name: fmt.Sprintf("Performer %d", id)}},
+		Tags:         []Tag{{ID: id * 100, Name: fmt.Sprintf("Tag%d", id)}},
+		Collections:  []Collection{{ID: 1, Name: "Test Collection"}},
+		Stats:        Stats{Likes: id, Views: id * 100},
+		RawImages:    json.RawMessage(fmt.Sprintf(`{"poster":{"0":{"xl":{"urls":{"default":"https://cdn.test/img/%d.jpg"}}}}}`, id)),
+		RawVideos:    json.RawMessage(fmt.Sprintf(`{"mediabook":{"length":%d,"files":{"720p":{"urls":{"view":"https://cdn.test/vid/%d.mp4"}}}}}`, 600+id, id)),
+	}
+}
+
+func makeSeries(id int, childIDs []int) Release {
+	children := make([]Release, len(childIDs))
+	for i, cid := range childIDs {
+		children[i] = makeRelease(cid)
+		children[i].Type = "scene"
+	}
+	return Release{
+		ID:           id,
+		Type:         "serie",
+		Title:        fmt.Sprintf("Series %d", id),
+		DateReleased: "2026-01-15T12:00:00+00:00",
+		Children:     children,
+		Actors:       []Actor{{ID: 99, Name: "Series Star"}},
+		Tags:         []Tag{{ID: 999, Name: "SeriesTag"}},
+		RawImages:    json.RawMessage(`{}`),
+		RawVideos:    json.RawMessage(`{}`),
+	}
+}
+
+type testServer struct {
+	ts          *httptest.Server
+	releases    []Release
+	series      []Release
+	collections []struct {
+		ID   int    `json:"id"`
+		Name string `json:"name"`
+	}
+}
+
+func newTestServer(releases []Release) *testServer {
+	s := &testServer{releases: releases}
+	s.ts = httptest.NewServer(http.HandlerFunc(s.handler))
+	return s
+}
+
+func (s *testServer) handler(w http.ResponseWriter, r *http.Request) {
+	switch {
+	case r.URL.Path == "/":
+		http.SetCookie(w, &http.Cookie{Name: "instance_token", Value: "test-token-123"})
+		_, _ = fmt.Fprint(w, "<html>site</html>")
+
+	case r.URL.Path == "/v2/releases":
+		q := r.URL.Query()
+		typ := q.Get("type")
+		limit, _ := strconv.Atoi(q.Get("limit"))
+		offset, _ := strconv.Atoi(q.Get("offset"))
+		if limit == 0 {
+			limit = 100
+		}
+
+		if typ == "serie" {
+			s.handleSeries(w, limit, offset)
+			return
+		}
+
+		filtered := s.filterReleases(q)
+		total := len(filtered)
+
+		end := offset + limit
+		if end > total {
+			end = total
+		}
+		var page []Release
+		if offset < total {
+			page = filtered[offset:end]
+		}
+
+		resp := ReleasesResponse{
+			Meta:   APIMeta{Count: len(page), Total: total},
+			Result: page,
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(resp)
+
+	case r.URL.Path == "/v1/collections":
+		w.Header().Set("Content-Type", "application/json")
+		result := struct {
+			Result []struct {
+				ID   int    `json:"id"`
+				Name string `json:"name"`
+			} `json:"result"`
+		}{Result: s.collections}
+		_ = json.NewEncoder(w).Encode(result)
+
+	default:
+		w.WriteHeader(404)
+	}
+}
+
+func (s *testServer) filterReleases(q map[string][]string) []Release {
+	actorID := queryInt(q, "actorId")
+	collectionID := queryInt(q, "collectionId")
+	tagID := queryInt(q, "tagId")
+
+	if actorID == 0 && collectionID == 0 && tagID == 0 {
+		return s.releases
+	}
+
+	var filtered []Release
+	for _, rel := range s.releases {
+		if actorID != 0 {
+			for _, a := range rel.Actors {
+				if a.ID == actorID {
+					filtered = append(filtered, rel)
+					break
+				}
+			}
+			continue
+		}
+		if collectionID != 0 {
+			for _, c := range rel.Collections {
+				if c.ID == collectionID {
+					filtered = append(filtered, rel)
+					break
+				}
+			}
+			continue
+		}
+		if tagID != 0 {
+			for _, t := range rel.Tags {
+				if t.ID == tagID {
+					filtered = append(filtered, rel)
+					break
+				}
+			}
+			continue
+		}
+	}
+	return filtered
+}
+
+func (s *testServer) handleSeries(w http.ResponseWriter, limit, offset int) {
+	total := len(s.series)
+	end := offset + limit
+	if end > total {
+		end = total
+	}
+	var page []Release
+	if offset < total {
+		page = s.series[offset:end]
+	}
+	resp := ReleasesResponse{
+		Meta:   APIMeta{Count: len(page), Total: total},
+		Result: page,
+	}
+	w.Header().Set("Content-Type", "application/json")
+	_ = json.NewEncoder(w).Encode(resp)
+}
+
+func queryInt(q map[string][]string, key string) int {
+	vals := q[key]
+	if len(vals) == 0 {
+		return 0
+	}
+	n, _ := strconv.Atoi(vals[0])
+	return n
+}
+
+func (s *testServer) close() { s.ts.Close() }
+
+func newScraper(ts *testServer) *Scraper {
+	return &Scraper{
+		Client: ts.ts.Client(),
+		Config: SiteConfig{
+			SiteID:     "testsite",
+			SiteBase:   ts.ts.URL,
+			StudioName: "Test Studio",
+		},
+		APIHost: ts.ts.URL,
+	}
+}
+
+// ---- Constructor ----
+
+func TestNewScraper(t *testing.T) {
+	s := NewScraper(SiteConfig{SiteID: "x", SiteBase: "https://x.com", StudioName: "X"})
+	if s.APIHost != DefaultAPIHost {
+		t.Errorf("default APIHost = %q, want %q", s.APIHost, DefaultAPIHost)
+	}
+
+	s2 := NewScraper(SiteConfig{SiteID: "x", SiteBase: "https://x.com", StudioName: "X", APIHost: "https://custom.api"})
+	if s2.APIHost != "https://custom.api" {
+		t.Errorf("custom APIHost = %q", s2.APIHost)
+	}
+}
+
+// ---- FetchToken ----
+
+func TestFetchToken(t *testing.T) {
+	ts := newTestServer(nil)
+	defer ts.close()
+	s := newScraper(ts)
+
+	token, err := s.FetchToken(context.Background())
+	if err != nil {
+		t.Fatalf("FetchToken: %v", err)
+	}
+	if token != "test-token-123" {
+		t.Errorf("token = %q, want test-token-123", token)
+	}
+}
+
+func TestFetchTokenMissing(t *testing.T) {
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		_, _ = fmt.Fprint(w, "<html>no cookie</html>")
+	}))
+	defer ts.Close()
+
+	s := &Scraper{
+		Client:  ts.Client(),
+		Config:  SiteConfig{SiteBase: ts.URL},
+		APIHost: ts.URL,
+	}
+	_, err := s.FetchToken(context.Background())
+	if err == nil {
+		t.Error("expected error when instance_token cookie missing")
+	}
+}
+
+// ---- FetchPage ----
+
+func TestFetchPage(t *testing.T) {
+	releases := []Release{makeRelease(1), makeRelease(2), makeRelease(3)}
+	ts := newTestServer(releases)
+	defer ts.close()
+	s := newScraper(ts)
+
+	got, total, err := s.FetchPage(context.Background(), "test-token", Filter{Type: FilterAll}, 0)
+	if err != nil {
+		t.Fatalf("FetchPage: %v", err)
+	}
+	if total != 3 {
+		t.Errorf("total = %d, want 3", total)
+	}
+	if len(got) != 3 {
+		t.Errorf("got %d releases, want 3", len(got))
+	}
+	if got[0].Title != "Scene 1" {
+		t.Errorf("first title = %q", got[0].Title)
+	}
+}
+
+func TestFetchPageWithActorFilter(t *testing.T) {
+	releases := []Release{makeRelease(1), makeRelease(2), makeRelease(3)}
+	ts := newTestServer(releases)
+	defer ts.close()
+	s := newScraper(ts)
+
+	got, total, err := s.FetchPage(context.Background(), "tok", Filter{Type: FilterActor, ID: 10}, 0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if total != 1 || len(got) != 1 || got[0].ID != 1 {
+		t.Errorf("actor filter: got %d results (total %d), want 1 result with ID=1", len(got), total)
+	}
+}
+
+func TestFetchPageWithTagFilter(t *testing.T) {
+	releases := []Release{makeRelease(1), makeRelease(2)}
+	ts := newTestServer(releases)
+	defer ts.close()
+	s := newScraper(ts)
+
+	got, _, err := s.FetchPage(context.Background(), "tok", Filter{Type: FilterTag, ID: 200}, 0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(got) != 1 || got[0].ID != 2 {
+		t.Errorf("tag filter: got %v, want scene 2 only", got)
+	}
+}
+
+// ---- slugify (internal) ----
+
+func TestSlugifyInternal(t *testing.T) {
+	cases := []struct {
+		in, want string
+	}{
+		{"Brazzers Exxtra", "brazzers-exxtra"},
+		{"Reality Kings", "reality-kings"},
+		{"Mom's Lil' Angel", "moms-lil-angel"},
+		{"  spaces  ", "spaces"},
+		{"", ""},
+	}
+	for _, c := range cases {
+		if got := slugify(c.in); got != c.want {
+			t.Errorf("slugify(%q) = %q, want %q", c.in, got, c.want)
+		}
+	}
+}
+
+// ---- resolveCollectionSlug ----
+
+func TestResolveCollectionSlug(t *testing.T) {
+	ts := newTestServer(nil)
+	ts.collections = []struct {
+		ID   int    `json:"id"`
+		Name string `json:"name"`
+	}{
+		{ID: 10, Name: "Brazzers Exxtra"},
+		{ID: 20, Name: "Hot And Mean"},
+	}
+	defer ts.close()
+	s := newScraper(ts)
+
+	id, err := s.resolveCollectionSlug(context.Background(), "tok", "brazzers-exxtra")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if id != 10 {
+		t.Errorf("got ID %d, want 10", id)
+	}
+}
+
+func TestResolveCollectionSlugNotFound(t *testing.T) {
+	ts := newTestServer(nil)
+	ts.collections = []struct {
+		ID   int    `json:"id"`
+		Name string `json:"name"`
+	}{
+		{ID: 10, Name: "Brazzers Exxtra"},
+	}
+	defer ts.close()
+	s := newScraper(ts)
+
+	_, err := s.resolveCollectionSlug(context.Background(), "tok", "nonexistent")
+	if err == nil {
+		t.Error("expected error for unknown slug")
+	}
+}
+
+// ---- ParseFilter extras ----
+
+func TestParseFilterTagQuery(t *testing.T) {
+	f := ParseFilter("https://www.babes.com/videos?tags=42")
+	if f.Type != FilterTag || f.ID != 42 {
+		t.Errorf("got %+v, want FilterTag ID=42", f)
+	}
+}
+
+func TestParseFilterCollectionSlug(t *testing.T) {
+	f := ParseFilter("https://www.brazzers.com/sites/brazzers-exxtra")
+	if f.Type != FilterCollection || f.Slug != "brazzers-exxtra" {
+		t.Errorf("got %+v, want FilterCollection slug=brazzers-exxtra", f)
+	}
+}
+
+// ---- Run (end-to-end) ----
+
+func TestRun(t *testing.T) {
+	releases := []Release{makeRelease(1), makeRelease(2), makeRelease(3)}
+	ts := newTestServer(releases)
+	defer ts.close()
+	s := newScraper(ts)
+
+	out := make(chan scraper.SceneResult)
+	go s.Run(context.Background(), ts.ts.URL, scraper.ListOpts{}, out)
+
+	results := testutil.CollectScenes(t, out)
+	if len(results) != 3 {
+		t.Fatalf("got %d scenes, want 3", len(results))
+	}
+	for _, sc := range results {
+		if sc.SiteID != "testsite" {
+			t.Errorf("SiteID = %q", sc.SiteID)
+		}
+		if sc.Studio != "Test Studio" {
+			t.Errorf("Studio = %q", sc.Studio)
+		}
+		if sc.Title == "" {
+			t.Error("Title is empty")
+		}
+		if len(sc.Performers) == 0 {
+			t.Error("Performers is empty")
+		}
+		if sc.Duration == 0 {
+			t.Error("Duration is 0")
+		}
+		if sc.Thumbnail == "" {
+			t.Error("Thumbnail is empty")
+		}
+	}
+}
+
+func TestRunKnownIDs(t *testing.T) {
+	releases := []Release{makeRelease(1), makeRelease(2), makeRelease(3)}
+	ts := newTestServer(releases)
+	defer ts.close()
+	s := newScraper(ts)
+
+	out := make(chan scraper.SceneResult)
+	go s.Run(context.Background(), ts.ts.URL, scraper.ListOpts{
+		KnownIDs: map[string]bool{"2": true},
+	}, out)
+
+	results, stoppedEarly := testutil.CollectScenesWithStop(t, out)
+	if !stoppedEarly {
+		t.Error("expected StoppedEarly")
+	}
+	if len(results) != 1 || results[0].ID != "1" {
+		t.Errorf("got %d scenes, want 1 (ID=1 before known ID=2)", len(results))
+	}
+}
+
+func TestRunActorFilter(t *testing.T) {
+	releases := []Release{makeRelease(1), makeRelease(2), makeRelease(3)}
+	ts := newTestServer(releases)
+	defer ts.close()
+	s := newScraper(ts)
+
+	studioURL := ts.ts.URL + "/pornstar/20/performer-2"
+	out := make(chan scraper.SceneResult)
+	go s.Run(context.Background(), studioURL, scraper.ListOpts{}, out)
+
+	results := testutil.CollectScenes(t, out)
+	if len(results) != 1 || results[0].ID != "2" {
+		t.Errorf("actor filter: got %d scenes, want 1 with ID=2", len(results))
+	}
+}
+
+func TestRunCollectionSlug(t *testing.T) {
+	r1 := makeRelease(1)
+	r1.Collections = []Collection{{ID: 10, Name: "Hot And Mean"}}
+	r2 := makeRelease(2)
+	r2.Collections = []Collection{{ID: 20, Name: "Other"}}
+	ts := newTestServer([]Release{r1, r2})
+	ts.collections = []struct {
+		ID   int    `json:"id"`
+		Name string `json:"name"`
+	}{
+		{ID: 10, Name: "Hot And Mean"},
+		{ID: 20, Name: "Other"},
+	}
+	defer ts.close()
+	s := newScraper(ts)
+
+	studioURL := ts.ts.URL + "/sites/hot-and-mean"
+	out := make(chan scraper.SceneResult)
+	go s.Run(context.Background(), studioURL, scraper.ListOpts{}, out)
+
+	results := testutil.CollectScenes(t, out)
+	if len(results) != 1 || results[0].ID != "1" {
+		t.Errorf("collection slug filter: got %d scenes, want 1 with ID=1", len(results))
+	}
+}
+
+func TestRunSeries(t *testing.T) {
+	ts := newTestServer(nil)
+	ts.series = []Release{makeSeries(100, []int{1, 2})}
+	defer ts.close()
+	s := newScraper(ts)
+
+	studioURL := ts.ts.URL + "/series/100/test-series"
+	out := make(chan scraper.SceneResult)
+	go s.Run(context.Background(), studioURL, scraper.ListOpts{}, out)
+
+	results := testutil.CollectScenes(t, out)
+	if len(results) != 2 {
+		t.Fatalf("series: got %d scenes, want 2", len(results))
+	}
+}
+
+func TestRunSeriesInheritsParentFields(t *testing.T) {
+	child := Release{
+		ID:    50,
+		Type:  "scene",
+		Title: "Child Scene",
+	}
+	parent := Release{
+		ID:           100,
+		Type:         "serie",
+		Title:        "Parent Series",
+		DateReleased: "2026-03-01T12:00:00+00:00",
+		Description:  "Series description",
+		Actors:       []Actor{{ID: 1, Name: "Star"}},
+		Tags:         []Tag{{ID: 1, Name: "Inherited"}},
+		Collections:  []Collection{{ID: 1, Name: "Col"}},
+		Children:     []Release{child},
+		RawImages:    json.RawMessage(`{"poster":{"0":{"xl":{"urls":{"default":"https://cdn.test/series.jpg"}}}}}`),
+		RawVideos:    json.RawMessage(`{}`),
+	}
+	ts := newTestServer(nil)
+	ts.series = []Release{parent}
+	defer ts.close()
+	s := newScraper(ts)
+
+	out := make(chan scraper.SceneResult)
+	go s.Run(context.Background(), ts.ts.URL+"/series/100/test", scraper.ListOpts{}, out)
+
+	results := testutil.CollectScenes(t, out)
+	if len(results) != 1 {
+		t.Fatalf("got %d scenes, want 1", len(results))
+	}
+	sc := results[0]
+	if len(sc.Performers) != 1 || sc.Performers[0] != "Star" {
+		t.Errorf("performers = %v, want [Star] (inherited from parent)", sc.Performers)
+	}
+	if sc.Date.IsZero() {
+		t.Error("date should be inherited from parent")
+	}
+	if sc.Description != "Series description" {
+		t.Errorf("description = %q, want inherited", sc.Description)
+	}
+	if sc.Thumbnail != "https://cdn.test/series.jpg" {
+		t.Errorf("thumbnail = %q, want inherited from parent images", sc.Thumbnail)
+	}
+}
+
+func TestRunPagination(t *testing.T) {
+	var releases []Release
+	for i := 1; i <= 150; i++ {
+		releases = append(releases, makeRelease(i))
+	}
+	ts := newTestServer(releases)
+	defer ts.close()
+	s := newScraper(ts)
+
+	out := make(chan scraper.SceneResult)
+	go s.Run(context.Background(), ts.ts.URL, scraper.ListOpts{}, out)
+
+	results := testutil.CollectScenes(t, out)
+	if len(results) != 150 {
+		t.Errorf("pagination: got %d scenes, want 150 (across 2 pages)", len(results))
+	}
+}
+
+func TestRunContextCancelled(t *testing.T) {
+	releases := []Release{makeRelease(1), makeRelease(2)}
+	ts := newTestServer(releases)
+	defer ts.close()
+	s := newScraper(ts)
+
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+
+	out := make(chan scraper.SceneResult)
+	go s.Run(ctx, ts.ts.URL, scraper.ListOpts{}, out)
+
+	var count int
+	for range out {
+		count++
+	}
+	if count > 1 {
+		t.Errorf("cancelled context should produce minimal results, got %d", count)
+	}
+}
+
+func TestRunSeriesKnownIDs(t *testing.T) {
+	ts := newTestServer(nil)
+	ts.series = []Release{makeSeries(100, []int{1, 2, 3})}
+	defer ts.close()
+	s := newScraper(ts)
+
+	out := make(chan scraper.SceneResult)
+	go s.Run(context.Background(), ts.ts.URL+"/series/100/x", scraper.ListOpts{
+		KnownIDs: map[string]bool{"2": true},
+	}, out)
+
+	results, stoppedEarly := testutil.CollectScenesWithStop(t, out)
+	if !stoppedEarly {
+		t.Error("expected StoppedEarly in series mode")
+	}
+	if len(results) != 1 {
+		t.Errorf("got %d scenes, want 1 before known ID", len(results))
+	}
+}
+
+func TestToSceneCustomScenePath(t *testing.T) {
+	cfg := SiteConfig{SiteID: "sp", SiteBase: "https://www.spicevids.com", StudioName: "SpiceVids", ScenePath: "scene"}
+	rel := Release{ID: 42, Title: "Test", RawImages: json.RawMessage(`[]`), RawVideos: json.RawMessage(`[]`)}
+	sc := ToScene(cfg, "https://www.spicevids.com", rel, time.Now())
+	if !strings.Contains(sc.URL, "/scene/42/") {
+		t.Errorf("URL = %q, want /scene/42/ path", sc.URL)
 	}
 }

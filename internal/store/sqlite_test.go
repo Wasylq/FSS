@@ -1,10 +1,16 @@
 package store
 
 import (
+	"database/sql"
+	"encoding/csv"
+	"encoding/json"
+	"os"
+	"path/filepath"
 	"testing"
 	"time"
 
 	"github.com/Wasylq/FSS/models"
+	_ "modernc.org/sqlite"
 )
 
 // ---- studios ----
@@ -503,5 +509,287 @@ func TestSQLiteRelationFastPathPreservesEntities(t *testing.T) {
 	}
 	if perfCount != 1 {
 		t.Errorf("scene_performers row count after no-op resave = %d, want 1", perfCount)
+	}
+}
+
+// ---- Export ----
+
+func TestSQLiteExportJSON(t *testing.T) {
+	s := newTestDB(t)
+	now := time.Now().UTC().Truncate(time.Second)
+
+	scenes := []models.Scene{{
+		ID: "1", SiteID: "test", StudioURL: testStudioURL,
+		Title: "Export Me", URL: "https://example.com/1",
+		Performers: []string{"Alice"}, Tags: []string{"tag1"},
+		Duration: 600, ScrapedAt: now,
+	}}
+	if err := s.Save(testStudioURL, scenes); err != nil {
+		t.Fatal(err)
+	}
+
+	path := filepath.Join(t.TempDir(), "export.json")
+	if err := s.Export("json", path, testStudioURL); err != nil {
+		t.Fatalf("Export JSON: %v", err)
+	}
+
+	data, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var sf studioFile
+	if err := json.Unmarshal(data, &sf); err != nil {
+		t.Fatalf("invalid JSON: %v", err)
+	}
+	if sf.StudioURL != testStudioURL {
+		t.Errorf("studioUrl = %q", sf.StudioURL)
+	}
+	if len(sf.Scenes) != 1 || sf.Scenes[0].Title != "Export Me" {
+		t.Errorf("scenes = %v", sf.Scenes)
+	}
+	if len(sf.Scenes[0].Performers) != 1 || sf.Scenes[0].Performers[0] != "Alice" {
+		t.Errorf("performers = %v", sf.Scenes[0].Performers)
+	}
+}
+
+func TestSQLiteExportCSV(t *testing.T) {
+	s := newTestDB(t)
+	now := time.Now().UTC().Truncate(time.Second)
+
+	scenes := []models.Scene{{
+		ID: "1", SiteID: "test", StudioURL: testStudioURL,
+		Title: "CSV Scene", Performers: []string{"Bob", "Carol"},
+		Tags: []string{"t1", "t2"}, Duration: 1200, ScrapedAt: now,
+	}}
+	if err := s.Save(testStudioURL, scenes); err != nil {
+		t.Fatal(err)
+	}
+
+	path := filepath.Join(t.TempDir(), "export.csv")
+	if err := s.Export("csv", path, testStudioURL); err != nil {
+		t.Fatalf("Export CSV: %v", err)
+	}
+
+	f, err := os.Open(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() { _ = f.Close() }()
+
+	r := csv.NewReader(f)
+	records, err := r.ReadAll()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(records) != 2 {
+		t.Fatalf("got %d rows, want 2 (header + 1)", len(records))
+	}
+	if records[1][3] != "CSV Scene" {
+		t.Errorf("title = %q", records[1][3])
+	}
+}
+
+func TestSQLiteExportUnknownFormat(t *testing.T) {
+	s := newTestDB(t)
+	err := s.Export("xml", "/tmp/nope.xml", testStudioURL)
+	if err == nil {
+		t.Error("expected error for unknown format")
+	}
+}
+
+// ---- Migration ----
+
+// newV0DB creates a SQLite database at schema v0 (no junction tables).
+// Scenes have JSON arrays in the performers/tags/categories TEXT columns,
+// just like the original schema before migration 1.
+func newV0DB(t *testing.T) *SQLite {
+	t.Helper()
+	db, err := sql.Open("sqlite", ":memory:")
+	if err != nil {
+		t.Fatal(err)
+	}
+	db.SetMaxOpenConns(1)
+	t.Cleanup(func() { _ = db.Close() })
+
+	if _, err := db.Exec(baseSchema); err != nil {
+		t.Fatalf("baseSchema: %v", err)
+	}
+	// Explicitly set version to 0 so migration 1 will run.
+	if _, err := db.Exec(`INSERT INTO schema_version (version) VALUES (0)`); err != nil {
+		t.Fatal(err)
+	}
+	return &SQLite{db: db}
+}
+
+func TestSQLiteMigration1(t *testing.T) {
+	s := newV0DB(t)
+	now := timeStr(time.Now().UTC().Truncate(time.Second))
+
+	// Insert v0-style scenes with JSON arrays in text columns.
+	_, err := s.db.Exec(`
+		INSERT INTO scenes (id, site_id, studio_url, title, url, date,
+			performers, tags, categories, scraped_at)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+		"s1", "test", testStudioURL, "Scene One", "https://example.com/1", now,
+		`["Alice","Bob"]`, `["blowjob","anal"]`, `["premium"]`, now,
+	)
+	if err != nil {
+		t.Fatalf("insert scene 1: %v", err)
+	}
+	_, err = s.db.Exec(`
+		INSERT INTO scenes (id, site_id, studio_url, title, url, date,
+			performers, tags, categories, scraped_at)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+		"s2", "test", testStudioURL, "Scene Two", "https://example.com/2", now,
+		`[]`, `["solo"]`, `[]`, now,
+	)
+	if err != nil {
+		t.Fatalf("insert scene 2: %v", err)
+	}
+
+	// Run migration 1.
+	if err := s.applyMigration1(); err != nil {
+		t.Fatalf("applyMigration1: %v", err)
+	}
+
+	// Verify schema version updated.
+	var version int
+	if err := s.db.QueryRow(`SELECT MAX(version) FROM schema_version`).Scan(&version); err != nil {
+		t.Fatal(err)
+	}
+	if version != 1 {
+		t.Errorf("schema version = %d, want 1", version)
+	}
+
+	// Verify junction table data via Load.
+	scenes, err := s.Load(testStudioURL)
+	if err != nil {
+		t.Fatalf("Load after migration: %v", err)
+	}
+	if len(scenes) != 2 {
+		t.Fatalf("got %d scenes, want 2", len(scenes))
+	}
+
+	byID := map[string]models.Scene{}
+	for _, sc := range scenes {
+		byID[sc.ID] = sc
+	}
+
+	sc1 := byID["s1"]
+	if len(sc1.Performers) != 2 || sc1.Performers[0] != "Alice" || sc1.Performers[1] != "Bob" {
+		t.Errorf("s1 performers = %v, want [Alice Bob]", sc1.Performers)
+	}
+	if len(sc1.Tags) != 2 {
+		t.Errorf("s1 tags = %v, want 2 tags", sc1.Tags)
+	}
+	if len(sc1.Categories) != 1 || sc1.Categories[0] != "premium" {
+		t.Errorf("s1 categories = %v, want [premium]", sc1.Categories)
+	}
+
+	sc2 := byID["s2"]
+	if len(sc2.Performers) != 0 {
+		t.Errorf("s2 performers = %v, want empty", sc2.Performers)
+	}
+	if len(sc2.Tags) != 1 || sc2.Tags[0] != "solo" {
+		t.Errorf("s2 tags = %v, want [solo]", sc2.Tags)
+	}
+	if len(sc2.Categories) != 0 {
+		t.Errorf("s2 categories = %v, want empty", sc2.Categories)
+	}
+
+	// Verify entity tables were populated.
+	var perfCount int
+	if err := s.db.QueryRow(`SELECT COUNT(*) FROM performers`).Scan(&perfCount); err != nil {
+		t.Fatal(err)
+	}
+	if perfCount != 2 {
+		t.Errorf("performers table has %d rows, want 2", perfCount)
+	}
+}
+
+func TestSQLiteMigration1EmptyDB(t *testing.T) {
+	s := newV0DB(t)
+
+	if err := s.applyMigration1(); err != nil {
+		t.Fatalf("applyMigration1 on empty DB: %v", err)
+	}
+
+	var version int
+	if err := s.db.QueryRow(`SELECT MAX(version) FROM schema_version`).Scan(&version); err != nil {
+		t.Fatal(err)
+	}
+	if version != 1 {
+		t.Errorf("schema version = %d, want 1", version)
+	}
+}
+
+func TestSQLiteMigration1NullJSON(t *testing.T) {
+	s := newV0DB(t)
+	now := timeStr(time.Now().UTC().Truncate(time.Second))
+
+	// Insert a scene where JSON columns are empty strings or null.
+	_, err := s.db.Exec(`
+		INSERT INTO scenes (id, site_id, studio_url, title, url, date,
+			performers, tags, categories, scraped_at)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+		"s1", "test", testStudioURL, "Null Scene", "https://example.com/1", now,
+		`null`, ``, `[]`, now,
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if err := s.applyMigration1(); err != nil {
+		t.Fatalf("applyMigration1 with null JSON: %v", err)
+	}
+
+	scenes, err := s.Load(testStudioURL)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(scenes) != 1 {
+		t.Fatalf("got %d scenes, want 1", len(scenes))
+	}
+	if len(scenes[0].Performers) != 0 {
+		t.Errorf("performers = %v, want empty", scenes[0].Performers)
+	}
+}
+
+// ---- unmarshalStrings ----
+
+func TestUnmarshalStrings(t *testing.T) {
+	cases := []struct {
+		name  string
+		input string
+		want  []string
+	}{
+		{"empty string", "", nil},
+		{"empty array", "[]", nil},
+		{"null", "null", nil},
+		{"single", `["alice"]`, []string{"alice"}},
+		{"multiple", `["alice","bob","carol"]`, []string{"alice", "bob", "carol"}},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			got, err := unmarshalStrings(c.input)
+			if err != nil {
+				t.Fatalf("unmarshalStrings(%q): %v", c.input, err)
+			}
+			if len(got) != len(c.want) {
+				t.Fatalf("got %v, want %v", got, c.want)
+			}
+			for i := range got {
+				if got[i] != c.want[i] {
+					t.Errorf("got[%d] = %q, want %q", i, got[i], c.want[i])
+				}
+			}
+		})
+	}
+}
+
+func TestUnmarshalStringsInvalid(t *testing.T) {
+	_, err := unmarshalStrings(`{not json}`)
+	if err == nil {
+		t.Error("expected error for invalid JSON")
 	}
 }
