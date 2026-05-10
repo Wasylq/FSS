@@ -28,11 +28,11 @@ var _ scraper.StudioScraper = (*Scraper)(nil)
 //	[6] release object (indices into further slots)
 //	[7+] leaf values
 func buildNuxtData(releases []map[string]any, hasNext bool) string {
-	flat := make([]any, 0, 64)
-	idx := func() int { return len(flat) }
-	push := func(v any) int { i := idx(); flat = append(flat, v); return i }
+	// Reserve index 0 for the root object — it must be at position 0
+	// in the devalue flat array. We fill it in at the end.
+	flat := make([]any, 1, 64)
+	push := func(v any) int { i := len(flat); flat = append(flat, v); return i }
 
-	// Leaf values for releases — push each release's fields, then build index objects.
 	type releaseRef struct {
 		obj map[string]any
 	}
@@ -43,7 +43,6 @@ func buildNuxtData(releases []map[string]any, hasNext bool) string {
 		for k, v := range rel {
 			switch val := v.(type) {
 			case []any:
-				// Array of values (performers, tags): push each element, then push array of refs.
 				elemRefs := make([]any, len(val))
 				for i, elem := range val {
 					elemRefs[i] = float64(push(elem))
@@ -51,7 +50,6 @@ func buildNuxtData(releases []map[string]any, hasNext bool) string {
 				arrIdx := push(elemRefs)
 				obj[k] = float64(arrIdx)
 			case map[string]any:
-				// Nested object (actor): push each field, then push object with refs.
 				inner := make(map[string]any)
 				for ik, iv := range val {
 					inner[ik] = float64(push(iv))
@@ -64,39 +62,27 @@ func buildNuxtData(releases []map[string]any, hasNext bool) string {
 		releaseRefs = append(releaseRefs, releaseRef{obj: obj})
 	}
 
-	// Push release objects and collect their indices.
 	itemIndices := make([]any, len(releaseRefs))
 	for i, rr := range releaseRefs {
 		itemIndices[i] = float64(push(rr.obj))
 	}
 	itemsIdx := push(itemIndices)
 
-	// Pagination.
 	var nextPageVal any
 	if hasNext {
 		nextPageVal = float64(push("/next"))
 	}
 	pagIdx := push(map[string]any{"nextPage": nextPageVal})
 
-	// Section: {items: →itemsIdx, pagination: →pagIdx}
 	sectionIdx := push(map[string]any{
 		"items":      float64(itemsIdx),
 		"pagination": float64(pagIdx),
 	})
 
-	// tourMainPageData: {latestReleases: →sectionIdx}
 	tourIdx := push(map[string]any{"latestReleases": float64(sectionIdx)})
-
-	// data: {tourMainPageData: →tourIdx}
 	dataIdx := push(map[string]any{"tourMainPageData": float64(tourIdx)})
 
-	// root: {data: →dataIdx}
-	rootIdx := push(map[string]any{"data": float64(dataIdx)})
-
-	// The root must be at index 0. Swap if needed.
-	if rootIdx != 0 {
-		flat[0], flat[rootIdx] = flat[rootIdx], flat[0]
-	}
+	flat[0] = map[string]any{"data": float64(dataIdx)}
 
 	b, _ := json.Marshal(flat)
 	return string(b)

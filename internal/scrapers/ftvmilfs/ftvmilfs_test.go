@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/Wasylq/FSS/internal/scrapers/ftvutil"
 	"github.com/Wasylq/FSS/internal/scrapers/testutil"
 	"github.com/Wasylq/FSS/scraper"
 )
@@ -44,8 +45,8 @@ func TestParseDate(t *testing.T) {
 		{"", time.Time{}},
 	}
 	for _, c := range cases {
-		if got := parseDate(c.input); !got.Equal(c.want) {
-			t.Errorf("parseDate(%q) = %v, want %v", c.input, got, c.want)
+		if got := ftvutil.ParseDate(c.input); !got.Equal(c.want) {
+			t.Errorf("ParseDate(%q) = %v, want %v", c.input, got, c.want)
 		}
 	}
 }
@@ -111,44 +112,44 @@ func TestParseListingPage(t *testing.T) {
 </div>
 </div><!-- ModelContainer -->`)
 
-	entries := parseListingPage(body)
+	entries := ftvutil.ParseListingPage(body)
 	if len(entries) != 2 {
 		t.Fatalf("got %d entries, want 2", len(entries))
 	}
 
 	e := entries[0]
-	if e.id != "610" {
-		t.Errorf("id = %q, want 610", e.id)
+	if e.ID != "610" {
+		t.Errorf("id = %q, want 610", e.ID)
 	}
-	if e.name != "Serene" {
-		t.Errorf("name = %q", e.name)
+	if e.Name != "Serene" {
+		t.Errorf("name = %q", e.Name)
 	}
 	wantDate := time.Date(2026, 4, 28, 0, 0, 0, 0, time.UTC)
-	if !e.date.Equal(wantDate) {
-		t.Errorf("date = %v, want %v", e.date, wantDate)
+	if !e.Date.Equal(wantDate) {
+		t.Errorf("date = %v, want %v", e.Date, wantDate)
 	}
-	if e.duration != 3840 {
-		t.Errorf("duration = %d, want 3840", e.duration)
+	if e.Duration != 3840 {
+		t.Errorf("duration = %d, want 3840", e.Duration)
 	}
-	if len(e.tags) != 2 || e.tags[0] != "First Time Experience" || e.tags[1] != "Busty Girl" {
-		t.Errorf("tags = %v", e.tags)
+	if len(e.Tags) != 2 || e.Tags[0] != "First Time Experience" || e.Tags[1] != "Busty Girl" {
+		t.Errorf("tags = %v", e.Tags)
 	}
-	if e.thumb != "https://cdn.test/serene-tour-610.jpg" {
-		t.Errorf("thumb = %q", e.thumb)
+	if e.Thumb != "https://cdn.test/serene-tour-610.jpg" {
+		t.Errorf("thumb = %q", e.Thumb)
 	}
-	if e.desc != "Serene is back on FTV!" {
-		t.Errorf("desc = %q", e.desc)
+	if e.Desc != "Serene is back on FTV!" {
+		t.Errorf("desc = %q", e.Desc)
 	}
 
 	e2 := entries[1]
-	if e2.id != "609" {
-		t.Errorf("id = %q, want 609", e2.id)
+	if e2.ID != "609" {
+		t.Errorf("id = %q, want 609", e2.ID)
 	}
-	if e2.name != "Melanie" {
-		t.Errorf("name = %q", e2.name)
+	if e2.Name != "Melanie" {
+		t.Errorf("name = %q", e2.Name)
 	}
-	if e2.duration != 4440 {
-		t.Errorf("duration = %d, want 4440", e2.duration)
+	if e2.Duration != 4440 {
+		t.Errorf("duration = %d, want 4440", e2.Duration)
 	}
 }
 
@@ -166,28 +167,28 @@ func TestParseDetailPage(t *testing.T) {
 </div>
 <div id="MagazineContainer"><img id="Magazine" src="https://cdn.test/serene-touru-610.jpg" alt="" /></div>`)
 
-	d := parseDetailPage(body)
-	if d.name != "Serene" {
-		t.Errorf("name = %q", d.name)
+	d := ftvutil.ParseDetailPage(body)
+	if d.Name != "Serene" {
+		t.Errorf("name = %q", d.Name)
 	}
-	if d.age != 28 {
-		t.Errorf("age = %d", d.age)
+	if d.Age != 28 {
+		t.Errorf("age = %d", d.Age)
 	}
-	if d.figure != "34D-26-34" {
-		t.Errorf("figure = %q", d.figure)
+	if d.Figure != "34D-26-34" {
+		t.Errorf("figure = %q", d.Figure)
 	}
-	if d.height != `5'4"` {
-		t.Errorf("height = %q", d.height)
+	if d.Height != `5'4"` {
+		t.Errorf("height = %q", d.Height)
 	}
 	wantDate := time.Date(2026, 4, 28, 0, 0, 0, 0, time.UTC)
-	if !d.date.Equal(wantDate) {
-		t.Errorf("date = %v, want %v", d.date, wantDate)
+	if !d.Date.Equal(wantDate) {
+		t.Errorf("date = %v, want %v", d.Date, wantDate)
 	}
-	if d.desc != "The day starts with gorgeous Serene." {
-		t.Errorf("desc = %q", d.desc)
+	if d.Desc != "The day starts with gorgeous Serene." {
+		t.Errorf("desc = %q", d.Desc)
 	}
-	if d.thumb != "https://cdn.test/serene-touru-610.jpg" {
-		t.Errorf("thumb = %q", d.thumb)
+	if d.Thumb != "https://cdn.test/serene-touru-610.jpg" {
+		t.Errorf("thumb = %q", d.Thumb)
 	}
 }
 
@@ -195,19 +196,19 @@ func TestParseDetailPageTitleFallback(t *testing.T) {
 	body := []byte(`<title>Luna on FTVMilfs.com Released Apr 14, 2026!</title>
 <div class="OneHeader" id="Bio"><p>Luna description.</p></div>`)
 
-	d := parseDetailPage(body)
-	if d.name != "Luna" {
-		t.Errorf("name = %q", d.name)
+	d := ftvutil.ParseDetailPage(body)
+	if d.Name != "Luna" {
+		t.Errorf("name = %q", d.Name)
 	}
 	wantDate := time.Date(2026, 4, 14, 0, 0, 0, 0, time.UTC)
-	if !d.date.Equal(wantDate) {
-		t.Errorf("date = %v", d.date)
+	if !d.Date.Equal(wantDate) {
+		t.Errorf("date = %v", d.Date)
 	}
 }
 
 func TestParseDetailPageEmpty(t *testing.T) {
-	d := parseDetailPage([]byte(`<html><body></body></html>`))
-	if d.name != "" || d.desc != "" {
+	d := ftvutil.ParseDetailPage([]byte(`<html><body></body></html>`))
+	if d.Name != "" || d.Desc != "" {
 		t.Errorf("expected empty detail, got %+v", d)
 	}
 }
@@ -273,7 +274,11 @@ func TestListScenes(t *testing.T) {
 	ts := newTestServer([]int{3, 2, 1})
 	defer ts.Close()
 
-	s := &Scraper{client: ts.Client(), base: ts.URL}
+	s := &ftvutil.Scraper{
+		Cfg:    ftvutil.SiteConfig{SiteID: "ftvmilfs", Domain: "ftvmilfs.com", Studio: "FTV MILFs", TitleSite: "FTVMilfs.com"},
+		Client: ts.Client(),
+		Base:   ts.URL,
+	}
 	ch, err := s.ListScenes(context.Background(), ts.URL+"/updates.html", scraper.ListOpts{})
 	if err != nil {
 		t.Fatal(err)
@@ -289,7 +294,11 @@ func TestListScenesKnownIDs(t *testing.T) {
 	ts := newTestServer([]int{5, 4, 3, 2, 1})
 	defer ts.Close()
 
-	s := &Scraper{client: ts.Client(), base: ts.URL}
+	s := &ftvutil.Scraper{
+		Cfg:    ftvutil.SiteConfig{SiteID: "ftvmilfs", Domain: "ftvmilfs.com", Studio: "FTV MILFs", TitleSite: "FTVMilfs.com"},
+		Client: ts.Client(),
+		Base:   ts.URL,
+	}
 	ch, err := s.ListScenes(context.Background(), ts.URL+"/updates.html", scraper.ListOpts{
 		KnownIDs: map[string]bool{"3": true},
 	})
@@ -310,7 +319,11 @@ func TestListScenesEnrichment(t *testing.T) {
 	ts := newTestServer([]int{3, 2, 1})
 	defer ts.Close()
 
-	s := &Scraper{client: ts.Client(), base: ts.URL}
+	s := &ftvutil.Scraper{
+		Cfg:    ftvutil.SiteConfig{SiteID: "ftvmilfs", Domain: "ftvmilfs.com", Studio: "FTV MILFs", TitleSite: "FTVMilfs.com"},
+		Client: ts.Client(),
+		Base:   ts.URL,
+	}
 	ch, err := s.ListScenes(context.Background(), ts.URL+"/updates.html", scraper.ListOpts{})
 	if err != nil {
 		t.Fatal(err)

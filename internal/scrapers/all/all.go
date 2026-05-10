@@ -6,6 +6,7 @@ package all
 
 import (
 	_ "github.com/Wasylq/FSS/internal/scrapers/adultprime"
+	_ "github.com/Wasylq/FSS/internal/scrapers/alisonangel"
 	_ "github.com/Wasylq/FSS/internal/scrapers/alternadudes"
 	_ "github.com/Wasylq/FSS/internal/scrapers/analacrobats"
 	_ "github.com/Wasylq/FSS/internal/scrapers/analtherapy"
@@ -29,6 +30,7 @@ import (
 	_ "github.com/Wasylq/FSS/internal/scrapers/familytherapy"
 	_ "github.com/Wasylq/FSS/internal/scrapers/fancentro"
 	_ "github.com/Wasylq/FSS/internal/scrapers/faphouse"
+	_ "github.com/Wasylq/FSS/internal/scrapers/ftvgirls"
 	_ "github.com/Wasylq/FSS/internal/scrapers/ftvmilfs"
 	_ "github.com/Wasylq/FSS/internal/scrapers/fyc"
 	_ "github.com/Wasylq/FSS/internal/scrapers/gamma"

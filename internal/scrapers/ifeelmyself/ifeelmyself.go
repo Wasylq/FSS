@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"net/url"
 	"regexp"
 	"strconv"
 	"strings"
@@ -36,6 +37,7 @@ func (s *Scraper) Patterns() []string {
 	return []string{
 		"ifeelmyself.com",
 		"ifeelmyself.com/public/main.php?page=artist_bio&artist_id={id}",
+		"ifeelmyself.com/public/main.php?page=quick_search&keyword={name}",
 	}
 }
 
@@ -49,7 +51,11 @@ func (s *Scraper) ListScenes(ctx context.Context, studioURL string, opts scraper
 	return out, nil
 }
 
-var artistPageRe = regexp.MustCompile(`artist_id=([A-Za-z0-9]+)`)
+var (
+	artistPageRe = regexp.MustCompile(`artist_id=([A-Za-z0-9]+)`)
+	searchPageRe = regexp.MustCompile(`[?&]keyword=([^&]+)`)
+	artistLinkRe = regexp.MustCompile(`artist_id=([A-Za-z0-9]+)'[^>]*>([^<]+)</a>`)
+)
 
 func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOpts, out chan<- scraper.SceneResult) {
 	defer close(out)
@@ -59,10 +65,32 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 		delay = defaultDelay
 	}
 
-	baseURL := siteBase + "/public/main.php?page=view&mode=all"
-	if m := artistPageRe.FindStringSubmatch(studioURL); m != nil {
-		baseURL = siteBase + "/public/main.php?page=artist_bio&artist_id=" + m[1]
+	if keyword := extractSearchKeyword(studioURL); keyword != "" {
+		s.runSearch(ctx, studioURL, keyword, opts, out)
+		return
 	}
+
+	if m := artistPageRe.FindStringSubmatch(studioURL); m != nil {
+		s.runArtist(ctx, studioURL, m[1], delay, opts, out)
+		return
+	}
+
+	s.runPaginated(ctx, studioURL, delay, opts, out)
+}
+
+func extractSearchKeyword(studioURL string) string {
+	if m := searchPageRe.FindStringSubmatch(studioURL); m != nil {
+		decoded, err := url.QueryUnescape(m[1])
+		if err != nil {
+			return m[1]
+		}
+		return decoded
+	}
+	return ""
+}
+
+func (s *Scraper) runPaginated(ctx context.Context, studioURL string, delay time.Duration, opts scraper.ListOpts, out chan<- scraper.SceneResult) {
+	baseURL := siteBase + "/public/main.php?page=view&mode=all"
 
 	totalSent := false
 	for offset := 0; ; offset += pageSize {
@@ -118,6 +146,110 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 	}
 }
 
+func (s *Scraper) runArtist(ctx context.Context, studioURL string, artistID string, delay time.Duration, opts scraper.ListOpts, out chan<- scraper.SceneResult) {
+	name, err := s.resolveArtistName(ctx, artistID, delay)
+	if err != nil {
+		select {
+		case out <- scraper.Error(fmt.Errorf("resolve artist %s: %w", artistID, err)):
+		case <-ctx.Done():
+		}
+		return
+	}
+
+	s.runSearch(ctx, studioURL, name, opts, out)
+}
+
+func (s *Scraper) resolveArtistName(ctx context.Context, artistID string, delay time.Duration) (string, error) {
+	const maxPages = 20
+	for page := 0; page < maxPages; page++ {
+		if ctx.Err() != nil {
+			return "", ctx.Err()
+		}
+		if page > 0 {
+			select {
+			case <-time.After(delay):
+			case <-ctx.Done():
+				return "", ctx.Err()
+			}
+		}
+
+		pageURL := fmt.Sprintf("%s/public/main.php?page=view&mode=all&offset=%d", siteBase, page*pageSize)
+		body, err := s.fetchBody(ctx, pageURL)
+		if err != nil {
+			return "", err
+		}
+
+		for _, m := range artistLinkRe.FindAllSubmatch(body, -1) {
+			if string(m[1]) == artistID {
+				return strings.TrimSpace(string(m[2])), nil
+			}
+		}
+
+		blocks := splitBlocks(body)
+		if len(blocks) == 0 {
+			break
+		}
+	}
+
+	return "", fmt.Errorf("artist_id %s not found in first %d listing pages — try quick_search URL instead", artistID, maxPages)
+}
+
+func (s *Scraper) runSearch(ctx context.Context, studioURL string, keyword string, opts scraper.ListOpts, out chan<- scraper.SceneResult) {
+	body, err := s.postSearch(ctx, keyword)
+	if err != nil {
+		select {
+		case out <- scraper.Error(fmt.Errorf("search %q: %w", keyword, err)):
+		case <-ctx.Done():
+		}
+		return
+	}
+
+	scenes := parseListingPage(body, studioURL)
+	if len(scenes) == 0 {
+		return
+	}
+
+	select {
+	case out <- scraper.Progress(len(scenes)):
+	case <-ctx.Done():
+		return
+	}
+
+	for _, scene := range scenes {
+		if opts.KnownIDs[scene.ID] {
+			select {
+			case out <- scraper.StoppedEarly():
+			case <-ctx.Done():
+			}
+			return
+		}
+		select {
+		case out <- scraper.Scene(scene):
+		case <-ctx.Done():
+			return
+		}
+	}
+}
+
+func (s *Scraper) postSearch(ctx context.Context, keyword string) ([]byte, error) {
+	form := url.Values{"keyword": {keyword}, "view_by": {"thumbnails"}}
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost,
+		siteBase+"/public/main.php?page=quick_search",
+		strings.NewReader(form.Encode()))
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("User-Agent", httpx.UserAgentFirefox)
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+
+	resp, err := s.client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer func() { _ = resp.Body.Close() }()
+	return httpx.ReadBody(resp.Body)
+}
+
 var (
 	cardRe      = regexp.MustCompile(`(?s)<table[^>]*class="ThumbTab ppss-scene"[^>]*data-scene-id="(\d+)"[^>]*data-scene-price="([^"]*)"[^>]*>.*?</TABLE>`)
 	performerRe = regexp.MustCompile(`artist_bio&amp;artist_id=([A-Za-z0-9]+)'[^>]*>([^<]+)</a>|artist_bio&artist_id=([A-Za-z0-9]+)'[^>]*>([^<]+)</a>`)
@@ -131,6 +263,14 @@ var (
 )
 
 func (s *Scraper) fetchPage(ctx context.Context, pageURL, studioURL string) ([]models.Scene, error) {
+	body, err := s.fetchBody(ctx, pageURL)
+	if err != nil {
+		return nil, err
+	}
+	return parseListingPage(body, studioURL), nil
+}
+
+func (s *Scraper) fetchBody(ctx context.Context, pageURL string) ([]byte, error) {
 	resp, err := httpx.Do(ctx, s.client, httpx.Request{
 		URL:     pageURL,
 		Headers: map[string]string{"User-Agent": httpx.UserAgentFirefox},
@@ -139,13 +279,7 @@ func (s *Scraper) fetchPage(ctx context.Context, pageURL, studioURL string) ([]m
 		return nil, err
 	}
 	defer func() { _ = resp.Body.Close() }()
-
-	body, err := httpx.ReadBody(resp.Body)
-	if err != nil {
-		return nil, err
-	}
-
-	return parseListingPage(body, studioURL), nil
+	return httpx.ReadBody(resp.Body)
 }
 
 func parseListingPage(body []byte, studioURL string) []models.Scene {
