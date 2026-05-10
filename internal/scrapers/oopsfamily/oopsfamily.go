@@ -19,10 +19,11 @@ const siteBase = "https://oopsfamily.com"
 
 type Scraper struct {
 	client *http.Client
+	base   string
 }
 
 func New() *Scraper {
-	return &Scraper{client: httpx.NewClient(30 * time.Second)}
+	return &Scraper{client: httpx.NewClient(30 * time.Second), base: siteBase}
 }
 
 func init() { scraper.Register(New()) }
@@ -54,14 +55,14 @@ var (
 	tagPathRe   = regexp.MustCompile(`/tag/([\w-]+)`)
 )
 
-func resolveListingBase(studioURL string) string {
+func (s *Scraper) resolveListingBase(studioURL string) string {
 	if m := modelPathRe.FindStringSubmatch(studioURL); m != nil {
-		return siteBase + "/model/" + m[1]
+		return s.base + "/model/" + m[1]
 	}
 	if m := tagPathRe.FindStringSubmatch(studioURL); m != nil {
-		return siteBase + "/tag/" + m[1]
+		return s.base + "/tag/" + m[1]
 	}
-	return siteBase + "/video"
+	return s.base + "/video"
 }
 
 // ---- runner ----
@@ -69,7 +70,7 @@ func resolveListingBase(studioURL string) string {
 func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOpts, out chan<- scraper.SceneResult) {
 	defer close(out)
 
-	base := resolveListingBase(studioURL)
+	base := s.resolveListingBase(studioURL)
 
 	var collected []listingCard
 	stoppedEarly := false
@@ -154,7 +155,7 @@ type listingCard struct {
 
 var (
 	cardBlockRe  = regexp.MustCompile(`(?s)<div class="video-card__item"[^>]*>(.*?)<div class="video-card__icons">`)
-	cardURLRe    = regexp.MustCompile(`href="(https://oopsfamily\.com/video/[^"]+)" class="video-card__title"`)
+	cardURLRe    = regexp.MustCompile(`href="([^"]+/video/[^"]+)" class="video-card__title"`)
 	cardTitleRe  = regexp.MustCompile(`(?s)class="video-card__title">\s*(.+?)\s*</a>`)
 	cardThumbRe  = regexp.MustCompile(`class="image-container"[^>]*>\s*<img src="([^"]+)"`)
 	cardDurRe    = regexp.MustCompile(`video-card__quality">\s*(?:<img[^>]*>)?\s*(\d+):(\d+)`)

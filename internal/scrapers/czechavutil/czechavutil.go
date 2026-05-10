@@ -75,11 +75,22 @@ type sitemapIndex struct {
 }
 
 func ParseSitemap(body []byte) []sitemapURL {
+	body = sanitizeXML(body)
 	var idx sitemapIndex
 	if err := xml.Unmarshal(body, &idx); err != nil {
 		return nil
 	}
 	return idx.URLs
+}
+
+func sanitizeXML(data []byte) []byte {
+	clean := make([]byte, 0, len(data))
+	for _, b := range data {
+		if b == 0x09 || b == 0x0A || b == 0x0D || b >= 0x20 {
+			clean = append(clean, b)
+		}
+	}
+	return clean
 }
 
 func ExtractSlug(loc, domain string) string {

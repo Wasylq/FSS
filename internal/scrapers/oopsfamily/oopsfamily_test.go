@@ -1,10 +1,15 @@
 package oopsfamily
 
 import (
+	"context"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 	"time"
+
+	"github.com/Wasylq/FSS/internal/scrapers/testutil"
+	"github.com/Wasylq/FSS/scraper"
 )
 
 func TestMatchesURL(t *testing.T) {
@@ -45,6 +50,7 @@ func TestExtractID(t *testing.T) {
 }
 
 func TestResolveListingBase(t *testing.T) {
+	s := New()
 	cases := []struct {
 		url, want string
 	}{
@@ -54,7 +60,7 @@ func TestResolveListingBase(t *testing.T) {
 		{"https://oopsfamily.com/tag/redhead", siteBase + "/tag/redhead"},
 	}
 	for _, c := range cases {
-		if got := resolveListingBase(c.url); got != c.want {
+		if got := s.resolveListingBase(c.url); got != c.want {
 			t.Errorf("resolveListingBase(%q) = %q, want %q", c.url, got, c.want)
 		}
 	}
@@ -174,44 +180,176 @@ func TestBuildScene(t *testing.T) {
 	}
 }
 
-func TestListScenes(t *testing.T) {
-	listing := fixtureCard + `<a href="?page=2" class="pagination__next icon-right-arr">`
-	detail := `<html><script type="application/ld+json">
-{"@type":"VideoObject","uploadDate":"2026-04-24T07:20:12+00:00","genre":["Pornography","Handjob"]}
-</script></html>`
+func cardFixture(base string, id int) string {
+	return fmt.Sprintf(`
+<div class="video-card__item">
+    <a class="image-container" href="%s/video/scene-%d-s%d">
+        <img src="%s/thumb/%d.jpg" alt="Scene %d">
+        <div class="video-card__quality">
+            <img src="/img/icons/icon-4K.svg" alt="4K"> %d:30
+        </div>
+    </a>
+    <div class="video-card__description">
+        <a href="%s/video/scene-%d-s%d" class="video-card__title">
+            Scene %d
+        </a>
+        <div class="video-card__actors mr-4">
+            <a href="%s/model/performer-%d">Performer %d</a>
+        </div>
+        <div class="video-card__icons">`,
+		base, id, id, base, id, id, id, base, id, id, id, base, id, id)
+}
 
-	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path == "/video" || r.URL.Path == "/" {
-			if r.URL.Query().Get("page") == "2" {
-				_, _ = w.Write([]byte(`<html></html>`))
+func detailFixture(id int) string {
+	return fmt.Sprintf(`<html><script type="application/ld+json">
+{"@type":"VideoObject","uploadDate":"2026-01-%02dT10:00:00+00:00","genre":["Pornography","Tag%d"]}
+</script></html>`, id, id)
+}
+
+func newTestServer(base *string, sceneCount int) *httptest.Server {
+	var ts *httptest.Server
+	ts = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch {
+		case r.URL.Path == "/video" || r.URL.Path == "/model/someone" || r.URL.Path == "/tag/redhead":
+			page := r.URL.Query().Get("page")
+			if page == "2" || page == "" && sceneCount == 0 {
+				_, _ = fmt.Fprint(w, `<html></html>`)
 				return
 			}
-			_, _ = w.Write([]byte(listing))
-			return
+			var html string
+			for i := 1; i <= sceneCount; i++ {
+				html += cardFixture(ts.URL, i)
+			}
+			if sceneCount > 0 {
+				html += `<a href="?page=2" class="pagination__next icon-right-arr">`
+			}
+			_, _ = fmt.Fprint(w, html)
+		default:
+			var id int
+			_, _ = fmt.Sscanf(r.URL.Path, "/video/scene-%d-", &id)
+			if id > 0 {
+				_, _ = fmt.Fprint(w, detailFixture(id))
+			} else {
+				w.WriteHeader(404)
+			}
 		}
-		_, _ = w.Write([]byte(detail))
 	}))
+	*base = ts.URL
+	return ts
+}
+
+func TestListScenes(t *testing.T) {
+	var base string
+	ts := newTestServer(&base, 3)
 	defer ts.Close()
 
-	s := &Scraper{client: ts.Client()}
+	s := &Scraper{client: ts.Client(), base: base}
 
-	// Override card URL regex to match test server
-	origURLRe := cardURLRe
-	origIDRe := sceneIDRe
-	defer func() {
-		cardURLRe = origURLRe
-		sceneIDRe = origIDRe
-	}()
+	ch, err := s.ListScenes(context.Background(), base, scraper.ListOpts{})
+	if err != nil {
+		t.Fatal(err)
+	}
 
-	// We can't easily override the hardcoded oopsfamily.com in the regex,
-	// so test via the integration test instead. This unit test validates
-	// the parsing logic through the individual parse functions above.
-	_ = s
-	_ = ts
+	results := testutil.CollectScenes(t, ch)
+	if len(results) != 3 {
+		t.Fatalf("got %d scenes, want 3", len(results))
+	}
+	for _, sc := range results {
+		if sc.SiteID != "oopsfamily" {
+			t.Errorf("siteID = %q", sc.SiteID)
+		}
+		if sc.Studio != "OopsFamily" {
+			t.Errorf("studio = %q", sc.Studio)
+		}
+		if sc.Title == "" {
+			t.Error("title is empty")
+		}
+		if len(sc.Performers) != 1 {
+			t.Errorf("performers = %v", sc.Performers)
+		}
+		if sc.Duration == 0 {
+			t.Error("duration is 0")
+		}
+		if sc.Date.IsZero() {
+			t.Error("date is zero")
+		}
+		if len(sc.Tags) == 0 {
+			t.Error("tags is empty")
+		}
+		if sc.Width != 3840 || sc.Resolution != "2160p" {
+			t.Errorf("resolution: %dx%d %s", sc.Width, sc.Height, sc.Resolution)
+		}
+	}
 }
 
 func TestListScenesKnownIDs(t *testing.T) {
-	// KnownIDs early-stop is tested via the parse functions:
-	// parseListingPage returns cards, and run() checks KnownIDs per card.
-	// Full integration of this is covered by the live test.
+	var base string
+	ts := newTestServer(&base, 3)
+	defer ts.Close()
+
+	s := &Scraper{client: ts.Client(), base: base}
+
+	ch, err := s.ListScenes(context.Background(), base, scraper.ListOpts{
+		KnownIDs: map[string]bool{"s2": true},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	results, stoppedEarly := testutil.CollectScenesWithStop(t, ch)
+	if !stoppedEarly {
+		t.Error("expected StoppedEarly signal")
+	}
+	if len(results) != 1 {
+		t.Fatalf("got %d scenes, want 1 (before known ID)", len(results))
+	}
+}
+
+func TestListScenesModelPage(t *testing.T) {
+	var base string
+	ts := newTestServer(&base, 2)
+	defer ts.Close()
+
+	s := &Scraper{client: ts.Client(), base: base}
+
+	ch, err := s.ListScenes(context.Background(), base+"/model/someone", scraper.ListOpts{})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	results := testutil.CollectScenes(t, ch)
+	if len(results) != 2 {
+		t.Fatalf("got %d scenes, want 2", len(results))
+	}
+}
+
+func TestListScenesDetailFallbackDate(t *testing.T) {
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch {
+		case r.URL.Path == "/video":
+			if r.URL.Query().Get("page") == "2" {
+				_, _ = fmt.Fprint(w, `<html></html>`)
+				return
+			}
+			_, _ = fmt.Fprint(w, cardFixture(r.Host, 1))
+		default:
+			_, _ = fmt.Fprint(w, `<html></html>`)
+		}
+	}))
+	defer ts.Close()
+
+	s := &Scraper{client: ts.Client(), base: ts.URL}
+
+	ch, err := s.ListScenes(context.Background(), ts.URL, scraper.ListOpts{})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	results := testutil.CollectScenes(t, ch)
+	if len(results) != 1 {
+		t.Fatalf("got %d scenes, want 1", len(results))
+	}
+	if results[0].Date.IsZero() {
+		t.Error("date should fallback to now, not be zero")
+	}
 }

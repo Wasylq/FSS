@@ -89,6 +89,30 @@ func TestParseSitemapEmpty(t *testing.T) {
 	}
 }
 
+func TestParseSitemapControlChars(t *testing.T) {
+	body := []byte("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+		"<urlset xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\"\n" +
+		"        xmlns:video=\"http://www.google.com/schemas/sitemap-video/1.1\">\n" +
+		"<url>\n" +
+		"<loc>https://example.com/sitemap.xml/video/scene-1/</loc>\n" +
+		"<video:video>\n" +
+		"<video:title><![CDATA[Scene with control\x19char]]></video:title>\n" +
+		"<video:description><![CDATA[She\x19s ready]]></video:description>\n" +
+		"<video:duration>600</video:duration>\n" +
+		"<video:publication_date>2026-01-15</video:publication_date>\n" +
+		"</video:video>\n" +
+		"</url>\n" +
+		"</urlset>")
+
+	urls := ParseSitemap(body)
+	if len(urls) != 1 {
+		t.Fatalf("got %d URLs, want 1", len(urls))
+	}
+	if urls[0].Video.Title != "Scene with controlchar" {
+		t.Errorf("title = %q", urls[0].Video.Title)
+	}
+}
+
 func TestParseDetailPage(t *testing.T) {
 	body := []byte(`<html><head>
 <script type="application/ld+json">
