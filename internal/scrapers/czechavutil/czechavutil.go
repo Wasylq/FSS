@@ -1,0 +1,367 @@
+package czechavutil
+
+import (
+	"context"
+	"encoding/json"
+	"encoding/xml"
+	"fmt"
+	"html"
+	"net/http"
+	"regexp"
+	"strings"
+	"sync"
+	"time"
+
+	"github.com/Wasylq/FSS/internal/httpx"
+	"github.com/Wasylq/FSS/models"
+	"github.com/Wasylq/FSS/scraper"
+)
+
+type SiteConfig struct {
+	SiteID string
+	Domain string
+	Studio string
+}
+
+type Scraper struct {
+	Cfg    SiteConfig
+	Client *http.Client
+	Base   string
+}
+
+func NewScraper(cfg SiteConfig) *Scraper {
+	return &Scraper{
+		Cfg:    cfg,
+		Client: httpx.NewClient(30 * time.Second),
+		Base:   "https://" + cfg.Domain,
+	}
+}
+
+func (s *Scraper) ID() string { return s.Cfg.SiteID }
+func (s *Scraper) MatchesURL(u string) bool {
+	re := regexp.MustCompile(`^https?://(?:www\.)?` + regexp.QuoteMeta(s.Cfg.Domain))
+	return re.MatchString(u)
+}
+func (s *Scraper) Patterns() []string {
+	return []string{
+		s.Cfg.Domain,
+		s.Cfg.Domain + "/video/{slug}",
+	}
+}
+
+func (s *Scraper) ListScenes(ctx context.Context, studioURL string, opts scraper.ListOpts) (<-chan scraper.SceneResult, error) {
+	out := make(chan scraper.SceneResult)
+	go s.run(ctx, studioURL, opts, out)
+	return out, nil
+}
+
+type sitemapURL struct {
+	Loc     string       `xml:"loc"`
+	LastMod string       `xml:"lastmod"`
+	Video   sitemapVideo `xml:"http://www.google.com/schemas/sitemap-video/1.1 video"`
+}
+
+type sitemapVideo struct {
+	Title       string `xml:"http://www.google.com/schemas/sitemap-video/1.1 title"`
+	Description string `xml:"http://www.google.com/schemas/sitemap-video/1.1 description"`
+	Thumbnail   string `xml:"http://www.google.com/schemas/sitemap-video/1.1 thumbnail_loc"`
+	Duration    int    `xml:"http://www.google.com/schemas/sitemap-video/1.1 duration"`
+	PubDate     string `xml:"http://www.google.com/schemas/sitemap-video/1.1 publication_date"`
+}
+
+type sitemapIndex struct {
+	XMLName xml.Name     `xml:"urlset"`
+	URLs    []sitemapURL `xml:"url"`
+}
+
+func ParseSitemap(body []byte) []sitemapURL {
+	var idx sitemapIndex
+	if err := xml.Unmarshal(body, &idx); err != nil {
+		return nil
+	}
+	return idx.URLs
+}
+
+func ExtractSlug(loc, domain string) string {
+	for _, scheme := range []string{"https://", "http://"} {
+		prefix := scheme + domain + "/sitemap.xml/video/"
+		if strings.HasPrefix(loc, prefix) {
+			return strings.TrimSuffix(strings.TrimPrefix(loc, prefix), "/")
+		}
+		prefix2 := scheme + domain + "/video/"
+		if strings.HasPrefix(loc, prefix2) {
+			return strings.TrimSuffix(strings.TrimPrefix(loc, prefix2), "/")
+		}
+	}
+	return ""
+}
+
+type DetailData struct {
+	Performers []string
+	Tags       []string
+}
+
+type jsonLD struct {
+	Type     string  `json:"@type"`
+	Actor    jsonAny `json:"actor"`
+	Keywords string  `json:"keywords"`
+}
+
+type jsonAny []byte
+
+func (j *jsonAny) UnmarshalJSON(data []byte) error {
+	*j = data
+	return nil
+}
+
+var (
+	jsonLDRe    = regexp.MustCompile(`(?s)<script type="application/ld\+json">(.*?)</script>`)
+	performerRe = regexp.MustCompile(`[?&]adult-performer[^"]*"[^>]*class="[^"]*text-link[^"]*"[^>]*>([^<]+)</a>`)
+)
+
+func ParseDetailPage(body []byte) DetailData {
+	var d DetailData
+
+	for _, m := range jsonLDRe.FindAllSubmatch(body, -1) {
+		var ld jsonLD
+		if err := json.Unmarshal(m[1], &ld); err != nil {
+			continue
+		}
+		if ld.Type != "VideoObject" {
+			continue
+		}
+
+		if len(ld.Actor) > 0 {
+			d.Performers = parseActors(ld.Actor)
+		}
+
+		if ld.Keywords != "" {
+			for _, kw := range strings.Split(ld.Keywords, ",") {
+				tag := strings.TrimSpace(kw)
+				if tag != "" {
+					d.Tags = append(d.Tags, tag)
+				}
+			}
+		}
+		break
+	}
+
+	if len(d.Performers) == 0 {
+		for _, m := range performerRe.FindAllSubmatch(body, -1) {
+			name := strings.TrimSpace(html.UnescapeString(string(m[1])))
+			if name != "" {
+				d.Performers = appendUnique(d.Performers, name)
+			}
+		}
+	}
+
+	return d
+}
+
+func parseActors(raw []byte) []string {
+	raw = []byte(strings.TrimSpace(string(raw)))
+	if len(raw) == 0 {
+		return nil
+	}
+
+	if raw[0] == '[' {
+		var arr []any
+		if err := json.Unmarshal(raw, &arr); err != nil {
+			return nil
+		}
+		var names []string
+		for _, v := range arr {
+			switch val := v.(type) {
+			case string:
+				if name := strings.TrimSpace(val); name != "" {
+					names = appendUnique(names, name)
+				}
+			case map[string]any:
+				if name, ok := val["name"].(string); ok {
+					if n := strings.TrimSpace(name); n != "" {
+						names = appendUnique(names, n)
+					}
+				}
+			}
+		}
+		return names
+	}
+
+	if raw[0] == '"' {
+		var s string
+		if err := json.Unmarshal(raw, &s); err == nil {
+			if name := strings.TrimSpace(s); name != "" {
+				return []string{name}
+			}
+		}
+	}
+
+	return nil
+}
+
+func appendUnique(slice []string, val string) []string {
+	for _, s := range slice {
+		if strings.EqualFold(s, val) {
+			return slice
+		}
+	}
+	return append(slice, val)
+}
+
+func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOpts, out chan<- scraper.SceneResult) {
+	defer close(out)
+
+	workers := opts.Workers
+	if workers <= 0 {
+		workers = 4
+	}
+
+	body, err := s.fetchPage(ctx, s.Base+"/sitemap.xml")
+	if err != nil {
+		select {
+		case out <- scraper.Error(fmt.Errorf("sitemap: %w", err)):
+		case <-ctx.Done():
+		}
+		return
+	}
+
+	urls := ParseSitemap(body)
+	if len(urls) == 0 {
+		select {
+		case out <- scraper.Error(fmt.Errorf("no scenes in sitemap")):
+		case <-ctx.Done():
+		}
+		return
+	}
+
+	type sceneEntry struct {
+		slug string
+		url  sitemapURL
+	}
+
+	var entries []sceneEntry
+	for _, u := range urls {
+		slug := ExtractSlug(u.Loc, s.Cfg.Domain)
+		if slug == "" || u.Video.Title == "" {
+			continue
+		}
+		entries = append(entries, sceneEntry{slug: slug, url: u})
+	}
+
+	if len(entries) == 0 {
+		return
+	}
+
+	select {
+	case out <- scraper.Progress(len(entries)):
+	case <-ctx.Done():
+		return
+	}
+
+	work := make(chan sceneEntry, workers)
+	var wg sync.WaitGroup
+	for i := 0; i < workers; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			for entry := range work {
+				if opts.Delay > 0 {
+					select {
+					case <-time.After(opts.Delay):
+					case <-ctx.Done():
+						return
+					}
+				}
+				scene, ferr := s.fetchScene(ctx, entry.slug, entry.url, studioURL)
+				if ferr != nil {
+					select {
+					case out <- scraper.Error(ferr):
+					case <-ctx.Done():
+						return
+					}
+					continue
+				}
+				select {
+				case out <- scraper.Scene(scene):
+				case <-ctx.Done():
+					return
+				}
+			}
+		}()
+	}
+
+	cancelled := false
+	for _, entry := range entries {
+		if opts.KnownIDs[entry.slug] {
+			select {
+			case out <- scraper.StoppedEarly():
+			case <-ctx.Done():
+			}
+			break
+		}
+		select {
+		case work <- entry:
+		case <-ctx.Done():
+			cancelled = true
+		}
+		if cancelled {
+			break
+		}
+	}
+
+	close(work)
+	wg.Wait()
+}
+
+func (s *Scraper) fetchScene(ctx context.Context, slug string, u sitemapURL, studioURL string) (models.Scene, error) {
+	sceneURL := s.Base + "/video/" + slug + "/"
+
+	detailBody, err := s.fetchPage(ctx, sceneURL)
+	if err != nil {
+		return models.Scene{}, fmt.Errorf("detail %s: %w", slug, err)
+	}
+
+	detail := ParseDetailPage(detailBody)
+
+	var date time.Time
+	if u.Video.PubDate != "" {
+		if t, err := time.Parse("2006-01-02", u.Video.PubDate); err == nil {
+			date = t.UTC()
+		}
+	} else if u.LastMod != "" {
+		if t, err := time.Parse("2006-01-02", u.LastMod); err == nil {
+			date = t.UTC()
+		}
+	}
+
+	now := time.Now().UTC()
+	return models.Scene{
+		ID:          slug,
+		SiteID:      s.Cfg.SiteID,
+		StudioURL:   studioURL,
+		URL:         sceneURL,
+		Title:       strings.TrimSpace(u.Video.Title),
+		Description: strings.TrimSpace(u.Video.Description),
+		Thumbnail:   u.Video.Thumbnail,
+		Duration:    u.Video.Duration,
+		Date:        date,
+		Performers:  detail.Performers,
+		Tags:        detail.Tags,
+		Studio:      s.Cfg.Studio,
+		ScrapedAt:   now,
+	}, nil
+}
+
+func (s *Scraper) fetchPage(ctx context.Context, url string) ([]byte, error) {
+	resp, err := httpx.Do(ctx, s.Client, httpx.Request{
+		URL: url,
+		Headers: map[string]string{
+			"User-Agent": httpx.UserAgentFirefox,
+		},
+	})
+	if err != nil {
+		return nil, err
+	}
+	defer func() { _ = resp.Body.Close() }()
+	return httpx.ReadBody(resp.Body)
+}
