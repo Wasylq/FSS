@@ -449,12 +449,12 @@ func newTestServer(releases []Release) *testServer {
 }
 
 func (s *testServer) handler(w http.ResponseWriter, r *http.Request) {
-	switch {
-	case r.URL.Path == "/":
+	switch r.URL.Path {
+	case "/":
 		http.SetCookie(w, &http.Cookie{Name: "instance_token", Value: "test-token-123"})
 		_, _ = fmt.Fprint(w, "<html>site</html>")
 
-	case r.URL.Path == "/v2/releases":
+	case "/v2/releases":
 		q := r.URL.Query()
 		typ := q.Get("type")
 		limit, _ := strconv.Atoi(q.Get("limit"))
@@ -487,7 +487,7 @@ func (s *testServer) handler(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		_ = json.NewEncoder(w).Encode(resp)
 
-	case r.URL.Path == "/v1/collections":
+	case "/v1/collections":
 		w.Header().Set("Content-Type", "application/json")
 		result := struct {
 			Result []struct {

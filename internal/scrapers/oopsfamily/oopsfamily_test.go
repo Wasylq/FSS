@@ -209,8 +209,8 @@ func detailFixture(id int) string {
 func newTestServer(base *string, sceneCount int) *httptest.Server {
 	var ts *httptest.Server
 	ts = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		switch {
-		case r.URL.Path == "/video" || r.URL.Path == "/model/someone" || r.URL.Path == "/tag/redhead":
+		switch r.URL.Path {
+		case "/video", "/model/someone", "/tag/redhead":
 			page := r.URL.Query().Get("page")
 			if page == "2" || page == "" && sceneCount == 0 {
 				_, _ = fmt.Fprint(w, `<html></html>`)
@@ -325,8 +325,8 @@ func TestListScenesModelPage(t *testing.T) {
 
 func TestListScenesDetailFallbackDate(t *testing.T) {
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		switch {
-		case r.URL.Path == "/video":
+		switch r.URL.Path {
+		case "/video":
 			if r.URL.Query().Get("page") == "2" {
 				_, _ = fmt.Fprint(w, `<html></html>`)
 				return
