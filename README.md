@@ -168,6 +168,9 @@ fss scrape --db ./fss.db --name "Bettie Bondage" <url>
 
 # See supported sites
 fss list-scrapers
+
+# Check if a URL is supported
+fss check <url>
 ```
 
 ### NFO sidecar files

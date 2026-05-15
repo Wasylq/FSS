@@ -43,6 +43,21 @@ Prints all registered scrapers and the URL patterns each one handles. No flags.
 
 Lists all studios in the SQLite database with scene counts and last-scraped timestamps. Requires `--db`.
 
+### `fss check <url>`
+
+Checks whether a URL is supported by any registered scraper. Prints the scraper ID and its URL patterns if matched. If unsupported, prints a pre-filled link to open a new-scraper request issue on GitHub.
+
+```bash
+$ fss check https://www.brazzers.com/videos
+Scraper:  brazzers
+Patterns: brazzers.com, brazzers.com/pornstar/{id}/{slug}, ...
+
+$ fss check https://example.com/unknown
+Not supported: https://example.com/unknown
+
+Request support: https://github.com/Wasylq/FSS/issues/new?template=new_scraper.yml&url=...
+```
+
 ### `fss version`
 
 Prints the build version, commit hash, and build date. Checks for newer releases on GitHub.
