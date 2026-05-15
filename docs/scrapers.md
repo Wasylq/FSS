@@ -340,6 +340,11 @@
 | [Diabolic](https://www.diabolic.com) | `diabolic.com` | Gamma/Algolia | No | Algolia search API (zerotolerancefilms segment), uses `gammautil` |
 | [Addicted 2 Girls](https://www.addicted2girls.com) | `addicted2girls.com` | Gamma/Algolia | No | Algolia search API (addicted2girls segment), uses `gammautil` |
 | [BiPhoria](https://www.biphoria.com) | `biphoria.com` | Gamma/Algolia | No | Algolia search API (biphoria segment), uses `gammautil` |
+| [Blowpass](https://www.blowpass.com) | `blowpass.com` | Gamma/Algolia | No | Algolia search API (blowpass segment), network hub (~6.8k scenes), uses `gammautil` |
+| [Throated](https://www.throated.com) | `throated.com` | Gamma/Algolia | No | Algolia search API (blowpass segment), Blowpass sub-site, uses `gammautil` |
+| [1000 Facials](https://www.1000facials.com) | `1000facials.com` | Gamma/Algolia | No | Algolia search API (blowpass segment), Blowpass sub-site, uses `gammautil` |
+| [Only Teen Blowjobs](https://www.onlyteenblowjobs.com) | `onlyteenblowjobs.com` | Gamma/Algolia | No | Algolia search API (blowpass segment), Blowpass sub-site, uses `gammautil` |
+| [Immoral Live](https://www.immorallive.com) | `immorallive.com` | Gamma/Algolia | No | Algolia search API (blowpass segment), Blowpass sub-site, uses `gammautil` |
 | [BigStr](https://www.czechhunter.com) | `czechhunter.com`, `czechhunter.com/pornstar/{id}/{slug}`, `czechhunter.com/category/{id}/{slug}`, `czechhunter.com/site/{id}/{slug}`, `czechhunter.com/series/{id}/{slug}` | Aylo/Juan | No | REST API, uses `ayloutil` |
 | [Bromo](https://www.bromo.com) | `bromo.com`, `bromo.com/pornstar/{id}/{slug}`, `bromo.com/category/{id}/{slug}`, `bromo.com/site/{id}/{slug}`, `bromo.com/series/{id}/{slug}` | Aylo/Juan | No | REST API, `/scene/` path, uses `ayloutil` |
 | [Erito](https://www.erito.com) | `erito.com`, `erito.com/pornstar/{id}/{slug}`, `erito.com/category/{id}/{slug}`, `erito.com/site/{id}/{slug}`, `erito.com/series/{id}/{slug}` | Aylo/Juan | No | REST API, uses `ayloutil` |

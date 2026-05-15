@@ -9,12 +9,12 @@ Scrapes all scenes and metadata from a studio URL. Designed to be easily extende
 
 ## Supported sites
 
-**681 sites** across 15+ platforms — [full list with URL patterns →](docs/scrapers.md)
+**686 sites** across 15+ platforms — [full list with URL patterns →](docs/scrapers.md)
 
 | Platform | Count | Examples |
 |----------|------:|---------|
 | Score Group | 93 | Scoreland, XL Girls, 18Eighteen, Leg Sex, Naughty Mag, 50 Plus MILFs, … |
-| Gamma/Algolia | 79 | Adult Time, BiPhoria, Burning Angel, Devil's Film, Diabolic, Dogfart Network, Evil Angel, Fame Digital, Girlcore, Modern-Day Sins, OpenLife, Pretty Dirty, Pure Taboo, Transfixed, White Ghetto, Wicked, Zero Tolerance Films, … |
+| Gamma/Algolia | 84 | Adult Time, BiPhoria, Blowpass, Burning Angel, Devil's Film, Diabolic, Dogfart Network, Evil Angel, Fame Digital, Girlcore, Modern-Day Sins, OpenLife, Pretty Dirty, Pure Taboo, Throated, Transfixed, White Ghetto, Wicked, Zero Tolerance Films, … |
 | WP video-elements | 12 | DaughterSwap, MommysBoy, PervMom, SisLovesMe, … |
 | SpiceVids collections | 1001 | AdamAndEveVOD, Crunchboy, 1111Customs, AdultTime, NewSensations, … (Aylo marketplace) |
 | Aylo/Juan | 36 | Babes, BangBros, BigStr, Brazzers, Bromo, Dancing Bear, Erito, FakeHub, HentaiPros, Icon Male, Killergram, LetsDoeIt, Men, Metro, MileHigh, Noir Male, Reality Kings, Sean Cody, Sex Selector, SpiceVids, Sweet Sinner, Sweetheart Video, Transsensual, TwinkPop, Virtual Porn, WhyNotBi, … |

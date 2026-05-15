@@ -124,6 +124,15 @@ var sites = []siteConfig{
 
 	// BiPhoria segment (own segment, under Zero Tolerance Films tree)
 	{"biphoria", "biphoria.com", "BiPhoria", "", "", ""},
+
+	// Blowpass segment — network hub (all content in the segment)
+	{"blowpass", "blowpass.com", "", "", "", ""},
+
+	// Blowpass segment — individual sites with own domains
+	{"throated", "throated.com", "Throated", "", "", ""},
+	{"1000facials", "1000facials.com", "1000 Facials", "", "", ""},
+	{"onlyteenblowjobs", "onlyteenblowjobs.com", "Only Teen Blowjobs", "", "", ""},
+	{"immorallive", "immorallive.com", "Immoral Live", "", "", ""},
 }
 
 type siteScraper struct {
