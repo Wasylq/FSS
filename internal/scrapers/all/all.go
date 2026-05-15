@@ -42,6 +42,7 @@ import (
 	_ "github.com/Wasylq/FSS/internal/scrapers/ifeelmyself"
 	_ "github.com/Wasylq/FSS/internal/scrapers/ishotmyself"
 	_ "github.com/Wasylq/FSS/internal/scrapers/iwantclips"
+	_ "github.com/Wasylq/FSS/internal/scrapers/javdatabase"
 	_ "github.com/Wasylq/FSS/internal/scrapers/jerkoffinstructions"
 	_ "github.com/Wasylq/FSS/internal/scrapers/julesjordan"
 	_ "github.com/Wasylq/FSS/internal/scrapers/karups"
