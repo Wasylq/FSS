@@ -9,7 +9,7 @@ Scrapes all scenes and metadata from a studio URL. Designed to be easily extende
 
 ## Supported sites
 
-**678 sites** across 15+ platforms — [full list with URL patterns →](docs/scrapers.md)
+**681 sites** across 15+ platforms — [full list with URL patterns →](docs/scrapers.md)
 
 | Platform | Count | Examples |
 |----------|------:|---------|
@@ -17,7 +17,7 @@ Scrapes all scenes and metadata from a studio URL. Designed to be easily extende
 | Gamma/Algolia | 79 | Adult Time, BiPhoria, Burning Angel, Devil's Film, Diabolic, Dogfart Network, Evil Angel, Fame Digital, Girlcore, Modern-Day Sins, OpenLife, Pretty Dirty, Pure Taboo, Transfixed, White Ghetto, Wicked, Zero Tolerance Films, … |
 | WP video-elements | 12 | DaughterSwap, MommysBoy, PervMom, SisLovesMe, … |
 | SpiceVids collections | 1001 | AdamAndEveVOD, Crunchboy, 1111Customs, AdultTime, NewSensations, … (Aylo marketplace) |
-| Aylo/Juan | 33 | Babes, BangBros, BigStr, Brazzers, Dancing Bear, Erito, HentaiPros, Icon Male, Killergram, LetsDoeIt, Metro, MileHigh, Noir Male, Reality Kings, Sean Cody, Sex Selector, SpiceVids, Sweet Sinner, Sweetheart Video, Transsensual, Virtual Porn, WhyNotBi, … |
+| Aylo/Juan | 36 | Babes, BangBros, BigStr, Brazzers, Bromo, Dancing Bear, Erito, FakeHub, HentaiPros, Icon Male, Killergram, LetsDoeIt, Men, Metro, MileHigh, Noir Male, Reality Kings, Sean Cody, Sex Selector, SpiceVids, Sweet Sinner, Sweetheart Video, Transsensual, TwinkPop, Virtual Porn, WhyNotBi, … |
 | FYC/PornPros | 20 | Passion HD, Tiny4K, POVD, Casting Couch X, Lubed, SpyFam, Cum4K, Exotic4K, WetVR, BBC Pie, … |
 | WordPress | 5 | Anal Therapy, Family Therapy, Tara Tainton, … |
 | POVR/WankzVR | 4 | BrasilVR, MilfVR, TranzVR, WankzVR |
