@@ -148,11 +148,22 @@ func ToScene(cfg SiteConfig, studioURL string, v Video, now time.Time) models.Sc
 		date = t.UTC()
 	}
 
+	title := v.Title
+	if title == "" {
+		title = titleFromURL(v.URL)
+	}
+	if title == "" && len(v.Actors) > 0 {
+		title = strings.Join(v.Actors, ", ")
+	}
+	if title == "" {
+		title = strconv.Itoa(v.ID)
+	}
+
 	return models.Scene{
 		ID:          strconv.Itoa(v.ID),
 		SiteID:      cfg.SiteID,
 		StudioURL:   studioURL,
-		Title:       v.Title,
+		Title:       title,
 		URL:         v.URL,
 		Date:        date,
 		Duration:    v.Duration,
@@ -163,6 +174,30 @@ func ToScene(cfg SiteConfig, studioURL string, v Video, now time.Time) models.Sc
 		Studio:      v.Channel,
 		ScrapedAt:   now,
 	}
+}
+
+func titleFromURL(rawURL string) string {
+	u, err := url.Parse(rawURL)
+	if err != nil {
+		return ""
+	}
+	slug := strings.TrimSuffix(strings.TrimPrefix(u.Path, "/"), "/")
+	// Strip trailing numeric ID (e.g. "some-slug-12345" → "some-slug")
+	if i := strings.LastIndex(slug, "-"); i > 0 {
+		tail := slug[i+1:]
+		if _, err := strconv.Atoi(tail); err == nil {
+			slug = slug[:i]
+		}
+	}
+	// Pure numeric slug (just an ID, no title info)
+	if _, err := strconv.Atoi(slug); err == nil {
+		return ""
+	}
+	if slug == "" {
+		return ""
+	}
+	title := strings.ReplaceAll(slug, "-", " ")
+	return strings.ToUpper(title[:1]) + title[1:]
 }
 
 func ParseChannel(studioURL string) string {

@@ -299,8 +299,8 @@ func TestFetchDetailFallbackPerformers(t *testing.T) {
 func TestRunPagination(t *testing.T) {
 	page := 0
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		switch {
-		case r.URL.Path == "/porn-categories/movies/":
+		switch r.URL.Path {
+		case "/porn-categories/movies/":
 			page++
 			if page == 1 {
 				_, _ = fmt.Fprint(w, sampleCard+sampleCard2+`
@@ -310,9 +310,9 @@ func TestRunPagination(t *testing.T) {
 			} else {
 				_, _ = fmt.Fprint(w, "")
 			}
-		case r.URL.Path == "/trailers/Naomis-Ass-Filled-With-Cum/":
+		case "/trailers/Naomis-Ass-Filled-With-Cum/":
 			_, _ = fmt.Fprint(w, sampleDetail)
-		case r.URL.Path == "/trailers/Second-Scene-Slug/":
+		case "/trailers/Second-Scene-Slug/":
 			_, _ = fmt.Fprint(w, sampleDetail)
 		default:
 			http.NotFound(w, r)
@@ -344,10 +344,10 @@ func TestRunPagination(t *testing.T) {
 
 func TestRunKnownIDs(t *testing.T) {
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		switch {
-		case r.URL.Path == "/porn-categories/movies/":
+		switch r.URL.Path {
+		case "/porn-categories/movies/":
 			_, _ = fmt.Fprint(w, sampleCard+sampleCard2)
-		case r.URL.Path == "/trailers/Naomis-Ass-Filled-With-Cum/":
+		case "/trailers/Naomis-Ass-Filled-With-Cum/":
 			_, _ = fmt.Fprint(w, sampleDetail)
 		default:
 			http.NotFound(w, r)

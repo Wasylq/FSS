@@ -153,6 +153,40 @@ func TestToScene(t *testing.T) {
 	}
 }
 
+func TestToSceneNullTitle(t *testing.T) {
+	cfg := SiteConfig{SiteID: "lethalpass", SiteBase: "https://www.lethalpass.com", StudioName: "Lethal Pass"}
+	v := Video{
+		ID:         1638954,
+		URL:        "https://www.lethalpass.com/1638954",
+		Duration:   877,
+		Actors:     []string{"Syren De Mer", "Tyler Nixon"},
+		Tags:       []string{"Hardcore"},
+		ActiveDate: "2025-01-01 00:00:00",
+	}
+
+	scene := ToScene(cfg, "https://www.lethalpass.com/", v, time.Now().UTC())
+	if scene.Title == "" {
+		t.Error("expected non-empty title fallback for null API title")
+	}
+}
+
+func TestTitleFromURL(t *testing.T) {
+	tests := []struct {
+		url  string
+		want string
+	}{
+		{"https://www.wankz.com/sexy-scene-name-12345", "Sexy scene name"},
+		{"https://www.lethalpass.com/1638954", ""},
+		{"https://www.wankz.com/just-a-slug", "Just a slug"},
+		{"https://www.wankz.com/", ""},
+	}
+	for _, tt := range tests {
+		if got := titleFromURL(tt.url); got != tt.want {
+			t.Errorf("titleFromURL(%q) = %q, want %q", tt.url, got, tt.want)
+		}
+	}
+}
+
 func TestParseChannel(t *testing.T) {
 	tests := []struct {
 		url  string
