@@ -9,7 +9,7 @@ Scrapes all scenes and metadata from a studio URL. Designed to be easily extende
 
 ## Supported sites
 
-**689 sites** across 15+ platforms — [full list with URL patterns →](docs/scrapers.md)
+**711 sites** across 15+ platforms — [full list with URL patterns →](docs/scrapers.md)
 
 | Platform | Count | Examples |
 |----------|------:|---------|
@@ -30,6 +30,7 @@ Scrapes all scenes and metadata from a studio URL. Designed to be easily extende
 | New Sensations | 8 | New Sensations, FamilyXXX, Hot Wife XXX, Girl Girl XXX, Fresh Outta High School, Shane Diesel XXX, … |
 | Wow Network | 4 | WowGirls, Ultra Films, angels.love, sensual.love |
 | TeamSkeet/PSM | 47 | TeamSkeet, MYLF, Family Strokes, Freeuse, Pervz, Shoplyfter, SayUncle, Dad Crush, Sis Loves Me, Hijab Hookup, … |
+| Full Porn Network | 22 | Analized, James Deen, Bad Daddy POV, Porn Force, DTF Sluts, Slut Inspection, Abbie Maley, Broken Sluts, … |
 | Wankz | 2 | Wankz, Lethal Pass |
 | Stashbox | 1+ | StashDB, any stashbox instance (config-driven) |
 | Standalone | 54 | Anal Vids, APClips, Bare Back Studios, Beautiful Agony, Clips4Sale, Crunchboy, DEEP'S, Fakings, Glory Quest, GrandparentsX, I Feel Myself, I Shot Myself, Jules Jordan, Kink, KM Produce, Lucas Entertainment, ManyVids, Mousouzoku, Naked News, Pornhub, Pure CFNM, r18.dev, Raw Fuck Club, SexLikeReal, Takara TV, VENUS, … |

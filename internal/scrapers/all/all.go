@@ -31,6 +31,7 @@ import (
 	_ "github.com/Wasylq/FSS/internal/scrapers/familytherapy"
 	_ "github.com/Wasylq/FSS/internal/scrapers/fancentro"
 	_ "github.com/Wasylq/FSS/internal/scrapers/faphouse"
+	_ "github.com/Wasylq/FSS/internal/scrapers/fpn"
 	_ "github.com/Wasylq/FSS/internal/scrapers/ftvgirls"
 	_ "github.com/Wasylq/FSS/internal/scrapers/ftvmilfs"
 	_ "github.com/Wasylq/FSS/internal/scrapers/fyc"

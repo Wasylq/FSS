@@ -397,6 +397,28 @@
 | [Wank It Now VR](https://wankitnowvr.com) | `wankitnowvr.com`, `wankitnowvr.com/models/{slug}/{id}` | Laravel (custom) | No | HTML listing (12/page), standalone scraper, model page support, ~1300 scenes |
 | [Wankz](https://www.wankz.com) | `wankz.com`, `wankz.com/channels/{slug}` | Wankz JSON API | No | REST JSON API at `/api/videos/find.json`, 50/page, date-sorted, 65 channels, ~3.4k scenes, uses `wankzutil` |
 | [Lethal Pass](https://www.lethalpass.com) | `lethalpass.com`, `lethalpass.com/channels/{slug}` | Wankz JSON API | No | REST JSON API, 18 channels, ~3.9k scenes, uses `wankzutil` |
+| [Full Porn Network](https://fullpornnetwork.com) | `fullpornnetwork.com`, `fullpornnetwork.com/models/{name}.html`, `fullpornnetwork.com/porn-categories/{slug}`, `fullpornnetwork.com/channels/{slug}` | Full Porn Network (Higgs Field) | No | Hub site aggregating all FPN subsites, HTML listing (20/page) + detail page worker pool, table-driven `fpn` package using `fpnutil` |
+| [Abbie Maley](https://abbiemaley.com) | `abbiemaley.com` | Full Porn Network | No | FPN subsite, uses `fpnutil` |
+| [Anal Amateur](https://analamateur.com) | `analamateur.com` | Full Porn Network | No | FPN subsite, uses `fpnutil` |
+| [AnalBBC](https://analbbc.com) | `analbbc.com` | Full Porn Network | No | FPN subsite, uses `fpnutil` |
+| [Analized](https://analized.com) | `analized.com`, `analized.com/models/{name}.html`, `analized.com/porn-categories/{slug}`, `analized.com/channels/{slug}` | Full Porn Network | No | FPN subsite, uses `fpnutil` |
+| [Bad Brother POV](https://badbrotherpov.com) | `badbrotherpov.com` | Full Porn Network | No | FPN subsite, uses `fpnutil` |
+| [Bad Daddy POV](https://baddaddypov.com) | `baddaddypov.com` | Full Porn Network | No | FPN subsite, uses `fpnutil` |
+| [Bad Family POV](https://badfamilypov.com) | `badfamilypov.com` | Full Porn Network | No | FPN subsite, uses `fpnutil` |
+| [Bad Mommy POV](https://badmommypov.com) | `badmommypov.com` | Full Porn Network | No | FPN subsite, uses `fpnutil` |
+| [Broken Sluts](https://brokensluts.net) | `brokensluts.net` | Full Porn Network | No | FPN subsite, uses `fpnutil` |
+| [Cum Dumpster Teens](https://cumdumpsterteens.com) | `cumdumpsterteens.com` | Full Porn Network | No | FPN subsite, uses `fpnutil` |
+| [DTF Sluts](https://dtfsluts.com) | `dtfsluts.com` | Full Porn Network | No | FPN subsite, uses `fpnutil` |
+| [James Deen](https://jamesdeen.com) | `jamesdeen.com` | Full Porn Network | No | FPN subsite, uses `fpnutil` |
+| [Porn Force](https://pornforce.com) | `pornforce.com` | Full Porn Network | No | FPN subsite, uses `fpnutil` |
+| [Pork Vendors](https://porkvendors.com) | `porkvendors.com` | Full Porn Network | No | FPN subsite, uses `fpnutil` |
+| [Public Sex Date](https://publicsexdate.com) | `publicsexdate.com` | Full Porn Network | No | FPN subsite, uses `fpnutil` |
+| [Slut Inspection](https://slutinspection.com) | `slutinspection.com` | Full Porn Network | No | FPN subsite, uses `fpnutil` |
+| [Slutty BBWs](https://sluttybbws.com) | `sluttybbws.com` | Full Porn Network | No | FPN subsite, uses `fpnutil` |
+| [Teasing and Pleasing](https://teasingandpleasing.com) | `teasingandpleasing.com` | Full Porn Network | No | FPN subsite, uses `fpnutil` |
+| [Teenage Anal Sluts](https://teenageanalsluts.com) | `teenageanalsluts.com` | Full Porn Network | No | FPN subsite, uses `fpnutil` |
+| [Teenage Tryouts](https://teenagetryouts.com) | `teenagetryouts.com` | Full Porn Network | No | FPN subsite, uses `fpnutil` |
+| [Your Mom Does Porn](https://yourmomdoesporn.com) | `yourmomdoesporn.com` | Full Porn Network | No | FPN subsite, uses `fpnutil` |
 | Wow Network sites (4) | `{domain}`, `{domain}/tour/whats-new`, `{domain}/tour/trailer/{section}/{slug}` | Custom CMS (Wow) | No | Table-driven via `wownetworkutil`: WowGirls (wowgirls.com + wowporn.com), Ultra Films (ultrafilms.com), angels.love (angels.love), sensual.love (sensual.love). Sitemap-based discovery, JSON-LD on detail pages for title/date/duration, performer extraction from JSON-LD description or listing page, `wowmodels.com` CDN |
 | Grooby (42 sites) | `{domain}/tour/categories/movies.html`, `{domain}/tour/models/{slug}.html` | Grooby CMS | No | Table-driven `grooby` package using `groobyutil`, HTML listing (12-30/page), date-sorted, model page support, NATS platform, ~7k scenes across network. Sites: Asian American TGirls, Asian Tgirl, Black TGirls, Black TGirls Hardcore, Bob's TGirls, Brazil TGirls, Brazilian Transsexuals, Canada TGirl, Euro Tgirls, Femout.xxx, Femoutsex.xxx, Frank's TGirl World, Grooby Archives, Grooby Girls (+ shemaleyum.com), Grooby VR (+ justvr.xxx), GroobyDVD, Krissy4U, Ladyboy Ladyboy, Ladyboy.xxx, Real TGirls, Russian TGirls, TGirl 40, TGirl BBW, TGirl Japan, TGirl Japan Hardcore, TGirl Pornstar, Tgirl Post-Op, tgirlsex.xxx, TGirls Fuck, TGirls Hookup, Tgirls.porn, TGirls.xxx (+ shemale.xxx), TGirl Tops, TGirl X, T.Porn, Third Sex XXX, Transex Domination, Transex POV, Transgasm, Transnificent, TS Casting Couch, UK TGirls |
 
