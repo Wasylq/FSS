@@ -22,10 +22,11 @@ const (
 )
 
 type SiteConfig struct {
-	SiteID   string
-	Domain   string
-	SiteBase string
-	Index    string // ES index name (e.g. "ts_network", "mylf_bundle")
+	SiteID    string
+	Domain    string
+	SiteBase  string
+	Index     string // ES index name (e.g. "ts_network", "mylf_bundle")
+	ScenePath string // URL path prefix for scenes (default: "/videos/")
 }
 
 type Scraper struct {
@@ -98,7 +99,7 @@ func (s *Scraper) Run(ctx context.Context, studioURL string, opts scraper.ListOp
 				return
 			}
 
-			scene := hitToScene(hit.Source, studioURL, s.Config.SiteBase, now)
+			scene := hitToScene(hit.Source, studioURL, s.Config, now)
 			select {
 			case out <- scraper.Scene(scene):
 			case <-ctx.Done():
@@ -244,7 +245,7 @@ type esModel struct {
 
 var stripTagsRe = regexp.MustCompile(`<[^>]+>`)
 
-func hitToScene(src esScene, studioURL, siteBase string, now time.Time) models.Scene {
+func hitToScene(src esScene, studioURL string, cfg SiteConfig, now time.Time) models.Scene {
 	id := strconv.Itoa(src.ItemID)
 
 	var performers []string
@@ -259,12 +260,17 @@ func hitToScene(src esScene, studioURL, siteBase string, now time.Time) models.S
 	desc = html.UnescapeString(desc)
 	desc = strings.TrimSpace(desc)
 
+	scenePath := cfg.ScenePath
+	if scenePath == "" {
+		scenePath = "/videos/"
+	}
+
 	scene := models.Scene{
 		ID:          id,
 		SiteID:      src.Site.NickName,
 		StudioURL:   studioURL,
 		Title:       src.Title,
-		URL:         siteBase + "/videos/" + src.ID,
+		URL:         cfg.SiteBase + scenePath + src.ID,
 		Thumbnail:   src.Img,
 		Preview:     src.VideoTrailer,
 		Description: desc,

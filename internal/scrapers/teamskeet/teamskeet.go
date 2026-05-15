@@ -57,6 +57,9 @@ var sites = []teamskeetutil.SiteConfig{
 	{SiteID: "sisswap", Domain: "sisswap.com", SiteBase: "https://www.sisswap.com", Index: "ts_network"},
 	{SiteID: "tinysis", Domain: "tinysis.com", SiteBase: "https://www.tinysis.com", Index: "ts_network"},
 	{SiteID: "freeusefantasy", Domain: "freeusefantasy.com", SiteBase: "https://www.freeusefantasy.com", Index: "ts_network"},
+
+	// SayUncle network
+	{SiteID: "sayuncle", Domain: "sayuncle.com", SiteBase: "https://www.sayuncle.com", Index: "sau_network", ScenePath: "/movies/"},
 }
 
 type siteScraper struct {

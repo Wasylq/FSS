@@ -100,7 +100,7 @@ func TestHitToScene(t *testing.T) {
 	src.Site.NickName = "mylf-singles-ts"
 
 	now := time.Date(2026, 4, 27, 12, 0, 0, 0, time.UTC)
-	scene := hitToScene(src, "https://www.mylf.com/", "https://www.mylf.com", now)
+	scene := hitToScene(src, "https://www.mylf.com/", SiteConfig{SiteBase: "https://www.mylf.com"}, now)
 
 	if scene.ID != "31954" {
 		t.Errorf("ID = %q, want 31954", scene.ID)

@@ -211,6 +211,7 @@
 | [Thickumz](https://www.thickumz.com) | `thickumz.com` | TeamSkeet/PSM | No | TeamSkeet, `ts_network` index |
 | [Tiny Sis](https://www.tinysis.com) | `tinysis.com` | TeamSkeet/PSM | No | TeamSkeet, `ts_network` index |
 | [Titty Attack](https://www.tittyattack.com) | `tittyattack.com` | TeamSkeet/PSM | No | TeamSkeet, `ts_network` index |
+| [SayUncle](https://www.sayuncle.com) | `sayuncle.com`, `sayuncle.com/models/{slug}`, `sayuncle.com/series/{slug}`, `sayuncle.com/categories/{name}` | TeamSkeet/PSM | No | TeamSkeet, `sau_network` ES index, `/movies/` scene path |
 | [Pure Mature](https://puremature.com) | `puremature.com`, `puremature.com/models/{slug}` | AMA Multimedia | No | JSON REST API, filter by model, resolution from download options |
 | [MilfVR](https://www.milfvr.com) | `milfvr.com` | POVR/WankzVR | No | Export JSON + listing page dates, uses `povrutil` |
 | [MissaX](https://www.missax.com) | `missax.com`, `missax.com/tour/models/{name}.html` | Custom | No | HTML scraping, listing + detail page worker pool, model/performer page support |

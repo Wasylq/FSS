@@ -37,3 +37,8 @@ func TestLivePervz(t *testing.T) {
 	s := newSiteScraper(sites[4]) // pervz
 	testutil.RunLiveScrape(t, s, "https://www.pervz.com/", 2)
 }
+
+func TestLiveSayUncle(t *testing.T) {
+	s := newSiteScraper(sites[len(sites)-1]) // sayuncle (last entry)
+	testutil.RunLiveScrape(t, s, "https://www.sayuncle.com/", 2)
+}
