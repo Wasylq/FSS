@@ -98,6 +98,7 @@ import (
 	_ "github.com/Wasylq/FSS/internal/scrapers/visitx"
 	_ "github.com/Wasylq/FSS/internal/scrapers/wankitnow"
 	_ "github.com/Wasylq/FSS/internal/scrapers/wankitnowvr"
+	_ "github.com/Wasylq/FSS/internal/scrapers/wankz"
 	_ "github.com/Wasylq/FSS/internal/scrapers/wownetwork"
 	_ "github.com/Wasylq/FSS/internal/scrapers/xespl"
 	_ "github.com/Wasylq/FSS/internal/scrapers/xevbellringer"
