@@ -294,8 +294,11 @@
 | [HeteroFlexible](https://www.heteroflexible.com) | `heteroflexible.com` | Gamma/Algolia | No | Algolia search API (adulttime segment), uses `gammautil` |
 | [Is This Real?!](https://www.isthisreal.com) | `isthisreal.com` | Gamma/Algolia | No | Algolia search API (adulttime segment), uses `gammautil` |
 | [Jerk Buddies](https://www.jerk-buddies.com) | `jerk-buddies.com` | Gamma/Algolia | No | Algolia search API (adulttime segment), uses `gammautil` |
+| [JoyMii](https://www.joymii.com) | `joymii.com` | Gamma/Algolia | No | Algolia search API (adulttime segment), uses `gammautil` |
 | [Lady Gonzo](https://www.ladygonzo.com) | `ladygonzo.com` | Gamma/Algolia | No | Algolia search API (adulttime segment), uses `gammautil` |
 | [Lez Be Bad](https://www.lezbebad.com) | `lezbebad.com` | Gamma/Algolia | No | Algolia search API (adulttime segment), uses `gammautil` |
+| [MixedX](https://www.mixedx.com) | `mixedx.com` | Gamma/Algolia | No | Algolia search API (adulttime segment), uses `gammautil` |
+| [Model Time](https://www.modeltime.com) | `modeltime.com` | Gamma/Algolia | No | Algolia search API (adulttime segment), uses `gammautil` |
 | [Modern-Day Sins](https://www.moderndaysins.com) | `moderndaysins.com` | Gamma/Algolia | No | Algolia search API (adulttime segment), uses `gammautil` |
 | [Oopsie!](https://www.oopsie.com) | `oopsie.com` | Gamma/Algolia | No | Algolia search API (adulttime segment), uses `gammautil` |
 | [Oopsie! Animated](https://www.oopsieanimated.com) | `oopsieanimated.com` | Gamma/Algolia | No | Algolia search API (adulttime segment), uses `gammautil` |
@@ -433,7 +436,7 @@ Scrapers that share a platform use common utility packages to avoid duplication:
 | `adultprimeutil` | Adult Prime (HTML listing + detail pages, `var params` pagination) | `adultprime` | 97 studios |
 | `ayloutil` | Aylo/Juan (REST API, instance token auth) | `aylo` | 31 sites + BangBros (standalone) + SpiceVids |
 | `cherrypimpsutil` | Cherry Pimps/BLT Innovations (Elevated X CMS, HTML listing) | `cherrypimps` | 2 sites |
-| `gammautil` | Gamma Entertainment (Algolia search API, 8 segments: adulttime, evilangel, evilangelnetwork, dfxtra, openlife, zerotolerancefilms, addicted2girls, biphoria) | `gamma` | 79 sites |
+| `gammautil` | Gamma Entertainment (Algolia search API, 8 segments: adulttime, evilangel, evilangelnetwork, dfxtra, openlife, zerotolerancefilms, addicted2girls, biphoria) | `gamma` | 87 sites |
 | `fycutil` | FYC/PornPros (Nuxt 3 SSR, `__NUXT_DATA__` devalue format, 12/page, model page support) | `fyc` | 20 sites |
 | `groobyutil` | Grooby CMS (HTML listing, NATS platform, `/tour/categories/movies_{page}_d.html` pagination) | `grooby` | 42 sites |
 | `julesjordanutil` | Jules Jordan Network (ElevatedX CMS, 3 template variants: JJ/Classic/Modern) | `julesjordan` | 5 sites |

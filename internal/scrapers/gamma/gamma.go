@@ -61,6 +61,11 @@ var sites = []siteConfig{
 	{"truelesbian", "truelesbian.com", "True Lesbian", "", "", ""},
 	{"upclosevr", "upclosevr.com", "Up Close VR", "", "", ""},
 
+	// Adult Time segment — standalone-domain sites
+	{"joymii", "joymii.com", "JoyMii", "", "", ""},
+	{"mixedx", "mixedx.com", "MixedX", "", "", ""},
+	{"modeltime", "modeltime.com", "Model Time", "", "", ""},
+
 	// Adult Time segment — Devil's Film (Network) sub-sites
 	{"devilsfilm", "devilsfilm.com", "Devil's Film", "", "", ""},
 	{"devilsfilmparodies", "devilsfilmparodies.com", "Devil's Film Parodies", "", "", ""},
