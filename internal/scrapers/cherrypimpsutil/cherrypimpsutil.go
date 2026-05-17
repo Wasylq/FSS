@@ -3,6 +3,7 @@ package cherrypimpsutil
 import (
 	"context"
 	"fmt"
+	"html"
 	"net/http"
 	"regexp"
 	"strconv"
@@ -57,9 +58,14 @@ var (
 	performerRe = regexp.MustCompile(`<a[^>]+href="[^"]*models/[^"]*">([^<]+)</a>`)
 	maxPageRe   = regexp.MustCompile(`_(\d+)_d\.html`)
 
+	dvdCardStartRe = regexp.MustCompile(`<div class="item-update[^"]*item-model[^"]*col">`)
+	dvdLinkRe      = regexp.MustCompile(`<a\s+href="([^"]+/dvds/[^"]+\.html)"`)
+	dvdPageRe      = regexp.MustCompile(`dvds_page_(\d+)\.html`)
+
 	seriesSlugRe   = regexp.MustCompile(`/series/([^_/.]+)`)
 	categorySlugRe = regexp.MustCompile(`/categories/([^_/.]+)`)
 	modelSlugRe    = regexp.MustCompile(`/models/([^_/.]+?)(?:\.html)?$`)
+	dvdSlugRe      = regexp.MustCompile(`/dvds/([^_/.]+?)(?:\.html)?$`)
 )
 
 const cardEnd = "<!--//item-update-->"
@@ -97,7 +103,7 @@ func parseListingPage(body []byte) []sceneItem {
 		}
 
 		if sm := titleRe.FindStringSubmatch(block); sm != nil {
-			item.title = strings.TrimSpace(sm[1])
+			item.title = html.UnescapeString(strings.TrimSpace(sm[1]))
 		}
 
 		if sm := sceneURLRe.FindStringSubmatch(block); sm != nil {
@@ -169,6 +175,8 @@ const (
 	modeSeries
 	modeCategory
 	modeModel
+	modeDVD
+	modeDVDListing
 )
 
 type listingConfig struct {
@@ -179,6 +187,12 @@ type listingConfig struct {
 func parseStudioURL(studioURL string) listingConfig {
 	if m := modelSlugRe.FindStringSubmatch(studioURL); m != nil {
 		return listingConfig{mode: modeModel, slug: m[1]}
+	}
+	if m := dvdSlugRe.FindStringSubmatch(studioURL); m != nil {
+		if m[1] == "dvds" {
+			return listingConfig{mode: modeDVDListing}
+		}
+		return listingConfig{mode: modeDVD, slug: m[1]}
 	}
 	if m := seriesSlugRe.FindStringSubmatch(studioURL); m != nil {
 		return listingConfig{mode: modeSeries, slug: m[1]}
@@ -209,15 +223,22 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 	lc := parseStudioURL(studioURL)
 	now := time.Now().UTC()
 
-	if lc.mode == modeModel {
-		s.scrapeModelPage(ctx, studioURL, opts, out, now)
+	switch lc.mode {
+	case modeModel:
+		s.scrapeSinglePage(ctx, studioURL, opts, out, now)
+		return
+	case modeDVD:
+		s.scrapeSinglePage(ctx, studioURL, opts, out, now)
+		return
+	case modeDVDListing:
+		s.scrapeDVDListing(ctx, opts, out, now)
 		return
 	}
 
 	s.scrapeListingPages(ctx, lc, opts, out, now)
 }
 
-func (s *Scraper) scrapeModelPage(ctx context.Context, studioURL string, opts scraper.ListOpts, out chan<- scraper.SceneResult, now time.Time) {
+func (s *Scraper) scrapeSinglePage(ctx context.Context, studioURL string, opts scraper.ListOpts, out chan<- scraper.SceneResult, now time.Time) {
 	pageURL := studioURL
 	if !strings.HasPrefix(pageURL, "http") {
 		pageURL = s.cfg.SiteBase + pageURL
@@ -296,6 +317,134 @@ func (s *Scraper) scrapeListingPages(ctx context.Context, lc listingConfig, opts
 				case <-ctx.Done():
 					return
 				}
+			}
+		}
+
+		for _, item := range scenes {
+			if opts.KnownIDs[item.id] {
+				select {
+				case out <- scraper.StoppedEarly():
+				case <-ctx.Done():
+				}
+				return
+			}
+			select {
+			case out <- scraper.Scene(item.toScene(s.cfg.ID, s.cfg.SiteBase, s.cfg.Studio, now)):
+			case <-ctx.Done():
+				return
+			}
+		}
+	}
+}
+
+func parseDVDCards(body []byte) []string {
+	page := string(body)
+	starts := dvdCardStartRe.FindAllStringIndex(page, -1)
+	seen := make(map[string]bool, len(starts))
+	var urls []string
+	for _, loc := range starts {
+		rest := page[loc[0]:]
+		endIdx := strings.Index(rest, cardEnd)
+		if endIdx < 0 {
+			continue
+		}
+		block := rest[:endIdx]
+		if m := dvdLinkRe.FindStringSubmatch(block); m != nil {
+			u := m[1]
+			if !seen[u] {
+				seen[u] = true
+				urls = append(urls, u)
+			}
+		}
+	}
+	return urls
+}
+
+func estimateDVDTotal(body []byte) int {
+	max := 1
+	for _, m := range dvdPageRe.FindAllSubmatch(body, -1) {
+		n, _ := strconv.Atoi(string(m[1]))
+		if n > max {
+			max = n
+		}
+	}
+	return max
+}
+
+func (s *Scraper) scrapeDVDListing(ctx context.Context, opts scraper.ListOpts, out chan<- scraper.SceneResult, now time.Time) {
+	var allDVDs []string
+	totalPages := 1
+
+	for page := 1; page <= totalPages; page++ {
+		if ctx.Err() != nil {
+			return
+		}
+		if page > 1 && opts.Delay > 0 {
+			select {
+			case <-time.After(opts.Delay):
+			case <-ctx.Done():
+				return
+			}
+		}
+
+		var pageURL string
+		if page == 1 {
+			pageURL = s.cfg.SiteBase + "/dvds/dvds.html"
+		} else {
+			pageURL = fmt.Sprintf("%s/dvds/dvds_page_%d.html", s.cfg.SiteBase, page)
+		}
+
+		body, err := s.fetchPage(ctx, pageURL)
+		if err != nil {
+			select {
+			case out <- scraper.Error(fmt.Errorf("dvd listing page %d: %w", page, err)):
+			case <-ctx.Done():
+			}
+			return
+		}
+
+		dvds := parseDVDCards(body)
+		if len(dvds) == 0 {
+			break
+		}
+		allDVDs = append(allDVDs, dvds...)
+
+		if page == 1 {
+			totalPages = estimateDVDTotal(body)
+		}
+	}
+
+	if len(allDVDs) == 0 {
+		return
+	}
+
+	for i, dvdURL := range allDVDs {
+		if ctx.Err() != nil {
+			return
+		}
+		if i > 0 && opts.Delay > 0 {
+			select {
+			case <-time.After(opts.Delay):
+			case <-ctx.Done():
+				return
+			}
+		}
+
+		body, err := s.fetchPage(ctx, dvdURL)
+		if err != nil {
+			select {
+			case out <- scraper.Error(fmt.Errorf("dvd %s: %w", dvdURL, err)):
+			case <-ctx.Done():
+			}
+			return
+		}
+
+		scenes := parseListingPage(body)
+		if i == 0 {
+			select {
+			case out <- scraper.Progress(len(scenes) * len(allDVDs)):
+			case <-ctx.Done():
+				return
 			}
 		}
 

@@ -168,6 +168,10 @@ func TestParseStudioURL(t *testing.T) {
 		{"https://cherrypimps.com/categories/blowjob_1_d.html", modeCategory, "blowjob"},
 		{"https://cherrypimps.com/models/AveryBlack.html", modeModel, "AveryBlack"},
 		{"https://wildoncam.com/models/JaneDoe.html", modeModel, "JaneDoe"},
+		{"https://cherrypimps.com/dvds/dvds.html", modeDVDListing, ""},
+		{"https://cherrypimps.com/dvds/daddy-complex.html", modeDVD, "daddy-complex"},
+		{"https://wildoncam.com/dvds/dvds.html", modeDVDListing, ""},
+		{"https://wildoncam.com/dvds/some-title.html", modeDVD, "some-title"},
 	}
 	for _, tt := range tests {
 		lc := parseStudioURL(tt.url)
@@ -368,6 +372,171 @@ func TestModelPage(t *testing.T) {
 	got := testutil.CollectScenes(t, ch)
 	if len(got) != 3 {
 		t.Fatalf("got %d scenes, want 3", len(got))
+	}
+}
+
+const testDVDCardHTML = `<div class="item-update no-overlay item-model col">
+	<div class="item-thumb">
+		<img src="https://www.pulsedistribution.com/uploads/title/44765_med_f.jpg" alt="Daddy Complex" class="dvd_cover_placeholder" />
+		<div class="flip-card"><div class="flip-card-inner">
+			<div class="flip-card-front"><a href="https://cherrypimps.com/dvds/daddy-complex.html" title="Daddy Complex"><img src="img.jpg" alt="" /></a></div>
+			<div class="flip-card-back"><a href="https://cherrypimps.com/dvds/daddy-complex.html" title="Daddy Complex"><img src="img_b.jpg" alt="" /></a></div>
+		</div></div>
+	</div>
+	<div class="item-footer">
+		<div class="item-row"><div class="item-title"><a href="https://cherrypimps.com/dvds/daddy-complex.html" title="Daddy Complex">Daddy Complex</a></div></div>
+		<div class="item-row"><div class="item-date"><i class="fa fa-calendar"></i> <strong>Released:</strong> December 29, 2020</div></div>
+	</div>
+</div><!--//item-update-->
+<div class="item-update no-overlay item-model col">
+	<div class="item-thumb">
+		<img src="img2.jpg" alt="Bush Friends Forever" class="dvd_cover_placeholder" />
+		<div class="flip-card"><div class="flip-card-inner">
+			<div class="flip-card-front"><a href="https://cherrypimps.com/dvds/bush-friends-forever.html" title="Bush Friends Forever"><img src="img2.jpg" alt="" /></a></div>
+		</div></div>
+	</div>
+	<div class="item-footer">
+		<div class="item-row"><div class="item-title"><a href="https://cherrypimps.com/dvds/bush-friends-forever.html" title="Bush Friends Forever">Bush Friends Forever</a></div></div>
+		<div class="item-row"><div class="item-date"><i class="fa fa-calendar"></i> <strong>Released:</strong> May 1, 2020</div></div>
+	</div>
+</div><!--//item-update-->`
+
+func TestParseDVDCards(t *testing.T) {
+	urls := parseDVDCards([]byte(testDVDCardHTML))
+	if len(urls) != 2 {
+		t.Fatalf("got %d DVDs, want 2", len(urls))
+	}
+	if urls[0] != "https://cherrypimps.com/dvds/daddy-complex.html" {
+		t.Errorf("dvd[0] = %q", urls[0])
+	}
+	if urls[1] != "https://cherrypimps.com/dvds/bush-friends-forever.html" {
+		t.Errorf("dvd[1] = %q", urls[1])
+	}
+}
+
+func TestParseDVDCardsDedups(t *testing.T) {
+	doubled := testDVDCardHTML + testDVDCardHTML
+	urls := parseDVDCards([]byte(doubled))
+	if len(urls) != 2 {
+		t.Fatalf("got %d DVDs, want 2 (deduped)", len(urls))
+	}
+}
+
+func TestEstimateDVDTotal(t *testing.T) {
+	body := []byte(`<a href="dvds_page_2.html">2</a><a href="dvds_page_3.html">3</a>`)
+	if got := estimateDVDTotal(body); got != 3 {
+		t.Errorf("estimateDVDTotal = %d, want 3", got)
+	}
+}
+
+func TestEstimateDVDTotalNoPagination(t *testing.T) {
+	body := []byte(`<div>no pagination links</div>`)
+	if got := estimateDVDTotal(body); got != 1 {
+		t.Errorf("estimateDVDTotal = %d, want 1", got)
+	}
+}
+
+func TestDVDSinglePage(t *testing.T) {
+	ts := newTestServer([][]int{{10, 20, 30}})
+	defer ts.Close()
+
+	cfg := testCfg
+	cfg.SiteBase = ts.URL
+
+	s := New(cfg)
+	ch, err := s.ListScenes(context.Background(), ts.URL+"/dvds/some-title.html", scraper.ListOpts{})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	got := testutil.CollectScenes(t, ch)
+	if len(got) != 3 {
+		t.Fatalf("got %d scenes, want 3", len(got))
+	}
+}
+
+func TestDVDListing(t *testing.T) {
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/html")
+		base := "http://" + r.Host
+		switch r.URL.Path {
+		case "/dvds/dvds.html":
+			_, _ = fmt.Fprintf(w, `
+				<div class="item-update no-overlay item-model col">
+					<div class="item-thumb"><a href="%s/dvds/dvd-a.html" title="DVD A"><img class="dvd_cover_placeholder" /></a></div>
+					<div class="item-footer"><div class="item-row"><div class="item-title"><a href="%s/dvds/dvd-a.html" title="DVD A">DVD A</a></div></div></div>
+				</div><!--//item-update-->
+				<div class="item-update no-overlay item-model col">
+					<div class="item-thumb"><a href="%s/dvds/dvd-b.html" title="DVD B"><img class="dvd_cover_placeholder" /></a></div>
+					<div class="item-footer"><div class="item-row"><div class="item-title"><a href="%s/dvds/dvd-b.html" title="DVD B">DVD B</a></div></div></div>
+				</div><!--//item-update-->`, base, base, base, base)
+		case "/dvds/dvd-a.html":
+			_, _ = w.Write(buildTestPage([]int{100, 200}, 1))
+		case "/dvds/dvd-b.html":
+			_, _ = w.Write(buildTestPage([]int{300}, 1))
+		default:
+			http.NotFound(w, r)
+		}
+	}))
+	defer ts.Close()
+
+	cfg := testCfg
+	cfg.SiteBase = ts.URL
+
+	s := New(cfg)
+	ch, err := s.ListScenes(context.Background(), ts.URL+"/dvds/dvds.html", scraper.ListOpts{
+		Delay: time.Millisecond,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	got := testutil.CollectScenes(t, ch)
+	if len(got) != 3 {
+		t.Fatalf("got %d scenes, want 3", len(got))
+	}
+	if got[0].ID != "100" || got[1].ID != "200" || got[2].ID != "300" {
+		t.Errorf("scene IDs = [%s, %s, %s], want [100, 200, 300]", got[0].ID, got[1].ID, got[2].ID)
+	}
+}
+
+func TestDVDListingKnownIDs(t *testing.T) {
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/html")
+		base := "http://" + r.Host
+		switch r.URL.Path {
+		case "/dvds/dvds.html":
+			_, _ = fmt.Fprintf(w, `
+				<div class="item-update no-overlay item-model col">
+					<div class="item-thumb"><a href="%s/dvds/dvd-a.html" title="A"><img class="dvd_cover_placeholder" /></a></div>
+					<div class="item-footer"><div class="item-row"><div class="item-title"><a href="%s/dvds/dvd-a.html" title="A">A</a></div></div></div>
+				</div><!--//item-update-->`, base, base)
+		case "/dvds/dvd-a.html":
+			_, _ = w.Write(buildTestPage([]int{1, 2, 3}, 1))
+		default:
+			http.NotFound(w, r)
+		}
+	}))
+	defer ts.Close()
+
+	cfg := testCfg
+	cfg.SiteBase = ts.URL
+
+	s := New(cfg)
+	ch, err := s.ListScenes(context.Background(), ts.URL+"/dvds/dvds.html", scraper.ListOpts{
+		KnownIDs: map[string]bool{"2": true},
+		Delay:    time.Millisecond,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	got, stopped := testutil.CollectScenesWithStop(t, ch)
+	if len(got) != 1 {
+		t.Fatalf("got %d scenes, want 1", len(got))
+	}
+	if !stopped {
+		t.Error("expected StoppedEarly")
 	}
 }
 
