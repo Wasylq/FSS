@@ -255,12 +255,12 @@ var (
 	modelIDRe      = regexp.MustCompile(`sets\.php\?id=(\d+)`)
 	modelMaxPageRe = regexp.MustCompile(`(?:movies_|page=)(\d+)`)
 
-	blockStartRe  = regexp.MustCompile(`<div class="update_block">`)
-	blockTitleRe  = regexp.MustCompile(`<span class="update_title">([^<]+)</span>`)
-	blockDateRe   = regexp.MustCompile(`<span class="availdate">(\d{2}/\d{2}/\d{4})`)
-	blockDescRe   = regexp.MustCompile(`(?s)<span class="latest_update_description">(.*?)</span>`)
+	blockStartRe   = regexp.MustCompile(`<div class="update_block">`)
+	blockTitleRe   = regexp.MustCompile(`<span class="update_title">([^<]+)</span>`)
+	blockDateRe    = regexp.MustCompile(`<span class="availdate">(\d{2}/\d{2}/\d{4})`)
+	blockDescRe    = regexp.MustCompile(`(?s)<span class="latest_update_description">(.*?)</span>`)
 	blockTagLinkRe = regexp.MustCompile(`<a\s+href="[^"]*?/categories/[^"]+">([^<]+)</a>`)
-	blockTagsRe   = regexp.MustCompile(`(?s)<span class="update_tags">(.*?)</span>`)
+	blockTagsRe    = regexp.MustCompile(`(?s)<span class="update_tags">(.*?)</span>`)
 )
 
 func parseListingCards(body []byte) []parsedScene {
