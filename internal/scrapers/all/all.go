@@ -25,6 +25,7 @@ import (
 	_ "github.com/Wasylq/FSS/internal/scrapers/crunchboy"
 	_ "github.com/Wasylq/FSS/internal/scrapers/czechav"
 	_ "github.com/Wasylq/FSS/internal/scrapers/czechvr"
+	_ "github.com/Wasylq/FSS/internal/scrapers/data18"
 	_ "github.com/Wasylq/FSS/internal/scrapers/deeps"
 	_ "github.com/Wasylq/FSS/internal/scrapers/dorcelclub"
 	_ "github.com/Wasylq/FSS/internal/scrapers/fakings"
