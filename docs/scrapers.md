@@ -429,6 +429,7 @@
 | [Teenage Anal Sluts](https://teenageanalsluts.com) | `teenageanalsluts.com` | Full Porn Network | No | FPN subsite, uses `fpnutil` |
 | [Teenage Tryouts](https://teenagetryouts.com) | `teenagetryouts.com` | Full Porn Network | No | FPN subsite, uses `fpnutil` |
 | [Your Mom Does Porn](https://yourmomdoesporn.com) | `yourmomdoesporn.com` | Full Porn Network | No | FPN subsite, uses `fpnutil` |
+| Vixen Media Group (9 sites) | `{domain}/videos`, `{domain}/videos/{slug}`, `{domain}/performers/{slug}` | Next.js SSR | No | Table-driven `vixen` package using `vixenutil`, `__NEXT_DATA__` JSON (12/page), detail page worker pool for description/duration/director, `cdn.vixen.com` CDN, ~4k scenes. Sites: Vixen (vixen.com), Blacked (blacked.com), Blacked Raw (blackedraw.com), Tushy (tushy.com), Tushy Raw (tushyraw.com), Deeper (deeper.com), Slayed (slayed.com), Milfy (milfy.com), Wifey (wifey.com) |
 | Wow Network sites (4) | `{domain}`, `{domain}/tour/whats-new`, `{domain}/tour/trailer/{section}/{slug}` | Custom CMS (Wow) | No | Table-driven via `wownetworkutil`: WowGirls (wowgirls.com + wowporn.com), Ultra Films (ultrafilms.com), angels.love (angels.love), sensual.love (sensual.love). Sitemap-based discovery, JSON-LD on detail pages for title/date/duration, performer extraction from JSON-LD description or listing page, `wowmodels.com` CDN |
 | Flourish (7 sites) | `tour.{domain}/categories/movies.html`, `tour.{domain}/models/{slug}.html` | NATS CMS | No | Table-driven `flourish` package using `flourishutil`, HTML listing (12/page), YYYY-MM-DD dates, detail page fetch for description + tags, NATS platform. Sites: The Flourish XXX (theflourishxxx.com), The Flourish POV (theflourishpov.com), The Flourish Fetish (theflourishfetish.com), The Flourish Amateurs (theflourishamateurs.com), MILF Candy (milfcandy.com), Curvy Culture XXX (curvyculturexxx.com), GILF Gasms (gilfgasms.com) |
 | [Flourish University](https://www.flourishuniv.com) | `flourishuniv.com/episodes/` | WordPress | No | Standalone, single-page episode listing, parses cast from "Starring:" text, fetches detail pages on tour.theflourishxxx.com for date/duration/tags, 15 episodes |
@@ -461,6 +462,7 @@ Scrapers that share a platform use common utility packages to avoid duplication:
 | `wankitnowutil` | Wank It Now network (Next.js `_next/data` JSON API, buildId bootstrap) | `wankitnow` | 6 sites |
 | `newsensationsutil` | New Sensations NATS CMS (HTML listing with `videothumb_` markers + detail page worker pool) | `newsensations` | 8 sites |
 | `wankzutil` | Wankz JSON API (`/api/videos/find.json`, 50/page, date-sorted, channel filtering) | `wankz` | 2 sites |
+| `vixenutil` | Vixen Media Group (Next.js SSR, `__NEXT_DATA__` JSON, 12/page, detail worker pool, performer page support) | `vixen` | 9 sites |
 | `wownetworkutil` | Wow Network (sitemap discovery, JSON-LD detail pages, `wowmodels.com` CDN) | `wownetwork` | 4 sites |
 | `wputil` | WordPress (sitemap + HTML meta parsing) | _(standalone packages)_ | 5 sites (each has custom parsing) |
 
