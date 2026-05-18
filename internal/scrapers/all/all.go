@@ -33,6 +33,8 @@ import (
 	_ "github.com/Wasylq/FSS/internal/scrapers/fancentro"
 	_ "github.com/Wasylq/FSS/internal/scrapers/faphouse"
 	_ "github.com/Wasylq/FSS/internal/scrapers/fetishnetwork"
+	_ "github.com/Wasylq/FSS/internal/scrapers/flourish"
+	_ "github.com/Wasylq/FSS/internal/scrapers/flourishuniv"
 	_ "github.com/Wasylq/FSS/internal/scrapers/fpn"
 	_ "github.com/Wasylq/FSS/internal/scrapers/ftvgirls"
 	_ "github.com/Wasylq/FSS/internal/scrapers/ftvmilfs"
