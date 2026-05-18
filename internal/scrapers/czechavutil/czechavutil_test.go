@@ -72,13 +72,39 @@ func TestParseSitemap(t *testing.T) {
 		t.Errorf("desc = %q", u.Video.Description)
 	}
 	if u.Video.Duration != 1120 {
-		t.Errorf("duration = %d, want 1120", u.Video.Duration)
+		t.Errorf("duration = %v, want 1120", u.Video.Duration)
 	}
 	if u.Video.PubDate != "2015-04-03" {
 		t.Errorf("pubdate = %q", u.Video.PubDate)
 	}
 	if u.Video.Thumbnail != "https://cdn77.hqmediago.com/files/czechcasting.com/e1281/orig/poster-1.jpg" {
 		t.Errorf("thumb = %q", u.Video.Thumbnail)
+	}
+}
+
+func TestParseSitemapFloatDuration(t *testing.T) {
+	body := []byte(`<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:video="http://www.google.com/schemas/sitemap-video/1.1">
+<url>
+<loc>https://czechcasting.com/video/tana-2081/</loc>
+<lastmod>2025-12-01</lastmod>
+<video:video>
+<video:thumbnail_loc>https://cdn77.hqmediago.com/thumb.jpg</video:thumbnail_loc>
+<video:title><![CDATA[Tana]]></video:title>
+<video:description><![CDATA[Desc.]]></video:description>
+<video:duration>1787.68</video:duration>
+<video:publication_date>2025-12-01</video:publication_date>
+</video:video>
+</url>
+</urlset>`)
+
+	urls := ParseSitemap(body)
+	if len(urls) != 1 {
+		t.Fatalf("got %d URLs, want 1", len(urls))
+	}
+	if urls[0].Video.Duration != 1787.68 {
+		t.Errorf("duration = %v, want 1787.68", urls[0].Video.Duration)
 	}
 }
 

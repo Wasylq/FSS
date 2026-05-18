@@ -62,11 +62,11 @@ type sitemapURL struct {
 }
 
 type sitemapVideo struct {
-	Title       string `xml:"http://www.google.com/schemas/sitemap-video/1.1 title"`
-	Description string `xml:"http://www.google.com/schemas/sitemap-video/1.1 description"`
-	Thumbnail   string `xml:"http://www.google.com/schemas/sitemap-video/1.1 thumbnail_loc"`
-	Duration    int    `xml:"http://www.google.com/schemas/sitemap-video/1.1 duration"`
-	PubDate     string `xml:"http://www.google.com/schemas/sitemap-video/1.1 publication_date"`
+	Title       string  `xml:"http://www.google.com/schemas/sitemap-video/1.1 title"`
+	Description string  `xml:"http://www.google.com/schemas/sitemap-video/1.1 description"`
+	Thumbnail   string  `xml:"http://www.google.com/schemas/sitemap-video/1.1 thumbnail_loc"`
+	Duration    float64 `xml:"http://www.google.com/schemas/sitemap-video/1.1 duration"`
+	PubDate     string  `xml:"http://www.google.com/schemas/sitemap-video/1.1 publication_date"`
 }
 
 type sitemapIndex struct {
@@ -354,7 +354,7 @@ func (s *Scraper) fetchScene(ctx context.Context, slug string, u sitemapURL, stu
 		Title:       strings.TrimSpace(u.Video.Title),
 		Description: strings.TrimSpace(u.Video.Description),
 		Thumbnail:   u.Video.Thumbnail,
-		Duration:    u.Video.Duration,
+		Duration:    int(u.Video.Duration),
 		Date:        date,
 		Performers:  detail.Performers,
 		Tags:        detail.Tags,

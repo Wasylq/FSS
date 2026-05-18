@@ -43,8 +43,9 @@ func ValidateScene(t *testing.T, s models.Scene) {
 		t.Logf("scene %q has zero Date", s.ID)
 	}
 	// Duration is sometimes unavailable from list endpoints; warn but don't fail.
-	if s.Duration < 0 || s.Duration > 24*60*60 {
-		t.Errorf("scene %q has implausible Duration %d (expected 0..86400)", s.ID, s.Duration)
+	// Cap is 7 days — generous but catches overflow/unit bugs. JAV compilations can exceed 40h.
+	if s.Duration < 0 || s.Duration > 7*24*60*60 {
+		t.Errorf("scene %q has implausible Duration %d (expected 0..604800)", s.ID, s.Duration)
 	}
 	if len(s.Performers) == 0 && s.Studio == "" {
 		t.Errorf("scene %q has neither Performers nor Studio", s.ID)
