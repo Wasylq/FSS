@@ -16,42 +16,55 @@ import (
 )
 
 const (
-	defaultBase     = "https://www.lucasentertainment.com"
 	apiPath         = "/wp-json/wp/v2/posts"
 	sceneCategoryID = 10
 	perPage         = 100
 )
 
-type Scraper struct {
-	client *http.Client
-	base   string
+type siteConfig struct {
+	siteID     string
+	domain     string
+	studioName string
 }
 
-func New() *Scraper {
-	return &Scraper{
-		client: httpx.NewClient(30 * time.Second),
-		base:   defaultBase,
+var sites = []siteConfig{
+	{"lucasentertainment", "lucasentertainment.com", "Lucas Entertainment"},
+	{"lucasraunch", "lucasraunch.com", "Lucas Raunch"},
+}
+
+type Scraper struct {
+	cfg     siteConfig
+	client  *http.Client
+	base    string
+	matchRe *regexp.Regexp
+}
+
+func init() {
+	for _, cfg := range sites {
+		escaped := strings.ReplaceAll(cfg.domain, ".", `\.`)
+		s := &Scraper{
+			cfg:     cfg,
+			client:  httpx.NewClient(30 * time.Second),
+			base:    "https://www." + cfg.domain,
+			matchRe: regexp.MustCompile(fmt.Sprintf(`^https?://(?:www\.)?%s`, escaped)),
+		}
+		scraper.Register(s)
 	}
 }
 
-func init() { scraper.Register(New()) }
-
-func (s *Scraper) ID() string { return "lucasentertainment" }
+func (s *Scraper) ID() string { return s.cfg.siteID }
 
 func (s *Scraper) Patterns() []string {
 	return []string{
-		"lucasentertainment.com",
-		"lucasentertainment.com/tag/{slug}",
+		s.cfg.domain,
+		s.cfg.domain + "/tag/{slug}",
 	}
 }
 
-var (
-	matchRe = regexp.MustCompile(`^https?://(?:www\.)?lucasentertainment\.com`)
-	tagRe   = regexp.MustCompile(`/tag/([^/]+)`)
-)
+var tagRe = regexp.MustCompile(`/tag/([^/]+)`)
 
 func (s *Scraper) MatchesURL(u string) bool {
-	return matchRe.MatchString(u)
+	return s.matchRe.MatchString(u)
 }
 
 func (s *Scraper) ListScenes(ctx context.Context, studioURL string, opts scraper.ListOpts) (<-chan scraper.SceneResult, error) {
@@ -155,7 +168,7 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 				send(ctx, out, scraper.StoppedEarly())
 				return
 			}
-			if !send(ctx, out, scraper.Scene(toScene(studioURL, p, now))) {
+			if !send(ctx, out, scraper.Scene(s.toScene(studioURL, p, now))) {
 				return
 			}
 		}
@@ -195,7 +208,7 @@ var (
 	htmlTagRe = regexp.MustCompile(`<[^>]+>`)
 )
 
-func toScene(studioURL string, p wpPost, now time.Time) models.Scene {
+func (s *Scraper) toScene(studioURL string, p wpPost, now time.Time) models.Scene {
 	title := html.UnescapeString(p.Title.Rendered)
 
 	desc := htmlTagRe.ReplaceAllString(p.Content.Rendered, "")
@@ -203,12 +216,12 @@ func toScene(studioURL string, p wpPost, now time.Time) models.Scene {
 
 	sc := models.Scene{
 		ID:          strconv.Itoa(p.ID),
-		SiteID:      "lucasentertainment",
+		SiteID:      s.cfg.siteID,
 		StudioURL:   studioURL,
 		Title:       title,
 		URL:         p.Link,
 		Description: desc,
-		Studio:      "Lucas Entertainment",
+		Studio:      s.cfg.studioName,
 		Performers:  extractPerformers(title),
 		ScrapedAt:   now,
 	}

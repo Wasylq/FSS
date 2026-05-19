@@ -86,6 +86,7 @@ import (
 	_ "github.com/Wasylq/FSS/internal/scrapers/r18dev"
 	_ "github.com/Wasylq/FSS/internal/scrapers/rachelsteele"
 	_ "github.com/Wasylq/FSS/internal/scrapers/railway"
+	_ "github.com/Wasylq/FSS/internal/scrapers/rawalphamales"
 	_ "github.com/Wasylq/FSS/internal/scrapers/rawfuckclub"
 	_ "github.com/Wasylq/FSS/internal/scrapers/reaganfoxx"
 	_ "github.com/Wasylq/FSS/internal/scrapers/realspankings"

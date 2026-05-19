@@ -5,10 +5,38 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"regexp"
+	"strings"
 	"testing"
 
 	"github.com/Wasylq/FSS/scraper"
 )
+
+func TestSiteCount(t *testing.T) {
+	if len(sites) != 2 {
+		t.Errorf("expected 2 sites, got %d", len(sites))
+	}
+}
+
+func TestNoDuplicateSiteIDs(t *testing.T) {
+	seen := make(map[string]bool)
+	for _, cfg := range sites {
+		if seen[cfg.siteID] {
+			t.Errorf("duplicate siteID: %s", cfg.siteID)
+		}
+		seen[cfg.siteID] = true
+	}
+}
+
+func newTestScraper(cfg siteConfig) *Scraper {
+	escaped := strings.ReplaceAll(cfg.domain, ".", `\.`)
+	return &Scraper{
+		cfg:     cfg,
+		client:  http.DefaultClient,
+		base:    "https://www." + cfg.domain,
+		matchRe: regexp.MustCompile(fmt.Sprintf(`^https?://(?:www\.)?%s`, escaped)),
+	}
+}
 
 const testAPIResponse = `[
   {
@@ -52,19 +80,26 @@ func TestScraperInterface(t *testing.T) {
 }
 
 func TestMatchesURL(t *testing.T) {
-	s := New()
+	le := newTestScraper(sites[0])
+	lr := newTestScraper(sites[1])
 	tests := []struct {
-		url  string
-		want bool
+		url    string
+		wantLE bool
+		wantLR bool
 	}{
-		{"https://www.lucasentertainment.com", true},
-		{"https://lucasentertainment.com/scenes/", true},
-		{"http://www.lucasentertainment.com/pablo-pixx-tops-mik-ayden/", true},
-		{"https://www.example.com", false},
+		{"https://www.lucasentertainment.com", true, false},
+		{"https://lucasentertainment.com/scenes/", true, false},
+		{"http://www.lucasentertainment.com/pablo-pixx-tops-mik-ayden/", true, false},
+		{"https://www.lucasraunch.com", false, true},
+		{"https://lucasraunch.com/scenes/", false, true},
+		{"https://www.example.com", false, false},
 	}
 	for _, tt := range tests {
-		if got := s.MatchesURL(tt.url); got != tt.want {
-			t.Errorf("MatchesURL(%q) = %v, want %v", tt.url, got, tt.want)
+		if got := le.MatchesURL(tt.url); got != tt.wantLE {
+			t.Errorf("LE.MatchesURL(%q) = %v, want %v", tt.url, got, tt.wantLE)
+		}
+		if got := lr.MatchesURL(tt.url); got != tt.wantLR {
+			t.Errorf("LR.MatchesURL(%q) = %v, want %v", tt.url, got, tt.wantLR)
 		}
 	}
 }
@@ -102,7 +137,7 @@ func TestListScenes(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	s := &Scraper{client: ts.Client(), base: ts.URL}
+	s := &Scraper{cfg: sites[0], client: ts.Client(), base: ts.URL}
 	ch, err := s.ListScenes(context.Background(), ts.URL, scraper.ListOpts{})
 	if err != nil {
 		t.Fatal(err)
@@ -134,7 +169,7 @@ func TestToScene(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	s := &Scraper{client: ts.Client(), base: ts.URL}
+	s := &Scraper{cfg: sites[0], client: ts.Client(), base: ts.URL}
 	ch, err := s.ListScenes(context.Background(), ts.URL, scraper.ListOpts{})
 	if err != nil {
 		t.Fatal(err)
@@ -200,7 +235,7 @@ func TestListScenesTag(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	s := &Scraper{client: ts.Client(), base: ts.URL}
+	s := &Scraper{cfg: sites[0], client: ts.Client(), base: ts.URL}
 	tagURL := ts.URL + "/tag/derek-kage/"
 	ch, err := s.ListScenes(context.Background(), tagURL, scraper.ListOpts{})
 	if err != nil {
@@ -232,7 +267,7 @@ func TestResolveTagNotFound(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	s := &Scraper{client: ts.Client(), base: ts.URL}
+	s := &Scraper{cfg: sites[0], client: ts.Client(), base: ts.URL}
 	tagURL := ts.URL + "/tag/nonexistent/"
 	ch, err := s.ListScenes(context.Background(), tagURL, scraper.ListOpts{})
 	if err != nil {
@@ -257,7 +292,7 @@ func TestKnownIDsStopEarly(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	s := &Scraper{client: ts.Client(), base: ts.URL}
+	s := &Scraper{cfg: sites[0], client: ts.Client(), base: ts.URL}
 	known := map[string]bool{"92940": true}
 	ch, err := s.ListScenes(context.Background(), ts.URL, scraper.ListOpts{KnownIDs: known})
 	if err != nil {
