@@ -44,6 +44,11 @@ var sites = []siteConfig{
 	{"twistys", "twistys.com", "Twistys", nil, nil, ""},
 	{"whynotbi", "whynotbi.com", "WhyNotBi", nil, nil, "scene"},
 
+	// SpiceVids-brand standalone domains
+	{"househumpers", "househumpers.com", "House Humpers", nil, nil, "scene"},
+	{"nextdoorhobby", "nextdoorhobby.com", "NextDoorHobby", nil, nil, "scene"},
+	{"trueamateurs", "trueamateurs.com", "True Amateurs", nil, nil, "scene"},
+
 	// Mile High Media sub-sites
 	{"biempire", "biempire.com", "BiEmpire", nil, nil, "scene"},
 	{"doghousedigital", "doghousedigital.com", "Doghouse Digital", nil, nil, "scene"},

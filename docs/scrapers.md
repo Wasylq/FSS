@@ -381,6 +381,9 @@
 | [Squirted](https://www.squirted.com) | `squirted.com`, `squirted.com/pornstar/{id}/{slug}`, `squirted.com/category/{id}/{slug}`, `squirted.com/site/{id}/{slug}`, `squirted.com/series/{id}/{slug}` | Aylo/Juan | No | REST API, uses `ayloutil` |
 | [WhyNotBi](https://www.whynotbi.com) | `whynotbi.com`, `whynotbi.com/pornstar/{id}/{slug}`, `whynotbi.com/category/{id}/{slug}`, `whynotbi.com/site/{id}/{slug}`, `whynotbi.com/series/{id}/{slug}` | Aylo/Juan | No | REST API, `/scene/` path, uses `ayloutil` |
 | [PropertySex](https://www.propertysex.com) | `propertysex.com`, `propertysex.com/pornstar/{id}/{slug}`, `propertysex.com/category/{id}/{slug}`, `propertysex.com/site/{id}/{slug}`, `propertysex.com/series/{id}/{slug}` | Aylo/Juan | No | REST API, filter by performer/category/sub-site/series, uses `ayloutil` |
+| [House Humpers](https://www.househumpers.com) | `househumpers.com`, `househumpers.com/pornstar/{id}/{slug}`, `househumpers.com/category/{id}/{slug}`, `househumpers.com/site/{id}/{slug}`, `househumpers.com/series/{id}/{slug}` | Aylo/Juan | No | SpiceVids-brand Aylo instance, uses `ayloutil` |
+| [NextDoorHobby](https://www.nextdoorhobby.com) | `nextdoorhobby.com`, `nextdoorhobby.com/pornstar/{id}/{slug}`, `nextdoorhobby.com/category/{id}/{slug}`, `nextdoorhobby.com/site/{id}/{slug}`, `nextdoorhobby.com/series/{id}/{slug}` | Aylo/Juan | No | SpiceVids-brand Aylo instance, uses `ayloutil` |
+| [True Amateurs](https://www.trueamateurs.com) | `trueamateurs.com`, `trueamateurs.com/pornstar/{id}/{slug}`, `trueamateurs.com/category/{id}/{slug}`, `trueamateurs.com/site/{id}/{slug}`, `trueamateurs.com/series/{id}/{slug}` | Aylo/Juan | No | SpiceVids-brand Aylo instance, uses `ayloutil` |
 | [TransAngels](https://www.transangels.com) | `transangels.com`, `transangels.com/pornstar/{id}/{slug}`, `transangels.com/category/{id}/{slug}`, `transangels.com/site/{id}/{slug}`, `transangels.com/series/{id}/{slug}` | Aylo/Juan | No | REST API, filter by performer/category/sub-site/series, uses `ayloutil` |
 | [TwinkPop](https://www.twinkpop.com) | `twinkpop.com`, `twinkpop.com/pornstar/{id}/{slug}`, `twinkpop.com/category/{id}/{slug}`, `twinkpop.com/site/{id}/{slug}`, `twinkpop.com/series/{id}/{slug}` | Aylo/Juan | No | REST API, uses `ayloutil` |
 | [Twistys](https://www.twistys.com) | `twistys.com`, `twistys.com/pornstar/{id}/{slug}`, `twistys.com/category/{id}/{slug}`, `twistys.com/site/{id}/{slug}`, `twistys.com/series/{id}/{slug}` | Aylo/Juan | No | REST API, filter by performer/category/sub-site/series, uses `ayloutil` |
@@ -443,7 +446,7 @@ Scrapers that share a platform use common utility packages to avoid duplication:
 | Util package | Platform | Table-driven package | Sites |
 |---------|----------|---------------------|-------|
 | `adultprimeutil` | Adult Prime (HTML listing + detail pages, `var params` pagination) | `adultprime` | 97 studios |
-| `ayloutil` | Aylo/Juan (REST API, instance token auth) | `aylo` | 31 sites + BangBros (standalone) + SpiceVids |
+| `ayloutil` | Aylo/Juan (REST API, instance token auth) | `aylo` | 34 sites + BangBros (standalone) + SpiceVids |
 | `cherrypimpsutil` | Cherry Pimps/BLT Innovations (Elevated X CMS, HTML listing) | `cherrypimps` | 2 sites |
 | `gammautil` | Gamma Entertainment (Algolia search API, 8 segments: adulttime, evilangel, evilangelnetwork, dfxtra, openlife, zerotolerancefilms, addicted2girls, biphoria) | `gamma` | 87 sites |
 | `flourishutil` | Flourish CMS (NATS platform, HTML listing + detail fetch, YYYY-MM-DD dates, 12/page) | `flourish` | 7 sites |
