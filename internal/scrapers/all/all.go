@@ -105,6 +105,7 @@ import (
 	_ "github.com/Wasylq/FSS/internal/scrapers/uptimely"
 	_ "github.com/Wasylq/FSS/internal/scrapers/venusav"
 	_ "github.com/Wasylq/FSS/internal/scrapers/videoelements"
+	_ "github.com/Wasylq/FSS/internal/scrapers/virtualtaboo"
 	_ "github.com/Wasylq/FSS/internal/scrapers/visitx"
 	_ "github.com/Wasylq/FSS/internal/scrapers/vixen"
 	_ "github.com/Wasylq/FSS/internal/scrapers/vna"
