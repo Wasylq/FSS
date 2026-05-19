@@ -9,21 +9,21 @@ Scrapes all scenes and metadata from a studio URL. Designed to be easily extende
 
 ## Supported sites
 
-**769 sites** across 15+ platforms — [full list with URL patterns →](docs/scrapers.md)
+**779 sites** across 15+ platforms — [full list with URL patterns →](docs/scrapers.md)
 
 | Platform | Count | Examples |
 |----------|------:|---------|
 | Score Group | 93 | Scoreland, XL Girls, 18Eighteen, Leg Sex, Naughty Mag, 50 Plus MILFs, … |
-| Gamma/Algolia | 84 | Adult Time, BiPhoria, Blowpass, Burning Angel, Devil's Film, Diabolic, Dogfart Network, Evil Angel, Fame Digital, Girlcore, Modern-Day Sins, OpenLife, Pretty Dirty, Pure Taboo, Throated, Transfixed, White Ghetto, Wicked, Zero Tolerance Films, … |
+| Gamma/Algolia | 93 | Adult Time, BiPhoria, Blowpass, Burning Angel, Devil's Film, Diabolic, Dogfart Network, Evil Angel, Fame Digital, Girlcore, Girlsway, Modern-Day Sins, Mommy's Girl, OpenLife, Pretty Dirty, Pure Taboo, Throated, Transfixed, Web Young, White Ghetto, Wicked, Zero Tolerance Films, … |
 | WP video-elements | 12 | DaughterSwap, MommysBoy, PervMom, SisLovesMe, … |
 | SpiceVids collections | 1001 | AdamAndEveVOD, Crunchboy, 1111Customs, AdultTime, NewSensations, … (Aylo marketplace) |
 | Aylo/Juan | 39 | Babes, BangBros, BigStr, Brazzers, Bromo, Dancing Bear, Erito, FakeHub, HentaiPros, House Humpers, Icon Male, Killergram, LetsDoeIt, Men, Metro, MileHigh, NextDoorHobby, Noir Male, Reality Kings, Sean Cody, Sex Selector, SpiceVids, Sweet Sinner, Sweetheart Video, Transsensual, True Amateurs, TwinkPop, Virtual Porn, WhyNotBi, … |
 | FYC/PornPros | 20 | Passion HD, Tiny4K, POVD, Casting Couch X, Lubed, SpyFam, Cum4K, Exotic4K, WetVR, BBC Pie, … |
 | WordPress | 5 | Anal Therapy, Family Therapy, Tara Tainton, … |
 | POVR/WankzVR | 4 | BrasilVR, MilfVR, TranzVR, WankzVR |
-| Up-Timely CMS | 5 | DAS!, Idea Pocket, Madonna, MOODYZ, S1 NO.1 STYLE |
+| Up-Timely CMS | 6 | Attackers, DAS!, Idea Pocket, Madonna, MOODYZ, S1 NO.1 STYLE |
 | SexMex Pro CMS | 3 | Exposed Latinas, SexMex, Trans Queens |
-| ModelCentro | 26 | Penny Barber, The Jerky Girls, Mugur Porn, Thicc Vision, Cum Trainer, Monster Males, … |
+| ModelCentro | 28 | Penny Barber, The Jerky Girls, Mugur Porn, Thicc Vision, Cum Trainer, Monster Males, … |
 | MetArt Network | 13 | MetArt, SexArt, ALS Scan, Viv Thomas, MetArt X, Errotica Archives, Stunning 18, … |
 | Railway/Express | 3 | Smoking Erotica, Smoking Models, Spanking Glamour |
 | Grooby | 42 | Grooby Girls, TGirls.xxx, Brazilian Transsexuals, TGirl Japan, Grooby VR, Black TGirls, Femout.xxx, Ladyboy.xxx, … |

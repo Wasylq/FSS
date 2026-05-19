@@ -115,6 +115,7 @@
 | CzechVR Network (6) | `czechvrnetwork.com`, `czechvr.com`, `czechvrfetish.com`, `czechvrcasting.com`, `vrintimacy.com`, `czechar.com`, `{domain}/model-{slug}`, `{domain}/tag-{slug}` | Custom PHP | No | Table-driven, sitemap-based enumeration (1709 scenes total), detail page worker pool for description/tags/performers, model page support, VR metadata, shared ID space across 5 sub-sites |
 | [Dancing Bear](https://www.dancingbear.com) | `dancingbear.com`, `dancingbear.com/pornstar/{id}/{slug}`, `dancingbear.com/category/{id}/{slug}`, `dancingbear.com/site/{id}/{slug}`, `dancingbear.com/series/{id}/{slug}` | Aylo/Juan | No | REST API, BangBros sub-site with standalone domain, uses `ayloutil` |
 | [DEEP'S](https://deeps.net) | `deeps.net/item`, `deeps.net/item/index.php?w_{actress}`, `deeps.net/item/index.php?d_{director}`, `deeps.net/item/index.php?s_{series}`, `deeps.net/item/index.php?c_{category}` | Custom PHP | Yes (JPY) | HTML listing (32+50/page) + detail page worker pool, actress/director/series/category filtering, price/duration/tags, ~2600 titles |
+| [Attackers](https://attackers.net) | `attackers.net/works/list/series/{id}`, `attackers.net/works/list/release`, `attackers.net/works/list/date/{date}`, `attackers.net/works/list/genre/{id}`, `attackers.net/works/list/label/{id}`, `attackers.net/actress/detail/{id}` | Up-Timely CMS | No | Thin wrapper around `uptimelyutil` |
 | [DAS!](https://dasdas.jp) | `dasdas.jp/works/list/series/{id}`, `dasdas.jp/works/list/release`, `dasdas.jp/works/list/date/{date}`, `dasdas.jp/works/list/genre/{id}`, `dasdas.jp/works/list/label/{id}`, `dasdas.jp/actress/detail/{id}` | Up-Timely CMS | No | Thin wrapper around `uptimelyutil` |
 | [Alison Angel](https://alisonangel.com) | `alisonangel.com`, `alisonangel.com/episode/{slug}-{id}.html` | Custom HTML | No | Homepage listing (2 featured + 36 grid), detail page chain via "continue" link for discovery, ~38+ episodes, dates only on featured entries, single performer |
 | [AlternaDudes](https://www.alternadudes.com) | `alternadudes.com`, `alternadudes.com/models/{name}.html` | Custom PHP | No | HTML listing + detail pages, NATS affiliate, 12/page, ~461 scenes, worker pool for tags/description, model page support |
@@ -143,6 +144,7 @@
 | [IWantClips](https://www.iwantclips.com) | `iwantclips.com/store/{id}/{username}` | IWantClips | Yes | JSON API, double HTML-unescaping |
 | [JAV Database](https://www.javdatabase.com) | `javdatabase.com/studios/{slug}`, `javdatabase.com/movies/`, `javdatabase.com/uncensored/`, `javdatabase.com/genres/{slug}`, `javdatabase.com/series/{slug}`, `javdatabase.com/idols/{slug}` | WordPress (custom) | No | HTML listing (18/page, `/page/{N}/`) + detail page worker pool (4 workers), two detail templates (censored `<p class="mb-1">` / uncensored `<table>`), DVD ID scene IDs for censored / URL slug for uncensored, `twitter:data1` total count, date-sorted, studio/genre/series/idol filtering, ~490k movies |
 | [Jules Jordan Network](https://www.julesjordan.com/trial/) (5 sites) | `{domain}/trial/`, `{domain}/trial/categories/movies.html`, `{domain}/trial/models/{slug}.html`, `{domain}/trial/dvds/dvds.html` | ElevatedX CMS | No | Table-driven `julesjordan` package via `julesjordanutil`, 3 template variants (JJ/Classic/Modern), listing + detail page worker pool, 3 modes: scene listing, model page, DVD listing. Sites: Jules Jordan, Manuel Ferrara, Girl Girl, Sperm Swallowers, The Ass Factory |
+| [Lady Fyre](https://www.ladyfyre.com) | `ladyfyre.com`, `ladyfyre.com/tour/models/{slug}.html` | NATS CMS | Yes | HTML listing (10/page), `updateItem` cards, detail page worker pool for description/tags, price tracking, model page support, ~380 scenes |
 | [Lady Sonia](https://tour.lady-sonia.com) | `lady-sonia.com` | KB Productions/Next.js | No | `__NEXT_DATA__` JSON parsing, 1500+ scenes, listing-only (no detail pages needed) |
 | [Lucas Entertainment](https://www.lucasentertainment.com) | `lucasentertainment.com`, `lucasentertainment.com/tag/{slug}` | WordPress REST API | No | WP JSON API with `?categories=10` (Scenes), 100/page, ~2400 scenes, performer extraction from title heuristic, OG image + embedded media thumbnails, tag-based filtering for model pages |
 | [LoyalFans](https://www.loyalfans.com) | `loyalfans.com/{creator_slug}` | LoyalFans API | No | POST `/api/v2/advanced-search`, cursor-based `page_token` pagination (20/page), session via `/api/v2/system-status`, filters results by owner slug |
@@ -220,6 +222,7 @@
 | [MissaX](https://www.missax.com) | `missax.com`, `missax.com/tour/models/{name}.html` | MissaX CMS | No | NATS tour, listing + detail page worker pool, model page support, uses `missaxutil` |
 | [All Her Luv](https://www.allherluv.com) | `allherluv.com`, `allherluv.com/tour/models/{name}.html` | MissaX CMS | No | Thin wrapper around `missaxutil` |
 | [Mommy Blows Best](https://www.mommyblowsbest.com) | `mommyblowsbest.com` | Gamma/Algolia | No | Algolia search API, uses `gammautil` |
+| [Mommy's Girl](https://www.mommysgirl.com) | `mommysgirl.com` | Gamma/Algolia | No | Algolia search API (adulttime segment), Girlsway Network sub-site, uses `gammautil` |
 | [Mofos](https://www.mofos.com) | `mofos.com`, `mofos.com/model/{id}/{slug}`, `mofos.com/sites/{slug}`, `mofos.com/scenes?tags={id}`, `mofos.com/site/{id}/{slug}`, `mofos.com/series/{id}/{slug}` | Aylo/Juan | No | REST API, filter by performer/sub-site (by slug or ID)/tag/series, uses `ayloutil` |
 | [MOODYZ](https://moodyz.com) | `moodyz.com/works/list/series/{id}`, `moodyz.com/works/list/release`, `moodyz.com/works/list/date/{date}`, `moodyz.com/works/list/genre/{id}`, `moodyz.com/works/list/label/{id}`, `moodyz.com/actress/detail/{id}` | Up-Timely CMS | No | Thin wrapper around `uptimelyutil` |
 | [Mom Comes First](https://momcomesfirst.com) | `momcomesfirst.com` | WordPress | No | Sitemap-driven, JSON-LD VideoObject, uses `wputil` |
@@ -231,7 +234,7 @@
 | [Nubiles Network](https://nubiles-porn.com) | `nubiles-porn.com`, `nubiles.net`, `momsteachsex.com`, `stepsiblingscaught.com`, `myfamilypies.com`, `princesscum.com`, + 26 more | EdgeCms | No | HTML scraping, 32+ network sites, detail page worker pool for tags/description, filter by model or category |
 | [MyDirtyHobby](https://www.mydirtyhobby.com) | `mydirtyhobby.com/profil/{id}-{username}` | MyDirtyHobby | No | JSON API with auth headers |
 | [Naked News](https://www.nakednews.com) | `nakednews.com/archives`, `nakednews.com/archives?segmentid={id}`, `nakednews.com/archives?anchorid={id}`, `nakednews.com/naked-news-anchor-{slug}-a{id}`, `nakednews.com/{year}/{month}`, `nakednews.com/auditions`, `nakednews.com/clip-store` | Custom REST API | No | JSON listing API (100/page, 0-indexed) + detail API worker pool for performers/tags/description, filter by anchor/segment type/date/auditions, 500ms default delay |
-| ModelCentro sites (26) | `{domain}/videos` | ModelCentro | No | Table-driven via `modelcentroutil`: Backalley Toonz, Big Johnny XXX, Black Money Erotica, Black Pynk, Cum Trainer, Facial Casting, Lisa Rivera XO, Monster Males, Mugur Porn, Naughty Colombia, Nerds of Porn, Peccatrici Produzioni, Penny Barber, Pervs MILFs n Teens, Porn Valley Girls, Porntugal, Ric Porter, Sexy Nina Rivera, Suk My Dick, Super Hot Films, The Jerky Girls, Thicc Vision, THICQ, Throat Wars, Wet Wet Girls, Yung Dumb Sluts |
+| ModelCentro sites (28) | `{domain}/videos` | ModelCentro | No | Table-driven via `modelcentroutil`: Backalley Toonz, Big Johnny XXX, Black Money Erotica, Black Pynk, City Girlz (sallydangeloxxx.com), Cum Trainer, Facial Casting, Glamour Bunnies, Lisa Rivera XO, Monster Males, Mugur Porn, Naughty Colombia, Nerds of Porn, Peccatrici Produzioni, Penny Barber, Pervs MILFs n Teens, Porn Valley Girls, Porntugal, Ric Porter, Sexy Nina Rivera, Suk My Dick, Super Hot Films, The Jerky Girls, Thicc Vision, THICQ, Throat Wars, Wet Wet Girls, Yung Dumb Sluts |
 | [Perfect Girlfriend](https://perfectgirlfriend.com) | `perfectgirlfriend.com` | WordPress | No | Sitemap-driven, JSON-LD VideoObject fallback, uses `wputil` |
 | [PissingHD](https://tour.pissinghd.com) | `pissinghd.com` | YourPornPartner | No | Tour page scraping, ~30 public scenes, limited metadata (no dates/performers) |
 | [Pornbox](https://pornbox.com) | `pornbox.com/application/studio/{id}`, `pornbox.com/application/model/{id}` | Backbone.js SPA / JSON API | Yes | JSON listing API (40/page, `/studio/{id}/?skip=N&sort=latest`), JDIALOG3 cookie auth (shared with AnalVids), studio info endpoint, model content endpoint, `cdn77-image.gtflixtv.com` CDN, price tracking |
@@ -296,7 +299,9 @@
 | [Futa World](https://www.futaworld.com) | `futaworld.com` | Gamma/Algolia | No | Algolia search API (adulttime segment), uses `gammautil` |
 | [Future Darkly](https://www.futuredarkly.com) | `futuredarkly.com` | Gamma/Algolia | No | Algolia search API (adulttime segment), uses `gammautil` |
 | [Girlcore](https://www.girlcore.com) | `girlcore.com` | Gamma/Algolia | No | Algolia search API (adulttime segment), uses `gammautil` |
+| [Girls Try Anal](https://www.girlstryanal.com) | `girlstryanal.com` | Gamma/Algolia | No | Algolia search API (adulttime segment), Girlsway Network sub-site, uses `gammautil` |
 | [Girls Under Arrest](https://www.girlsunderarrest.com) | `girlsunderarrest.com` | Gamma/Algolia | No | Algolia search API (adulttime segment), uses `gammautil` |
+| [Girlsway](https://www.girlsway.com) | `girlsway.com` | Gamma/Algolia | No | Algolia search API (adulttime segment), Girlsway Network hub, uses `gammautil` |
 | [Hentai Sex School](https://www.hentaisexschool.com) | `hentaisexschool.com` | Gamma/Algolia | No | Algolia search API (adulttime segment), uses `gammautil` |
 | [HeteroFlexible](https://www.heteroflexible.com) | `heteroflexible.com` | Gamma/Algolia | No | Algolia search API (adulttime segment), uses `gammautil` |
 | [Is This Real?!](https://www.isthisreal.com) | `isthisreal.com` | Gamma/Algolia | No | Algolia search API (adulttime segment), uses `gammautil` |
@@ -323,7 +328,9 @@
 | [Hairy Undies](https://www.hairyundies.com) | `hairyundies.com` | Gamma/Algolia | No | Algolia search API (adulttime segment), Devil's Film Network sub-site, uses `gammautil` |
 | [Lesbian Factor](https://www.lesbianfactor.com) | `lesbianfactor.com` | Gamma/Algolia | No | Algolia search API (adulttime segment), Devil's Film Network sub-site, uses `gammautil` |
 | [Out of the Family](https://www.outofthefamily.com) | `outofthefamily.com` | Gamma/Algolia | No | Algolia search API (adulttime segment), Devil's Film Network sub-site, uses `gammautil` |
+| [Sex Tape Lesbians](https://www.sextapelesbians.com) | `sextapelesbians.com` | Gamma/Algolia | No | Algolia search API (adulttime segment), Girlsway Network sub-site, uses `gammautil` |
 | [Squirtalicious](https://www.squirtalicious.com) | `squirtalicious.com` | Gamma/Algolia | No | Algolia search API (adulttime segment), Devil's Film Network sub-site, uses `gammautil` |
+| [Squirting Lesbian](https://www.squirtinglesbian.com) | `squirtinglesbian.com` | Gamma/Algolia | No | Algolia search API (adulttime segment), Girlsway Network sub-site, uses `gammautil` |
 | [Fame Digital](https://www.famedigital.com) | `famedigital.com` | Gamma/Algolia | No | Algolia search API (adulttime segment), Fame Digital parent, uses `gammautil` |
 | [Big Fat Creampie](https://www.bigfatcreampie.com) | `bigfatcreampie.com` | Gamma/Algolia | No | Algolia search API (adulttime segment), Fame Digital sub-site, uses `gammautil` |
 | [Bushy Bushy](https://www.bushybushy.com) | `bushybushy.com` | Gamma/Algolia | No | Algolia search API (adulttime segment), Fame Digital sub-site, uses `gammautil` |
@@ -338,6 +345,7 @@
 | [Silvia Saint](https://www.silviasaint.com) | `silviasaint.com` | Gamma/Algolia | No | Algolia search API (adulttime segment), Fame Digital sub-site, uses `gammautil` |
 | [Tera Patrick](https://www.terapatrick.com) | `terapatrick.com` | Gamma/Algolia | No | Algolia search API (adulttime segment), Fame Digital sub-site, RefererBase override (legacy non-Gamma site), uses `gammautil` |
 | [Transsexual Roadtrip](https://www.transsexualroadtrip.com) | `transsexualroadtrip.com` | Gamma/Algolia | No | Algolia search API (adulttime segment), Fame Digital sub-site, uses `gammautil` |
+| [Web Young](https://www.webyoung.com) | `webyoung.com` | Gamma/Algolia | No | Algolia search API (adulttime segment), Girlsway Network sub-site, uses `gammautil` |
 | [White Ghetto](https://www.whiteghetto.com) | `whiteghetto.com` | Gamma/Algolia | No | Algolia search API (adulttime segment), Fame Digital sub-site, uses `gammautil` |
 | [Burning Angel](https://www.burningangel.com) | `burningangel.com` | Gamma/Algolia | No | Algolia search API, uses `gammautil` |
 | [Filthy Kings](https://www.filthykings.com) | `filthykings.com` | Gamma/Algolia | No | Algolia search API, uses `gammautil` |
@@ -449,7 +457,7 @@ Scrapers that share a platform use common utility packages to avoid duplication:
 | `adultprimeutil` | Adult Prime (HTML listing + detail pages, `var params` pagination) | `adultprime` | 97 studios |
 | `ayloutil` | Aylo/Juan (REST API, instance token auth) | `aylo` | 34 sites + BangBros (standalone) + SpiceVids |
 | `cherrypimpsutil` | Cherry Pimps/BLT Innovations (Elevated X CMS, HTML listing) | `cherrypimps` | 2 sites |
-| `gammautil` | Gamma Entertainment (Algolia search API, 8 segments: adulttime, evilangel, evilangelnetwork, dfxtra, openlife, zerotolerancefilms, addicted2girls, biphoria) | `gamma` | 87 sites |
+| `gammautil` | Gamma Entertainment (Algolia search API, 8 segments: adulttime, evilangel, evilangelnetwork, dfxtra, openlife, zerotolerancefilms, addicted2girls, biphoria) | `gamma` | 93 sites |
 | `flourishutil` | Flourish CMS (NATS platform, HTML listing + detail fetch, YYYY-MM-DD dates, 12/page) | `flourish` | 7 sites |
 | `fycutil` | FYC/PornPros (Nuxt 3 SSR, `__NUXT_DATA__` devalue format, 12/page, model page support) | `fyc` | 20 sites |
 | `groobyutil` | Grooby CMS (HTML listing, NATS platform, `/tour/categories/movies_{page}_d.html` pagination) | `grooby` | 42 sites |
@@ -458,9 +466,9 @@ Scrapers that share a platform use common utility packages to avoid duplication:
 | `metartutil` | MetArt Network (JSON API at `/api/updates`, movies filtered client-side) | `metart` | 13 sites |
 | `veutil` | WordPress video-elements theme (WP REST API) | `videoelements` | 13 sites |
 | `scoregrouputil` | Score Group (HTML listing + detail pages) | `scoregroup` | 93 sites |
-| `modelcentroutil` | ModelCentro/AdultCentro (JSON API at `/api/content.load`) | `modelcentro` | 26 sites |
+| `modelcentroutil` | ModelCentro/AdultCentro (JSON API at `/api/content.load`) | `modelcentro` | 28 sites |
 | `povrutil` | POVR/WankzVR (export JSON + HTML listing) | `povr` | 4 sites |
-| `uptimelyutil` | Up-Timely CMS (HTML listing + detail, Japanese metadata) | `uptimely` | 5 sites |
+| `uptimelyutil` | Up-Timely CMS (HTML listing + detail, Japanese metadata) | `uptimely` | 6 sites |
 | `sexmexutil` | SexMex Pro CMS (HTML scraping). **Quirk:** CMS returns HTTP 500 with valid HTML on some pages. | `sexmexpro` | 3 sites |
 | `railwayutil` | Railway/Express/MongoDB (single JSON API call) | `railway` | 3 sites |
 | `realspankingsutil` | Real Spankings Network (PHP CMS, base64 URL params, per-site parsing) | `realspankings` | 5 sites |

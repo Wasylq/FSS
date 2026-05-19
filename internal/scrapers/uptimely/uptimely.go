@@ -16,6 +16,7 @@ type siteConfig struct {
 }
 
 var sites = []siteConfig{
+	{"attackers", "attackers.net", "Attackers"},
 	{"dasdas", "dasdas.jp", "DAS!"},
 	{"ideapocket", "ideapocket.com", "Idea Pocket"},
 	{"madonna", "madonna-av.com", "Madonna"},

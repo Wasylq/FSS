@@ -177,7 +177,7 @@ func (s *Scraper) runSinglePage(ctx context.Context, studioURL string, opts scra
 		select {
 		case work <- e:
 		case <-ctx.Done():
-			break
+			return
 		}
 	}
 

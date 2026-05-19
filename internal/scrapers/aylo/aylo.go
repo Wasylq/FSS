@@ -21,7 +21,7 @@ type siteConfig struct {
 
 var sites = []siteConfig{
 	{"babes", "babes.com", "Babes", []string{"babes.com/model/{id}/{slug}"}, nil, ""},
-	{"bigstr", "czechhunter.com", "BigStr", nil, nil, ""},
+	{"bigstr", "czechhunter.com", "BigStr", nil, []string{"bigstr.com", "debtdandy.com", "dirtyscout.com"}, ""},
 	{"brazzers", "brazzers.com", "Brazzers", nil, nil, ""},
 	{"bromo", "bromo.com", "Bromo", nil, nil, "scene"},
 	{"digitalplayground", "digitalplayground.com", "Digital Playground", []string{"digitalplayground.com/modelprofile/{id}/{slug}"}, []string{"digitalplaygroundnetwork.com"}, ""},
@@ -31,11 +31,11 @@ var sites = []siteConfig{
 	{"killergram", "killergram.com", "Killergram", nil, nil, ""},
 	{"letsdoeit", "letsdoeit.com", "LetsDoeIt", nil, nil, ""},
 	{"men", "men.com", "Men", nil, []string{"bigdicksatschool.com", "drillmyhole.com", "str8togay.com", "thegayoffice.com", "jizzorgy.com", "menofuk.com", "toptobottom.com"}, "sceneid"},
-	{"metro", "shewillcheat.com", "Metro", nil, nil, ""},
+	{"metro", "shewillcheat.com", "Metro", nil, []string{"metrohd.com", "familyhookups.com", "kinkyspa.com", "girlgrind.com", "devianthardcore.com"}, ""},
 	{"milehigh", "milfed.com", "MileHigh", nil, []string{"dilfed.com", "gilfed.com"}, "scene"},
 	{"mofos", "mofos.com", "Mofos", []string{"mofos.com/model/{id}/{slug}"}, nil, ""},
 	{"propertysex", "propertysex.com", "PropertySex", nil, nil, ""},
-	{"realitydudes", "realitydudes.com", "RealityDudes", nil, nil, ""},
+	{"realitydudes", "realitydudes.com", "RealityDudes", nil, []string{"boysfirsttime.com", "dickdorm.com", "gayrevenge.com", "papi.com", "str8chaser.com"}, ""},
 	{"realitykings", "realitykings.com", "Reality Kings", []string{"realitykings.com/model/{id}/{slug}"}, []string{"rk.com"}, ""},
 	{"seancody", "seancody.com", "Sean Cody", nil, nil, ""},
 	{"squirted", "squirted.com", "Squirted", nil, nil, ""},

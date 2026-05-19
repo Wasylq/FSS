@@ -94,6 +94,14 @@ var sites = []siteConfig{
 	{"transsexualroadtrip", "transsexualroadtrip.com", "Transsexual Roadtrip", "", "", ""},
 	{"whiteghetto", "whiteghetto.com", "White Ghetto", "", "", ""},
 
+	// Adult Time segment — Girlsway (Network) sub-sites
+	{"girlsway", "girlsway.com", "Girlsway", "", "", ""},
+	{"girlstryanal", "girlstryanal.com", "Girls Try Anal", "", "", ""},
+	{"mommysgirl", "mommysgirl.com", "Mommy's Girl", "", "", ""},
+	{"sextapelesbians", "sextapelesbians.com", "Sex Tape Lesbians", "", "", ""},
+	{"squirtinglesbian", "squirtinglesbian.com", "Squirting Lesbian", "", "", ""},
+	{"webyoung", "webyoung.com", "Web Young", "", "", ""},
+
 	// Evil Angel Network segment (evilangelnetwork) — director-branded sub-sites
 	{"buttman", "buttman.com", "Buttman", "buttman", "", ""},
 	{"analtrixxx", "analtrixxx.com", "AnalTriXXX", "analtrixxx", "", ""},
