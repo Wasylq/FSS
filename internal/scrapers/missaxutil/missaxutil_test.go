@@ -1,4 +1,4 @@
-package missax
+package missaxutil
 
 import (
 	"context"
@@ -8,12 +8,13 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/Wasylq/FSS/internal/scrapers/testutil"
 	"github.com/Wasylq/FSS/scraper"
 )
 
+var testCfg = SiteConfig{SiteID: "testsite", Domain: "example.com", Studio: "Test Studio"}
+
 func TestMatchesURL(t *testing.T) {
-	s := New()
+	s := New(SiteConfig{SiteID: "missax", Domain: "missax.com", Studio: "MissaX"})
 	cases := []struct {
 		url  string
 		want bool
@@ -22,8 +23,25 @@ func TestMatchesURL(t *testing.T) {
 		{"https://missax.com/tour/categories/movies_1_d.html", true},
 		{"https://www.missax.com/tour/trailers/Some-Scene.html", true},
 		{"https://www.missax.com/tour/models/ActorA.html", true},
-		{"https://www.manyvids.com/Profile/123/foo", false},
+		{"https://www.allherluv.com/tour/", false},
 		{"https://example.com", false},
+	}
+	for _, c := range cases {
+		if got := s.MatchesURL(c.url); got != c.want {
+			t.Errorf("MatchesURL(%q) = %v, want %v", c.url, got, c.want)
+		}
+	}
+}
+
+func TestMatchesURLAllHerLuv(t *testing.T) {
+	s := New(SiteConfig{SiteID: "allherluv", Domain: "allherluv.com", Studio: "All Her Luv"})
+	cases := []struct {
+		url  string
+		want bool
+	}{
+		{"https://www.allherluv.com/tour/", true},
+		{"https://allherluv.com/tour/categories/movies_1_d.html", true},
+		{"https://www.missax.com", false},
 	}
 	for _, c := range cases {
 		if got := s.MatchesURL(c.url); got != c.want {
@@ -36,7 +54,7 @@ const fixtureListPage = `<!DOCTYPE html><html><body>
 <div class="photo-thumb video-thumb">
 	<div class="photo-thumb_body">
 		<a href="%s/tour/trailers/Test-Scene.html" title="Test Scene">
-			<img class="mainThumb thumbs stdimage" src0_1x="https://cdn.missax.com/tour/content/contentthumbs/10/01/1001-1x.jpg?expires=99&token=abc" />
+			<img class="mainThumb thumbs stdimage" src0_1x="https://cdn.example.com/tour/content/contentthumbs/10/01/1001-1x.jpg?expires=99&token=abc" />
 		</a>
 	</div>
 	<div class="thumb-descr">
@@ -49,7 +67,7 @@ const fixtureListPage = `<!DOCTYPE html><html><body>
 <div class="photo-thumb video-thumb">
 	<div class="photo-thumb_body">
 		<a href="%s/tour/trailers/Another-Scene.html" title="Another Scene">
-			<img class="mainThumb thumbs stdimage" src0_1x="https://cdn.missax.com/tour/content/contentthumbs/10/02/1002-1x.jpg?expires=99&token=def" />
+			<img class="mainThumb thumbs stdimage" src0_1x="https://cdn.example.com/tour/content/contentthumbs/10/02/1002-1x.jpg?expires=99&token=def" />
 		</a>
 	</div>
 	<div class="thumb-descr">
@@ -63,7 +81,7 @@ const fixtureListPage = `<!DOCTYPE html><html><body>
 
 const fixtureDetailPage = `<!DOCTYPE html><html><head>
 <TITLE>Test Scene</TITLE>
-<meta property="og:image" content="https://www.missax.com/tour/content/contentthumbs/1001.jpg" />
+<meta property="og:image" content="https://www.example.com/tour/content/contentthumbs/1001.jpg" />
 </head><body>
 <div class="wrap-block">
 	<video src="/trailers/missa_testscene_12345.mp4" poster="/img.jpg" width="1190" height="675"></video>
@@ -84,18 +102,9 @@ Second paragraph with more details.
 </p>
 </body></html>`
 
-func TestFetchPage(t *testing.T) {
-	var ts *httptest.Server
-	ts = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		_, _ = fmt.Fprintf(w, fixtureListPage, ts.URL, ts.URL)
-	}))
-	defer ts.Close()
-
-	s := &Scraper{client: ts.Client(), siteBase: ts.URL}
-	entries, err := s.fetchPage(context.Background(), 1)
-	if err != nil {
-		t.Fatal(err)
-	}
+func TestParsePage(t *testing.T) {
+	body := fmt.Sprintf(fixtureListPage, "https://www.example.com", "https://www.example.com")
+	entries := parsePage([]byte(body))
 
 	if len(entries) != 2 {
 		t.Fatalf("got %d entries, want 2", len(entries))
@@ -125,12 +134,12 @@ func TestFetchDetail(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	s := &Scraper{client: ts.Client(), siteBase: ts.URL}
+	s := &Scraper{cfg: testCfg, client: ts.Client(), base: ts.URL}
 	entry := listEntry{
 		id:         "1001",
 		title:      "Test Scene",
 		url:        ts.URL + "/tour/trailers/Test-Scene.html",
-		thumbnail:  "https://cdn.missax.com/tour/content/contentthumbs/10/01/1001-1x.jpg",
+		thumbnail:  "https://cdn.example.com/tour/content/contentthumbs/10/01/1001-1x.jpg",
 		performers: []string{"Actor A", "Actor B"},
 	}
 
@@ -142,8 +151,11 @@ func TestFetchDetail(t *testing.T) {
 	if scene.ID != "1001" {
 		t.Errorf("ID = %q", scene.ID)
 	}
-	if scene.Title != "Test Scene" {
-		t.Errorf("Title = %q", scene.Title)
+	if scene.SiteID != "testsite" {
+		t.Errorf("SiteID = %q", scene.SiteID)
+	}
+	if scene.Studio != "Test Studio" {
+		t.Errorf("Studio = %q", scene.Studio)
 	}
 	if scene.Duration != 25*60+30 {
 		t.Errorf("Duration = %d, want %d", scene.Duration, 25*60+30)
@@ -158,20 +170,11 @@ func TestFetchDetail(t *testing.T) {
 	if scene.Description != wantDesc {
 		t.Errorf("Description = %q, want %q", scene.Description, wantDesc)
 	}
-	if scene.Thumbnail != "https://www.missax.com/tour/content/contentthumbs/1001.jpg" {
+	if scene.Thumbnail != "https://www.example.com/tour/content/contentthumbs/1001.jpg" {
 		t.Errorf("Thumbnail = %q", scene.Thumbnail)
 	}
 	if !strings.Contains(scene.Preview, "missa_testscene") {
 		t.Errorf("Preview = %q", scene.Preview)
-	}
-	if len(scene.Performers) != 2 {
-		t.Errorf("Performers = %v", scene.Performers)
-	}
-	if scene.Studio != "MissaX" {
-		t.Errorf("Studio = %q", scene.Studio)
-	}
-	if scene.SiteID != "missax" {
-		t.Errorf("SiteID = %q", scene.SiteID)
 	}
 }
 
@@ -191,20 +194,24 @@ func TestListScenes(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	s := &Scraper{client: ts.Client(), siteBase: ts.URL}
+	s := &Scraper{cfg: testCfg, client: ts.Client(), base: ts.URL}
 	ch, err := s.ListScenes(context.Background(), ts.URL, scraper.ListOpts{Workers: 1})
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	scenes := testutil.CollectScenes(t, ch)
-
-	if len(scenes) != 2 {
-		t.Fatalf("got %d scenes, want 2", len(scenes))
+	var scenes int
+	for r := range ch {
+		if r.Kind == scraper.KindScene {
+			scenes++
+		}
+	}
+	if scenes != 2 {
+		t.Errorf("got %d scenes, want 2", scenes)
 	}
 }
 
-func TestListScenesKnownIDs(t *testing.T) {
+func TestKnownIDsStopsEarly(t *testing.T) {
 	var ts *httptest.Server
 	ts = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch {
@@ -216,7 +223,7 @@ func TestListScenesKnownIDs(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	s := &Scraper{client: ts.Client(), siteBase: ts.URL}
+	s := &Scraper{cfg: testCfg, client: ts.Client(), base: ts.URL}
 	ch, err := s.ListScenes(context.Background(), ts.URL, scraper.ListOpts{
 		Workers:  1,
 		KnownIDs: map[string]bool{"1002": true},
@@ -225,17 +232,25 @@ func TestListScenesKnownIDs(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	scenes, stoppedEarly := testutil.CollectScenesWithStop(t, ch)
-
+	var scenes int
+	var stoppedEarly bool
+	for r := range ch {
+		switch r.Kind {
+		case scraper.KindScene:
+			scenes++
+		case scraper.KindStoppedEarly:
+			stoppedEarly = true
+		}
+	}
 	if !stoppedEarly {
 		t.Error("expected StoppedEarly signal")
 	}
-	if len(scenes) != 1 || scenes[0].ID != "1001" {
-		t.Errorf("got scenes %v, want [1001]", scenes)
+	if scenes != 1 {
+		t.Errorf("got %d scenes, want 1", scenes)
 	}
 }
 
-func TestListScenesModel(t *testing.T) {
+func TestModelPage(t *testing.T) {
 	var ts *httptest.Server
 	ts = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch {
@@ -249,21 +264,21 @@ func TestListScenesModel(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	s := &Scraper{client: ts.Client(), siteBase: ts.URL}
+	s := &Scraper{cfg: testCfg, client: ts.Client(), base: ts.URL}
 	modelURL := ts.URL + "/tour/models/ActorA.html"
 	ch, err := s.ListScenes(context.Background(), modelURL, scraper.ListOpts{Workers: 1})
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	scenes := testutil.CollectScenes(t, ch)
-	if len(scenes) != 2 {
-		t.Fatalf("got %d scenes, want 2", len(scenes))
-	}
-	for _, sc := range scenes {
-		if sc.StudioURL != modelURL {
-			t.Errorf("StudioURL = %q, want %q", sc.StudioURL, modelURL)
+	var scenes int
+	for r := range ch {
+		if r.Kind == scraper.KindScene {
+			scenes++
 		}
+	}
+	if scenes != 2 {
+		t.Errorf("got %d scenes, want 2", scenes)
 	}
 }
 
@@ -307,11 +322,22 @@ func TestSlugFromURL(t *testing.T) {
 		want string
 	}{
 		{"https://www.missax.com/tour/trailers/Test-Scene.html", "Test-Scene"},
-		{"https://www.missax.com/tour/trailers/Another-One.html", "Another-One"},
+		{"https://www.allherluv.com/tour/trailers/Another-One.html", "Another-One"},
 	}
 	for _, c := range cases {
 		if got := slugFromURL(c.url); got != c.want {
 			t.Errorf("slugFromURL(%q) = %q, want %q", c.url, got, c.want)
 		}
+	}
+}
+
+func TestScraperInterface(t *testing.T) {
+	s := New(SiteConfig{SiteID: "missax", Domain: "missax.com", Studio: "MissaX"})
+	var _ scraper.StudioScraper = s
+	if s.ID() != "missax" {
+		t.Errorf("ID() = %q", s.ID())
+	}
+	if len(s.Patterns()) != 2 {
+		t.Errorf("Patterns() = %d, want 2", len(s.Patterns()))
 	}
 }

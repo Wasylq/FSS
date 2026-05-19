@@ -217,7 +217,8 @@
 | [SayUncle](https://www.sayuncle.com) | `sayuncle.com`, `sayuncle.com/models/{slug}`, `sayuncle.com/series/{slug}`, `sayuncle.com/categories/{name}` | TeamSkeet/PSM | No | TeamSkeet, `sau_network` ES index, `/movies/` scene path |
 | [Pure Mature](https://puremature.com) | `puremature.com`, `puremature.com/models/{slug}` | AMA Multimedia | No | JSON REST API, filter by model, resolution from download options |
 | [MilfVR](https://www.milfvr.com) | `milfvr.com` | POVR/WankzVR | No | Export JSON + listing page dates, uses `povrutil` |
-| [MissaX](https://www.missax.com) | `missax.com`, `missax.com/tour/models/{name}.html` | Custom | No | HTML scraping, listing + detail page worker pool, model/performer page support |
+| [MissaX](https://www.missax.com) | `missax.com`, `missax.com/tour/models/{name}.html` | MissaX CMS | No | NATS tour, listing + detail page worker pool, model page support, uses `missaxutil` |
+| [All Her Luv](https://www.allherluv.com) | `allherluv.com`, `allherluv.com/tour/models/{name}.html` | MissaX CMS | No | Thin wrapper around `missaxutil` |
 | [Mommy Blows Best](https://www.mommyblowsbest.com) | `mommyblowsbest.com` | Gamma/Algolia | No | Algolia search API, uses `gammautil` |
 | [Mofos](https://www.mofos.com) | `mofos.com`, `mofos.com/model/{id}/{slug}`, `mofos.com/sites/{slug}`, `mofos.com/scenes?tags={id}`, `mofos.com/site/{id}/{slug}`, `mofos.com/series/{id}/{slug}` | Aylo/Juan | No | REST API, filter by performer/sub-site (by slug or ID)/tag/series, uses `ayloutil` |
 | [MOODYZ](https://moodyz.com) | `moodyz.com/works/list/series/{id}`, `moodyz.com/works/list/release`, `moodyz.com/works/list/date/{date}`, `moodyz.com/works/list/genre/{id}`, `moodyz.com/works/list/label/{id}`, `moodyz.com/actress/detail/{id}` | Up-Timely CMS | No | Thin wrapper around `uptimelyutil` |
@@ -449,6 +450,7 @@ Scrapers that share a platform use common utility packages to avoid duplication:
 | `fycutil` | FYC/PornPros (Nuxt 3 SSR, `__NUXT_DATA__` devalue format, 12/page, model page support) | `fyc` | 20 sites |
 | `groobyutil` | Grooby CMS (HTML listing, NATS platform, `/tour/categories/movies_{page}_d.html` pagination) | `grooby` | 42 sites |
 | `julesjordanutil` | Jules Jordan Network (ElevatedX CMS, 3 template variants: JJ/Classic/Modern) | `julesjordan` | 5 sites |
+| `missaxutil` | MissaX CMS (NATS tour, `photo-thumb video-thumb` cards, listing + detail worker pool, model page) | `missax` | 2 sites |
 | `metartutil` | MetArt Network (JSON API at `/api/updates`, movies filtered client-side) | `metart` | 13 sites |
 | `veutil` | WordPress video-elements theme (WP REST API) | `videoelements` | 13 sites |
 | `scoregrouputil` | Score Group (HTML listing + detail pages) | `scoregroup` | 93 sites |

@@ -5,13 +5,14 @@ package missax
 import (
 	"testing"
 
+	"github.com/Wasylq/FSS/internal/scrapers/missaxutil"
 	"github.com/Wasylq/FSS/internal/scrapers/testutil"
 )
 
-// liveStudioURL — site root; MissaX scraper handles the listing.
-const liveStudioURL = "https://www.missax.com"
-
 func TestLiveMissaX(t *testing.T) {
-	testutil.SkipIfPlaceholder(t, liveStudioURL)
-	testutil.RunLiveScrape(t, New(), liveStudioURL, 2)
+	testutil.RunLiveScrape(t, missaxutil.New(sites[0]), "https://www.missax.com", 2)
+}
+
+func TestLiveAllHerLuv(t *testing.T) {
+	testutil.RunLiveScrape(t, missaxutil.New(sites[1]), "https://www.allherluv.com/tour/", 2)
 }
