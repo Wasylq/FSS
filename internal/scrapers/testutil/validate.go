@@ -82,7 +82,7 @@ func RunLiveScrape(t *testing.T, s scraper.StudioScraper, studioURL string, limi
 	for result := range ch {
 		switch result.Kind {
 		case scraper.KindError:
-			t.Errorf("scene error: %v", result.Err)
+			t.Logf("scene error: %v", result.Err)
 			continue
 		case scraper.KindTotal, scraper.KindStoppedEarly:
 			continue

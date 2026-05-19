@@ -33,5 +33,5 @@ func newTestScraper(cfg siteConfig) *uptimelyutil.Scraper {
 }
 
 func TestLiveIdeaPocket(t *testing.T) {
-	testutil.RunLiveScrape(t, newTestScraper(sites[1]), "https://ideapocket.com/works/list/release", 2)
+	testutil.RunLiveScrape(t, newTestScraper(sites[2]), "https://ideapocket.com/works/list/release", 2)
 }

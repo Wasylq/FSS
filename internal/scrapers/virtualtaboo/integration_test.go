@@ -24,11 +24,11 @@ func newTestScraper(cfg siteConfig) *Scraper {
 }
 
 func TestLiveDarkRoomVR(t *testing.T) {
-	testutil.RunLiveScrape(t, newTestScraper(sites[0]), "https://darkroomvr.com/videos", 2)
+	testutil.RunLiveScrape(t, newTestScraper(sites[0]), "https://darkroomvr.com/video", 2)
 }
 
 func TestLiveOnlyTarts(t *testing.T) {
-	testutil.RunLiveScrape(t, newTestScraper(sites[1]), "https://onlytarts.com/videos", 2)
+	testutil.RunLiveScrape(t, newTestScraper(sites[1]), "https://onlytarts.com/video", 2)
 }
 
 func TestLiveVirtualTaboo(t *testing.T) {

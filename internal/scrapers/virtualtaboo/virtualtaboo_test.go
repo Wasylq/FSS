@@ -39,8 +39,8 @@ func TestMatchesURL(t *testing.T) {
 	}{
 		{"https://virtualtaboo.com/videos", true},
 		{"https://www.virtualtaboo.com/videos", true},
-		{"http://virtualtaboo.com/video/some-scene", true},
-		{"https://darkroomvr.com/videos", false},
+		{"http://virtualtaboo.com/videos/some-scene", true},
+		{"https://darkroomvr.com/video", false},
 		{"https://example.com/", false},
 	}
 	for _, tt := range tests {
@@ -62,8 +62,8 @@ const listingHTML = `<html><body>
   </a>
   <div class="video-card__title">Hot VR Scene</div>
   <div class="video-card__actors">
-    <a href="/model/jane-doe">Jane Doe</a>,
-    <a href="/model/john-smith">John Smith</a>
+    <a href="/pornstars/jane-doe">Jane Doe</a>,
+    <a href="/pornstars/john-smith">John Smith</a>
   </div>
 </div>
 <div class="video-card__item video">

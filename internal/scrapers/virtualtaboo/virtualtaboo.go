@@ -19,12 +19,13 @@ type siteConfig struct {
 	siteID     string
 	domain     string
 	studioName string
+	listPath   string
 }
 
 var sites = []siteConfig{
-	{"darkroomvr", "darkroomvr.com", "Dark Room VR"},
-	{"onlytarts", "onlytarts.com", "OnlyTarts"},
-	{"virtualtaboo", "virtualtaboo.com", "Virtual Taboo"},
+	{"darkroomvr", "darkroomvr.com", "Dark Room VR", "/video"},
+	{"onlytarts", "onlytarts.com", "OnlyTarts", "/video"},
+	{"virtualtaboo", "virtualtaboo.com", "Virtual Taboo", "/videos"},
 }
 
 type Scraper struct {
@@ -50,7 +51,7 @@ func (s *Scraper) ID() string { return s.cfg.siteID }
 
 func (s *Scraper) Patterns() []string {
 	return []string{
-		s.cfg.domain + "/videos",
+		s.cfg.domain + s.cfg.listPath,
 		s.cfg.domain + "/model/{slug}",
 	}
 }
@@ -163,7 +164,7 @@ func (s *Scraper) runPaginated(ctx context.Context, opts scraper.ListOpts, out c
 			}
 		}
 
-		pageURL := fmt.Sprintf("%s/videos?page=%d", s.base(), page)
+		pageURL := fmt.Sprintf("%s%s?page=%d", s.base(), s.cfg.listPath, page)
 		body, err := s.fetchHTML(ctx, pageURL)
 		if err != nil {
 			select {
@@ -279,7 +280,7 @@ func (s *Scraper) processEntries(ctx context.Context, entries []listEntry, opts 
 var (
 	cardRe      = regexp.MustCompile(`(?s)video-card__item[^>]*>\s*<a class="image-container" href="([^"]+)"`)
 	cardTitleRe = regexp.MustCompile(`(?s)<div class="video-card__title">\s*(.*?)\s*</div>`)
-	cardActorRe = regexp.MustCompile(`<a href="[^"]*/model/[^"]*">([^<]+)</a>`)
+	cardActorRe = regexp.MustCompile(`<a href="[^"]*/(?:model|pornstars)/[^"]*">([^<]+)</a>`)
 	cardThumbRe = regexp.MustCompile(`<img src="([^"]+)"`)
 	pageRe      = regexp.MustCompile(`[?&]page=(\d+)`)
 )
@@ -334,7 +335,7 @@ func (s *Scraper) parseListingEntries(body []byte) []listEntry {
 	return entries
 }
 
-var slugRe = regexp.MustCompile(`/video/(.+?)(?:\?|$)`)
+var slugRe = regexp.MustCompile(`/videos?/(.+?)(?:\?|$)`)
 
 func extractSlug(rawURL string) string {
 	m := slugRe.FindStringSubmatch(rawURL)
@@ -379,7 +380,7 @@ var (
 	jldDurRe    = regexp.MustCompile(`"duration"\s*:\s*"T(\d+)H(\d+)M(\d+)S"|"duration"\s*:\s*"T(\d+)M(\d+)S"|"duration"\s*:\s*"T(\d+)M`)
 	jldThumbRe  = regexp.MustCompile(`"thumbnailUrl"\s*:\s*"([^"]+)"`)
 	tagLinkRe   = regexp.MustCompile(`/tag/[^"]*">([^<]+)</a>`)
-	modelLinkRe = regexp.MustCompile(`/model/[^"]*">([^<\n]+)</a>`)
+	modelLinkRe = regexp.MustCompile(`/(?:model|pornstars)/[^"]*">([^<\n]+)</a>`)
 )
 
 func (s *Scraper) fetchDetail(ctx context.Context, entry listEntry) (models.Scene, error) {

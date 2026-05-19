@@ -165,6 +165,10 @@ func (s *Scraper) runSinglePage(ctx context.Context, studioURL string, opts scra
 			}
 		}()
 	}
+	defer func() {
+		close(work)
+		wg.Wait()
+	}()
 
 	for _, e := range entries {
 		if opts.KnownIDs[e.sceneID] {
@@ -180,9 +184,6 @@ func (s *Scraper) runSinglePage(ctx context.Context, studioURL string, opts scra
 			return
 		}
 	}
-
-	close(work)
-	wg.Wait()
 }
 
 func (s *Scraper) runPaginated(ctx context.Context, studioURL string, opts scraper.ListOpts, out chan<- scraper.SceneResult, mode urlMode) {
