@@ -240,7 +240,7 @@ var (
 func (s *Scraper) parseListingPage(ctx context.Context, pageURL string) ([]workItem, error) {
 	resp, err := httpx.Do(ctx, s.client, httpx.Request{
 		URL:     pageURL,
-		Headers: map[string]string{"User-Agent": httpx.UserAgentFirefox},
+		Headers: httpx.BrowserHeaders(httpx.UserAgentFirefox),
 	})
 	if err != nil {
 		return nil, err
@@ -333,7 +333,7 @@ func (s *Scraper) fetchDetail(ctx context.Context, item workItem, studioURL stri
 
 	resp, err := httpx.Do(ctx, s.client, httpx.Request{
 		URL:     item.url,
-		Headers: map[string]string{"User-Agent": httpx.UserAgentFirefox},
+		Headers: httpx.BrowserHeaders(httpx.UserAgentFirefox),
 	})
 	if err != nil {
 		return models.Scene{}, fmt.Errorf("detail %s: %w", item.url, err)

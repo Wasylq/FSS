@@ -151,7 +151,7 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 func (s *Scraper) fetchSitemap(ctx context.Context, sitemapURL string) ([]string, error) {
 	resp, err := httpx.Do(ctx, s.client, httpx.Request{
 		URL:     sitemapURL,
-		Headers: map[string]string{"User-Agent": httpx.UserAgentChrome},
+		Headers: httpx.BrowserHeaders(httpx.UserAgentChrome),
 	})
 	if err != nil {
 		return nil, err
@@ -188,7 +188,7 @@ var jsonLDRe = regexp.MustCompile(`(?s)<script type="application/ld\+json">\s*(\
 func (s *Scraper) fetchDetail(ctx context.Context, pageURL, studioURL string, listingPerformers map[string][]string) (models.Scene, error) {
 	resp, err := httpx.Do(ctx, s.client, httpx.Request{
 		URL:     pageURL,
-		Headers: map[string]string{"User-Agent": httpx.UserAgentChrome},
+		Headers: httpx.BrowserHeaders(httpx.UserAgentChrome),
 	})
 	if err != nil {
 		return models.Scene{}, err
@@ -262,7 +262,7 @@ func (s *Scraper) fetchListingPerformers(ctx context.Context, listingURL string)
 
 	resp, err := httpx.Do(ctx, s.client, httpx.Request{
 		URL:     listingURL,
-		Headers: map[string]string{"User-Agent": httpx.UserAgentChrome},
+		Headers: httpx.BrowserHeaders(httpx.UserAgentChrome),
 	})
 	if err != nil {
 		return result

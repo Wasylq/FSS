@@ -117,7 +117,7 @@ var (
 func (s *Scraper) fetchPage(ctx context.Context, pageURL, studioURL string) ([]models.Scene, error) {
 	resp, err := httpx.Do(ctx, s.client, httpx.Request{
 		URL:     pageURL,
-		Headers: map[string]string{"User-Agent": httpx.UserAgentFirefox},
+		Headers: httpx.BrowserHeaders(httpx.UserAgentFirefox),
 	})
 	if err != nil {
 		return nil, err

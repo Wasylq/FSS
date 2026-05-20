@@ -416,7 +416,7 @@ func (s *siteScraper) fetchDetail(ctx context.Context, item workItem, studioURL 
 func (s *siteScraper) fetchPage(ctx context.Context, pageURL string) (string, error) {
 	resp, err := httpx.Do(ctx, s.client, httpx.Request{
 		URL:     pageURL,
-		Headers: map[string]string{"User-Agent": httpx.UserAgentFirefox},
+		Headers: httpx.BrowserHeaders(httpx.UserAgentFirefox),
 	})
 	if err != nil {
 		return "", err

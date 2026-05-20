@@ -120,13 +120,19 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 func (s *Scraper) initSession(ctx context.Context) error {
 	resp, err := httpx.Do(ctx, s.client, httpx.Request{
 		URL:     siteBase + "/en/",
-		Headers: map[string]string{"User-Agent": httpx.UserAgentFirefox},
+		Headers: httpx.BrowserHeaders(httpx.UserAgentFirefox),
 	})
 	if err != nil {
 		return err
 	}
 	_ = resp.Body.Close()
 	return nil
+}
+
+func ajaxHeaders() map[string]string {
+	h := httpx.BrowserHeaders(httpx.UserAgentFirefox)
+	h["X-Requested-With"] = "XMLHttpRequest"
+	return h
 }
 
 var (
@@ -251,7 +257,7 @@ func (s *Scraper) paginateAJAX(ctx context.Context, basePath, sorting string, op
 func (s *Scraper) fetchPage(ctx context.Context, pageURL string) (string, error) {
 	resp, err := httpx.Do(ctx, s.client, httpx.Request{
 		URL:     pageURL,
-		Headers: map[string]string{"User-Agent": httpx.UserAgentFirefox},
+		Headers: httpx.BrowserHeaders(httpx.UserAgentFirefox),
 	})
 	if err != nil {
 		return "", err
@@ -266,12 +272,9 @@ func (s *Scraper) fetchPage(ctx context.Context, pageURL string) (string, error)
 
 func (s *Scraper) fetchAJAX(ctx context.Context, ajaxURL string) (string, error) {
 	resp, err := httpx.Do(ctx, s.client, httpx.Request{
-		URL: ajaxURL,
-		Headers: map[string]string{
-			"User-Agent":       httpx.UserAgentFirefox,
-			"X-Requested-With": "XMLHttpRequest",
-		},
-		Method: "POST",
+		URL:     ajaxURL,
+		Headers: ajaxHeaders(),
+		Method:  "POST",
 	})
 	if err != nil {
 		return "", err

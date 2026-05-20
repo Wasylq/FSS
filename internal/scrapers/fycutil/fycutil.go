@@ -152,7 +152,7 @@ var nuxtDataRe = regexp.MustCompile(`<script[^>]*id="__NUXT_DATA__"[^>]*>(.*?)</
 func (s *Scraper) fetchPage(ctx context.Context, pageURL, dataKey, releasesKey string) ([]map[string]any, bool, error) {
 	resp, err := httpx.Do(ctx, s.client, httpx.Request{
 		URL:     pageURL,
-		Headers: map[string]string{"User-Agent": httpx.UserAgentChrome},
+		Headers: httpx.BrowserHeaders(httpx.UserAgentChrome),
 	})
 	if err != nil {
 		return nil, false, err
