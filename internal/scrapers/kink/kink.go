@@ -505,10 +505,11 @@ func (s *Scraper) fetchDetail(ctx context.Context, entry listEntry) (models.Scen
 func (s *Scraper) fetchHTML(ctx context.Context, rawURL string) ([]byte, error) {
 	resp, err := httpx.Do(ctx, s.client, httpx.Request{
 		URL: rawURL,
-		Headers: map[string]string{
-			"User-Agent": httpx.UserAgentFirefox,
-			"Cookie":     "age_gate_accepted=1",
-		},
+		Headers: func() map[string]string {
+			h := httpx.BrowserHeaders(httpx.UserAgentFirefox)
+			h["Cookie"] = "age_gate_accepted=1"
+			return h
+		}(),
 	})
 	if err != nil {
 		return nil, err

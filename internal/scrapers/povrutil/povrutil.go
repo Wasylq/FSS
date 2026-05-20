@@ -176,10 +176,11 @@ func (s *Scraper) buildScene(c listingCard, ev exportVideo, id string, now time.
 func (s *Scraper) fetchExport(ctx context.Context) ([]exportVideo, error) {
 	resp, err := httpx.Do(ctx, s.Client, httpx.Request{
 		URL: s.Cfg.SiteBase + "/export/videos.json",
-		Headers: map[string]string{
-			"User-Agent": httpx.UserAgentFirefox,
-			"Accept":     "application/json",
-		},
+		Headers: func() map[string]string {
+			h := httpx.BrowserHeaders(httpx.UserAgentFirefox)
+			h["Accept"] = "application/json"
+			return h
+		}(),
 	})
 	if err != nil {
 		return nil, err
@@ -249,10 +250,11 @@ func (s *Scraper) fetchListingPage(ctx context.Context, page int) ([]listingCard
 	u := fmt.Sprintf("%s/?o=d&p=%d", s.Cfg.SiteBase, page)
 	resp, err := httpx.Do(ctx, s.Client, httpx.Request{
 		URL: u,
-		Headers: map[string]string{
-			"User-Agent": httpx.UserAgentFirefox,
-			"Accept":     "text/html",
-		},
+		Headers: func() map[string]string {
+			h := httpx.BrowserHeaders(httpx.UserAgentFirefox)
+			h["Accept"] = "text/html"
+			return h
+		}(),
 	})
 	if err != nil {
 		return nil, err

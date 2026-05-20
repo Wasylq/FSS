@@ -118,10 +118,11 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 func (s *Scraper) fetchPage(ctx context.Context, url string) ([]byte, error) {
 	resp, err := httpx.Do(ctx, s.client, httpx.Request{
 		URL: url,
-		Headers: map[string]string{
-			"User-Agent": httpx.UserAgentFirefox,
-			"Cookie":     "cLegalAge=true",
-		},
+		Headers: func() map[string]string {
+			h := httpx.BrowserHeaders(httpx.UserAgentFirefox)
+			h["Cookie"] = "cLegalAge=true"
+			return h
+		}(),
 	})
 	if err != nil {
 		return nil, err

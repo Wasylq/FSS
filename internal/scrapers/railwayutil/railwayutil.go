@@ -102,10 +102,11 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 func (s *Scraper) fetchAll(ctx context.Context) ([]APIVideo, error) {
 	resp, err := httpx.Do(ctx, s.client, httpx.Request{
 		URL: APIBase + "/videos/" + s.cfg.SiteCode,
-		Headers: map[string]string{
-			"User-Agent": httpx.UserAgentFirefox,
-			"Accept":     "application/json",
-		},
+		Headers: func() map[string]string {
+			h := httpx.BrowserHeaders(httpx.UserAgentFirefox)
+			h["Accept"] = "application/json"
+			return h
+		}(),
 	})
 	if err != nil {
 		return nil, err

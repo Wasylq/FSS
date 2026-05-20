@@ -144,10 +144,11 @@ func querySep(u string) string {
 func (s *Scraper) fetch(ctx context.Context, url string) (*apiResponse, error) {
 	resp, err := httpx.Do(ctx, s.client, httpx.Request{
 		URL: url,
-		Headers: map[string]string{
-			"x-site":     "puremature.com",
-			"User-Agent": httpx.UserAgentFirefox,
-		},
+		Headers: func() map[string]string {
+			h := httpx.BrowserHeaders(httpx.UserAgentFirefox)
+			h["x-site"] = "puremature.com"
+			return h
+		}(),
 	})
 	if err != nil {
 		return nil, err

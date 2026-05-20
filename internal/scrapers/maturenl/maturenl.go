@@ -238,9 +238,7 @@ func (s *Scraper) runModel(ctx context.Context, studioURL string, modelID string
 func (s *Scraper) fetch(ctx context.Context, url string) ([]byte, error) {
 	resp, err := httpx.Do(ctx, s.client, httpx.Request{
 		URL: url,
-		Headers: map[string]string{
-			"User-Agent": httpx.UserAgentFirefox,
-		},
+		Headers: httpx.BrowserHeaders(httpx.UserAgentFirefox),
 	})
 	if err != nil {
 		return nil, err

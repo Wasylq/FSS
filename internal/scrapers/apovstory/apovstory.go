@@ -239,9 +239,7 @@ func (s *Scraper) fetchPage(ctx context.Context, page int) ([]listEntry, error) 
 func (s *Scraper) fetchBody(ctx context.Context, u string) ([]byte, error) {
 	resp, err := httpx.Do(ctx, s.client, httpx.Request{
 		URL: u,
-		Headers: map[string]string{
-			"User-Agent": httpx.UserAgentFirefox,
-		},
+		Headers: httpx.BrowserHeaders(httpx.UserAgentFirefox),
 	})
 	if err != nil {
 		return nil, err
@@ -328,9 +326,7 @@ func (s *Scraper) fetchDetail(ctx context.Context, studioURL string, entry listE
 
 	resp, err := httpx.Do(ctx, s.client, httpx.Request{
 		URL: entry.url,
-		Headers: map[string]string{
-			"User-Agent": httpx.UserAgentFirefox,
-		},
+		Headers: httpx.BrowserHeaders(httpx.UserAgentFirefox),
 	})
 	if err != nil {
 		return scene, nil

@@ -136,9 +136,7 @@ func send(ctx context.Context, ch chan<- scraper.SceneResult, r scraper.SceneRes
 func (s *Scraper) fetchToken(ctx context.Context, pageURL string) (string, error) {
 	resp, err := httpx.Do(ctx, s.client, httpx.Request{
 		URL: pageURL,
-		Headers: map[string]string{
-			"User-Agent": httpx.UserAgentChrome,
-		},
+		Headers: httpx.BrowserHeaders(httpx.UserAgentChrome),
 	})
 	if err != nil {
 		return "", err
@@ -203,11 +201,12 @@ func (s *Scraper) fetchVideos(ctx context.Context, token, modelName string, offs
 		Method: "POST",
 		URL:    s.base + "/vxql",
 		Body:   body,
-		Headers: map[string]string{
-			"User-Agent":    httpx.UserAgentChrome,
-			"Content-Type":  "application/json",
-			"Authorization": "Bearer " + token,
-		},
+		Headers: func() map[string]string {
+			h := httpx.BrowserHeaders(httpx.UserAgentChrome)
+			h["Content-Type"] = "application/json"
+			h["Authorization"] = "Bearer " + token
+			return h
+		}(),
 	})
 	if err != nil {
 		return nil, 0, fmt.Errorf("graphql request offset %d: %w", offset, err)

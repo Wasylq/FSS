@@ -362,10 +362,11 @@ func (s *Scraper) fetch(ctx context.Context, u string) (string, error) {
 	}
 	resp, err := httpx.Do(ctx, s.client, httpx.Request{
 		URL: u,
-		Headers: map[string]string{
-			"User-Agent": httpx.UserAgentFirefox,
-			"Cookie":     "consent=1",
-		},
+		Headers: func() map[string]string {
+			h := httpx.BrowserHeaders(httpx.UserAgentFirefox)
+			h["Cookie"] = "consent=1"
+			return h
+		}(),
 	})
 	if err != nil {
 		return "", err

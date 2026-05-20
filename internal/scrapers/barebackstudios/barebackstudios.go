@@ -281,9 +281,7 @@ func (s *Scraper) fetchPage(ctx context.Context, page int) (string, error) {
 	u := fmt.Sprintf("%s/en/?page=%d", s.base, page)
 	resp, err := httpx.Do(ctx, s.client, httpx.Request{
 		URL: u,
-		Headers: map[string]string{
-			"User-Agent": httpx.UserAgentFirefox,
-		},
+		Headers: httpx.BrowserHeaders(httpx.UserAgentFirefox),
 	})
 	if err != nil {
 		return "", err

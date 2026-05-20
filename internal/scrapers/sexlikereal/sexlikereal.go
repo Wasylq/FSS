@@ -256,11 +256,12 @@ func toScene(item apiScene, detail detailData, studioURL string) models.Scene {
 func (s *Scraper) fetchJSON(ctx context.Context, u string, v any) error {
 	resp, err := httpx.Do(ctx, s.client, httpx.Request{
 		URL: u,
-		Headers: map[string]string{
-			"User-Agent":  httpx.UserAgentFirefox,
-			"Client-Type": "web",
-			"Project":     "1",
-		},
+		Headers: func() map[string]string {
+			h := httpx.BrowserHeaders(httpx.UserAgentFirefox)
+			h["Client-Type"] = "web"
+			h["Project"] = "1"
+			return h
+		}(),
 	})
 	if err != nil {
 		return err

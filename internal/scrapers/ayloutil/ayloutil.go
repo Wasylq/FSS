@@ -113,10 +113,7 @@ func ParseFilter(rawURL string) Filter {
 func (s *Scraper) FetchToken(ctx context.Context) (string, error) {
 	resp, err := httpx.Do(ctx, s.Client, httpx.Request{
 		URL: s.Config.SiteBase,
-		Headers: map[string]string{
-			"User-Agent": httpx.UserAgentFirefox,
-			"Accept":     "text/html",
-		},
+		Headers: httpx.BrowserHeaders(httpx.UserAgentFirefox),
 	})
 	if err != nil {
 		return "", fmt.Errorf("fetching instance token: %w", err)

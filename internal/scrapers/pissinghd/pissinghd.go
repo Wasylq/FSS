@@ -182,9 +182,7 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 func (s *Scraper) fetchPage(ctx context.Context, url string) ([]byte, error) {
 	resp, err := httpx.Do(ctx, s.client, httpx.Request{
 		URL: url,
-		Headers: map[string]string{
-			"User-Agent": httpx.UserAgentChrome,
-		},
+		Headers: httpx.BrowserHeaders(httpx.UserAgentChrome),
 	})
 	if err != nil {
 		return nil, err

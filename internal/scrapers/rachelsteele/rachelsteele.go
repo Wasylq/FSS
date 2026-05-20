@@ -220,9 +220,7 @@ func (s *Scraper) fetchPage(ctx context.Context, page int) (videosPage, error) {
 
 	resp, err := httpx.Do(ctx, s.client, httpx.Request{
 		URL: reqURL,
-		Headers: map[string]string{
-			"User-Agent": httpx.UserAgentFirefox,
-		},
+		Headers: httpx.BrowserHeaders(httpx.UserAgentFirefox),
 	})
 	if err != nil {
 		return videosPage{}, err
@@ -318,9 +316,7 @@ var (
 func (s *Scraper) fetchDetail(ctx context.Context, pageURL string) (sceneDetail, error) {
 	resp, err := httpx.Do(ctx, s.client, httpx.Request{
 		URL: pageURL,
-		Headers: map[string]string{
-			"User-Agent": httpx.UserAgentFirefox,
-		},
+		Headers: httpx.BrowserHeaders(httpx.UserAgentFirefox),
 	})
 	if err != nil {
 		return sceneDetail{}, err

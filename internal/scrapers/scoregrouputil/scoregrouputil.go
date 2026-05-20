@@ -362,9 +362,7 @@ func parseVisibleDate(s string) time.Time {
 func (s *Scraper) fetchPage(ctx context.Context, url string) ([]byte, error) {
 	resp, err := httpx.Do(ctx, s.Client, httpx.Request{
 		URL: url,
-		Headers: map[string]string{
-			"User-Agent": httpx.UserAgentFirefox,
-		},
+		Headers: httpx.BrowserHeaders(httpx.UserAgentFirefox),
 	})
 	if err != nil {
 		return nil, err

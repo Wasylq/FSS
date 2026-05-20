@@ -146,10 +146,7 @@ func (s *Scraper) fetchPage(ctx context.Context, studioID, slug string, page int
 	)
 	resp, err := httpx.Do(ctx, s.client, httpx.Request{
 		URL: u,
-		Headers: map[string]string{
-			"User-Agent": httpx.UserAgentChrome,
-			"Accept":     "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-		},
+		Headers: httpx.BrowserHeaders(httpx.UserAgentChrome),
 	})
 	if err != nil {
 		return nil, 0, err

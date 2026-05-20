@@ -290,11 +290,12 @@ const jdialogCookie = "JDIALOG3=4XLXCS00776HUYXZ6S73BYG0MSV3QK1K18EJ08YGHRP81JSC
 func (s *Scraper) fetchJSON(ctx context.Context, url string, v any) error {
 	resp, err := httpx.Do(ctx, s.client, httpx.Request{
 		URL: url,
-		Headers: map[string]string{
-			"User-Agent":       httpx.UserAgentFirefox,
-			"X-Requested-With": "XMLHttpRequest",
-			"Cookie":           jdialogCookie,
-		},
+		Headers: func() map[string]string {
+			h := httpx.BrowserHeaders(httpx.UserAgentFirefox)
+			h["X-Requested-With"] = "XMLHttpRequest"
+			h["Cookie"] = jdialogCookie
+			return h
+		}(),
 	})
 	if err != nil {
 		return err

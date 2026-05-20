@@ -227,11 +227,12 @@ func (s *Scraper) run(ctx context.Context, studioURL, slug string, opts scraper.
 func (s *Scraper) fetchAPI(ctx context.Context, apiURL string) (*apiResponse, error) {
 	resp, err := httpx.Do(ctx, s.client, httpx.Request{
 		URL: apiURL,
-		Headers: map[string]string{
-			"User-Agent":       httpx.UserAgentFirefox,
-			"Accept":           "application/json",
-			"X-Requested-With": "XMLHttpRequest",
-		},
+		Headers: func() map[string]string {
+			h := httpx.BrowserHeaders(httpx.UserAgentFirefox)
+			h["Accept"] = "application/json"
+			h["X-Requested-With"] = "XMLHttpRequest"
+			return h
+		}(),
 	})
 	if err != nil {
 		return nil, err
@@ -263,10 +264,11 @@ var (
 func (s *Scraper) fetchDetail(ctx context.Context, videoURL string) (description string, tags []string) {
 	resp, err := httpx.Do(ctx, s.client, httpx.Request{
 		URL: videoURL,
-		Headers: map[string]string{
-			"User-Agent": httpx.UserAgentFirefox,
-			"Accept":     "text/html",
-		},
+		Headers: func() map[string]string {
+			h := httpx.BrowserHeaders(httpx.UserAgentFirefox)
+			h["Accept"] = "text/html"
+			return h
+		}(),
 	})
 	if err != nil {
 		return "", nil

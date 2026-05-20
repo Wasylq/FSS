@@ -189,11 +189,12 @@ func (s *Scraper) searchWithURL(ctx context.Context, url string, query map[strin
 		URL:    url,
 		Method: http.MethodPost,
 		Body:   body,
-		Headers: map[string]string{
-			"Content-Type": "application/json",
-			"Origin":       s.Config.SiteBase,
-			"User-Agent":   httpx.UserAgentFirefox,
-		},
+		Headers: func() map[string]string {
+			h := httpx.BrowserHeaders(httpx.UserAgentFirefox)
+			h["Content-Type"] = "application/json"
+			h["Origin"] = s.Config.SiteBase
+			return h
+		}(),
 	})
 	if err != nil {
 		return nil, err

@@ -356,11 +356,12 @@ func buildScene(studioURL string, c listingCard, d detailData, now time.Time) mo
 func (s *Scraper) fetchHTML(ctx context.Context, rawURL string) ([]byte, error) {
 	resp, err := httpx.Do(ctx, s.client, httpx.Request{
 		URL: rawURL,
-		Headers: map[string]string{
-			"User-Agent": httpx.UserAgentFirefox,
-			"Accept":     "text/html",
-			"Cookie":     "adult=1",
-		},
+		Headers: func() map[string]string {
+			h := httpx.BrowserHeaders(httpx.UserAgentFirefox)
+			h["Accept"] = "text/html"
+			h["Cookie"] = "adult=1"
+			return h
+		}(),
 	})
 	if err != nil {
 		return nil, err

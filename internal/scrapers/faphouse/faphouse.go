@@ -165,9 +165,7 @@ func (s *Scraper) run(ctx context.Context, studioURL, typePath, slug string, opt
 func (s *Scraper) fetchPage(ctx context.Context, url string) ([]byte, error) {
 	resp, err := httpx.Do(ctx, s.client, httpx.Request{
 		URL: url,
-		Headers: map[string]string{
-			"User-Agent": httpx.UserAgentFirefox,
-		},
+		Headers: httpx.BrowserHeaders(httpx.UserAgentFirefox),
 	})
 	if err != nil {
 		return nil, err

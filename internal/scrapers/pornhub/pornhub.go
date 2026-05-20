@@ -147,10 +147,11 @@ var liRe = regexp.MustCompile(`(?s)<li[^>]*pcVideoListItem[^>]*>.*?</li>`)
 func (s *Scraper) fetchPage(ctx context.Context, rawURL string) ([]phItem, int, error) {
 	resp, err := httpx.Do(ctx, s.client, httpx.Request{
 		URL: rawURL,
-		Headers: map[string]string{
-			"User-Agent": httpx.UserAgentFirefox,
-			"Cookie":     "platform=pc; ageVerified=1; accessAgeDisclaimerPH=1",
-		},
+		Headers: func() map[string]string {
+			h := httpx.BrowserHeaders(httpx.UserAgentFirefox)
+			h["Cookie"] = "platform=pc; ageVerified=1; accessAgeDisclaimerPH=1"
+			return h
+		}(),
 	})
 	if err != nil {
 		return nil, 0, err

@@ -90,9 +90,7 @@ var buildIDRe = regexp.MustCompile(`"buildId"\s*:\s*"([^"]+)"`)
 func (s *Scraper) fetchBuildID(ctx context.Context) (string, error) {
 	resp, err := httpx.Do(ctx, s.client, httpx.Request{
 		URL: s.siteBase() + "/",
-		Headers: map[string]string{
-			"User-Agent": httpx.UserAgentChrome,
-		},
+		Headers: httpx.BrowserHeaders(httpx.UserAgentChrome),
 	})
 	if err != nil {
 		return "", fmt.Errorf("fetch homepage: %w", err)
@@ -115,9 +113,7 @@ func (s *Scraper) fetchPage(ctx context.Context, buildID string, page int) (*nex
 	u := fmt.Sprintf("%s/_next/data/%s/videos.json?page=%d", s.siteBase(), buildID, page)
 	resp, err := httpx.Do(ctx, s.client, httpx.Request{
 		URL: u,
-		Headers: map[string]string{
-			"User-Agent": httpx.UserAgentChrome,
-		},
+		Headers: httpx.BrowserHeaders(httpx.UserAgentChrome),
 	})
 	if err != nil {
 		return nil, err

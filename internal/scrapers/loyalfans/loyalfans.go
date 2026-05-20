@@ -128,12 +128,13 @@ func (s *Scraper) initSession(ctx context.Context) ([]*http.Cookie, error) {
 	resp, err := httpx.Do(ctx, s.client, httpx.Request{
 		Method: http.MethodPost,
 		URL:    s.base + "/api/v2/system-status",
-		Headers: map[string]string{
-			"Accept":       "application/json",
-			"Content-Type": "application/json",
-			"Origin":       s.base,
-			"User-Agent":   httpx.UserAgentChrome,
-		},
+		Headers: func() map[string]string {
+			h := httpx.BrowserHeaders(httpx.UserAgentChrome)
+			h["Accept"] = "application/json"
+			h["Content-Type"] = "application/json"
+			h["Origin"] = s.base
+			return h
+		}(),
 	})
 	if err != nil {
 		return nil, err
@@ -199,13 +200,11 @@ func (s *Scraper) fetchPage(ctx context.Context, slug, pageToken string, cookies
 		return nil, "", err
 	}
 
-	headers := map[string]string{
-		"Accept":       "application/json",
-		"Content-Type": "application/json",
-		"Origin":       s.base,
-		"Referer":      s.base + "/" + slug,
-		"User-Agent":   httpx.UserAgentChrome,
-	}
+	headers := httpx.BrowserHeaders(httpx.UserAgentChrome)
+	headers["Accept"] = "application/json"
+	headers["Content-Type"] = "application/json"
+	headers["Origin"] = s.base
+	headers["Referer"] = s.base + "/" + slug
 	if len(cookies) > 0 {
 		headers["Cookie"] = cookieHeader(cookies)
 	}

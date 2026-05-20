@@ -29,6 +29,12 @@ type Scraper struct {
 	Client *http.Client
 }
 
+func jsonHeaders() map[string]string {
+	h := httpx.BrowserHeaders(httpx.UserAgentChrome)
+	h["Accept"] = "application/json"
+	return h
+}
+
 func New(cfg SiteConfig) *Scraper {
 	return &Scraper{
 		Config: cfg,
@@ -165,11 +171,8 @@ func (s *Scraper) FetchListing(ctx context.Context, offset int) ([]APIScene, int
 		s.Config.SiteBase, PerPage, offset)
 
 	resp, err := httpx.Do(ctx, s.Client, httpx.Request{
-		URL: u,
-		Headers: map[string]string{
-			"User-Agent": httpx.UserAgentChrome,
-			"Accept":     "application/json",
-		},
+		URL:     u,
+		Headers: jsonHeaders(),
 	})
 	if err != nil {
 		return nil, 0, fmt.Errorf("fetch listing offset %d: %w", offset, err)
@@ -195,11 +198,8 @@ func (s *Scraper) FetchDetail(ctx context.Context, id int) (*APIScene, error) {
 		s.Config.SiteBase, id)
 
 	resp, err := httpx.Do(ctx, s.Client, httpx.Request{
-		URL: u,
-		Headers: map[string]string{
-			"User-Agent": httpx.UserAgentChrome,
-			"Accept":     "application/json",
-		},
+		URL:     u,
+		Headers: jsonHeaders(),
 	})
 	if err != nil {
 		return nil, fmt.Errorf("fetch detail %d: %w", id, err)

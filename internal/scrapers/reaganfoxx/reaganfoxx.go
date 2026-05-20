@@ -358,10 +358,11 @@ func (s *Scraper) fetchDetail(ctx context.Context, ls listingScene, delay time.D
 func (s *Scraper) fetchPage(ctx context.Context, url string) ([]byte, error) {
 	resp, err := httpx.Do(ctx, s.client, httpx.Request{
 		URL: url,
-		Headers: map[string]string{
-			"User-Agent": httpx.UserAgentChrome,
-			"Cookie":     "AgeConfirmed=true",
-		},
+		Headers: func() map[string]string {
+			h := httpx.BrowserHeaders(httpx.UserAgentChrome)
+			h["Cookie"] = "AgeConfirmed=true"
+			return h
+		}(),
 	})
 	if err != nil {
 		return nil, err

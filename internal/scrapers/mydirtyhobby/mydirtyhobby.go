@@ -190,12 +190,13 @@ func (s *Scraper) fetchPage(ctx context.Context, uid, page int) ([]mdhItem, int,
 	resp, err := httpx.Do(ctx, s.client, httpx.Request{
 		URL:  u,
 		Body: body,
-		Headers: map[string]string{
-			"Content-Type": "application/json",
-			"Accept":       "application/json",
-			"Cookie":       "AGEGATEPASSED=1",
-			"User-Agent":   httpx.UserAgentFirefox,
-		},
+		Headers: func() map[string]string {
+			h := httpx.BrowserHeaders(httpx.UserAgentFirefox)
+			h["Content-Type"] = "application/json"
+			h["Accept"] = "application/json"
+			h["Cookie"] = "AGEGATEPASSED=1"
+			return h
+		}(),
 	})
 	if err != nil {
 		return nil, 0, 0, err

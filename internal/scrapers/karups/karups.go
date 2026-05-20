@@ -355,10 +355,11 @@ func (s *Scraper) processEntry(ctx context.Context, studioURL string, now time.T
 func (s *Scraper) fetchPage(ctx context.Context, url string) ([]byte, error) {
 	resp, err := httpx.Do(ctx, s.client, httpx.Request{
 		URL: url,
-		Headers: map[string]string{
-			"User-Agent": httpx.UserAgentChrome,
-			"Cookie":     "warningHidden=hide",
-		},
+		Headers: func() map[string]string {
+			h := httpx.BrowserHeaders(httpx.UserAgentChrome)
+			h["Cookie"] = "warningHidden=hide"
+			return h
+		}(),
 	})
 	if err != nil {
 		return nil, err

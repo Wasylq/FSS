@@ -356,9 +356,7 @@ func (s *Scraper) fetchDetail(ctx context.Context, studioURL string, entry listE
 func (s *Scraper) fetchBody(ctx context.Context, u string) ([]byte, error) {
 	resp, err := httpx.Do(ctx, s.client, httpx.Request{
 		URL: u,
-		Headers: map[string]string{
-			"User-Agent": httpx.UserAgentFirefox,
-		},
+		Headers: httpx.BrowserHeaders(httpx.UserAgentFirefox),
 	})
 	if err != nil {
 		return nil, err

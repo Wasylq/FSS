@@ -106,9 +106,7 @@ func (lc listingConfig) ajaxURL(page int) string {
 func (s *Scraper) bootstrap(ctx context.Context) error {
 	resp, err := httpx.Do(ctx, s.client, httpx.Request{
 		URL: siteBase + "/sys/captcha",
-		Headers: map[string]string{
-			"User-Agent": httpx.UserAgentFirefox,
-		},
+		Headers: httpx.BrowserHeaders(httpx.UserAgentFirefox),
 	})
 	if err != nil {
 		return fmt.Errorf("captcha bootstrap: %w", err)
@@ -508,12 +506,8 @@ func parseMonthYear(s string) time.Time {
 
 func (s *Scraper) fetchPage(ctx context.Context, url string) ([]byte, error) {
 	resp, err := httpx.Do(ctx, s.client, httpx.Request{
-		URL: url,
-		Headers: map[string]string{
-			"User-Agent":      httpx.UserAgentFirefox,
-			"Accept":          "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-			"Accept-Language": "en-US,en;q=0.5",
-		},
+		URL:     url,
+		Headers: httpx.BrowserHeaders(httpx.UserAgentFirefox),
 	})
 	if err != nil {
 		return nil, err
@@ -525,13 +519,13 @@ func (s *Scraper) fetchPage(ctx context.Context, url string) ([]byte, error) {
 func (s *Scraper) fetchAjax(ctx context.Context, url, referer string) ([]byte, error) {
 	resp, err := httpx.Do(ctx, s.client, httpx.Request{
 		URL: url,
-		Headers: map[string]string{
-			"User-Agent":       httpx.UserAgentFirefox,
-			"Accept":           "text/html, */*; q=0.01",
-			"Accept-Language":  "en-US,en;q=0.5",
-			"X-Requested-With": "XMLHttpRequest",
-			"Referer":          referer,
-		},
+		Headers: func() map[string]string {
+			h := httpx.BrowserHeaders(httpx.UserAgentFirefox)
+			h["Accept"] = "text/html, */*; q=0.01"
+			h["X-Requested-With"] = "XMLHttpRequest"
+			h["Referer"] = referer
+			return h
+		}(),
 	})
 	if err != nil {
 		return nil, err

@@ -337,10 +337,11 @@ func toScene(studioURL string, dr detailResponse) models.Scene {
 func (s *Scraper) fetchJSON(ctx context.Context, rawURL string, v any) error {
 	resp, err := httpx.Do(ctx, s.client, httpx.Request{
 		URL: rawURL,
-		Headers: map[string]string{
-			"User-Agent": httpx.UserAgentChrome,
-			"Accept":     "application/json",
-		},
+		Headers: func() map[string]string {
+			h := httpx.BrowserHeaders(httpx.UserAgentChrome)
+			h["Accept"] = "application/json"
+			return h
+		}(),
 	})
 	if err != nil {
 		return err
