@@ -7,6 +7,8 @@ import (
 	"net/http/httptest"
 	"testing"
 	"time"
+
+	"github.com/Wasylq/FSS/internal/httpx"
 )
 
 func TestSlugFromURL(t *testing.T) {
@@ -65,15 +67,6 @@ func TestVideoWidth(t *testing.T) {
 	for _, c := range cases {
 		if got := VideoWidth(c.height); got != c.want {
 			t.Errorf("VideoWidth(%d) = %d, want %d", c.height, got, c.want)
-		}
-	}
-}
-
-func TestBrowserHeaders(t *testing.T) {
-	h := BrowserHeaders()
-	for _, k := range []string{"User-Agent", "Accept", "Accept-Language"} {
-		if h[k] == "" {
-			t.Errorf("missing header %q", k)
 		}
 	}
 }
@@ -207,7 +200,7 @@ func TestFetchSitemap(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	urls, err := FetchSitemap(context.Background(), ts.Client(), ts.URL, BrowserHeaders())
+	urls, err := FetchSitemap(context.Background(), ts.Client(), ts.URL, httpx.BrowserHeaders(httpx.UserAgentFirefox))
 	if err != nil {
 		t.Fatalf("FetchSitemap error: %v", err)
 	}

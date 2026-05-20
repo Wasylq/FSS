@@ -105,7 +105,7 @@ func (s *Scraper) resolveTag(ctx context.Context, slug string) (int, error) {
 	u := fmt.Sprintf("%s/wp-json/wp/v2/tags?slug=%s", s.base, slug)
 	resp, err := httpx.Do(ctx, s.client, httpx.Request{
 		URL:     u,
-		Headers: map[string]string{"User-Agent": httpx.UserAgentFirefox, "Accept": "application/json"},
+		Headers: httpx.BrowserHeaders(httpx.UserAgentFirefox),
 	})
 	if err != nil {
 		return 0, err
@@ -183,11 +183,8 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 func (s *Scraper) fetchPage(ctx context.Context, page int, filter string) ([]wpPost, int, error) {
 	u := fmt.Sprintf("%s%s?categories=%d&per_page=%d&page=%d&orderby=date&order=desc&_embed%s", s.base, apiPath, sceneCategoryID, perPage, page, filter)
 	resp, err := httpx.Do(ctx, s.client, httpx.Request{
-		URL: u,
-		Headers: map[string]string{
-			"User-Agent": httpx.UserAgentFirefox,
-			"Accept":     "application/json",
-		},
+		URL:     u,
+		Headers: httpx.BrowserHeaders(httpx.UserAgentFirefox),
 	})
 	if err != nil {
 		return nil, 0, err

@@ -157,7 +157,7 @@ func (s *Scraper) fetchAllTags(ctx context.Context) (map[int]string, error) {
 		u := fmt.Sprintf("%s/wp-json/wp/v2/tags?per_page=100&page=%d&_fields=id,name", s.Cfg.SiteBase, page)
 		resp, err := httpx.Do(ctx, s.Client, httpx.Request{
 			URL:     u,
-			Headers: map[string]string{"User-Agent": httpx.UserAgentChrome},
+			Headers: httpx.BrowserHeaders(httpx.UserAgentChrome),
 		})
 		if err != nil {
 			return nil, fmt.Errorf("tags page %d: %w", page, err)
@@ -191,7 +191,7 @@ func (s *Scraper) fetchPosts(ctx context.Context, page int) ([]wpPost, int, erro
 
 	resp, err := httpx.Do(ctx, s.Client, httpx.Request{
 		URL:     u,
-		Headers: map[string]string{"User-Agent": httpx.UserAgentChrome},
+		Headers: httpx.BrowserHeaders(httpx.UserAgentChrome),
 	})
 	if err != nil {
 		return nil, 0, err

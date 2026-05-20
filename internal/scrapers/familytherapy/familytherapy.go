@@ -23,7 +23,7 @@ func New() *Scraper {
 	return &Scraper{
 		client:   httpx.NewClient(30 * time.Second),
 		siteBase: "https://familytherapyxxx.com",
-		headers:  wputil.BrowserHeaders(),
+		headers:  httpx.BrowserHeaders(httpx.UserAgentFirefox),
 	}
 }
 

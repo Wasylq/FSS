@@ -77,6 +77,7 @@ output: json      # str   — json | csv | json,csv
 out_dir: .        # str   — output directory path
 db: ""            # str   — SQLite path; empty string disables SQLite
 delay: 0          # int   — ms between page requests; 0 disables
+user_agent: ""    # str   — "firefox" (default), "chrome", or a custom UA string
 
 site_delays:      # map[string]int — per-scraper delay overrides (overrides `delay` for matching sites)
   # manyvids: 0

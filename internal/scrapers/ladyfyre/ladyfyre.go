@@ -412,10 +412,8 @@ func parseDetail(body []byte, entry listEntry) models.Scene {
 
 func (s *Scraper) fetchHTML(ctx context.Context, rawURL string) ([]byte, error) {
 	resp, err := httpx.Do(ctx, s.client, httpx.Request{
-		URL: rawURL,
-		Headers: map[string]string{
-			"User-Agent": httpx.UserAgentFirefox,
-		},
+		URL:     rawURL,
+		Headers: httpx.BrowserHeaders(httpx.UserAgentFirefox),
 	})
 	if err != nil {
 		return nil, err

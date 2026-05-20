@@ -31,15 +31,6 @@ type Meta struct {
 	HasVideo    bool     // true if a VideoObject JSON-LD block was found
 }
 
-// BrowserHeaders returns common browser headers to avoid WAF blocks.
-func BrowserHeaders() map[string]string {
-	return map[string]string{
-		"User-Agent":      httpx.UserAgentFirefox,
-		"Accept":          "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-		"Accept-Language": "en-US,en;q=0.5",
-	}
-}
-
 // ---- sitemap ----
 
 type urlset struct {

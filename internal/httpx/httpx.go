@@ -11,15 +11,68 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strings"
 	"time"
 )
 
-// Common User-Agent strings. Bump these in one place when sites start
-// rejecting the version we impersonate.
 const (
-	UserAgentFirefox = "Mozilla/5.0 (X11; Linux x86_64; rv:124.0) Gecko/20100101 Firefox/124.0"
-	UserAgentChrome  = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
+	builtinFirefox = "Mozilla/5.0 (X11; Linux x86_64; rv:138.0) Gecko/20100101 Firefox/138.0"
+	builtinChrome  = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36"
 )
+
+// UserAgentFirefox and UserAgentChrome are the active UA strings used by
+// scrapers. Call SetDefaultUA at startup to override both with a config value.
+var (
+	UserAgentFirefox = builtinFirefox
+	UserAgentChrome  = builtinChrome
+)
+
+// SetDefaultUA overrides both exported UA variables. Accepts "firefox",
+// "chrome", or a full custom string. Empty is a no-op (keeps built-ins).
+// Call once at startup before any scrapers run.
+func SetDefaultUA(ua string) {
+	ua = strings.TrimSpace(ua)
+	if ua == "" {
+		return
+	}
+	resolved := ResolveUA(ua)
+	UserAgentFirefox = resolved
+	UserAgentChrome = resolved
+}
+
+// ResolveUA maps a shorthand to a full UA string. "firefox" and "chrome"
+// return the built-in strings; anything else is returned as-is.
+func ResolveUA(ua string) string {
+	switch strings.ToLower(strings.TrimSpace(ua)) {
+	case "firefox":
+		return builtinFirefox
+	case "chrome":
+		return builtinChrome
+	default:
+		return ua
+	}
+}
+
+// BrowserHeaders returns headers that mimic a real browser navigation request,
+// including Sec-Fetch-* headers that WAFs like Wordfence check. Pass a UA
+// string, or empty to use the active default.
+func BrowserHeaders(ua string) map[string]string {
+	if ua == "" {
+		ua = UserAgentFirefox
+	}
+	return map[string]string{
+		"User-Agent":                ua,
+		"Accept":                    "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
+		"Accept-Language":           "en-US,en;q=0.5",
+		"DNT":                       "1",
+		"Connection":                "keep-alive",
+		"Upgrade-Insecure-Requests": "1",
+		"Sec-Fetch-Dest":            "document",
+		"Sec-Fetch-Mode":            "navigate",
+		"Sec-Fetch-Site":            "none",
+		"Sec-Fetch-User":            "?1",
+	}
+}
 
 // MaxPageBytes caps ReadBody response reads to prevent an oversized or
 // malicious response from exhausting memory.

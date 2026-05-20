@@ -6,6 +6,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/Wasylq/FSS/internal/config"
+	"github.com/Wasylq/FSS/internal/httpx"
 )
 
 var cfg *config.Config
@@ -16,7 +17,11 @@ var rootCmd = &cobra.Command{
 	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
 		var err error
 		cfg, err = config.Load()
-		return err
+		if err != nil {
+			return err
+		}
+		httpx.SetDefaultUA(cfg.UserAgent)
+		return nil
 	},
 }
 

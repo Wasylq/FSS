@@ -15,11 +15,12 @@ import (
 )
 
 type Config struct {
-	Workers int    `yaml:"workers"`
-	Output  string `yaml:"output"`
-	OutDir  string `yaml:"out_dir"`
-	DB      string `yaml:"db"`
-	Delay   int    `yaml:"delay"`
+	Workers   int    `yaml:"workers"`
+	Output    string `yaml:"output"`
+	OutDir    string `yaml:"out_dir"`
+	DB        string `yaml:"db"`
+	Delay     int    `yaml:"delay"`
+	UserAgent string `yaml:"user_agent"`
 	// SiteDelays overrides Delay per scraper ID (e.g. "manyvids", "pornhub").
 	// Sites without an entry fall back to Delay.
 	SiteDelays map[string]int   `yaml:"site_delays"`
