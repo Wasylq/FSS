@@ -275,6 +275,87 @@ func TestDecodeJSON(t *testing.T) {
 	}
 }
 
+func TestResolveUA(t *testing.T) {
+	t.Parallel()
+	cases := []struct {
+		in, want string
+	}{
+		{"firefox", builtinFirefox},
+		{"Firefox", builtinFirefox},
+		{"  firefox  ", builtinFirefox},
+		{"chrome", builtinChrome},
+		{"Chrome", builtinChrome},
+		{"Mozilla/5.0 Custom", "Mozilla/5.0 Custom"},
+		{"", ""},
+	}
+	for _, c := range cases {
+		if got := ResolveUA(c.in); got != c.want {
+			t.Errorf("ResolveUA(%q) = %q, want %q", c.in, got, c.want)
+		}
+	}
+}
+
+func TestBrowserHeaders(t *testing.T) {
+	t.Parallel()
+
+	h := BrowserHeaders("")
+	if h["User-Agent"] != UserAgentFirefox {
+		t.Errorf("empty UA: got %q, want default Firefox", h["User-Agent"])
+	}
+
+	h = BrowserHeaders("custom-ua")
+	if h["User-Agent"] != "custom-ua" {
+		t.Errorf("custom UA: got %q, want %q", h["User-Agent"], "custom-ua")
+	}
+
+	for _, key := range []string{"Accept", "Accept-Language", "Sec-Fetch-Dest", "Sec-Fetch-Mode", "Sec-Fetch-Site", "Sec-Fetch-User"} {
+		if h[key] == "" {
+			t.Errorf("missing header %q", key)
+		}
+	}
+}
+
+func TestSetDefaultUA(t *testing.T) {
+	save := func() (string, string) { return UserAgentFirefox, UserAgentChrome }
+	restore := func(ff, ch string) { UserAgentFirefox, UserAgentChrome = ff, ch }
+
+	t.Run("empty is no-op", func(t *testing.T) {
+		ff, ch := save()
+		defer restore(ff, ch)
+		SetDefaultUA("")
+		if UserAgentFirefox != ff || UserAgentChrome != ch {
+			t.Error("empty string should not change UA vars")
+		}
+	})
+
+	t.Run("shorthand chrome", func(t *testing.T) {
+		ff, ch := save()
+		defer restore(ff, ch)
+		SetDefaultUA("chrome")
+		if UserAgentFirefox != builtinChrome || UserAgentChrome != builtinChrome {
+			t.Errorf("both vars should be Chrome builtin, got Firefox=%q Chrome=%q", UserAgentFirefox, UserAgentChrome)
+		}
+	})
+
+	t.Run("custom string", func(t *testing.T) {
+		ff, ch := save()
+		defer restore(ff, ch)
+		SetDefaultUA("MyBot/1.0")
+		if UserAgentFirefox != "MyBot/1.0" || UserAgentChrome != "MyBot/1.0" {
+			t.Errorf("both vars should be custom, got Firefox=%q Chrome=%q", UserAgentFirefox, UserAgentChrome)
+		}
+	})
+
+	t.Run("whitespace trimmed", func(t *testing.T) {
+		ff, ch := save()
+		defer restore(ff, ch)
+		SetDefaultUA("  firefox  ")
+		if UserAgentFirefox != builtinFirefox {
+			t.Errorf("got %q, want builtin Firefox", UserAgentFirefox)
+		}
+	})
+}
+
 func contains(s, substr string) bool {
 	for i := 0; i+len(substr) <= len(s); i++ {
 		if s[i:i+len(substr)] == substr {
