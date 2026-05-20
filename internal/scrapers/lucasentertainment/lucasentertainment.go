@@ -101,11 +101,17 @@ type wpTag struct {
 	ID int `json:"id"`
 }
 
+func jsonHeaders() map[string]string {
+	h := httpx.BrowserHeaders(httpx.UserAgentFirefox)
+	h["Accept"] = "application/json"
+	return h
+}
+
 func (s *Scraper) resolveTag(ctx context.Context, slug string) (int, error) {
 	u := fmt.Sprintf("%s/wp-json/wp/v2/tags?slug=%s", s.base, slug)
 	resp, err := httpx.Do(ctx, s.client, httpx.Request{
 		URL:     u,
-		Headers: httpx.BrowserHeaders(httpx.UserAgentFirefox),
+		Headers: jsonHeaders(),
 	})
 	if err != nil {
 		return 0, err
@@ -184,7 +190,7 @@ func (s *Scraper) fetchPage(ctx context.Context, page int, filter string) ([]wpP
 	u := fmt.Sprintf("%s%s?categories=%d&per_page=%d&page=%d&orderby=date&order=desc&_embed%s", s.base, apiPath, sceneCategoryID, perPage, page, filter)
 	resp, err := httpx.Do(ctx, s.client, httpx.Request{
 		URL:     u,
-		Headers: httpx.BrowserHeaders(httpx.UserAgentFirefox),
+		Headers: jsonHeaders(),
 	})
 	if err != nil {
 		return nil, 0, err
