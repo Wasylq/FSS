@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/Wasylq/FSS/internal/httpx"
+	"github.com/Wasylq/FSS/internal/parseutil"
 	"github.com/Wasylq/FSS/models"
 	"github.com/Wasylq/FSS/scraper"
 )
@@ -316,7 +317,7 @@ func toScene(studioURL string, v apiVideo, description string, tags []string, no
 		URL:         v.VideoURL,
 		Thumbnail:   v.Thumbnail,
 		Preview:     v.PreviewURL,
-		Duration:    parseDuration(v.Duration),
+		Duration:    parseutil.ParseDurationColon(v.Duration),
 		Views:       v.Views,
 		Likes:       v.Likes,
 		Performers:  []string{v.CreatorName},
@@ -376,16 +377,6 @@ func parseOriginalPrice(raw json.RawMessage) float64 {
 		return f
 	}
 	return 0
-}
-
-func parseDuration(s string) int {
-	parts := strings.Split(s, ":")
-	total := 0
-	for _, p := range parts {
-		n, _ := strconv.Atoi(p)
-		total = total*60 + n
-	}
-	return total
 }
 
 func titleCase(s string) string {

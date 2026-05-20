@@ -7,6 +7,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/Wasylq/FSS/internal/parseutil"
 	"github.com/Wasylq/FSS/scraper"
 )
 
@@ -158,9 +159,9 @@ func TestParseDuration(t *testing.T) {
 		{"bad", 0},
 	}
 	for _, tc := range tests {
-		got := parseDuration(tc.in)
+		got := parseutil.ParseDurationColon(tc.in)
 		if got != tc.want {
-			t.Errorf("parseDuration(%q) = %d, want %d", tc.in, got, tc.want)
+			t.Errorf("parseutil.ParseDurationColon(%q) = %d, want %d", tc.in, got, tc.want)
 		}
 	}
 }

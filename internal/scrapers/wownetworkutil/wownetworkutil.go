@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/Wasylq/FSS/internal/httpx"
+	"github.com/Wasylq/FSS/internal/parseutil"
 	"github.com/Wasylq/FSS/models"
 	"github.com/Wasylq/FSS/scraper"
 )
@@ -229,7 +230,7 @@ func (s *Scraper) fetchDetail(ctx context.Context, pageURL, studioURL string, li
 		Title:      vo.Name,
 		URL:        pageURL,
 		Date:       date.UTC(),
-		Duration:   parseDuration(vo.Duration),
+		Duration:   parseutil.ParseDurationISO(vo.Duration),
 		Thumbnail:  vo.ThumbnailURL,
 		Performers: performers,
 		Studio:     s.config.StudioName,
@@ -294,26 +295,6 @@ func parseListingPerformers(body []byte, result map[string][]string) {
 			result[slug] = performers
 		}
 	}
-}
-
-func parseDuration(iso string) int {
-	if iso == "" || iso == "null" {
-		return 0
-	}
-	iso = strings.TrimPrefix(iso, "PT")
-	var hours, mins, secs int
-	if i := strings.Index(iso, "H"); i >= 0 {
-		_, _ = fmt.Sscanf(iso[:i], "%d", &hours)
-		iso = iso[i+1:]
-	}
-	if i := strings.Index(iso, "M"); i >= 0 {
-		_, _ = fmt.Sscanf(iso[:i], "%d", &mins)
-		iso = iso[i+1:]
-	}
-	if i := strings.Index(iso, "S"); i >= 0 {
-		_, _ = fmt.Sscanf(iso[:i], "%d", &secs)
-	}
-	return hours*3600 + mins*60 + secs
 }
 
 func extractSlug(u string) string {

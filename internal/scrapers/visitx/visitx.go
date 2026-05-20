@@ -135,7 +135,7 @@ func send(ctx context.Context, ch chan<- scraper.SceneResult, r scraper.SceneRes
 
 func (s *Scraper) fetchToken(ctx context.Context, pageURL string) (string, error) {
 	resp, err := httpx.Do(ctx, s.client, httpx.Request{
-		URL: pageURL,
+		URL:     pageURL,
 		Headers: httpx.BrowserHeaders(httpx.UserAgentChrome),
 	})
 	if err != nil {

@@ -145,7 +145,7 @@ func (s *Scraper) fetchPage(ctx context.Context, studioID, slug string, page int
 		s.siteBase, studioID, slug, page, s.pageLimit,
 	)
 	resp, err := httpx.Do(ctx, s.client, httpx.Request{
-		URL: u,
+		URL:     u,
 		Headers: httpx.BrowserHeaders(httpx.UserAgentChrome),
 	})
 	if err != nil {

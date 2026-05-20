@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/Wasylq/FSS/internal/httpx"
+	"github.com/Wasylq/FSS/internal/parseutil"
 	"github.com/Wasylq/FSS/models"
 	"github.com/Wasylq/FSS/scraper"
 )
@@ -238,7 +239,7 @@ func (s *Scraper) fetchPage(ctx context.Context, page int) ([]listEntry, error) 
 
 func (s *Scraper) fetchBody(ctx context.Context, u string) ([]byte, error) {
 	resp, err := httpx.Do(ctx, s.client, httpx.Request{
-		URL: u,
+		URL:     u,
 		Headers: httpx.BrowserHeaders(httpx.UserAgentFirefox),
 	})
 	if err != nil {
@@ -285,7 +286,7 @@ func parseEntries(body []byte, siteBase string) []listEntry {
 		}
 		if m := ratingDurRe.FindSubmatch(content); m != nil {
 			entry.rating, _ = strconv.ParseFloat(string(m[1]), 64)
-			entry.duration = parseDuration(string(m[2]))
+			entry.duration = parseutil.ParseDurationColon(string(m[2]))
 		}
 		if m := dateRe.FindSubmatch(content); m != nil {
 			entry.date = parseDate(strings.TrimSpace(string(m[1])))
@@ -325,7 +326,7 @@ func (s *Scraper) fetchDetail(ctx context.Context, studioURL string, entry listE
 	}
 
 	resp, err := httpx.Do(ctx, s.client, httpx.Request{
-		URL: entry.url,
+		URL:     entry.url,
 		Headers: httpx.BrowserHeaders(httpx.UserAgentFirefox),
 	})
 	if err != nil {
@@ -347,16 +348,6 @@ func (s *Scraper) fetchDetail(ctx context.Context, studioURL string, entry listE
 	}
 
 	return scene, nil
-}
-
-func parseDuration(s string) int {
-	parts := strings.Split(s, ":")
-	total := 0
-	for _, p := range parts {
-		n, _ := strconv.Atoi(p)
-		total = total*60 + n
-	}
-	return total
 }
 
 func parseDate(s string) time.Time {

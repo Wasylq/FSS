@@ -6,20 +6,11 @@ import (
 	"io"
 	"os"
 	"path/filepath"
-	"time"
 
 	"github.com/Wasylq/FSS/models"
 )
 
-// studioFile is the top-level JSON structure written per studio.
-type studioFile struct {
-	StudioURL  string         `json:"studioUrl"`
-	ScrapedAt  time.Time      `json:"scrapedAt"`
-	SceneCount int            `json:"sceneCount"`
-	Scenes     []models.Scene `json:"scenes"`
-}
-
-func WriteJSON(sf studioFile, path string) error {
+func WriteJSON(sf models.StudioFile, path string) error {
 	data, err := json.MarshalIndent(sf, "", "  ")
 	if err != nil {
 		return fmt.Errorf("marshalling JSON: %w", err)

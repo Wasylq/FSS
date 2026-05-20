@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/Wasylq/FSS/internal/httpx"
+	"github.com/Wasylq/FSS/internal/parseutil"
 	"github.com/Wasylq/FSS/models"
 	"github.com/Wasylq/FSS/scraper"
 )
@@ -164,7 +165,7 @@ func (s *Scraper) run(ctx context.Context, studioURL, typePath, slug string, opt
 
 func (s *Scraper) fetchPage(ctx context.Context, url string) ([]byte, error) {
 	resp, err := httpx.Do(ctx, s.client, httpx.Request{
-		URL: url,
+		URL:     url,
 		Headers: httpx.BrowserHeaders(httpx.UserAgentFirefox),
 	})
 	if err != nil {
@@ -213,7 +214,7 @@ func parseListingPage(body []byte) ([]card, int) {
 			c.detailPath = string(m[1])
 		}
 		if m := durationSpanRe.FindSubmatch(block); m != nil {
-			c.duration = parseDuration(string(m[1]))
+			c.duration = parseutil.ParseDurationColon(string(m[1]))
 		}
 		if imgTag := imgTagRe.FindSubmatch(block); imgTag != nil {
 			if m := altAttrRe.FindSubmatch(imgTag[0]); m != nil {
@@ -300,24 +301,6 @@ func parseDetailPage(body []byte) detailInfo {
 }
 
 // --- helpers ---
-
-func parseDuration(s string) int {
-	s = strings.TrimSpace(s)
-	parts := strings.Split(s, ":")
-	switch len(parts) {
-	case 2:
-		m, _ := strconv.Atoi(parts[0])
-		sec, _ := strconv.Atoi(parts[1])
-		return m*60 + sec
-	case 3:
-		h, _ := strconv.Atoi(parts[0])
-		m, _ := strconv.Atoi(parts[1])
-		sec, _ := strconv.Atoi(parts[2])
-		return h*3600 + m*60 + sec
-	default:
-		return 0
-	}
-}
 
 func parsePrice(s string) float64 {
 	s = strings.Map(func(r rune) rune {

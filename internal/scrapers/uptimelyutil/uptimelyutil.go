@@ -354,7 +354,7 @@ func extractLinkTexts(re *regexp.Regexp, body []byte) []string {
 
 func (s *Scraper) fetchPage(ctx context.Context, rawURL string) ([]byte, error) {
 	resp, err := httpx.Do(ctx, s.Client, httpx.Request{
-		URL: rawURL,
+		URL:     rawURL,
 		Headers: httpx.BrowserHeaders(httpx.UserAgentFirefox),
 	})
 	if err != nil {

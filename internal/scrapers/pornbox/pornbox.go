@@ -4,9 +4,11 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"net/http/cookiejar"
 	"regexp"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/Wasylq/FSS/internal/httpx"
@@ -17,13 +19,18 @@ import (
 const defaultBase = "https://pornbox.com"
 
 type Scraper struct {
-	client  *http.Client
-	baseURL string
+	client   *http.Client
+	baseURL  string
+	sessOnce sync.Once
+	sessErr  error
 }
 
 func New() *Scraper {
+	jar, _ := cookiejar.New(nil)
+	c := httpx.NewClient(30 * time.Second)
+	c.Jar = jar
 	return &Scraper{
-		client:  httpx.NewClient(30 * time.Second),
+		client:  c,
 		baseURL: defaultBase,
 	}
 }
@@ -285,17 +292,30 @@ func parseRuntime(s string) int {
 	return 0
 }
 
-const jdialogCookie = "JDIALOG3=4XLXCS00776HUYXZ6S73BYG0MSV3QK1K18EJ08YGHRP81JSCNR"
+func (s *Scraper) initSession(ctx context.Context) error {
+	s.sessOnce.Do(func() {
+		resp, err := httpx.Do(ctx, s.client, httpx.Request{
+			URL:     s.baseURL,
+			Headers: httpx.BrowserHeaders(httpx.UserAgentFirefox),
+		})
+		if err != nil {
+			s.sessErr = fmt.Errorf("session bootstrap: %w", err)
+			return
+		}
+		_ = resp.Body.Close()
+	})
+	return s.sessErr
+}
 
 func (s *Scraper) fetchJSON(ctx context.Context, url string, v any) error {
+	if err := s.initSession(ctx); err != nil {
+		return err
+	}
+	h := httpx.BrowserHeaders(httpx.UserAgentFirefox)
+	h["X-Requested-With"] = "XMLHttpRequest"
 	resp, err := httpx.Do(ctx, s.client, httpx.Request{
-		URL: url,
-		Headers: func() map[string]string {
-			h := httpx.BrowserHeaders(httpx.UserAgentFirefox)
-			h["X-Requested-With"] = "XMLHttpRequest"
-			h["Cookie"] = jdialogCookie
-			return h
-		}(),
+		URL:     url,
+		Headers: h,
 	})
 	if err != nil {
 		return err

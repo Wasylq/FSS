@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/Wasylq/FSS/internal/httpx"
+	"github.com/Wasylq/FSS/internal/parseutil"
 	"github.com/Wasylq/FSS/models"
 	"github.com/Wasylq/FSS/scraper"
 )
@@ -137,22 +138,6 @@ func parseDuration(s string) int {
 	return total
 }
 
-func parseDurationColon(s string) int {
-	parts := strings.Split(strings.TrimSpace(s), ":")
-	if len(parts) == 2 {
-		m, _ := strconv.Atoi(parts[0])
-		sec, _ := strconv.Atoi(parts[1])
-		return m*60 + sec
-	}
-	if len(parts) == 3 {
-		h, _ := strconv.Atoi(parts[0])
-		m, _ := strconv.Atoi(parts[1])
-		sec, _ := strconv.Atoi(parts[2])
-		return h*3600 + m*60 + sec
-	}
-	return 0
-}
-
 type detailData struct {
 	performers []string
 	tags       []string
@@ -175,7 +160,7 @@ func parseDetail(body string) detailData {
 		d.date = m[1]
 	}
 	if m := detailDurRe.FindStringSubmatch(body); m != nil {
-		d.duration = parseDurationColon(m[1])
+		d.duration = parseutil.ParseDurationColon(m[1])
 	}
 	tagSeen := make(map[string]bool)
 	for _, m := range detailTagRe.FindAllStringSubmatch(body, -1) {
@@ -378,7 +363,7 @@ func (s *Scraper) fetch(ctx context.Context, u string) (string, error) {
 		u = s.base + u
 	}
 	resp, err := httpx.Do(ctx, s.client, httpx.Request{
-		URL: u,
+		URL:     u,
 		Headers: httpx.BrowserHeaders(httpx.UserAgentFirefox),
 	})
 	if err != nil {

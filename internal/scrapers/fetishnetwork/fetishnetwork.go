@@ -240,7 +240,7 @@ func (item sceneItem) toScene(now time.Time) models.Scene {
 
 func (s *Scraper) fetchPage(ctx context.Context, url string) ([]byte, error) {
 	resp, err := httpx.Do(ctx, s.client, httpx.Request{
-		URL: url,
+		URL:     url,
 		Headers: httpx.BrowserHeaders(httpx.UserAgentChrome),
 	})
 	if err != nil {

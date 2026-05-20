@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/Wasylq/FSS/internal/httpx"
+	"github.com/Wasylq/FSS/internal/parseutil"
 	"github.com/Wasylq/FSS/models"
 	"github.com/Wasylq/FSS/scraper"
 )
@@ -315,31 +316,6 @@ func parseDetailPage(body []byte) (jsonLD, bool) {
 	return jsonLD{}, false
 }
 
-func parseDuration(iso string) int {
-	iso = strings.TrimPrefix(iso, "PT")
-	iso = strings.ToUpper(iso)
-
-	var total int
-	if i := strings.Index(iso, "H"); i >= 0 {
-		if n, err := strconv.Atoi(iso[:i]); err == nil {
-			total += n * 3600
-		}
-		iso = iso[i+1:]
-	}
-	if i := strings.Index(iso, "M"); i >= 0 {
-		if n, err := strconv.Atoi(iso[:i]); err == nil {
-			total += n * 60
-		}
-		iso = iso[i+1:]
-	}
-	if i := strings.Index(iso, "S"); i >= 0 {
-		if n, err := strconv.Atoi(iso[:i]); err == nil {
-			total += n
-		}
-	}
-	return total
-}
-
 func (s *Scraper) fetchDetail(ctx context.Context, item listItem, studioURL string) (models.Scene, error) {
 	sceneURL := s.base + "/en/" + item.slug
 	body, err := s.fetchPage(ctx, sceneURL)
@@ -397,14 +373,14 @@ func (s *Scraper) fetchDetail(ctx context.Context, item listItem, studioURL stri
 		Performers:  performers,
 		Studio:      studioName,
 		Series:      series,
-		Duration:    parseDuration(ld.Duration),
+		Duration:    parseutil.ParseDurationISO(ld.Duration),
 		ScrapedAt:   now,
 	}, nil
 }
 
 func (s *Scraper) fetchPage(ctx context.Context, url string) ([]byte, error) {
 	resp, err := httpx.Do(ctx, s.client, httpx.Request{
-		URL: url,
+		URL:     url,
 		Headers: httpx.BrowserHeaders(httpx.UserAgentFirefox),
 	})
 	if err != nil {

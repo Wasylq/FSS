@@ -25,7 +25,7 @@ For NFO sidecar file generation, see [identify.md](identify.md).
 | `--full` | bool | false | Ignore existing data, scrape everything from scratch |
 | `--refresh` | bool | false | Re-fetch metadata for all known scenes; soft-delete missing ones |
 | `--output`, `-o` | string | `json` | Export format(s): `json`, `csv`, or `json,csv` |
-| `--out` | string | `.` | Output directory |
+| `--out-dir` | string | `.` | Output directory |
 | `--db` | string | _(disabled)_ | Path to SQLite database; enables SQLite store |
 | `--delay` | int | `0` | Milliseconds to sleep between page requests (applies to sites without a `--site-delay` override) |
 | `--site-delay` | []string | _(none)_ | Per-scraper delay overrides as `name=ms` pairs, e.g. `--site-delay manyvids=0,pornhub=2000` |

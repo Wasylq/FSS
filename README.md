@@ -161,7 +161,7 @@ fss scrape --full <url>
 fss scrape --refresh <url>
 
 # Output both JSON and CSV
-fss scrape --output json,csv --out ./data <url>
+fss scrape --output json,csv --out-dir ./data <url>
 
 # Use SQLite as the store
 fss scrape --db ./fss.db --name "Bettie Bondage" <url>

@@ -445,7 +445,7 @@ func EstimateTotal(body []byte, videoPrefix string, firstPageCount int) int {
 
 func fetchPage(ctx context.Context, client *http.Client, url string) ([]byte, error) {
 	resp, err := httpx.Do(ctx, client, httpx.Request{
-		URL: url,
+		URL:     url,
 		Headers: httpx.BrowserHeaders(httpx.UserAgentFirefox),
 	})
 	if err != nil {

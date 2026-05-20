@@ -358,7 +358,7 @@ func (s *SQLite) Export(format, path, studioURL string) error {
 	}
 	switch format {
 	case "json":
-		sf := studioFile{
+		sf := models.StudioFile{
 			StudioURL:  studioURL,
 			ScrapedAt:  time.Now().UTC(),
 			SceneCount: len(scenes),

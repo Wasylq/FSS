@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/Wasylq/FSS/internal/httpx"
+	"github.com/Wasylq/FSS/internal/parseutil"
 	"github.com/Wasylq/FSS/models"
 	"github.com/Wasylq/FSS/scraper"
 )
@@ -122,7 +123,7 @@ func parseListingPage(body []byte) []sceneItem {
 		}
 
 		if m := durationRe.FindStringSubmatch(block); m != nil {
-			item.duration = parseDuration(m[1])
+			item.duration = parseutil.ParseDurationColon(m[1])
 		}
 
 		if m := dateRe.FindStringSubmatch(block); m != nil {
@@ -141,16 +142,6 @@ func parseListingPage(body []byte) []sceneItem {
 		items = append(items, item)
 	}
 	return items
-}
-
-func parseDuration(s string) int {
-	parts := strings.Split(s, ":")
-	if len(parts) != 2 {
-		return 0
-	}
-	mins, _ := strconv.Atoi(parts[0])
-	secs, _ := strconv.Atoi(parts[1])
-	return mins*60 + secs
 }
 
 type detailData struct {
@@ -354,7 +345,7 @@ func (s *Scraper) buildScene(ctx context.Context, item sceneItem, now time.Time)
 
 func (s *Scraper) fetchPage(ctx context.Context, url string) ([]byte, error) {
 	resp, err := httpx.Do(ctx, s.client, httpx.Request{
-		URL: url,
+		URL:     url,
 		Headers: httpx.BrowserHeaders(httpx.UserAgentChrome),
 	})
 	if err != nil {

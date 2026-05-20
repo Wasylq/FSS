@@ -146,7 +146,7 @@ Flags:
   --full             Ignore existing data, scrape everything from scratch
   --refresh          Re-fetch metadata for all known scenes (implies full list traversal)
   --output   string  Export formats: json, csv, or json,csv (default: json)
-  --out      string  Output directory (default: current dir)
+  --out-dir  string  Output directory (default: current dir)
   --db       string  Enable SQLite and set path (e.g. --db ./fss.db)
   --name     string  Human-readable label for this studio (stored in DB if --db is set)
 

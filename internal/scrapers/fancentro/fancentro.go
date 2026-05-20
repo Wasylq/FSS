@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/Wasylq/FSS/internal/httpx"
+	"github.com/Wasylq/FSS/internal/parseutil"
 	"github.com/Wasylq/FSS/models"
 	"github.com/Wasylq/FSS/scraper"
 )
@@ -197,22 +198,6 @@ func (s *Scraper) fetchPage(ctx context.Context, slug string, page int) ([]apiCl
 	return ar.Data, ar.TotalItems, ar.LastPage, nil
 }
 
-func parseDuration(s string) int {
-	parts := strings.Split(s, ":")
-	switch len(parts) {
-	case 2:
-		m, _ := strconv.Atoi(parts[0])
-		sec, _ := strconv.Atoi(parts[1])
-		return m*60 + sec
-	case 3:
-		h, _ := strconv.Atoi(parts[0])
-		m, _ := strconv.Atoi(parts[1])
-		sec, _ := strconv.Atoi(parts[2])
-		return h*3600 + m*60 + sec
-	}
-	return 0
-}
-
 func toScene(clip apiClip, studioURL, base string, now time.Time) models.Scene {
 	id := strconv.Itoa(clip.ID)
 	sceneURL := base + clip.Link
@@ -223,7 +208,7 @@ func toScene(clip apiClip, studioURL, base string, now time.Time) models.Scene {
 		StudioURL: studioURL,
 		Title:     clip.Title,
 		URL:       sceneURL,
-		Duration:  parseDuration(clip.Duration),
+		Duration:  parseutil.ParseDurationColon(clip.Duration),
 		ScrapedAt: now,
 	}
 

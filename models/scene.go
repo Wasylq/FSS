@@ -24,6 +24,14 @@ func (p PriceSnapshot) Effective() float64 {
 	return p.Regular
 }
 
+// StudioFile is the top-level JSON structure for a per-studio file.
+type StudioFile struct {
+	StudioURL  string    `json:"studioUrl"`
+	ScrapedAt  time.Time `json:"scrapedAt"`
+	SceneCount int       `json:"sceneCount"`
+	Scenes     []Scene   `json:"scenes"`
+}
+
 // Scene holds all metadata for a single scraped scene. Fields vary by site —
 // only ID, SiteID, Title, URL, and ScrapedAt are guaranteed to be populated.
 type Scene struct {

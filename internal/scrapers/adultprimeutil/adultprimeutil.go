@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/Wasylq/FSS/internal/httpx"
+	"github.com/Wasylq/FSS/internal/parseutil"
 	"github.com/Wasylq/FSS/models"
 	"github.com/Wasylq/FSS/scraper"
 )
@@ -330,25 +331,15 @@ func (s *Scraper) fetchDetail(ctx context.Context, item listingItem, delay time.
 		scene.Duration = mins * 60
 	}
 	if scene.Duration == 0 {
-		scene.Duration = parseDuration(item.duration)
+		scene.Duration = parseutil.ParseDurationColon(item.duration)
 	}
 
 	return scene, nil
 }
 
-func parseDuration(s string) int {
-	parts := strings.Split(strings.TrimSpace(s), ":")
-	if len(parts) == 2 {
-		mins, _ := strconv.Atoi(parts[0])
-		secs, _ := strconv.Atoi(parts[1])
-		return mins*60 + secs
-	}
-	return 0
-}
-
 func (s *Scraper) fetchPage(ctx context.Context, url string) ([]byte, error) {
 	resp, err := httpx.Do(ctx, s.client, httpx.Request{
-		URL: url,
+		URL:     url,
 		Headers: httpx.BrowserHeaders(httpx.UserAgentChrome),
 	})
 	if err != nil {

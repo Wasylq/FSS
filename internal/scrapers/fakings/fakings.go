@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/Wasylq/FSS/internal/httpx"
+	"github.com/Wasylq/FSS/internal/parseutil"
 	"github.com/Wasylq/FSS/models"
 	"github.com/Wasylq/FSS/scraper"
 )
@@ -228,7 +229,7 @@ func (s *Scraper) runActress(ctx context.Context, pc pageConfig, studioURL strin
 
 func (s *Scraper) fetchHTML(ctx context.Context, rawURL string) ([]byte, error) {
 	resp, err := httpx.Do(ctx, s.client, httpx.Request{
-		URL: rawURL,
+		URL:     rawURL,
 		Headers: httpx.BrowserHeaders(httpx.UserAgentChrome),
 	})
 	if err != nil {
@@ -310,7 +311,7 @@ func (v rscVideo) toScene(studioURL string, now time.Time) models.Scene {
 		StudioURL: studioURL,
 		Title:     v.Title,
 		URL:       "https://fakings.com/video/" + v.Slug,
-		Duration:  parseDuration(v.Duration),
+		Duration:  parseutil.ParseDurationColon(v.Duration),
 		Views:     v.Views,
 		Likes:     v.Likes,
 		ScrapedAt: now,
@@ -471,16 +472,6 @@ func extractJSONArray(data string, start int) string {
 }
 
 // ---- helpers ----
-
-func parseDuration(s string) int {
-	parts := strings.Split(s, ":")
-	total := 0
-	for _, p := range parts {
-		n, _ := strconv.Atoi(p)
-		total = total*60 + n
-	}
-	return total
-}
 
 func titleCase(s string) string {
 	words := strings.Fields(s)

@@ -17,7 +17,7 @@ func TestWriteJSON(t *testing.T) {
 	path := filepath.Join(dir, "test.json")
 	now := time.Now().UTC().Truncate(time.Second)
 
-	sf := studioFile{
+	sf := models.StudioFile{
 		StudioURL:  flatTestURL,
 		ScrapedAt:  now,
 		SceneCount: 1,
@@ -35,7 +35,7 @@ func TestWriteJSON(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	var got studioFile
+	var got models.StudioFile
 	if err := json.Unmarshal(data, &got); err != nil {
 		t.Fatalf("invalid JSON: %v", err)
 	}
@@ -55,7 +55,7 @@ func TestWriteJSONSpecialChars(t *testing.T) {
 	path := filepath.Join(dir, "special.json")
 	now := time.Now().UTC().Truncate(time.Second)
 
-	sf := studioFile{
+	sf := models.StudioFile{
 		StudioURL:  flatTestURL,
 		ScrapedAt:  now,
 		SceneCount: 1,
@@ -71,7 +71,7 @@ func TestWriteJSONSpecialChars(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	var got studioFile
+	var got models.StudioFile
 	data, _ := os.ReadFile(path)
 	if err := json.Unmarshal(data, &got); err != nil {
 		t.Fatalf("invalid JSON after special chars: %v", err)
@@ -86,7 +86,7 @@ func TestWriteJSONAtomic(t *testing.T) {
 	path := filepath.Join(dir, "atomic.json")
 	now := time.Now().UTC().Truncate(time.Second)
 
-	sf := studioFile{
+	sf := models.StudioFile{
 		StudioURL: flatTestURL, ScrapedAt: now, SceneCount: 1,
 		Scenes: []models.Scene{{
 			ID: "1", SiteID: "test", Title: "First", ScrapedAt: now,
@@ -102,7 +102,7 @@ func TestWriteJSONAtomic(t *testing.T) {
 	}
 
 	data, _ := os.ReadFile(path)
-	var got studioFile
+	var got models.StudioFile
 	if err := json.Unmarshal(data, &got); err != nil {
 		t.Fatal(err)
 	}

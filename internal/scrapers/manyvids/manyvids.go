@@ -7,11 +7,11 @@ import (
 	"net/http"
 	"regexp"
 	"strconv"
-	"strings"
 	"sync"
 	"time"
 
 	"github.com/Wasylq/FSS/internal/httpx"
+	"github.com/Wasylq/FSS/internal/parseutil"
 	"github.com/Wasylq/FSS/models"
 	"github.com/Wasylq/FSS/scraper"
 )
@@ -237,7 +237,7 @@ func toScene(studioURL, siteBase string, item detailItem, previewURL string, now
 		Performers:  []string{item.Model.DisplayName},
 		Studio:      item.Model.DisplayName,
 		Tags:        tags,
-		Duration:    parseDuration(item.VideoDuration),
+		Duration:    parseutil.ParseDurationColon(item.VideoDuration),
 		Resolution:  item.Resolution,
 		Width:       item.Width,
 		Height:      item.Height,
@@ -270,17 +270,6 @@ func creatorID(studioURL string) (string, error) {
 		return "", fmt.Errorf("cannot extract creator ID from %q", studioURL)
 	}
 	return m[1], nil
-}
-
-// parseDuration converts "MM:SS" or "HH:MM:SS" to seconds.
-func parseDuration(s string) int {
-	parts := strings.Split(s, ":")
-	total := 0
-	for _, p := range parts {
-		n, _ := strconv.Atoi(p)
-		total = total*60 + n
-	}
-	return total
 }
 
 // parseDate parses ManyVids API timestamps (RFC3339 with optional milliseconds).

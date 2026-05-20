@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
+	"net/http/cookiejar"
 	"net/http/httptest"
 	"testing"
 
@@ -162,8 +163,11 @@ func TestToSceneThumbnailFallback(t *testing.T) {
 }
 
 func newTestScraper(ts *httptest.Server) *Scraper {
+	c := ts.Client()
+	jar, _ := cookiejar.New(nil)
+	c.Jar = jar
 	return &Scraper{
-		client:  ts.Client(),
+		client:  c,
 		baseURL: ts.URL,
 	}
 }
@@ -203,6 +207,8 @@ func TestRunStudio(t *testing.T) {
 			_ = json.NewEncoder(w).Encode(studioInfo)
 		case "/studio/42/":
 			_ = json.NewEncoder(w).Encode(listing)
+		case "/":
+			w.WriteHeader(http.StatusOK)
 		default:
 			http.NotFound(w, r)
 		}
@@ -255,6 +261,8 @@ func TestRunKnownIDs(t *testing.T) {
 			_ = json.NewEncoder(w).Encode(studioInfoResp{Name: "S"})
 		case "/studio/1/":
 			_ = json.NewEncoder(w).Encode(listing)
+		case "/":
+			w.WriteHeader(http.StatusOK)
 		default:
 			http.NotFound(w, r)
 		}
@@ -326,6 +334,8 @@ func TestRunPagination(t *testing.T) {
 			default:
 				_ = json.NewEncoder(w).Encode(listingResp{})
 			}
+		case "/":
+			w.WriteHeader(http.StatusOK)
 		default:
 			http.NotFound(w, r)
 		}
@@ -374,6 +384,8 @@ func TestRunModel(t *testing.T) {
 		switch r.URL.Path {
 		case "/model/content/99/":
 			_ = json.NewEncoder(w).Encode(listing)
+		case "/":
+			w.WriteHeader(http.StatusOK)
 		default:
 			http.NotFound(w, r)
 		}
@@ -402,5 +414,44 @@ func TestRunModel(t *testing.T) {
 
 	if sceneCount != 1 {
 		t.Errorf("scene count = %d, want 1", sceneCount)
+	}
+}
+
+func TestSessionBootstrap(t *testing.T) {
+	var sessionHit bool
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/" {
+			sessionHit = true
+			http.SetCookie(w, &http.Cookie{Name: "JDIALOG3", Value: "TESTVALUE"})
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		if r.URL.Path == "/studio/info/1" {
+			_ = json.NewEncoder(w).Encode(studioInfoResp{Name: "S"})
+			return
+		}
+		if r.URL.Path == "/studio/1/" {
+			if c, err := r.Cookie("JDIALOG3"); err != nil || c.Value != "TESTVALUE" {
+				t.Errorf("expected JDIALOG3 cookie, got err=%v cookie=%v", err, c)
+			}
+			_ = json.NewEncoder(w).Encode(listingResp{
+				TotalCount: 1, TotalPages: 1,
+				Contents: []contentItem{{ID: 1, SceneName: "S", Studio: "S"}},
+			})
+			return
+		}
+		http.NotFound(w, r)
+	}))
+	defer ts.Close()
+
+	s := newTestScraper(ts)
+	ch, err := s.ListScenes(context.Background(), "https://pornbox.com/application/studio/1", scraper.ListOpts{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	for range ch {
+	}
+	if !sessionHit {
+		t.Error("session bootstrap request was never made")
 	}
 }

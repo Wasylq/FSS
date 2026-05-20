@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/Wasylq/FSS/internal/httpx"
+	"github.com/Wasylq/FSS/internal/parseutil"
 	"github.com/Wasylq/FSS/models"
 	"github.com/Wasylq/FSS/scraper"
 )
@@ -443,7 +444,7 @@ func parseDetail(body []byte, entry listEntry, base string) models.Scene {
 		secs, _ := strconv.Atoi(string(m[2]))
 		scene.Duration = mins*60 + secs
 	} else if entry.duration != "" {
-		scene.Duration = parseDuration(entry.duration)
+		scene.Duration = parseutil.ParseDurationColon(entry.duration)
 	}
 
 	if m := descriptionRe.FindSubmatch(body); m != nil {
@@ -490,14 +491,4 @@ func (s *Scraper) fetchHTML(ctx context.Context, rawURL string) ([]byte, error) 
 	}
 	defer func() { _ = resp.Body.Close() }()
 	return httpx.ReadBody(resp.Body)
-}
-
-func parseDuration(s string) int {
-	parts := strings.SplitN(s, ":", 2)
-	if len(parts) != 2 {
-		return 0
-	}
-	mins, _ := strconv.Atoi(strings.TrimSpace(parts[0]))
-	secs, _ := strconv.Atoi(strings.TrimSpace(parts[1]))
-	return mins*60 + secs
 }

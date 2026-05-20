@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/Wasylq/FSS/internal/httpx"
+	"github.com/Wasylq/FSS/internal/parseutil"
 	"github.com/Wasylq/FSS/models"
 	"github.com/Wasylq/FSS/scraper"
 )
@@ -291,7 +292,7 @@ func (s *Scraper) runIDList(ctx context.Context, studioURL string, pageURL strin
 
 func (s *Scraper) fetch(ctx context.Context, url string) ([]byte, error) {
 	resp, err := httpx.Do(ctx, s.client, httpx.Request{
-		URL: url,
+		URL:     url,
 		Headers: httpx.BrowserHeaders(httpx.UserAgentFirefox),
 	})
 	if err != nil {
@@ -418,7 +419,7 @@ func parseDetailPage(body []byte) detailPage {
 	// Duration appears near the date, after mat-ico span.
 	// Find it in the date/duration info line.
 	if m := durationRe.FindSubmatch(body); m != nil {
-		d.duration = parseDuration(string(m[1]))
+		d.duration = parseutil.ParseDurationColon(string(m[1]))
 	}
 
 	for _, m := range modelLinkRe.FindAllSubmatch(body, -1) {
@@ -450,16 +451,6 @@ func parseDate(s string) time.Time {
 		return time.Time{}
 	}
 	return t.UTC()
-}
-
-func parseDuration(s string) int {
-	parts := strings.Split(s, ":")
-	total := 0
-	for _, p := range parts {
-		n, _ := strconv.Atoi(strings.TrimSpace(p))
-		total = total*60 + n
-	}
-	return total
 }
 
 func appendUnique(slice []string, val string) []string {

@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/Wasylq/FSS/internal/httpx"
+	"github.com/Wasylq/FSS/internal/parseutil"
 	"github.com/Wasylq/FSS/models"
 	"github.com/Wasylq/FSS/scraper"
 )
@@ -269,7 +270,7 @@ func (s *Scraper) fetchDetail(ctx context.Context, entry listEntry) (models.Scen
 		Title:      entry.title,
 		URL:        detailURL,
 		Thumbnail:  entry.thumbnail,
-		Duration:   parseDuration(entry.duration),
+		Duration:   parseutil.ParseDurationColon(entry.duration),
 		Performers: entry.performers,
 		ScrapedAt:  now,
 	}
@@ -294,36 +295,9 @@ func (s *Scraper) fetchDetail(ctx context.Context, entry listEntry) (models.Scen
 	return scene, nil
 }
 
-func parseDuration(raw string) int {
-	raw = strings.TrimSpace(raw)
-	parts := strings.Split(raw, ":")
-	switch len(parts) {
-	case 2:
-		m := atoi(parts[0])
-		s := atoi(parts[1])
-		return m*60 + s
-	case 3:
-		h := atoi(parts[0])
-		m := atoi(parts[1])
-		s := atoi(parts[2])
-		return h*3600 + m*60 + s
-	}
-	return 0
-}
-
-func atoi(s string) int {
-	n := 0
-	for _, c := range s {
-		if c >= '0' && c <= '9' {
-			n = n*10 + int(c-'0')
-		}
-	}
-	return n
-}
-
 func (s *Scraper) fetchHTML(ctx context.Context, rawURL string) ([]byte, error) {
 	resp, err := httpx.Do(ctx, s.client, httpx.Request{
-		URL: rawURL,
+		URL:     rawURL,
 		Headers: httpx.BrowserHeaders(httpx.UserAgentFirefox),
 	})
 	if err != nil {

@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/Wasylq/FSS/internal/httpx"
+	"github.com/Wasylq/FSS/internal/parseutil"
 	"github.com/Wasylq/FSS/models"
 	"github.com/Wasylq/FSS/scraper"
 )
@@ -111,7 +112,7 @@ func parseListingPage(body []byte) []sceneItem {
 		}
 
 		if sm := durationRe.FindStringSubmatch(block); sm != nil {
-			item.duration = parseDuration(sm[1])
+			item.duration = parseutil.ParseDurationColon(sm[1])
 		}
 
 		for _, pm := range performerRe.FindAllStringSubmatch(block, -1) {
@@ -124,16 +125,6 @@ func parseListingPage(body []byte) []sceneItem {
 		items = append(items, item)
 	}
 	return items
-}
-
-func parseDuration(s string) int {
-	parts := strings.Split(s, ":")
-	total := 0
-	for _, p := range parts {
-		n, _ := strconv.Atoi(p)
-		total = total*60 + n
-	}
-	return total
 }
 
 func estimateTotal(body []byte, perPage int) int {
@@ -270,7 +261,7 @@ func (item sceneItem) toScene(studioURL, base string, now time.Time) models.Scen
 
 func (s *Scraper) fetchPage(ctx context.Context, url string) ([]byte, error) {
 	resp, err := httpx.Do(ctx, s.client, httpx.Request{
-		URL: url,
+		URL:     url,
 		Headers: httpx.BrowserHeaders(httpx.UserAgentChrome),
 	})
 	if err != nil {

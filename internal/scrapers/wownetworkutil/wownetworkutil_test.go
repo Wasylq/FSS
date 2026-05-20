@@ -9,6 +9,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/Wasylq/FSS/internal/parseutil"
 	"github.com/Wasylq/FSS/internal/scrapers/testutil"
 	"github.com/Wasylq/FSS/models"
 	"github.com/Wasylq/FSS/scraper"
@@ -30,9 +31,9 @@ func TestParseDuration(t *testing.T) {
 		{"null", 0},
 	}
 	for _, tt := range tests {
-		got := parseDuration(tt.in)
+		got := parseutil.ParseDurationISO(tt.in)
 		if got != tt.want {
-			t.Errorf("parseDuration(%q) = %d, want %d", tt.in, got, tt.want)
+			t.Errorf("ParseDurationISO(%q) = %d, want %d", tt.in, got, tt.want)
 		}
 	}
 }

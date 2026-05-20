@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/Wasylq/FSS/internal/httpx"
+	"github.com/Wasylq/FSS/internal/parseutil"
 	"github.com/Wasylq/FSS/models"
 	"github.com/Wasylq/FSS/scraper"
 )
@@ -119,7 +120,7 @@ func parseListingPage(body []byte) []sceneItem {
 			if end := strings.Index(dateSection, "</div>"); end > 0 {
 				dateSection = dateSection[:end]
 				if sm := durationRe.FindStringSubmatch(dateSection); sm != nil {
-					item.duration = parseDuration(sm[1])
+					item.duration = parseutil.ParseDurationColon(sm[1])
 				}
 				if sm := dateRe.FindStringSubmatch(dateSection); sm != nil {
 					if t, err := time.Parse("January 2, 2006", sm[1]); err == nil {
@@ -145,16 +146,6 @@ func parseListingPage(body []byte) []sceneItem {
 		items = append(items, item)
 	}
 	return items
-}
-
-func parseDuration(s string) int {
-	parts := strings.Split(s, ":")
-	if len(parts) != 2 {
-		return 0
-	}
-	mins, _ := strconv.Atoi(parts[0])
-	secs, _ := strconv.Atoi(parts[1])
-	return mins*60 + secs
 }
 
 func estimateTotal(body []byte, perPage int) int {
@@ -487,7 +478,7 @@ func (item sceneItem) toScene(siteID, siteBase, studio string, now time.Time) mo
 
 func (s *Scraper) fetchPage(ctx context.Context, url string) ([]byte, error) {
 	resp, err := httpx.Do(ctx, s.client, httpx.Request{
-		URL: url,
+		URL:     url,
 		Headers: httpx.BrowserHeaders(httpx.UserAgentChrome),
 	})
 	if err != nil {

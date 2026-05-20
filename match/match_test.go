@@ -400,7 +400,7 @@ func TestDurationClose(t *testing.T) {
 
 func TestLoadJSONFiles(t *testing.T) {
 	dir := t.TempDir()
-	sf := studioFile{
+	sf := models.StudioFile{
 		StudioURL:  "https://example.com/studio/1",
 		ScrapedAt:  time.Now().UTC(),
 		SceneCount: 2,
@@ -498,7 +498,7 @@ func TestLoadJSONDir(t *testing.T) {
 	dir := t.TempDir()
 
 	for _, name := range []string{"studio-a.json", "studio-b.json"} {
-		sf := studioFile{
+		sf := models.StudioFile{
 			Scenes: []models.Scene{scene(name, "site", "Title for "+name)},
 		}
 		data, _ := json.MarshalIndent(sf, "", "  ")

@@ -6,12 +6,12 @@ import (
 	"html"
 	"net/http"
 	"regexp"
-	"strconv"
 	"strings"
 	"sync"
 	"time"
 
 	"github.com/Wasylq/FSS/internal/httpx"
+	"github.com/Wasylq/FSS/internal/parseutil"
 	"github.com/Wasylq/FSS/models"
 	"github.com/Wasylq/FSS/scraper"
 )
@@ -318,7 +318,7 @@ func (s *Scraper) fetchDetail(ctx context.Context, studioURL string, entry listE
 	}
 
 	if m := runtimeRe.FindSubmatch(body); m != nil {
-		scene.Duration = parseDuration(string(m[1]))
+		scene.Duration = parseutil.ParseDurationColon(string(m[1]))
 	}
 
 	if m := addedRe.FindSubmatch(body); m != nil {
@@ -355,7 +355,7 @@ func (s *Scraper) fetchDetail(ctx context.Context, studioURL string, entry listE
 
 func (s *Scraper) fetchBody(ctx context.Context, u string) ([]byte, error) {
 	resp, err := httpx.Do(ctx, s.client, httpx.Request{
-		URL: u,
+		URL:     u,
 		Headers: httpx.BrowserHeaders(httpx.UserAgentFirefox),
 	})
 	if err != nil {
@@ -363,16 +363,6 @@ func (s *Scraper) fetchBody(ctx context.Context, u string) ([]byte, error) {
 	}
 	defer func() { _ = resp.Body.Close() }()
 	return httpx.ReadBody(resp.Body)
-}
-
-func parseDuration(s string) int {
-	parts := strings.Split(s, ":")
-	total := 0
-	for _, p := range parts {
-		n, _ := strconv.Atoi(p)
-		total = total*60 + n
-	}
-	return total
 }
 
 func parseDate(s string) time.Time {

@@ -65,7 +65,7 @@ func (s *Scraper) refererBase() string {
 
 func (s *Scraper) FetchAPIKey(ctx context.Context) (string, error) {
 	resp, err := httpx.Do(ctx, s.Client, httpx.Request{
-		URL: s.refererBase() + "/en/videos",
+		URL:     s.refererBase() + "/en/videos",
 		Headers: httpx.BrowserHeaders(httpx.UserAgentFirefox),
 	})
 	if err != nil {

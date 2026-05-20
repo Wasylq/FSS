@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/Wasylq/FSS/internal/httpx"
+	"github.com/Wasylq/FSS/internal/parseutil"
 	"github.com/Wasylq/FSS/models"
 	"github.com/Wasylq/FSS/scraper"
 )
@@ -156,7 +157,7 @@ func (s *Scraper) fetchPage(ctx context.Context, page int) ([]byte, error) {
 
 func (s *Scraper) fetchURL(ctx context.Context, u string) ([]byte, error) {
 	resp, err := httpx.Do(ctx, s.client, httpx.Request{
-		URL: u,
+		URL:     u,
 		Headers: httpx.BrowserHeaders(httpx.UserAgentChrome),
 	})
 	if err != nil {
@@ -213,7 +214,7 @@ func parseListingPage(body []byte) []listingCard {
 			if t, err := time.Parse("January 2, 2006", string(m[1])); err == nil {
 				c.date = t.UTC()
 			}
-			c.duration = parseDuration(string(m[2]))
+			c.duration = parseutil.ParseDurationColon(string(m[2]))
 		}
 
 		for _, pm := range performerRe.FindAllSubmatch(block, -1) {
@@ -236,16 +237,6 @@ func parseLastPage(body []byte) int {
 	}
 	n, _ := strconv.Atoi(string(m[1]))
 	return n
-}
-
-func parseDuration(s string) int {
-	parts := strings.Split(s, ":")
-	total := 0
-	for _, p := range parts {
-		n, _ := strconv.Atoi(p)
-		total = total*60 + n
-	}
-	return total
 }
 
 func buildScene(c listingCard, studioURL string, now time.Time) models.Scene {

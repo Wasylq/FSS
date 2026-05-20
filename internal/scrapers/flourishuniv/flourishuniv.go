@@ -5,11 +5,11 @@ import (
 	"html"
 	"net/http"
 	"regexp"
-	"strconv"
 	"strings"
 	"time"
 
 	"github.com/Wasylq/FSS/internal/httpx"
+	"github.com/Wasylq/FSS/internal/parseutil"
 	"github.com/Wasylq/FSS/models"
 	"github.com/Wasylq/FSS/scraper"
 )
@@ -176,7 +176,7 @@ func parseDetailPage(body []byte) detailData {
 	}
 
 	if m := detailRuntimeRe.FindSubmatch(body); m != nil {
-		d.duration = parseDuration(string(m[1]))
+		d.duration = parseutil.ParseDurationColon(string(m[1]))
 	}
 
 	if m := detailTagsRe.FindSubmatch(body); m != nil {
@@ -196,22 +196,6 @@ func parseDetailPage(body []byte) detailData {
 	}
 
 	return d
-}
-
-func parseDuration(s string) int {
-	parts := strings.Split(s, ":")
-	switch len(parts) {
-	case 2:
-		mins, _ := strconv.Atoi(parts[0])
-		secs, _ := strconv.Atoi(parts[1])
-		return mins*60 + secs
-	case 3:
-		hours, _ := strconv.Atoi(parts[0])
-		mins, _ := strconv.Atoi(parts[1])
-		secs, _ := strconv.Atoi(parts[2])
-		return hours*3600 + mins*60 + secs
-	}
-	return 0
 }
 
 func (s *Scraper) run(ctx context.Context, opts scraper.ListOpts, out chan<- scraper.SceneResult) {
@@ -296,7 +280,7 @@ func (s *Scraper) buildScene(ctx context.Context, ep episode, now time.Time) mod
 
 func (s *Scraper) fetchPage(ctx context.Context, url string) ([]byte, error) {
 	resp, err := httpx.Do(ctx, s.client, httpx.Request{
-		URL: url,
+		URL:     url,
 		Headers: httpx.BrowserHeaders(httpx.UserAgentChrome),
 	})
 	if err != nil {

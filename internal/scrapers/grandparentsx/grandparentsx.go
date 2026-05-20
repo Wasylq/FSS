@@ -175,7 +175,7 @@ func (item sceneItem) toScene(studioURL string) models.Scene {
 
 func (s *Scraper) fetchPage(ctx context.Context, rawURL string) ([]byte, error) {
 	resp, err := httpx.Do(ctx, s.client, httpx.Request{
-		URL: rawURL,
+		URL:     rawURL,
 		Headers: httpx.BrowserHeaders(httpx.UserAgentChrome),
 	})
 	if err != nil {

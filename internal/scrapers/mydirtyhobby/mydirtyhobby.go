@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/Wasylq/FSS/internal/httpx"
+	"github.com/Wasylq/FSS/internal/parseutil"
 	"github.com/Wasylq/FSS/models"
 	"github.com/Wasylq/FSS/scraper"
 )
@@ -233,7 +234,7 @@ func toScene(studioURL, siteBase string, uid int, nick string, item mdhItem, now
 		Description: item.Description,
 		Thumbnail:   item.Thumbnail,
 		Studio:      item.Nick,
-		Duration:    parseDuration(item.Duration),
+		Duration:    parseutil.ParseDurationColon(item.Duration),
 		Likes:       item.VotesCount,
 		ScrapedAt:   now,
 	}
@@ -266,17 +267,6 @@ func profileParams(studioURL string) (int, string, error) {
 	// Strip any trailing path segment from slug (e.g., "/videos").
 	nick := strings.SplitN(m[2], "/", 2)[0]
 	return uid, nick, nil
-}
-
-// parseDuration converts "MM:SS" or "HH:MM:SS" to seconds.
-func parseDuration(s string) int {
-	parts := strings.Split(s, ":")
-	total := 0
-	for _, p := range parts {
-		n, _ := strconv.Atoi(p)
-		total = total*60 + n
-	}
-	return total
 }
 
 // parseDate parses ISO 8601 timestamps with timezone offset.

@@ -133,34 +133,25 @@ func ResolutionTags(width int) []string {
 	}
 }
 
-// MergeURLs returns the union of existing and new URLs.
-func MergeURLs(existing, new []string) []string {
+// MergeStrings returns the ordered union of two slices, preserving the order
+// from existing first, then appending any new entries not already present.
+func MergeStrings(existing, new []string) []string {
 	seen := make(map[string]bool, len(existing))
 	result := make([]string, 0, len(existing)+len(new))
-	for _, u := range existing {
-		seen[u] = true
-		result = append(result, u)
+	for _, s := range existing {
+		seen[s] = true
+		result = append(result, s)
 	}
-	for _, u := range new {
-		if !seen[u] {
-			result = append(result, u)
+	for _, s := range new {
+		if !seen[s] {
+			result = append(result, s)
 		}
 	}
 	return result
 }
 
+// MergeURLs returns the union of existing and new URLs.
+func MergeURLs(existing, new []string) []string { return MergeStrings(existing, new) }
+
 // MergeTagIDs returns the union of existing and new tag IDs.
-func MergeTagIDs(existing, new []string) []string {
-	seen := make(map[string]bool, len(existing))
-	result := make([]string, 0, len(existing)+len(new))
-	for _, id := range existing {
-		seen[id] = true
-		result = append(result, id)
-	}
-	for _, id := range new {
-		if !seen[id] {
-			result = append(result, id)
-		}
-	}
-	return result
-}
+func MergeTagIDs(existing, new []string) []string { return MergeStrings(existing, new) }

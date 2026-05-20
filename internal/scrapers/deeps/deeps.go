@@ -390,7 +390,7 @@ func extractLinkTexts(fieldRe *regexp.Regexp, body []byte) []string {
 
 func (s *Scraper) fetchPage(ctx context.Context, rawURL string) ([]byte, error) {
 	resp, err := httpx.Do(ctx, s.client, httpx.Request{
-		URL: rawURL,
+		URL:     rawURL,
 		Headers: httpx.BrowserHeaders(httpx.UserAgentFirefox),
 	})
 	if err != nil {

@@ -40,7 +40,7 @@ func (f *Flat) Load(studioURL string) ([]models.Scene, error) {
 	if err != nil {
 		return nil, fmt.Errorf("reading store: %w", err)
 	}
-	var sf studioFile
+	var sf models.StudioFile
 	if err := json.Unmarshal(data, &sf); err != nil {
 		return nil, fmt.Errorf("parsing store: %w", err)
 	}
@@ -51,7 +51,7 @@ func (f *Flat) Save(studioURL string, scenes []models.Scene) error {
 	if err := os.MkdirAll(f.dir, 0o755); err != nil {
 		return fmt.Errorf("creating output dir: %w", err)
 	}
-	sf := studioFile{
+	sf := models.StudioFile{
 		StudioURL:  studioURL,
 		ScrapedAt:  time.Now().UTC(),
 		SceneCount: len(scenes),

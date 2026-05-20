@@ -7,17 +7,9 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
-	"time"
 
 	"github.com/Wasylq/FSS/models"
 )
-
-type studioFile struct {
-	StudioURL  string         `json:"studioUrl"`
-	ScrapedAt  time.Time      `json:"scrapedAt"`
-	SceneCount int            `json:"sceneCount"`
-	Scenes     []models.Scene `json:"scenes"`
-}
 
 type SceneIndex struct {
 	byTitle             map[string][]models.Scene
@@ -227,7 +219,7 @@ func LoadJSONFiles(paths []string) ([]models.Scene, error) {
 		if err != nil {
 			return nil, fmt.Errorf("reading %s: %w", p, err)
 		}
-		var sf studioFile
+		var sf models.StudioFile
 		if err := json.Unmarshal(data, &sf); err != nil {
 			continue
 		}

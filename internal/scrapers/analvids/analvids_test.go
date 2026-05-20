@@ -7,6 +7,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/Wasylq/FSS/internal/parseutil"
 	"github.com/Wasylq/FSS/scraper"
 )
 
@@ -106,8 +107,8 @@ func TestParseDurationColon(t *testing.T) {
 		{"30:00", 1800},
 	}
 	for _, tt := range tests {
-		if got := parseDurationColon(tt.in); got != tt.want {
-			t.Errorf("parseDurationColon(%q) = %d, want %d", tt.in, got, tt.want)
+		if got := parseutil.ParseDurationColon(tt.in); got != tt.want {
+			t.Errorf("parseutil.ParseDurationColon(%q) = %d, want %d", tt.in, got, tt.want)
 		}
 	}
 }

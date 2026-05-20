@@ -6,12 +6,12 @@ import (
 	"fmt"
 	"net/http"
 	"regexp"
-	"strconv"
 	"strings"
 	"sync"
 	"time"
 
 	"github.com/Wasylq/FSS/internal/httpx"
+	"github.com/Wasylq/FSS/internal/parseutil"
 	"github.com/Wasylq/FSS/models"
 	"github.com/Wasylq/FSS/scraper"
 )
@@ -330,7 +330,7 @@ func (s *Scraper) fetchAndBuildScene(ctx context.Context, n node, now time.Time)
 		scene.Description = v.Description
 	}
 	if v.RunLength != "" {
-		scene.Duration = parseDuration(v.RunLength)
+		scene.Duration = parseutil.ParseDurationColon(v.RunLength)
 	}
 	if len(v.Directors) > 0 {
 		scene.Director = v.Directors[0].Name
@@ -379,25 +379,9 @@ func (s *Scraper) nodeToScene(n node, now time.Time) models.Scene {
 	}
 }
 
-func parseDuration(s string) int {
-	parts := strings.Split(s, ":")
-	switch len(parts) {
-	case 2:
-		mins, _ := strconv.Atoi(parts[0])
-		secs, _ := strconv.Atoi(parts[1])
-		return mins*60 + secs
-	case 3:
-		hours, _ := strconv.Atoi(parts[0])
-		mins, _ := strconv.Atoi(parts[1])
-		secs, _ := strconv.Atoi(parts[2])
-		return hours*3600 + mins*60 + secs
-	}
-	return 0
-}
-
 func (s *Scraper) fetchPage(ctx context.Context, url string) ([]byte, error) {
 	resp, err := httpx.Do(ctx, s.client, httpx.Request{
-		URL: url,
+		URL:     url,
 		Headers: httpx.BrowserHeaders(httpx.UserAgentChrome),
 	})
 	if err != nil {

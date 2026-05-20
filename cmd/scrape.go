@@ -32,7 +32,7 @@ func init() {
 	scrapeCmd.Flags().Bool("full", false, "ignore existing data, scrape everything from scratch")
 	scrapeCmd.Flags().Bool("refresh", false, "re-fetch metadata for all known scenes, soft-delete missing")
 	scrapeCmd.Flags().StringP("output", "o", "", "export formats: json, csv, or json,csv (default from config)")
-	scrapeCmd.Flags().String("out", "", "output directory (default from config)")
+	scrapeCmd.Flags().String("out-dir", "", "output directory (default from config)")
 	scrapeCmd.Flags().String("db", "", "enable SQLite store at this path")
 	scrapeCmd.Flags().String("name", "", "human-readable label for this studio (stored when --db is set)")
 	scrapeCmd.Flags().Int("delay", 0, "milliseconds between page requests (0 = no delay; applies to sites without a --site-delay override)")
@@ -62,7 +62,7 @@ func runScrape(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	outDir, _ := cmd.Flags().GetString("out")
+	outDir, _ := cmd.Flags().GetString("out-dir")
 	if outDir == "" {
 		outDir = cfg.OutDir
 	}

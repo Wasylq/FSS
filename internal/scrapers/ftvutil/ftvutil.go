@@ -318,7 +318,7 @@ func (s *Scraper) fetchScene(ctx context.Context, id int, studioURL string, enri
 
 func (s *Scraper) FetchPage(ctx context.Context, url string) ([]byte, error) {
 	resp, err := httpx.Do(ctx, s.Client, httpx.Request{
-		URL: url,
+		URL:     url,
 		Headers: httpx.BrowserHeaders(httpx.UserAgentChrome),
 	})
 	if err != nil {

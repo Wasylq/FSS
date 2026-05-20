@@ -296,7 +296,7 @@ func TestFlatJSONStructure(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	var sf studioFile
+	var sf models.StudioFile
 	if err := json.Unmarshal(data, &sf); err != nil {
 		t.Fatalf("JSON structure invalid: %v", err)
 	}

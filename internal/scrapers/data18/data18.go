@@ -105,7 +105,7 @@ func (lc listingConfig) ajaxURL(page int) string {
 
 func (s *Scraper) bootstrap(ctx context.Context) error {
 	resp, err := httpx.Do(ctx, s.client, httpx.Request{
-		URL: siteBase + "/sys/captcha",
+		URL:     siteBase + "/sys/captcha",
 		Headers: httpx.BrowserHeaders(httpx.UserAgentFirefox),
 	})
 	if err != nil {

@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/Wasylq/FSS/internal/httpx"
+	"github.com/Wasylq/FSS/internal/parseutil"
 	"github.com/Wasylq/FSS/models"
 	"github.com/Wasylq/FSS/scraper"
 )
@@ -138,7 +139,7 @@ type listItem struct {
 
 func (s *Scraper) fetchListing(ctx context.Context, rawURL string) ([]listItem, error) {
 	resp, err := httpx.Do(ctx, s.client, httpx.Request{
-		URL: rawURL,
+		URL:     rawURL,
 		Headers: httpx.BrowserHeaders(httpx.UserAgentFirefox),
 	})
 	if err != nil {
@@ -231,7 +232,7 @@ func (s *Scraper) fetchDetail(ctx context.Context, path string) (*detailData, er
 	rawURL := s.base + "/" + path
 
 	resp, err := httpx.Do(ctx, s.client, httpx.Request{
-		URL: rawURL,
+		URL:     rawURL,
 		Headers: httpx.BrowserHeaders(httpx.UserAgentFirefox),
 	})
 	if err != nil {
@@ -261,7 +262,7 @@ func parseDetail(body []byte) *detailData {
 	}
 
 	if m := detailDurationRe.FindSubmatch(body); m != nil {
-		d.duration = parseDuration(string(m[1]))
+		d.duration = parseutil.ParseDurationColon(string(m[1]))
 	}
 
 	return d
@@ -327,14 +328,4 @@ func parseDate(s string) time.Time {
 	day, _ := strconv.Atoi(m[2])
 	year, _ := strconv.Atoi(m[3])
 	return time.Date(year, month, day, 0, 0, 0, 0, time.UTC)
-}
-
-func parseDuration(s string) int {
-	parts := strings.Split(s, ":")
-	total := 0
-	for _, p := range parts {
-		n, _ := strconv.Atoi(p)
-		total = total*60 + n
-	}
-	return total
 }

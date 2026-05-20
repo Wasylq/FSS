@@ -15,6 +15,10 @@ var rootCmd = &cobra.Command{
 	Use:   "fss",
 	Short: "FullStudioScraper — scrape all scenes and metadata from a studio URL",
 	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
+		switch cmd.Name() {
+		case "version", "list-scrapers":
+			return nil
+		}
 		var err error
 		cfg, err = config.Load()
 		if err != nil {

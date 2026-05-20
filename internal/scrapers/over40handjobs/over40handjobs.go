@@ -6,12 +6,12 @@ import (
 	"html"
 	"net/http"
 	"regexp"
-	"strconv"
 	"strings"
 	"sync"
 	"time"
 
 	"github.com/Wasylq/FSS/internal/httpx"
+	"github.com/Wasylq/FSS/internal/parseutil"
 	"github.com/Wasylq/FSS/models"
 	"github.com/Wasylq/FSS/scraper"
 )
@@ -78,16 +78,6 @@ func stripNATS(u string) string {
 	return u
 }
 
-func parseDuration(raw string) int {
-	parts := strings.SplitN(raw, ":", 2)
-	if len(parts) != 2 {
-		return 0
-	}
-	mins, _ := strconv.Atoi(parts[0])
-	secs, _ := strconv.Atoi(parts[1])
-	return mins*60 + secs
-}
-
 func parseDate(raw string) time.Time {
 	raw = strings.TrimSuffix(strings.TrimSpace(raw), ",")
 	raw = strings.TrimSpace(raw)
@@ -113,7 +103,7 @@ func parseListingPage(body []byte) []listingEntry {
 
 		if m := h4Re.FindStringSubmatch(block); m != nil {
 			e.date = parseDate(m[1])
-			e.duration = parseDuration(m[2])
+			e.duration = parseutil.ParseDurationColon(m[2])
 		}
 
 		if m := descRe.FindStringSubmatch(block); m != nil {
@@ -337,7 +327,7 @@ func (s *Scraper) buildScene(ctx context.Context, e listingEntry, studioURL stri
 
 func (s *Scraper) fetchPage(ctx context.Context, url string) ([]byte, error) {
 	resp, err := httpx.Do(ctx, s.client, httpx.Request{
-		URL: url,
+		URL:     url,
 		Headers: httpx.BrowserHeaders(httpx.UserAgentChrome),
 	})
 	if err != nil {

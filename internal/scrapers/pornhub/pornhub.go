@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/Wasylq/FSS/internal/httpx"
+	"github.com/Wasylq/FSS/internal/parseutil"
 	"github.com/Wasylq/FSS/models"
 	"github.com/Wasylq/FSS/scraper"
 )
@@ -226,7 +227,7 @@ func parseItem(li []byte) (phItem, bool) {
 	}
 
 	if mDur := durRe.FindSubmatch(li); mDur != nil {
-		item.duration = parseDuration(strings.TrimSpace(string(mDur[1])))
+		item.duration = parseutil.ParseDurationColon(strings.TrimSpace(string(mDur[1])))
 	}
 
 	if mStudio := uploaderRe.FindSubmatch(li); mStudio != nil {
@@ -254,15 +255,4 @@ func toScene(studioURL string, item phItem, now time.Time) models.Scene {
 		IsFree: true,
 	})
 	return scene
-}
-
-// parseDuration converts "MM:SS" or "HH:MM:SS" to seconds.
-func parseDuration(s string) int {
-	parts := strings.Split(s, ":")
-	total := 0
-	for _, p := range parts {
-		n, _ := strconv.Atoi(p)
-		total = total*60 + n
-	}
-	return total
 }

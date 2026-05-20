@@ -112,7 +112,7 @@ func ParseFilter(rawURL string) Filter {
 
 func (s *Scraper) FetchToken(ctx context.Context) (string, error) {
 	resp, err := httpx.Do(ctx, s.Client, httpx.Request{
-		URL: s.Config.SiteBase,
+		URL:     s.Config.SiteBase,
 		Headers: httpx.BrowserHeaders(httpx.UserAgentFirefox),
 	})
 	if err != nil {

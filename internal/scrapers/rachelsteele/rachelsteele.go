@@ -219,7 +219,7 @@ func (s *Scraper) fetchPage(ctx context.Context, page int) (videosPage, error) {
 	reqURL := fmt.Sprintf("%s%s?functionName=fetchVideosApi&args=%s", s.siteBase, apiPath, args)
 
 	resp, err := httpx.Do(ctx, s.client, httpx.Request{
-		URL: reqURL,
+		URL:     reqURL,
 		Headers: httpx.BrowserHeaders(httpx.UserAgentFirefox),
 	})
 	if err != nil {
@@ -315,7 +315,7 @@ var (
 
 func (s *Scraper) fetchDetail(ctx context.Context, pageURL string) (sceneDetail, error) {
 	resp, err := httpx.Do(ctx, s.client, httpx.Request{
-		URL: pageURL,
+		URL:     pageURL,
 		Headers: httpx.BrowserHeaders(httpx.UserAgentFirefox),
 	})
 	if err != nil {
