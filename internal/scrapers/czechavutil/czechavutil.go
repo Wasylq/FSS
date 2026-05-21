@@ -24,23 +24,24 @@ type SiteConfig struct {
 }
 
 type Scraper struct {
-	Cfg    SiteConfig
-	Client *http.Client
-	Base   string
+	Cfg     SiteConfig
+	Client  *http.Client
+	Base    string
+	matchRe *regexp.Regexp
 }
 
 func NewScraper(cfg SiteConfig) *Scraper {
 	return &Scraper{
-		Cfg:    cfg,
-		Client: httpx.NewClient(30 * time.Second),
-		Base:   "https://" + cfg.Domain,
+		Cfg:     cfg,
+		Client:  httpx.NewClient(30 * time.Second),
+		Base:    "https://" + cfg.Domain,
+		matchRe: regexp.MustCompile(`^https?://(?:www\.)?` + regexp.QuoteMeta(cfg.Domain)),
 	}
 }
 
 func (s *Scraper) ID() string { return s.Cfg.SiteID }
 func (s *Scraper) MatchesURL(u string) bool {
-	re := regexp.MustCompile(`^https?://(?:www\.)?` + regexp.QuoteMeta(s.Cfg.Domain))
-	return re.MatchString(u)
+	return s.matchRe.MatchString(u)
 }
 func (s *Scraper) Patterns() []string {
 	return []string{

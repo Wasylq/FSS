@@ -343,6 +343,7 @@ var (
 	detailTagRe   = regexp.MustCompile(`>([^<]+)</a>`)
 	detailModelRe = regexp.MustCompile(`<p class="sp-info-name">.*?<a[^>]*>([^<]+)`)
 	detailPathRe  = regexp.MustCompile(`(?s)<p class="path">(.*?)</p>`)
+	detailLinkRe  = regexp.MustCompile(`<a[^>]*>([^<]+)</a>`)
 )
 
 type detailData struct {
@@ -377,7 +378,7 @@ func parseDetailPage(body []byte) detailData {
 	}
 
 	if m := detailPathRe.FindSubmatch(body); m != nil {
-		links := regexp.MustCompile(`<a[^>]*>([^<]+)</a>`).FindAllSubmatch(m[1], -1)
+		links := detailLinkRe.FindAllSubmatch(m[1], -1)
 		for _, l := range links {
 			name := strings.TrimSpace(string(l[1]))
 			if name != "" && !strings.EqualFold(name, "Home") {

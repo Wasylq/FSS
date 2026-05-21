@@ -380,16 +380,17 @@ func parseTotalPages(body []byte) int {
 }
 
 var (
-	detailTitleRe    = regexp.MustCompile(`<h1 class="scene-header-title">([^<]+)</h1>`)
-	featuringRe      = regexp.MustCompile(`(?s)<strong>Featuring:\s*</strong>(.*?)</p>`)
-	performerLinkRe  = regexp.MustCompile(`<a href="sets\.php\?id=\d+">([^<]+)</a>`)
-	detailReleasedRe = regexp.MustCompile(`<p><strong>Released:\s*</strong>\s*([A-Z][a-z]{2}\s+\d{1,2},\s*\d{4})</p>`)
-	detailLengthRe   = regexp.MustCompile(`<p><strong>Length:</strong>\s*(\d+):(\d+)</p>`)
-	descriptionRe    = regexp.MustCompile(`(?s)<h2>Description</h2><p>(.*?)</p>`)
-	categoriesRe     = regexp.MustCompile(`(?s)<p><strong>Categories:\s*</strong>(.*?)</p>`)
-	categoryLinkRe   = regexp.MustCompile(`<a href="category\.php\?[^"]*">([^<]+)</a>`)
-	movieTitleRe     = regexp.MustCompile(`<p><strong>Movie Title:\s*</strong><a href="[^"]*">([^<]+)</a></p>`)
-	directorRe       = regexp.MustCompile(`<p><strong>Director:\s*</strong><a href="[^"]*">([^<]+)</a></p>`)
+	detailTitleRe     = regexp.MustCompile(`<h1 class="scene-header-title">([^<]+)</h1>`)
+	featuringRe       = regexp.MustCompile(`(?s)<strong>Featuring:\s*</strong>(.*?)</p>`)
+	performerLinkRe   = regexp.MustCompile(`<a href="sets\.php\?id=\d+">([^<]+)</a>`)
+	detailReleasedRe  = regexp.MustCompile(`<p><strong>Released:\s*</strong>\s*([A-Z][a-z]{2}\s+\d{1,2},\s*\d{4})</p>`)
+	detailLengthRe    = regexp.MustCompile(`<p><strong>Length:</strong>\s*(\d+):(\d+)</p>`)
+	descriptionRe     = regexp.MustCompile(`(?s)<h2>Description</h2><p>(.*?)</p>`)
+	categoriesRe      = regexp.MustCompile(`(?s)<p><strong>Categories:\s*</strong>(.*?)</p>`)
+	categoryLinkRe    = regexp.MustCompile(`<a href="category\.php\?[^"]*">([^<]+)</a>`)
+	movieTitleRe      = regexp.MustCompile(`<p><strong>Movie Title:\s*</strong><a href="[^"]*">([^<]+)</a></p>`)
+	directorRe        = regexp.MustCompile(`<p><strong>Director:\s*</strong><a href="[^"]*">([^<]+)</a></p>`)
+	detailThumbLinkRe = regexp.MustCompile(`<a href="dvds\.php\?id=\d+&(?:amp;)?sceneid=(\d+)"[^>]*><img src="([^"]+)"`)
 )
 
 func (s *Scraper) fetchDetail(ctx context.Context, entry listEntry) (models.Scene, error) {
@@ -468,10 +469,13 @@ func parseDetail(body []byte, entry listEntry, base string) models.Scene {
 		scene.Director = html.UnescapeString(strings.TrimSpace(string(m[1])))
 	}
 
-	detailThumbRe := regexp.MustCompile(fmt.Sprintf(
-		`<a href="dvds\.php\?id=\d+&(?:amp;)?sceneid=%s"[^>]*><img src="([^"]+)"`, entry.sceneID))
-	if m := detailThumbRe.FindSubmatch(body); m != nil {
-		scene.Thumbnail = html.UnescapeString(string(m[1]))
+	if m := detailThumbLinkRe.FindAllSubmatch(body, -1); m != nil {
+		for _, match := range m {
+			if string(match[1]) == entry.sceneID {
+				scene.Thumbnail = html.UnescapeString(string(match[2]))
+				break
+			}
+		}
 	}
 
 	return scene

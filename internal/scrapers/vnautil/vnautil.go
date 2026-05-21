@@ -23,9 +23,11 @@ type SiteConfig struct {
 }
 
 type Scraper struct {
-	cfg    SiteConfig
-	client *http.Client
-	base   string
+	cfg        SiteConfig
+	client     *http.Client
+	base       string
+	hrefRe     *regexp.Regexp
+	pageLinkRe *regexp.Regexp
 }
 
 func New(cfg SiteConfig) *Scraper {
@@ -34,14 +36,22 @@ func New(cfg SiteConfig) *Scraper {
 		host = "www." + host
 	}
 	return &Scraper{
-		cfg:    cfg,
-		client: httpx.NewClient(30 * time.Second),
-		base:   "https://" + host,
+		cfg:        cfg,
+		client:     httpx.NewClient(30 * time.Second),
+		base:       "https://" + host,
+		hrefRe:     buildHrefRe(cfg.VideoPrefix),
+		pageLinkRe: buildPageLinkRe(cfg.VideoPrefix),
 	}
 }
 
 func NewWithBase(cfg SiteConfig, base string, client *http.Client) *Scraper {
-	return &Scraper{cfg: cfg, client: client, base: base}
+	return &Scraper{
+		cfg:        cfg,
+		client:     client,
+		base:       base,
+		hrefRe:     buildHrefRe(cfg.VideoPrefix),
+		pageLinkRe: buildPageLinkRe(cfg.VideoPrefix),
+	}
 }
 
 func (s *Scraper) ID() string { return s.cfg.SiteID }
@@ -97,13 +107,13 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 			return
 		}
 
-		items := ParseListing(body, s.cfg.VideoPrefix)
+		items := s.parseListing(body)
 		if len(items) == 0 {
 			return
 		}
 
 		if page == 1 {
-			total := EstimateTotal(body, s.cfg.VideoPrefix, len(items))
+			total := s.estimateTotal(body, len(items))
 			if total > 0 {
 				if !send(ctx, out, scraper.Progress(total)) {
 					return
@@ -149,7 +159,7 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 			}
 		}
 
-		if !HasNextPage(body, s.cfg.VideoPrefix, page) {
+		if !s.hasNextPage(body, page) {
 			return
 		}
 	}
@@ -219,9 +229,16 @@ func hasInlineTagsOrDuration(body []byte) bool {
 	return inlineTagsRe.Match(body) && inlineDurRe.Match(body)
 }
 
+func (s *Scraper) parseListing(body []byte) []ListItem {
+	return parseListingWithRe(body, s.hrefRe)
+}
+
 func ParseListing(body []byte, videoPrefix string) []ListItem {
+	return parseListingWithRe(body, buildHrefRe(videoPrefix))
+}
+
+func parseListingWithRe(body []byte, hrefRe *regexp.Regexp) []ListItem {
 	page := string(body)
-	hrefRe := buildHrefRe(videoPrefix)
 
 	allMatches := hrefRe.FindAllStringSubmatchIndex(page, -1)
 	if len(allMatches) == 0 {
@@ -412,15 +429,14 @@ func buildPageLinkRe(prefix string) *regexp.Regexp {
 	return regexp.MustCompile(regexp.QuoteMeta(prefix) + `/page/(\d+)`)
 }
 
-func maxPageFromNav(body []byte, videoPrefix string) int {
+func maxPageFromNavWithRe(body []byte, pageLinkRe *regexp.Regexp) int {
 	pm := pageNavRe.FindSubmatch(body)
 	if pm == nil {
 		return 0
 	}
 
-	re := buildPageLinkRe(videoPrefix)
 	maxPage := 0
-	for _, m := range re.FindAllSubmatch(pm[1], -1) {
+	for _, m := range pageLinkRe.FindAllSubmatch(pm[1], -1) {
 		if n, _ := strconv.Atoi(string(m[1])); n > maxPage {
 			maxPage = n
 		}
@@ -428,9 +444,25 @@ func maxPageFromNav(body []byte, videoPrefix string) int {
 	return maxPage
 }
 
+func maxPageFromNav(body []byte, videoPrefix string) int {
+	return maxPageFromNavWithRe(body, buildPageLinkRe(videoPrefix))
+}
+
+func (s *Scraper) hasNextPage(body []byte, currentPage int) bool {
+	return currentPage < maxPageFromNavWithRe(body, s.pageLinkRe)
+}
+
 func HasNextPage(body []byte, videoPrefix string, currentPage int) bool {
 	mp := maxPageFromNav(body, videoPrefix)
 	return currentPage < mp
+}
+
+func (s *Scraper) estimateTotal(body []byte, firstPageCount int) int {
+	mp := maxPageFromNavWithRe(body, s.pageLinkRe)
+	if mp == 0 {
+		return firstPageCount
+	}
+	return mp * firstPageCount
 }
 
 func EstimateTotal(body []byte, videoPrefix string, firstPageCount int) int {

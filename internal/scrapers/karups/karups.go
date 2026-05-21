@@ -90,6 +90,8 @@ var (
 	modelNameRe = regexp.MustCompile(`<a[^>]*>([^<]+)</a>`)
 
 	ordinalRe = regexp.MustCompile(`(\d+)(st|nd|rd|th)`)
+
+	baseURLRe = regexp.MustCompile(`^(https?://[^/]+)`)
 )
 
 type listEntry struct {
@@ -149,7 +151,7 @@ func listingURL(base string, page int) string {
 }
 
 func resolveBase(studioURL string, cfg siteConfig) string {
-	if m := regexp.MustCompile(`^(https?://[^/]+)`).FindString(studioURL); m != "" {
+	if m := baseURLRe.FindString(studioURL); m != "" {
 		if !strings.Contains(m, "karups") {
 			return m
 		}

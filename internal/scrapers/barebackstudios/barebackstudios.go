@@ -65,6 +65,8 @@ var (
 	actorRe = regexp.MustCompile(`data-actors="([^"]*)"`)
 	catRe   = regexp.MustCompile(`data-category="([^"]*)"`)
 	priceRe = regexp.MustCompile(`<small[^>]*>\s*\$\s*([\d.]+)\s*</small>`)
+
+	relativeDateRe = regexp.MustCompile(`(\d+)\s+(year|month|week|day)s?`)
 )
 
 type entry struct {
@@ -133,8 +135,7 @@ func splitTrim(s string) []string {
 
 func parseRelativeDate(s string, now time.Time) time.Time {
 	var years, months, weeks, days int
-	re := regexp.MustCompile(`(\d+)\s+(year|month|week|day)s?`)
-	for _, m := range re.FindAllStringSubmatch(s, -1) {
+	for _, m := range relativeDateRe.FindAllStringSubmatch(s, -1) {
 		n, _ := strconv.Atoi(m[1])
 		switch m[2] {
 		case "year":

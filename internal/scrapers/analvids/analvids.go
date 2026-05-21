@@ -74,6 +74,9 @@ var (
 
 	studioSlugRe = regexp.MustCompile(`/studios/([^/]+)`)
 	modelPathRe  = regexp.MustCompile(`/model/(\d+/[^/]+)`)
+
+	durationHoursRe = regexp.MustCompile(`(\d+)\s*h`)
+	durationMinsRe  = regexp.MustCompile(`(\d+)\s*min`)
 )
 
 type listEntry struct {
@@ -127,11 +130,11 @@ func parseListing(body string) []listEntry {
 func parseDuration(s string) int {
 	s = strings.TrimSpace(s)
 	var total int
-	if m := regexp.MustCompile(`(\d+)\s*h`).FindStringSubmatch(s); m != nil {
+	if m := durationHoursRe.FindStringSubmatch(s); m != nil {
 		n, _ := strconv.Atoi(m[1])
 		total += n * 3600
 	}
-	if m := regexp.MustCompile(`(\d+)\s*min`).FindStringSubmatch(s); m != nil {
+	if m := durationMinsRe.FindStringSubmatch(s); m != nil {
 		n, _ := strconv.Atoi(m[1])
 		total += n * 60
 	}

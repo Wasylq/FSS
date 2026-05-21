@@ -76,6 +76,9 @@ var (
 	detailDescRe = regexp.MustCompile(`(?s)<div class="description">\s*<h3>[^<]*</h3>\s*<p>(.*?)</p>`)
 	detailTagsRe = regexp.MustCompile(`(?s)<ul class="tags">(.*?)</ul>`)
 	detailTagRe  = regexp.MustCompile(`<a[^>]*>([^<]+)</a>`)
+
+	brTagRe    = regexp.MustCompile(`<br\s*/?\s*>`)
+	stripTagRe = regexp.MustCompile(`<[^>]+>`)
 )
 
 type sceneItem struct {
@@ -154,8 +157,8 @@ func parseDetailPage(body []byte) detailData {
 
 	if m := detailDescRe.FindSubmatch(body); m != nil {
 		raw := strings.TrimSpace(string(m[1]))
-		raw = regexp.MustCompile(`<br\s*/?\s*>`).ReplaceAllString(raw, "\n")
-		raw = regexp.MustCompile(`<[^>]+>`).ReplaceAllString(raw, "")
+		raw = brTagRe.ReplaceAllString(raw, "\n")
+		raw = stripTagRe.ReplaceAllString(raw, "")
 		d.description = strings.TrimSpace(html.UnescapeString(raw))
 	}
 

@@ -27,9 +27,11 @@ type SiteConfig struct {
 }
 
 type Scraper struct {
-	config  SiteConfig
-	client  *http.Client
-	matchRe *regexp.Regexp
+	config      SiteConfig
+	client      *http.Client
+	matchRe     *regexp.Regexp
+	modelRe     *regexp.Regexp
+	modelReOnce sync.Once
 }
 
 func New(cfg SiteConfig) *Scraper {
@@ -39,10 +41,13 @@ func New(cfg SiteConfig) *Scraper {
 	}
 	re := regexp.MustCompile(`^https?://(?:www\.)?(?:` + pattern + `)`)
 
+	modelRe := regexp.MustCompile(`/` + regexp.QuoteMeta(cfg.TourPrefix) + `/models/`)
+
 	return &Scraper{
 		config:  cfg,
 		client:  httpx.NewClient(30 * time.Second),
 		matchRe: re,
+		modelRe: modelRe,
 	}
 }
 
@@ -59,6 +64,15 @@ func (s *Scraper) Patterns() []string {
 }
 
 func (s *Scraper) MatchesURL(u string) bool { return s.matchRe.MatchString(u) }
+
+func (s *Scraper) getModelRe() *regexp.Regexp {
+	s.modelReOnce.Do(func() {
+		if s.modelRe == nil {
+			s.modelRe = regexp.MustCompile(`/` + regexp.QuoteMeta(s.config.TourPrefix) + `/models/`)
+		}
+	})
+	return s.modelRe
+}
 
 func (s *Scraper) ListScenes(ctx context.Context, studioURL string, opts scraper.ListOpts) (<-chan scraper.SceneResult, error) {
 	out := make(chan scraper.SceneResult)
@@ -124,13 +138,11 @@ func (s *Scraper) produceListing(ctx context.Context, studioURL string, opts scr
 		delay = defaultDelay
 	}
 
-	modelRe := regexp.MustCompile(`/` + regexp.QuoteMeta(s.config.TourPrefix) + `/models/`)
-	if modelRe.MatchString(studioURL) {
+	if s.getModelRe().MatchString(studioURL) {
 		s.scrapeListingPage(ctx, studioURL, opts, out, work)
 		return
 	}
 
-	catRe := regexp.MustCompile(`/categories/([A-Za-z0-9_-]+)_(\d+)_([dnopuz])\.html`)
 	if m := catRe.FindStringSubmatch(studioURL); m != nil {
 		s.paginateCategory(ctx, m[1], m[3], opts, out, work, delay)
 		return
@@ -235,6 +247,8 @@ var (
 	performerRe  = regexp.MustCompile(`>([^<]+)</a>`)
 	thumbRe      = regexp.MustCompile(`data-src="([^"]+)"`)
 	previewRe    = regexp.MustCompile(`src="([^"]*\.mp4[^"]*)"`)
+
+	catRe = regexp.MustCompile(`/categories/([A-Za-z0-9_-]+)_(\d+)_([dnopuz])\.html`)
 )
 
 func (s *Scraper) parseListingPage(ctx context.Context, pageURL string) ([]workItem, error) {
