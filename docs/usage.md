@@ -27,7 +27,7 @@ For NFO sidecar file generation, see [identify.md](identify.md).
 | `--output`, `-o` | string | `json` | Export format(s): `json`, `csv`, or `json,csv` |
 | `--out-dir` | string | `.` | Output directory |
 | `--db` | string | _(disabled)_ | Path to SQLite database; enables SQLite store |
-| `--delay` | int | `0` | Milliseconds to sleep between page requests (applies to sites without a `--site-delay` override) |
+| `--delay` | int | `500` | Milliseconds to sleep between page requests (default from config; `--delay 0` disables) |
 | `--site-delay` | []string | _(none)_ | Per-scraper delay overrides as `name=ms` pairs, e.g. `--site-delay manyvids=0,pornhub=2000` |
 | `--name` | string | _(none)_ | Human-readable label for this studio (stored when `--db` is set) |
 
@@ -76,7 +76,7 @@ workers: 3        # int   — parallel metadata fetchers
 output: json      # str   — json | csv | json,csv
 out_dir: .        # str   — output directory path
 db: ""            # str   — SQLite path; empty string disables SQLite
-delay: 0          # int   — ms between page requests; 0 disables
+delay: 500        # int   — ms between page requests; 0 disables
 user_agent: ""    # str   — "firefox" (default), "chrome", or a custom UA string
 
 site_delays:      # map[string]int — per-scraper delay overrides (overrides `delay` for matching sites)

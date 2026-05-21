@@ -24,8 +24,8 @@ out_dir: "."
 db: ""
 
 # Default delay between page requests, in milliseconds.
-# 0 means no delay. Some sites may need throttling to avoid rate limits.
-delay: 0
+# Set to 0 to disable. Prevents rate-limiting by sites with WAFs.
+delay: 500
 
 # User-Agent string for all HTTP requests.
 # "firefox" (default), "chrome", or a full custom UA string.

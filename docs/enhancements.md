@@ -23,5 +23,5 @@ GoReleaser produces `.deb` and `.rpm` packages attached to each GitHub Release, 
 `fss identify` is implemented — see [identify.md](identify.md) for full documentation. Potential future additions:
 
 - **`--nfo-dir`**: Write `.nfo` files to a `.nfo/` subdirectory instead of next to the video, keeping the video folder clean. The Stash NFO scraper supports both locations.
-- **ffprobe duration**: Use `ffprobe` (if available) to read video file durations for better matching accuracy, especially for the trailing-number pass which requires duration to disambiguate. Fall back to duration=0 if not installed.
+- ~~**ffprobe duration**: Use `ffprobe` (if available) to read video file durations for better matching accuracy.~~ **Implemented** — `identify.probeDuration()` calls `ffprobe` automatically and falls back to 0 if not installed.
 

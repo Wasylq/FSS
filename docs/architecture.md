@@ -86,7 +86,7 @@ Scrapers never know which store is active.
 
 ## Shared Scraper Packages
 
-Nine utility packages eliminate duplication for sites that share a platform:
+27+ `*util` packages eliminate duplication for sites that share a platform. The full list with detection signals is in `CLAUDE.md` under **Platform Detection for New Scrapers**. Key examples:
 
 ### ayloutil
 
