@@ -9,8 +9,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Wasylq/FSS/internal/parseutil"
 	"github.com/Wasylq/FSS/internal/scrapers/testutil"
+	"github.com/Wasylq/FSS/parseutil"
 	"github.com/Wasylq/FSS/scraper"
 )
 

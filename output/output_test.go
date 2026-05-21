@@ -1,4 +1,4 @@
-package store
+package output
 
 import (
 	"encoding/csv"
@@ -12,13 +12,15 @@ import (
 	"github.com/Wasylq/FSS/models"
 )
 
+const testURL = "https://www.manyvids.com/Profile/590705/bettie-bondage/Store/Videos"
+
 func TestWriteJSON(t *testing.T) {
 	dir := t.TempDir()
 	path := filepath.Join(dir, "test.json")
 	now := time.Now().UTC().Truncate(time.Second)
 
 	sf := models.StudioFile{
-		StudioURL:  flatTestURL,
+		StudioURL:  testURL,
 		ScrapedAt:  now,
 		SceneCount: 1,
 		Scenes: []models.Scene{{
@@ -39,7 +41,7 @@ func TestWriteJSON(t *testing.T) {
 	if err := json.Unmarshal(data, &got); err != nil {
 		t.Fatalf("invalid JSON: %v", err)
 	}
-	if got.StudioURL != flatTestURL {
+	if got.StudioURL != testURL {
 		t.Errorf("studioUrl = %q", got.StudioURL)
 	}
 	if got.SceneCount != 1 {
@@ -56,7 +58,7 @@ func TestWriteJSONSpecialChars(t *testing.T) {
 	now := time.Now().UTC().Truncate(time.Second)
 
 	sf := models.StudioFile{
-		StudioURL:  flatTestURL,
+		StudioURL:  testURL,
 		ScrapedAt:  now,
 		SceneCount: 1,
 		Scenes: []models.Scene{{
@@ -87,7 +89,7 @@ func TestWriteJSONAtomic(t *testing.T) {
 	now := time.Now().UTC().Truncate(time.Second)
 
 	sf := models.StudioFile{
-		StudioURL: flatTestURL, ScrapedAt: now, SceneCount: 1,
+		StudioURL: testURL, ScrapedAt: now, SceneCount: 1,
 		Scenes: []models.Scene{{
 			ID: "1", SiteID: "test", Title: "First", ScrapedAt: now,
 		}},
@@ -110,7 +112,6 @@ func TestWriteJSONAtomic(t *testing.T) {
 		t.Errorf("atomic overwrite failed, got %q", got.Scenes[0].Title)
 	}
 
-	// No temp files should remain.
 	entries, _ := os.ReadDir(dir)
 	for _, e := range entries {
 		if strings.HasPrefix(e.Name(), ".fss-tmp-") {
@@ -128,7 +129,7 @@ func TestWriteCSV(t *testing.T) {
 		{
 			ID:         "1",
 			SiteID:     "test",
-			StudioURL:  flatTestURL,
+			StudioURL:  testURL,
 			Title:      "Test Scene",
 			URL:        "https://example.com/1",
 			Date:       now,
@@ -163,8 +164,8 @@ func TestWriteCSV(t *testing.T) {
 	if header[0] != "id" {
 		t.Errorf("header[0] = %q, want 'id'", header[0])
 	}
-	if len(header) != len(csvHeaders) {
-		t.Errorf("got %d columns, want %d", len(header), len(csvHeaders))
+	if len(header) != len(CSVHeaders) {
+		t.Errorf("got %d columns, want %d", len(header), len(CSVHeaders))
 	}
 
 	row := records[1]
@@ -175,7 +176,6 @@ func TestWriteCSV(t *testing.T) {
 		t.Errorf("title = %q", row[3])
 	}
 
-	// performers use | separator
 	perfIdx := indexOf(header, "performers")
 	if perfIdx < 0 {
 		t.Fatal("performers column not found")
@@ -184,7 +184,6 @@ func TestWriteCSV(t *testing.T) {
 		t.Errorf("performers = %q, want 'Alice|Bob'", row[perfIdx])
 	}
 
-	// tags use | separator
 	tagIdx := indexOf(header, "tags")
 	if tagIdx < 0 {
 		t.Fatal("tags column not found")
@@ -193,7 +192,6 @@ func TestWriteCSV(t *testing.T) {
 		t.Errorf("tags = %q", row[tagIdx])
 	}
 
-	// duration
 	durIdx := indexOf(header, "duration")
 	if durIdx < 0 {
 		t.Fatal("duration column not found")
@@ -226,7 +224,7 @@ func TestWriteCSVSpecialChars(t *testing.T) {
 	now := time.Now().UTC().Truncate(time.Second)
 
 	scenes := []models.Scene{{
-		ID: "1", SiteID: "test", StudioURL: flatTestURL,
+		ID: "1", SiteID: "test", StudioURL: testURL,
 		Title:     `Scene with "quotes", commas, and newlines` + "\n" + "second line",
 		ScrapedAt: now,
 	}}
@@ -270,7 +268,7 @@ func TestFormatTimePtr(t *testing.T) {
 func TestSceneToRow(t *testing.T) {
 	now := time.Now().UTC().Truncate(time.Second)
 	scene := models.Scene{
-		ID: "42", SiteID: "test", StudioURL: flatTestURL,
+		ID: "42", SiteID: "test", StudioURL: testURL,
 		Title: "Test", URL: "https://example.com/42",
 		Performers: []string{"A", "B"}, Tags: []string{"t1"},
 		Duration: 120, LowestPrice: 9.99,
@@ -280,11 +278,59 @@ func TestSceneToRow(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(row) != len(csvHeaders) {
-		t.Fatalf("row has %d fields, want %d", len(row), len(csvHeaders))
+	if len(row) != len(CSVHeaders) {
+		t.Fatalf("row has %d fields, want %d", len(row), len(CSVHeaders))
 	}
 	if row[0] != "42" {
 		t.Errorf("id = %q", row[0])
+	}
+}
+
+func TestSlugify(t *testing.T) {
+	tests := []struct {
+		input string
+		want  string
+	}{
+		{testURL, "www-manyvids-com-profile-590705-bettie-bondage-store-videos"},
+		{"https://www.clips4sale.com/studio/12345/some-store", "www-clips4sale-com-studio-12345-some-store"},
+	}
+	for _, tt := range tests {
+		got := Slugify(tt.input)
+		if got != tt.want {
+			t.Errorf("Slugify(%q) = %q, want %q", tt.input, got, tt.want)
+		}
+	}
+}
+
+func TestSlugifySpecialChars(t *testing.T) {
+	tests := []struct {
+		input string
+		want  string
+	}{
+		{"https://example.com/path/with spaces/", "example-com-path-with-spaces"},
+		{"https://example.com/UPPER/Case", "example-com-upper-case"},
+		{"https://example.com/path///multiple///slashes", "example-com-path-multiple-slashes"},
+		{"https://example.com/special!@#$%chars", "https-example-com-special-chars"},
+	}
+	for _, tt := range tests {
+		got := Slugify(tt.input)
+		if got != tt.want {
+			t.Errorf("Slugify(%q) = %q, want %q", tt.input, got, tt.want)
+		}
+	}
+}
+
+func TestSlugifyEmpty(t *testing.T) {
+	got := Slugify("")
+	if got != "" {
+		t.Errorf("Slugify('') = %q, want empty", got)
+	}
+}
+
+func TestSlugifyPathTraversal(t *testing.T) {
+	got := Slugify("https://evil.com/../../etc/passwd")
+	if strings.Contains(got, "..") || strings.Contains(got, "/") {
+		t.Errorf("Slugify path traversal = %q, want no dots/slashes", got)
 	}
 }
 

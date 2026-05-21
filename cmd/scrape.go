@@ -16,6 +16,7 @@ import (
 	"github.com/Wasylq/FSS/internal/config"
 	"github.com/Wasylq/FSS/internal/store"
 	"github.com/Wasylq/FSS/models"
+	"github.com/Wasylq/FSS/output"
 	"github.com/Wasylq/FSS/scraper"
 )
 
@@ -170,7 +171,7 @@ func scrapeOne(ctx context.Context, st store.Store, studioURL, name, dbPath, out
 	}
 
 	if dbPath != "" {
-		slug := store.Slugify(studioURL)
+		slug := output.Slugify(studioURL)
 		for _, format := range formats {
 			path := filepath.Join(outDir, slug+"."+format)
 			if err := st.Export(format, path, studioURL); err != nil {

@@ -16,6 +16,8 @@ go get github.com/Wasylq/FSS@latest # Or use tag for stable release
 | `scraper` | `github.com/Wasylq/FSS/scraper` | Registry API, `StudioScraper` interface, `SceneResult` channel protocol |
 | `models` | `github.com/Wasylq/FSS/models` | `Scene`, `PriceSnapshot` — the core data model |
 | `match` | `github.com/Wasylq/FSS/match` | Filename→title matching, cross-site merging, JSON loading |
+| `output` | `github.com/Wasylq/FSS/output` | `WriteJSON`, `WriteCSV`, `Slugify` — write FSS output files |
+| `parseutil` | `github.com/Wasylq/FSS/parseutil` | `ParseDurationColon`, `ParseDurationISO` — video duration parsing |
 | `stash` | `github.com/Wasylq/FSS/stash` | GraphQL client for Stash |
 | `nfo` | `github.com/Wasylq/FSS/nfo` | Kodi-style NFO XML generation |
 | `identify` | `github.com/Wasylq/FSS/identify` | Video directory scan + match + NFO write |
@@ -325,3 +327,47 @@ studioID, _ := client.EnsureStudio(ctx, "Bettie Bondage")
 ```
 
 **Key types:** `Client`, `StashScene`, `FindScenesFilter`, `SceneUpdateInput`.
+
+## Output Files (`output`)
+
+The `output` package writes FSS-format JSON and CSV files, and provides URL-to-filename slugification.
+
+```go
+import (
+    "github.com/Wasylq/FSS/models"
+    "github.com/Wasylq/FSS/output"
+)
+
+// Write scenes as JSON (atomic file replacement — safe on crash).
+sf := models.StudioFile{
+    StudioURL:  "https://www.manyvids.com/...",
+    ScrapedAt:  time.Now().UTC(),
+    SceneCount: len(scenes),
+    Scenes:     scenes,
+}
+output.WriteJSON(sf, "studio.json")
+
+// Write scenes as CSV.
+output.WriteCSV(scenes, "studio.csv")
+
+// Generate a safe filename from a URL.
+slug := output.Slugify("https://www.manyvids.com/Profile/590705/bettie-bondage/Store/Videos")
+// → "www-manyvids-com-profile-590705-bettie-bondage-store-videos"
+```
+
+**Key functions:** `WriteJSON`, `WriteCSV`, `Slugify`. **Key var:** `CSVHeaders` (column order).
+
+## Duration Parsing (`parseutil`)
+
+The `parseutil` package parses video duration strings commonly found on adult content sites.
+
+```go
+import "github.com/Wasylq/FSS/parseutil"
+
+parseutil.ParseDurationColon("30:00")    // → 1800 (seconds)
+parseutil.ParseDurationColon("01:02:03") // → 3723
+parseutil.ParseDurationISO("PT1H2M3S")  // → 3723
+parseutil.ParseDurationISO("PT30M")     // → 1800
+```
+
+Both functions return 0 for empty or unparseable input.
