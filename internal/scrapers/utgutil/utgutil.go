@@ -1,0 +1,686 @@
+package utgutil
+
+import (
+	"context"
+	"fmt"
+	"net/http"
+	"net/url"
+	"regexp"
+	"strings"
+	"time"
+
+	"github.com/Wasylq/FSS/internal/httpx"
+	"github.com/Wasylq/FSS/models"
+	"github.com/Wasylq/FSS/parseutil"
+	"github.com/Wasylq/FSS/scraper"
+)
+
+const perPage = 200
+
+type SiteConfig struct {
+	SiteID     string
+	Domain     string
+	StudioName string
+	Legacy     bool // old Bootstrap 3 template (no <article> tags)
+	YearBased  bool // legacy sites with /updates/videos/{YY} year pagination
+}
+
+type Scraper struct {
+	client       *http.Client
+	config       SiteConfig
+	baseOverride string
+}
+
+func New(cfg SiteConfig) *Scraper {
+	return &Scraper{
+		client: httpx.NewClient(30 * time.Second),
+		config: cfg,
+	}
+}
+
+func (s *Scraper) ID() string { return s.config.SiteID }
+
+func (s *Scraper) base() string {
+	if s.baseOverride != "" {
+		return s.baseOverride
+	}
+	return "https://" + s.config.Domain
+}
+
+func (s *Scraper) Patterns() []string {
+	return []string{
+		s.config.Domain + "/updates/videos",
+		s.config.Domain + "/models/{slug}",
+	}
+}
+
+var modelPageRe = regexp.MustCompile(`/models/([a-z0-9-]+)`)
+
+func (s *Scraper) MatchesURL(u string) bool {
+	p, err := url.Parse(u)
+	if err != nil {
+		return false
+	}
+	host := strings.TrimPrefix(p.Hostname(), "www.")
+	expected := strings.TrimPrefix(s.config.Domain, "www.")
+	if host != expected {
+		return false
+	}
+	path := p.Path
+	return path == "" || path == "/" ||
+		strings.HasPrefix(path, "/updates") ||
+		modelPageRe.MatchString(path)
+}
+
+func (s *Scraper) ListScenes(ctx context.Context, studioURL string, opts scraper.ListOpts) (<-chan scraper.SceneResult, error) {
+	out := make(chan scraper.SceneResult)
+	go s.run(ctx, studioURL, opts, out)
+	return out, nil
+}
+
+func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOpts, out chan<- scraper.SceneResult) {
+	defer close(out)
+
+	if m := modelPageRe.FindStringSubmatch(studioURL); m != nil {
+		scraper.Debugf(1, "%s: scraping model page for %s", s.config.SiteID, m[1])
+		s.runModel(ctx, studioURL, m[1], opts, out)
+		return
+	}
+	if s.config.Legacy {
+		if s.config.YearBased {
+			s.runLegacyYears(ctx, studioURL, opts, out)
+		} else {
+			s.runLegacyPages(ctx, studioURL, opts, out)
+		}
+		return
+	}
+	s.runPaginated(ctx, studioURL, opts, out)
+}
+
+func (s *Scraper) runPaginated(ctx context.Context, studioURL string, opts scraper.ListOpts, out chan<- scraper.SceneResult) {
+	base := s.base()
+
+	for page := 1; ; page++ {
+		if ctx.Err() != nil {
+			return
+		}
+		if page > 1 && opts.Delay > 0 {
+			select {
+			case <-time.After(opts.Delay):
+			case <-ctx.Done():
+				return
+			}
+		}
+
+		scraper.Debugf(1, "%s: fetching page %d", s.config.SiteID, page)
+		pageURL := fmt.Sprintf("%s/updates/videos/%d/%d", base, page, perPage)
+		body, err := s.fetchPage(ctx, pageURL)
+		if err != nil {
+			select {
+			case out <- scraper.Error(fmt.Errorf("page %d: %w", page, err)):
+			case <-ctx.Done():
+			}
+			return
+		}
+
+		articles := parseArticles(body, true)
+		if len(articles) == 0 {
+			return
+		}
+
+		if page == 1 {
+			total := parseVideoCount(body)
+			if total > 0 {
+				scraper.Debugf(1, "%s: %d total scenes", s.config.SiteID, total)
+				select {
+				case out <- scraper.Progress(total):
+				case <-ctx.Done():
+					return
+				}
+			}
+		}
+
+		now := time.Now().UTC()
+		for _, a := range articles {
+			scene := a.toScene(s.config, studioURL, now)
+			if opts.KnownIDs[scene.ID] {
+				scraper.Debugf(1, "%s: hit known ID, stopping early", s.config.SiteID)
+				select {
+				case out <- scraper.StoppedEarly():
+				case <-ctx.Done():
+				}
+				return
+			}
+			select {
+			case out <- scraper.Scene(scene):
+			case <-ctx.Done():
+				return
+			}
+		}
+
+		if len(articles) < perPage {
+			return
+		}
+	}
+}
+
+func (s *Scraper) runModel(ctx context.Context, studioURL, slug string, opts scraper.ListOpts, out chan<- scraper.SceneResult) {
+	base := s.base()
+
+	for page := 1; ; page++ {
+		if ctx.Err() != nil {
+			return
+		}
+		if page > 1 && opts.Delay > 0 {
+			select {
+			case <-time.After(opts.Delay):
+			case <-ctx.Done():
+				return
+			}
+		}
+
+		scraper.Debugf(1, "%s: fetching model page %d", s.config.SiteID, page)
+		pageURL := fmt.Sprintf("%s/models/%s/%d/%d", base, slug, page, perPage)
+		body, err := s.fetchPage(ctx, pageURL)
+		if err != nil {
+			select {
+			case out <- scraper.Error(fmt.Errorf("model page %d: %w", page, err)):
+			case <-ctx.Done():
+			}
+			return
+		}
+
+		articles := parseArticles(body, false)
+		videos := filterVideos(articles)
+		if page == 1 && len(videos) > 0 {
+			scraper.Debugf(1, "%s: %d videos on model page", s.config.SiteID, len(videos))
+			select {
+			case out <- scraper.Progress(len(videos)):
+			case <-ctx.Done():
+				return
+			}
+		}
+
+		if len(articles) == 0 {
+			return
+		}
+
+		now := time.Now().UTC()
+		for _, a := range videos {
+			scene := a.toScene(s.config, studioURL, now)
+			if opts.KnownIDs[scene.ID] {
+				scraper.Debugf(1, "%s: hit known ID, stopping early", s.config.SiteID)
+				select {
+				case out <- scraper.StoppedEarly():
+				case <-ctx.Done():
+				}
+				return
+			}
+			select {
+			case out <- scraper.Scene(scene):
+			case <-ctx.Done():
+				return
+			}
+		}
+
+		if len(articles) < perPage {
+			return
+		}
+	}
+}
+
+// --- Legacy template (Bootstrap 3, no <article> tags) ---
+
+var (
+	legacyYearRe  = regexp.MustCompile(`/updates/videos/(\d{2})"`)
+	legacyThumbRe = regexp.MustCompile(`(?s)<img[^>]+src="([^"]*category/videos/[^"]+)"[^>]*alt="([^"]*)"`)
+	legacyDurRe   = regexp.MustCompile(`(?i)(\d+:\d+)\s+[Mm]inutes`)
+	legacyPageRe  = regexp.MustCompile(`/updates/videos/(\d+)"`)
+)
+
+func parseLegacyArticles(body []byte) []article {
+	matches := legacyThumbRe.FindAllSubmatch(body, -1)
+	if len(matches) == 0 {
+		return nil
+	}
+
+	text := string(body)
+	var out []article
+	seen := make(map[string]bool)
+
+	for _, m := range matches {
+		thumb := string(m[1])
+		title := strings.TrimSpace(string(m[2]))
+		if title == "" {
+			continue
+		}
+
+		var slug string
+		if sm := cdnSlugRe.FindStringSubmatch(thumb); sm != nil {
+			slug = sm[1]
+		} else {
+			slug = slugify(title)
+		}
+		if seen[slug] {
+			continue
+		}
+		seen[slug] = true
+
+		a := article{
+			title:     title,
+			slug:      slug,
+			thumbnail: thumb,
+			isVideo:   true,
+		}
+
+		thumbIdx := strings.Index(text, thumb)
+		if thumbIdx >= 0 {
+			end := thumbIdx + len(thumb) + 500
+			if end > len(text) {
+				end = len(text)
+			}
+			block := text[thumbIdx:end]
+
+			if dur := legacyDurRe.FindStringSubmatch(block); dur != nil {
+				a.duration = parseutil.ParseDurationColon(dur[1])
+			}
+		}
+
+		out = append(out, a)
+	}
+	return out
+}
+
+func parseLegacyYears(body []byte) []int {
+	seen := make(map[int]bool)
+	var years []int
+	for _, m := range legacyYearRe.FindAllSubmatch(body, -1) {
+		n := 0
+		for _, c := range m[1] {
+			n = n*10 + int(c-'0')
+		}
+		if !seen[n] {
+			seen[n] = true
+			years = append(years, n)
+		}
+	}
+	// Sort descending (newest first)
+	for i := 0; i < len(years); i++ {
+		for j := i + 1; j < len(years); j++ {
+			if years[j] > years[i] {
+				years[i], years[j] = years[j], years[i]
+			}
+		}
+	}
+	return years
+}
+
+func parseLegacyMaxPage(body []byte) int {
+	max := 0
+	for _, m := range legacyPageRe.FindAllSubmatch(body, -1) {
+		n := 0
+		for _, c := range m[1] {
+			n = n*10 + int(c-'0')
+		}
+		if n > max {
+			max = n
+		}
+	}
+	return max
+}
+
+func (s *Scraper) runLegacyYears(ctx context.Context, studioURL string, opts scraper.ListOpts, out chan<- scraper.SceneResult) {
+	base := s.base()
+
+	scraper.Debugf(1, "%s: fetching year index", s.config.SiteID)
+	indexBody, err := s.fetchPage(ctx, base+"/updates/videos")
+	if err != nil {
+		select {
+		case out <- scraper.Error(err):
+		case <-ctx.Done():
+		}
+		return
+	}
+
+	years := parseLegacyYears(indexBody)
+	if len(years) == 0 {
+		return
+	}
+	scraper.Debugf(1, "%s: %d year pages to scan", s.config.SiteID, len(years))
+
+	now := time.Now().UTC()
+	for i, yr := range years {
+		if ctx.Err() != nil {
+			return
+		}
+		if i > 0 && opts.Delay > 0 {
+			select {
+			case <-time.After(opts.Delay):
+			case <-ctx.Done():
+				return
+			}
+		}
+
+		scraper.Debugf(1, "%s: fetching year 20%02d", s.config.SiteID, yr)
+		pageURL := fmt.Sprintf("%s/updates/videos/%d", base, yr)
+		body, err := s.fetchPage(ctx, pageURL)
+		if err != nil {
+			select {
+			case out <- scraper.Error(fmt.Errorf("year %d: %w", yr, err)):
+			case <-ctx.Done():
+			}
+			return
+		}
+
+		articles := parseLegacyArticles(body)
+		for _, a := range articles {
+			scene := a.toScene(s.config, studioURL, now)
+			if opts.KnownIDs[scene.ID] {
+				scraper.Debugf(1, "%s: hit known ID, stopping early", s.config.SiteID)
+				select {
+				case out <- scraper.StoppedEarly():
+				case <-ctx.Done():
+				}
+				return
+			}
+			select {
+			case out <- scraper.Scene(scene):
+			case <-ctx.Done():
+				return
+			}
+		}
+	}
+}
+
+func (s *Scraper) runLegacyPages(ctx context.Context, studioURL string, opts scraper.ListOpts, out chan<- scraper.SceneResult) {
+	base := s.base()
+	now := time.Now().UTC()
+
+	// Probe whether /page/200 style is supported
+	usePerPage := true
+	body, err := s.fetchPage(ctx, fmt.Sprintf("%s/updates/videos/1/200", base))
+	if err != nil {
+		usePerPage = false
+		body, err = s.fetchPage(ctx, fmt.Sprintf("%s/updates/videos/1/", base))
+		if err != nil {
+			body, err = s.fetchPage(ctx, base+"/updates/videos")
+			if err != nil {
+				select {
+				case out <- scraper.Error(err):
+				case <-ctx.Done():
+				}
+				return
+			}
+		}
+	}
+
+	articles := parseLegacyArticles(body)
+	if len(articles) == 0 {
+		return
+	}
+
+	scraper.Debugf(1, "%s: fetching page 1 (%d videos)", s.config.SiteID, len(articles))
+	maxPg := parseLegacyMaxPage(body)
+	if maxPg > 1 {
+		select {
+		case out <- scraper.Progress(maxPg * len(articles)):
+		case <-ctx.Done():
+			return
+		}
+	} else {
+		select {
+		case out <- scraper.Progress(len(articles)):
+		case <-ctx.Done():
+			return
+		}
+	}
+
+	for _, a := range articles {
+		scene := a.toScene(s.config, studioURL, now)
+		if opts.KnownIDs[scene.ID] {
+			scraper.Debugf(1, "%s: hit known ID, stopping early", s.config.SiteID)
+			select {
+			case out <- scraper.StoppedEarly():
+			case <-ctx.Done():
+			}
+			return
+		}
+		select {
+		case out <- scraper.Scene(scene):
+		case <-ctx.Done():
+			return
+		}
+	}
+
+	for page := 2; page <= maxPg; page++ {
+		if ctx.Err() != nil {
+			return
+		}
+		if opts.Delay > 0 {
+			select {
+			case <-time.After(opts.Delay):
+			case <-ctx.Done():
+				return
+			}
+		}
+
+		scraper.Debugf(1, "%s: fetching page %d", s.config.SiteID, page)
+		var pageURL string
+		if usePerPage {
+			pageURL = fmt.Sprintf("%s/updates/videos/%d/200", base, page)
+		} else {
+			pageURL = fmt.Sprintf("%s/updates/videos/%d/", base, page)
+		}
+		body, err := s.fetchPage(ctx, pageURL)
+		if err != nil {
+			select {
+			case out <- scraper.Error(fmt.Errorf("page %d: %w", page, err)):
+			case <-ctx.Done():
+			}
+			return
+		}
+
+		articles := parseLegacyArticles(body)
+		if len(articles) == 0 {
+			return
+		}
+
+		if page == 1 {
+			maxPg := parseLegacyMaxPage(body)
+			if maxPg > 1 {
+				scraper.Debugf(1, "%s: %d pages", s.config.SiteID, maxPg)
+				select {
+				case out <- scraper.Progress(maxPg * len(articles)):
+				case <-ctx.Done():
+					return
+				}
+			} else {
+				select {
+				case out <- scraper.Progress(len(articles)):
+				case <-ctx.Done():
+					return
+				}
+			}
+		}
+
+		for _, a := range articles {
+			scene := a.toScene(s.config, studioURL, now)
+			if opts.KnownIDs[scene.ID] {
+				scraper.Debugf(1, "%s: hit known ID, stopping early", s.config.SiteID)
+				select {
+				case out <- scraper.StoppedEarly():
+				case <-ctx.Done():
+				}
+				return
+			}
+			select {
+			case out <- scraper.Scene(scene):
+			case <-ctx.Done():
+				return
+			}
+		}
+
+		maxPg := parseLegacyMaxPage(body)
+		if page >= maxPg {
+			return
+		}
+	}
+}
+
+func (s *Scraper) fetchPage(ctx context.Context, pageURL string) ([]byte, error) {
+	resp, err := httpx.Do(ctx, s.client, httpx.Request{
+		URL:     pageURL,
+		Headers: httpx.BrowserHeaders(""),
+	})
+	if err != nil {
+		return nil, err
+	}
+	defer func() { _ = resp.Body.Close() }()
+	return httpx.ReadBody(resp.Body)
+}
+
+type article struct {
+	title     string
+	slug      string // from CDN path, e.g. "laura_hollyman_crimson_canvas_bts"
+	thumbnail string
+	date      string
+	duration  int
+	model     string
+	modelSlug string
+	isVideo   bool
+}
+
+var (
+	articleRe    = regexp.MustCompile(`(?s)<article[^>]*>(.+?)</article>`)
+	imgRe        = regexp.MustCompile(`<img\s[^>]*src="([^"]+)"[^>]*alt="([^"]*)"`)
+	modelRe      = regexp.MustCompile(`href="/models/([^"]+)"[^>]*>([^<]+)</a>`)
+	dateRe       = regexp.MustCompile(`\b(\d{1,2}\s+(?:January|February|March|April|May|June|July|August|September|October|November|December)\s+\d{4})\b`)
+	durationRe   = regexp.MustCompile(`(\d+:\d+)\s+Minutes`)
+	videoBanner  = regexp.MustCompile(`update_video_banner`)
+	cdnSlugRe    = regexp.MustCompile(`/videos/([^/]+)/`)
+	videoCountRe = regexp.MustCompile(`HD\s*VIDEO:\s*([\d,]+)`)
+)
+
+func parseArticles(body []byte, videosOnly bool) []article {
+	matches := articleRe.FindAllSubmatch(body, -1)
+	var out []article
+	for _, m := range matches {
+		html := m[1]
+		a := article{}
+
+		if im := imgRe.FindSubmatch(html); im != nil {
+			a.thumbnail = string(im[1])
+			a.title = string(im[2])
+		}
+		if a.title == "" {
+			continue
+		}
+
+		if mm := modelRe.FindSubmatch(html); mm != nil {
+			a.modelSlug = string(mm[1])
+			a.model = strings.TrimSpace(string(mm[2]))
+		}
+
+		if dm := dateRe.FindSubmatch(html); dm != nil {
+			a.date = string(dm[1])
+		}
+
+		if dur := durationRe.FindSubmatch(html); dur != nil {
+			a.duration = parseutil.ParseDurationColon(string(dur[1]))
+			a.isVideo = true
+		}
+
+		if videoBanner.Match(html) {
+			a.isVideo = true
+		}
+
+		if sm := cdnSlugRe.FindSubmatch([]byte(a.thumbnail)); sm != nil {
+			a.slug = string(sm[1])
+		}
+
+		if a.slug == "" {
+			a.slug = slugify(a.title)
+		}
+
+		if videosOnly && !a.isVideo {
+			continue
+		}
+		out = append(out, a)
+	}
+	return out
+}
+
+func filterVideos(articles []article) []article {
+	var out []article
+	for _, a := range articles {
+		if a.isVideo {
+			out = append(out, a)
+		}
+	}
+	return out
+}
+
+func parseVideoCount(body []byte) int {
+	m := videoCountRe.FindSubmatch(body)
+	if m == nil {
+		return 0
+	}
+	s := strings.ReplaceAll(string(m[1]), ",", "")
+	var n int
+	_, _ = fmt.Sscanf(s, "%d", &n)
+	return n
+}
+
+func (a article) toScene(cfg SiteConfig, studioURL string, now time.Time) models.Scene {
+	thumb := a.thumbnail
+	if idx := strings.Index(thumb, "?"); idx > 0 {
+		thumb = thumb[:idx]
+	}
+
+	var performers []string
+	if a.model != "" {
+		performers = []string{a.model}
+	}
+
+	return models.Scene{
+		ID:         a.slug,
+		SiteID:     cfg.SiteID,
+		StudioURL:  studioURL,
+		Title:      a.title,
+		URL:        fmt.Sprintf("https://%s/updates/previews/videos/%s", cfg.Domain, slugify(a.title)),
+		Date:       parseDate(a.date),
+		Duration:   a.duration,
+		Performers: performers,
+		Thumbnail:  thumb,
+		Studio:     cfg.StudioName,
+		ScrapedAt:  now,
+	}
+}
+
+func parseDate(s string) time.Time {
+	if s == "" {
+		return time.Time{}
+	}
+	t, err := time.Parse("2 January 2006", s)
+	if err != nil {
+		return time.Time{}
+	}
+	return t.UTC()
+}
+
+func slugify(title string) string {
+	s := strings.ToLower(title)
+	s = strings.Map(func(r rune) rune {
+		if r >= 'a' && r <= 'z' || r >= '0' && r <= '9' {
+			return r
+		}
+		if r == ' ' || r == '-' || r == '_' {
+			return '-'
+		}
+		return -1
+	}, s)
+	for strings.Contains(s, "--") {
+		s = strings.ReplaceAll(s, "--", "-")
+	}
+	return strings.Trim(s, "-")
+}
