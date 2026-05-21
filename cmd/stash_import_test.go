@@ -6,9 +6,13 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"reflect"
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/Wasylq/FSS/match"
+	"github.com/Wasylq/FSS/stash"
 )
 
 func TestAppendChangelog_freshStart(t *testing.T) {
@@ -329,5 +333,190 @@ func TestPrintFailureSummary_preservesInsertionOrder(t *testing.T) {
 	idxB := strings.Index(out, "scene B")
 	if idxC >= idxA || idxA >= idxB {
 		t.Errorf("expected insertion order C → A → B, got positions C=%d A=%d B=%d\noutput: %s", idxC, idxA, idxB, out)
+	}
+}
+
+func TestDiffStrings(t *testing.T) {
+	got := diffStrings([]string{"a", "b", "c"}, []string{"b", "c", "d", "e"})
+	want := []string{"d", "e"}
+	if !reflect.DeepEqual(got, want) {
+		t.Errorf("got %v, want %v", got, want)
+	}
+}
+
+func TestDiffStrings_allNew(t *testing.T) {
+	got := diffStrings([]string{"a"}, []string{"b", "c"})
+	want := []string{"b", "c"}
+	if !reflect.DeepEqual(got, want) {
+		t.Errorf("got %v, want %v", got, want)
+	}
+}
+
+func TestDiffStrings_noneNew(t *testing.T) {
+	got := diffStrings([]string{"a", "b"}, []string{"a", "b"})
+	if len(got) != 0 {
+		t.Errorf("got %v, want empty", got)
+	}
+}
+
+func TestExtractTagIDs(t *testing.T) {
+	tags := []stash.StashTag{{ID: "10", Name: "POV"}, {ID: "20", Name: "MILF"}}
+	got := extractTagIDs(tags)
+	want := []string{"10", "20"}
+	if !reflect.DeepEqual(got, want) {
+		t.Errorf("got %v, want %v", got, want)
+	}
+}
+
+func TestExtractPerfIDs(t *testing.T) {
+	perfs := []stash.StashPerf{{ID: "1", Name: "Alice"}, {ID: "2", Name: "Bob"}}
+	got := extractPerfIDs(perfs)
+	want := []string{"1", "2"}
+	if !reflect.DeepEqual(got, want) {
+		t.Errorf("got %v, want %v", got, want)
+	}
+}
+
+func TestDedup(t *testing.T) {
+	got := dedup([]string{"a", "b", "a", "c", "b"})
+	want := []string{"a", "b", "c"}
+	if !reflect.DeepEqual(got, want) {
+		t.Errorf("got %v, want %v", got, want)
+	}
+}
+
+func TestDedup_noDups(t *testing.T) {
+	got := dedup([]string{"x", "y", "z"})
+	want := []string{"x", "y", "z"}
+	if !reflect.DeepEqual(got, want) {
+		t.Errorf("got %v, want %v", got, want)
+	}
+}
+
+func TestTruncate_short(t *testing.T) {
+	got := truncate("hello", 10)
+	if got != "hello" {
+		t.Errorf("got %q, want %q", got, "hello")
+	}
+}
+
+func TestTruncate_exact(t *testing.T) {
+	got := truncate("hello", 5)
+	if got != "hello" {
+		t.Errorf("got %q, want %q", got, "hello")
+	}
+}
+
+func TestTruncate_long(t *testing.T) {
+	got := truncate("hello world", 8)
+	if got != "hello..." {
+		t.Errorf("got %q, want %q", got, "hello...")
+	}
+}
+
+func TestParseFieldsFlag_valid(t *testing.T) {
+	got, err := parseFieldsFlag([]string{"title", "tags", "cover"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := map[string]bool{"title": true, "tags": true, "cover": true}
+	if !reflect.DeepEqual(got, want) {
+		t.Errorf("got %v, want %v", got, want)
+	}
+}
+
+func TestParseFieldsFlag_invalid(t *testing.T) {
+	_, err := parseFieldsFlag([]string{"title", "bogus"})
+	if err == nil {
+		t.Fatal("expected error for unknown field")
+	}
+	if !strings.Contains(err.Error(), "bogus") {
+		t.Errorf("error should mention the unknown field, got: %v", err)
+	}
+}
+
+func TestParseFieldsFlag_empty(t *testing.T) {
+	got, err := parseFieldsFlag(nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got != nil {
+		t.Errorf("got %v, want nil", got)
+	}
+}
+
+func TestFieldAllowed_nilAllowsAll(t *testing.T) {
+	if !fieldAllowed(nil, "anything") {
+		t.Error("nil map should allow all fields")
+	}
+}
+
+func TestFieldAllowed_presentField(t *testing.T) {
+	m := map[string]bool{"title": true}
+	if !fieldAllowed(m, "title") {
+		t.Error("present field should be allowed")
+	}
+}
+
+func TestFieldAllowed_absentField(t *testing.T) {
+	m := map[string]bool{"title": true}
+	if fieldAllowed(m, "tags") {
+		t.Error("absent field should not be allowed")
+	}
+}
+
+func TestBuildChanges_titleChange(t *testing.T) {
+	ss := stash.StashScene{ID: "1", Title: "Old Title"}
+	merged := match.MergedScene{Title: "New Title"}
+	changes := buildChanges(ss, merged, nil, nil, false)
+	diff, ok := changes["title"]
+	if !ok {
+		t.Fatal("expected title change")
+	}
+	if diff.From != "Old Title" || diff.To != "New Title" {
+		t.Errorf("got from=%v to=%v", diff.From, diff.To)
+	}
+}
+
+func TestBuildChanges_noChanges(t *testing.T) {
+	ss := stash.StashScene{ID: "1", Title: "Same", Details: "Desc", Date: "2026-01-01"}
+	merged := match.MergedScene{
+		Title:       "Same",
+		Description: "Desc",
+		Date:        time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC),
+	}
+	changes := buildChanges(ss, merged, nil, nil, false)
+	if len(changes) != 0 {
+		t.Errorf("expected no changes, got %v", changes)
+	}
+}
+
+func TestBuildChanges_coverEnabled(t *testing.T) {
+	ss := stash.StashScene{ID: "1"}
+	merged := match.MergedScene{Thumbnail: "https://example.com/thumb.jpg"}
+	changes := buildChanges(ss, merged, nil, nil, true)
+	diff, ok := changes["cover"]
+	if !ok {
+		t.Fatal("expected cover change")
+	}
+	if diff.To == nil || diff.To == "" {
+		t.Error("cover To should be set")
+	}
+}
+
+func TestBuildChanges_addedTags(t *testing.T) {
+	ss := stash.StashScene{
+		ID:   "1",
+		Tags: []stash.StashTag{{ID: "10", Name: "POV"}},
+	}
+	merged := match.MergedScene{}
+	changes := buildChanges(ss, merged, nil, []string{"POV", "MILF", "Threesome"}, false)
+	diff, ok := changes["tags"]
+	if !ok {
+		t.Fatal("expected tags change")
+	}
+	want := []string{"MILF", "Threesome"}
+	if !reflect.DeepEqual(diff.Added, want) {
+		t.Errorf("got added=%v, want %v", diff.Added, want)
 	}
 }

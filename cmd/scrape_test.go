@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"slices"
 	"strings"
 	"testing"
 	"time"
@@ -236,5 +237,75 @@ func TestCarryOverPriceHistory_freeSnap(t *testing.T) {
 	got := carryOverPriceHistory(fresh, existing)
 	if got.LowestPrice != 0 {
 		t.Errorf("lowestPrice = %.2f, want 0 (free)", got.LowestPrice)
+	}
+}
+
+func TestParseFormats_json(t *testing.T) {
+	got, err := parseFormats("json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !slices.Equal(got, []string{"json"}) {
+		t.Errorf("got %v, want [json]", got)
+	}
+}
+
+func TestParseFormats_csv(t *testing.T) {
+	got, err := parseFormats("csv")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !slices.Equal(got, []string{"csv"}) {
+		t.Errorf("got %v, want [csv]", got)
+	}
+}
+
+func TestParseFormats_both(t *testing.T) {
+	got, err := parseFormats("json,csv")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !slices.Equal(got, []string{"json", "csv"}) {
+		t.Errorf("got %v, want [json csv]", got)
+	}
+}
+
+func TestParseFormats_dedup(t *testing.T) {
+	got, err := parseFormats("json,json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !slices.Equal(got, []string{"json"}) {
+		t.Errorf("got %v, want [json]", got)
+	}
+}
+
+func TestParseFormats_unknown(t *testing.T) {
+	_, err := parseFormats("xml")
+	if err == nil {
+		t.Fatal("expected error for unknown format")
+	}
+	if !strings.Contains(err.Error(), "xml") {
+		t.Errorf("error should mention the unknown format, got: %v", err)
+	}
+}
+
+func TestParseFormats_empty(t *testing.T) {
+	got, err := parseFormats("")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(got) != 0 {
+		t.Errorf("got %v, want empty", got)
+	}
+}
+
+func TestParseFormats_whitespace(t *testing.T) {
+	got, err := parseFormats(" json , csv ")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !slices.Equal(got, []string{"json", "csv"}) {
+		t.Errorf("got %v, want [json csv]", got)
 	}
 }

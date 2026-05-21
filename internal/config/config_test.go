@@ -3,6 +3,7 @@ package config
 import (
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/adrg/xdg"
@@ -282,5 +283,80 @@ func TestLoadPartialConfig(t *testing.T) {
 	}
 	if cfg.Stash.Tag != "fss_import" {
 		t.Errorf("Stash.Tag = %q, want fss_import (default)", cfg.Stash.Tag)
+	}
+}
+
+func TestValidate_negativeDelay(t *testing.T) {
+	cfg := defaults()
+	cfg.Delay = -1
+	err := cfg.Validate()
+	if err == nil {
+		t.Fatal("expected error for negative delay")
+	}
+	if !strings.Contains(err.Error(), "delay must be non-negative") {
+		t.Errorf("unexpected error: %v", err)
+	}
+}
+
+func TestValidate_negativeSiteDelay(t *testing.T) {
+	cfg := defaults()
+	cfg.SiteDelays = map[string]int{"manyvids": -5}
+	err := cfg.Validate()
+	if err == nil {
+		t.Fatal("expected error for negative site delay")
+	}
+	if !strings.Contains(err.Error(), "site_delays[manyvids]") {
+		t.Errorf("unexpected error: %v", err)
+	}
+}
+
+func TestValidate_invalidOutputFormat(t *testing.T) {
+	cfg := defaults()
+	cfg.Output = "xml"
+	err := cfg.Validate()
+	if err == nil {
+		t.Fatal("expected error for invalid output format")
+	}
+	if !strings.Contains(err.Error(), `unknown output format "xml"`) {
+		t.Errorf("unexpected error: %v", err)
+	}
+}
+
+func TestValidate_multipleFormats(t *testing.T) {
+	cfg := defaults()
+	cfg.Output = "json,csv"
+	if err := cfg.Validate(); err != nil {
+		t.Fatalf("unexpected error for valid multi-format output: %v", err)
+	}
+}
+
+func TestLoad_oversizedConfig(t *testing.T) {
+	dir := isolateXDG(t)
+
+	cfgDir := filepath.Join(dir, "fss")
+	if err := os.MkdirAll(cfgDir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	big := make([]byte, 1<<20+1)
+	for i := range big {
+		big[i] = '#'
+	}
+	if err := os.WriteFile(filepath.Join(cfgDir, "config.yaml"), big, 0o600); err != nil {
+		t.Fatal(err)
+	}
+
+	_, err := Load()
+	if err == nil {
+		t.Fatal("expected error for oversized config")
+	}
+	if !strings.Contains(err.Error(), "exceeds") {
+		t.Errorf("unexpected error: %v", err)
+	}
+}
+
+func TestDefaultPath(t *testing.T) {
+	p := DefaultPath()
+	if !strings.HasSuffix(p, filepath.Join("fss", "config.yaml")) {
+		t.Errorf("DefaultPath() = %q, want suffix %q", p, filepath.Join("fss", "config.yaml"))
 	}
 }
