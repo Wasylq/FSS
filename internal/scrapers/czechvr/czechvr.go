@@ -16,8 +16,6 @@ import (
 	"github.com/Wasylq/FSS/scraper"
 )
 
-const defaultDelay = 500 * time.Millisecond
-
 type siteConfig struct {
 	SiteID     string
 	Domain     string
@@ -88,9 +86,6 @@ func (s *siteScraper) run(ctx context.Context, studioURL string, opts scraper.Li
 	defer close(out)
 
 	delay := opts.Delay
-	if delay == 0 {
-		delay = defaultDelay
-	}
 	workers := opts.Workers
 	if workers <= 0 {
 		workers = 4

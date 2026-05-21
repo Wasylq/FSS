@@ -256,3 +256,66 @@ func TestParseDetailPage_Empty(t *testing.T) {
 		t.Errorf("expected empty detail, got %+v", d)
 	}
 }
+
+func TestNewScraper(t *testing.T) {
+	cfg := SiteConfig{
+		SiteID:    "ftvgirls",
+		Domain:    "ftvgirls.com",
+		Studio:    "FTV Girls",
+		TitleSite: "FTVGirls.com",
+	}
+	s := NewScraper(cfg)
+	if s.ID() != "ftvgirls" {
+		t.Errorf("ID() = %q, want ftvgirls", s.ID())
+	}
+	if s.Base != "https://ftvgirls.com" {
+		t.Errorf("Base = %q, want https://ftvgirls.com", s.Base)
+	}
+	if s.Client == nil {
+		t.Fatal("Client is nil")
+	}
+}
+
+func TestMatchesURL_ftvutil(t *testing.T) {
+	s := NewScraper(SiteConfig{
+		SiteID: "ftvgirls",
+		Domain: "ftvgirls.com",
+	})
+	tests := []struct {
+		url  string
+		want bool
+	}{
+		{"https://www.ftvgirls.com", true},
+		{"https://ftvgirls.com", true},
+		{"http://ftvgirls.com", true},
+		{"https://ftvgirls.com/updates.html", true},
+		{"https://www.ftvgirls.com/update/alice-100.html", true},
+		{"https://otherdomain.com", false},
+		{"https://ftvmilfs.com", false},
+	}
+	for _, tc := range tests {
+		if got := s.MatchesURL(tc.url); got != tc.want {
+			t.Errorf("MatchesURL(%q) = %v, want %v", tc.url, got, tc.want)
+		}
+	}
+}
+
+func TestPatterns_ftvutil(t *testing.T) {
+	s := NewScraper(SiteConfig{
+		SiteID: "ftvgirls",
+		Domain: "ftvgirls.com",
+	})
+	pats := s.Patterns()
+	if len(pats) < 1 {
+		t.Fatal("no patterns")
+	}
+	found := false
+	for _, p := range pats {
+		if p == "ftvgirls.com" {
+			found = true
+		}
+	}
+	if !found {
+		t.Errorf("Patterns() = %v, expected to contain %q", pats, "ftvgirls.com")
+	}
+}

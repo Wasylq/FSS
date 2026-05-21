@@ -1,6 +1,10 @@
 package czechvr
 
 import (
+	"context"
+	"fmt"
+	"net/http"
+	"net/http/httptest"
 	"testing"
 	"time"
 
@@ -275,6 +279,190 @@ func TestMatchesURL(t *testing.T) {
 			got := s.MatchesURL(tt.url)
 			if got != tt.want {
 				t.Errorf("MatchesURL(%q) = %v, want %v", tt.url, got, tt.want)
+			}
+		})
+	}
+}
+
+const detailFixtureHTML = `<html>
+<h1>Czech VR 456 - Amazing Scene</h1>
+<div class="datum">January 15, 2026</div>
+<div class="cas">25:30</div>
+<div class="text">A great description here</div>
+<div class="modelky"><a href="#"><span>Jane Doe</span></a><a href="#"><span>John Smith</span></a><div class="cistic"></div></div>
+<div id="Tagy"><div><a href="#">VR</a></div><div><a href="#">Blonde</a></div><div class="cistic"></div></div>
+<video poster="/thumbs/456.jpg"></video>
+<source src="https://preview.czechvr.com/456.mp4">
+</html>`
+
+func newTestServer() *httptest.Server {
+	return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		_, _ = fmt.Fprint(w, detailFixtureHTML)
+	}))
+}
+
+func TestFetchDetail_fullPage(t *testing.T) {
+	ts := newTestServer()
+	defer ts.Close()
+
+	s := newSiteScraper(sites[0])
+	s.client = ts.Client()
+
+	item := workItem{
+		id:  "456",
+		url: ts.URL + "/detail-456-amazing-scene",
+	}
+
+	scene, err := s.fetchDetail(context.Background(), item, "https://czechvrnetwork.com", 0)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if scene.ID != "456" {
+		t.Errorf("ID = %q, want %q", scene.ID, "456")
+	}
+	if scene.Title != "Amazing Scene" {
+		t.Errorf("Title = %q, want %q", scene.Title, "Amazing Scene")
+	}
+	wantDate := time.Date(2026, 1, 15, 0, 0, 0, 0, time.UTC)
+	if !scene.Date.Equal(wantDate) {
+		t.Errorf("Date = %v, want %v", scene.Date, wantDate)
+	}
+	if scene.Duration != 25*60+30 {
+		t.Errorf("Duration = %d, want %d", scene.Duration, 25*60+30)
+	}
+	if scene.Description != "A great description here" {
+		t.Errorf("Description = %q, want %q", scene.Description, "A great description here")
+	}
+	if len(scene.Performers) != 2 {
+		t.Fatalf("Performers len = %d, want 2", len(scene.Performers))
+	}
+	if scene.Performers[0] != "Jane Doe" {
+		t.Errorf("Performers[0] = %q, want %q", scene.Performers[0], "Jane Doe")
+	}
+	if scene.Performers[1] != "John Smith" {
+		t.Errorf("Performers[1] = %q, want %q", scene.Performers[1], "John Smith")
+	}
+	if len(scene.Tags) != 2 {
+		t.Fatalf("Tags len = %d, want 2", len(scene.Tags))
+	}
+	if scene.Tags[0] != "VR" {
+		t.Errorf("Tags[0] = %q, want %q", scene.Tags[0], "VR")
+	}
+	if scene.Tags[1] != "Blonde" {
+		t.Errorf("Tags[1] = %q, want %q", scene.Tags[1], "Blonde")
+	}
+	wantThumb := "https://www.czechvrnetwork.com/thumbs/456.jpg"
+	if scene.Thumbnail != wantThumb {
+		t.Errorf("Thumbnail = %q, want %q", scene.Thumbnail, wantThumb)
+	}
+	if scene.Preview != "https://preview.czechvr.com/456.mp4" {
+		t.Errorf("Preview = %q, want %q", scene.Preview, "https://preview.czechvr.com/456.mp4")
+	}
+	if scene.SiteID != "czechvrnetwork" {
+		t.Errorf("SiteID = %q, want %q", scene.SiteID, "czechvrnetwork")
+	}
+	if scene.StudioURL != "https://czechvrnetwork.com" {
+		t.Errorf("StudioURL = %q, want %q", scene.StudioURL, "https://czechvrnetwork.com")
+	}
+	if scene.Studio != "CzechVR Network" {
+		t.Errorf("Studio = %q, want %q", scene.Studio, "CzechVR Network")
+	}
+	if scene.ScrapedAt.IsZero() {
+		t.Error("ScrapedAt is zero")
+	}
+}
+
+func TestFetchDetail_prefilled(t *testing.T) {
+	ts := newTestServer()
+	defer ts.Close()
+
+	s := newSiteScraper(sites[0])
+	s.client = ts.Client()
+
+	preDate := time.Date(2020, 6, 1, 0, 0, 0, 0, time.UTC)
+	item := workItem{
+		id:         "456",
+		url:        ts.URL + "/detail-456-amazing-scene",
+		title:      "Prefilled Title",
+		date:       preDate,
+		duration:   999,
+		performers: []string{"Already Here"},
+		thumb:      "https://example.com/existing.jpg",
+		preview:    "https://example.com/existing.mp4",
+	}
+
+	scene, err := s.fetchDetail(context.Background(), item, "https://czechvrnetwork.com", 0)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if scene.Title != "Prefilled Title" {
+		t.Errorf("Title = %q, want %q (should not be overwritten)", scene.Title, "Prefilled Title")
+	}
+	if !scene.Date.Equal(preDate) {
+		t.Errorf("Date = %v, want %v (should not be overwritten)", scene.Date, preDate)
+	}
+	if scene.Duration != 999 {
+		t.Errorf("Duration = %d, want 999 (should not be overwritten)", scene.Duration)
+	}
+	if len(scene.Performers) != 1 || scene.Performers[0] != "Already Here" {
+		t.Errorf("Performers = %v, want [Already Here] (should not be overwritten)", scene.Performers)
+	}
+	if scene.Thumbnail != "https://example.com/existing.jpg" {
+		t.Errorf("Thumbnail = %q, want existing (should not be overwritten)", scene.Thumbnail)
+	}
+	if scene.Preview != "https://example.com/existing.mp4" {
+		t.Errorf("Preview = %q, want existing (should not be overwritten)", scene.Preview)
+	}
+	// Description is always parsed from the page (not conditional on empty).
+	if scene.Description != "A great description here" {
+		t.Errorf("Description = %q, want %q", scene.Description, "A great description here")
+	}
+	// Tags are always parsed from the page (not conditional on empty).
+	if len(scene.Tags) != 2 {
+		t.Errorf("Tags len = %d, want 2", len(scene.Tags))
+	}
+}
+
+func TestFetchDetail_titleStripsPrefix(t *testing.T) {
+	tests := []struct {
+		name      string
+		h1        string
+		wantTitle string
+	}{
+		{"standard prefix", `<h1>Czech VR 123 - My Title</h1>`, "My Title"},
+		{"prefix with tags", `<h1><span>Czech VR 789</span> - Tagged Title</h1>`, "Tagged Title"},
+		{"no prefix", `<h1>No Dash Title</h1>`, "No Dash Title"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			page := fmt.Sprintf(`<html>%s
+<div class="datum">January 1, 2025</div>
+<div class="cas">10:00</div>
+<div class="text">desc</div>
+</html>`, tt.h1)
+
+			ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				_, _ = fmt.Fprint(w, page)
+			}))
+			defer ts.Close()
+
+			s := newSiteScraper(sites[0])
+			s.client = ts.Client()
+
+			item := workItem{
+				id:  "123",
+				url: ts.URL + "/detail-123-test",
+			}
+
+			scene, err := s.fetchDetail(context.Background(), item, "https://czechvrnetwork.com", 0)
+			if err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+			if scene.Title != tt.wantTitle {
+				t.Errorf("Title = %q, want %q", scene.Title, tt.wantTitle)
 			}
 		})
 	}

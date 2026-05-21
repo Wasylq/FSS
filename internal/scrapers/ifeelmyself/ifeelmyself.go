@@ -16,9 +16,8 @@ import (
 )
 
 const (
-	siteBase     = "https://ifeelmyself.com"
-	pageSize     = 12
-	defaultDelay = 500 * time.Millisecond
+	siteBase = "https://ifeelmyself.com"
+	pageSize = 12
 )
 
 type Scraper struct {
@@ -60,22 +59,17 @@ var (
 func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOpts, out chan<- scraper.SceneResult) {
 	defer close(out)
 
-	delay := opts.Delay
-	if delay == 0 {
-		delay = defaultDelay
-	}
-
 	if keyword := extractSearchKeyword(studioURL); keyword != "" {
 		s.runSearch(ctx, studioURL, keyword, opts, out)
 		return
 	}
 
 	if m := artistPageRe.FindStringSubmatch(studioURL); m != nil {
-		s.runArtist(ctx, studioURL, m[1], delay, opts, out)
+		s.runArtist(ctx, studioURL, m[1], opts.Delay, opts, out)
 		return
 	}
 
-	s.runPaginated(ctx, studioURL, delay, opts, out)
+	s.runPaginated(ctx, studioURL, opts.Delay, opts, out)
 }
 
 func extractSearchKeyword(studioURL string) string {

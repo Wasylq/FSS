@@ -204,6 +204,34 @@ func TestInterface(t *testing.T) {
 	_ = s
 }
 
+func TestExtractSearchKeyword_present(t *testing.T) {
+	got := extractSearchKeyword("https://ifeelmyself.com/public/main.php?page=quick_search&keyword=Alice")
+	if got != "Alice" {
+		t.Errorf("extractSearchKeyword = %q, want %q", got, "Alice")
+	}
+}
+
+func TestExtractSearchKeyword_encoded(t *testing.T) {
+	got := extractSearchKeyword("https://ifeelmyself.com/public/main.php?page=quick_search&keyword=Jane%20Doe")
+	if got != "Jane Doe" {
+		t.Errorf("extractSearchKeyword = %q, want %q", got, "Jane Doe")
+	}
+}
+
+func TestExtractSearchKeyword_missing(t *testing.T) {
+	got := extractSearchKeyword("https://ifeelmyself.com/public/main.php?page=view&mode=all")
+	if got != "" {
+		t.Errorf("extractSearchKeyword = %q, want empty", got)
+	}
+}
+
+func TestExtractSearchKeyword_empty(t *testing.T) {
+	got := extractSearchKeyword("https://ifeelmyself.com/public/main.php?page=quick_search&keyword=")
+	if got != "" {
+		t.Errorf("extractSearchKeyword = %q, want empty", got)
+	}
+}
+
 func TestSceneValidation(t *testing.T) {
 	html := buildIFMPage([]struct {
 		sceneID, price, artistID, performer, title, duration, date, thumb string
