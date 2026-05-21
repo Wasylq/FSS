@@ -265,7 +265,7 @@ func TestToScene(t *testing.T) {
 		CoverImagePath: "/media/ABC123/cover_ABC123.jpg",
 	}
 
-	sc := toScene(cfg, base, g, fixedTime())
+	sc := toScene(cfg, base, base, g, fixedTime())
 	if sc.URL != "https://www.metart.com/model/model-a/movie/20250615/TEST_SCENE" {
 		t.Errorf("URL = %q", sc.URL)
 	}

@@ -136,6 +136,13 @@ func (s *Scraper) run(ctx context.Context, studioURL, cid string, opts scraper.L
 			}
 			break
 		}
+		if page == 1 && totalPages > 0 && len(entries) > 0 {
+			select {
+			case out <- scraper.Progress(totalPages * len(entries)):
+			case <-ctx.Done():
+				break
+			}
+		}
 		cancelled := false
 		hitKnown := false
 		for _, e := range entries {

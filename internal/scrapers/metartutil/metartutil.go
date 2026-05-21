@@ -83,7 +83,7 @@ type apiPerson struct {
 	Name string `json:"name"`
 }
 
-func (s *Scraper) run(ctx context.Context, _ string, opts scraper.ListOpts, out chan<- scraper.SceneResult) {
+func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOpts, out chan<- scraper.SceneResult) {
 	defer close(out)
 
 	progressSent := false
@@ -134,7 +134,7 @@ func (s *Scraper) run(ctx context.Context, _ string, opts scraper.ListOpts, out 
 				return
 			}
 			select {
-			case out <- scraper.Scene(toScene(s.Config, s.base, g, now)):
+			case out <- scraper.Scene(toScene(s.Config, studioURL, s.base, g, now)):
 			case <-ctx.Done():
 				return
 			}
@@ -168,11 +168,11 @@ func (s *Scraper) fetchPage(ctx context.Context, page int) (*apiResponse, error)
 	return &result, nil
 }
 
-func toScene(cfg SiteConfig, base string, g gallery, now time.Time) models.Scene {
+func toScene(cfg SiteConfig, studioURL, base string, g gallery, now time.Time) models.Scene {
 	sc := models.Scene{
 		ID:         g.UUID,
 		SiteID:     cfg.SiteID,
-		StudioURL:  base,
+		StudioURL:  studioURL,
 		Title:      g.Name,
 		URL:        base + g.Path,
 		Duration:   g.Runtime,

@@ -320,8 +320,7 @@ func TestListScenes(t *testing.T) {
 
 	got := map[string]string{}
 	for result := range ch {
-		if result.Err != nil {
-			t.Errorf("unexpected error: %v", result.Err)
+		if result.Kind != scraper.KindScene {
 			continue
 		}
 		got[result.Scene.ID] = result.Scene.Title
@@ -389,15 +388,14 @@ func TestListScenesKnownIDs(t *testing.T) {
 	var scenes []scraper.SceneResult
 	sawStoppedEarly := false
 	for r := range ch {
-		if r.Kind == scraper.KindStoppedEarly {
+		switch r.Kind {
+		case scraper.KindStoppedEarly:
 			sawStoppedEarly = true
-			continue
-		}
-		if r.Err != nil {
+		case scraper.KindScene:
+			scenes = append(scenes, r)
+		case scraper.KindError:
 			t.Errorf("unexpected error: %v", r.Err)
-			continue
 		}
-		scenes = append(scenes, r)
 	}
 
 	if len(scenes) != 1 {
