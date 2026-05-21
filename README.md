@@ -163,8 +163,11 @@ fss scrape --refresh <url>
 # Output both JSON and CSV
 fss scrape --output json,csv --out-dir ./data <url>
 
-# Use SQLite as the store
-fss scrape --db ./fss.db --name "Bettie Bondage" <url>
+# Use SQLite as the store (default: ~/.local/share/fss/fss.db)
+fss scrape --db --name "Bettie Bondage" <url>
+
+# Use SQLite at a custom path
+fss scrape --db /path/to/fss.db <url>
 
 # See supported sites
 fss list-scrapers
@@ -236,7 +239,7 @@ CLI flags always override config values. See [docs/usage.md](docs/usage.md#confi
 | [docs/identify.md](docs/identify.md) | NFO sidecar file generation: matching videos, writing .nfo files |
 | [docs/stash.md](docs/stash.md) | Stash integration: matching, merging, import workflow |
 | [docs/docker.md](docs/docker.md) | Running FSS in Docker — image tags, volumes, compose examples |
-| [docs/library.md](docs/library.md) | Using FSS as a Go library — registry API, streaming results, Scene model |
+| [docs/library.md](docs/library.md) | Using FSS as a Go library — 9 public packages: scraper registry, models, matching, output, duration parsing, Stash client, NFO, identify |
 | [docs/architecture.md](docs/architecture.md) | System design, plugin registry, streaming model, store abstraction |
 | [CONTRIBUTING.md](CONTRIBUTING.md) | How to add a new scraper, reference implementations |
 | [SECURITY.md](SECURITY.md) | Credential handling, network policy, vulnerability reporting |
