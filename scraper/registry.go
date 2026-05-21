@@ -16,9 +16,11 @@ func Register(s StudioScraper) {
 	registered = append(registered, s)
 }
 
-// All returns every registered scraper.
+// All returns a copy of every registered scraper.
 func All() []StudioScraper {
-	return registered
+	out := make([]StudioScraper, len(registered))
+	copy(out, registered)
+	return out
 }
 
 // ForID returns the registered scraper with the given ID,
