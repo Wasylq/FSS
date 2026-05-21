@@ -13,6 +13,7 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/Wasylq/FSS/internal/config"
 	"github.com/Wasylq/FSS/internal/store"
 	"github.com/Wasylq/FSS/models"
 	"github.com/Wasylq/FSS/scraper"
@@ -33,7 +34,8 @@ func init() {
 	scrapeCmd.Flags().Bool("refresh", false, "re-fetch metadata for all known scenes, soft-delete missing")
 	scrapeCmd.Flags().StringP("output", "o", "", "export formats: json, csv, or json,csv (default from config)")
 	scrapeCmd.Flags().String("out-dir", "", "output directory (default from config)")
-	scrapeCmd.Flags().String("db", "", "enable SQLite store at this path")
+	scrapeCmd.Flags().String("db", "", "enable SQLite store (no value = ~/.local/share/fss/fss.db; or pass a path)")
+	scrapeCmd.Flags().Lookup("db").NoOptDefVal = "default"
 	scrapeCmd.Flags().String("name", "", "human-readable label for this studio (stored when --db is set)")
 	scrapeCmd.Flags().Int("delay", 0, "milliseconds between page requests (default 500 from config; 0 = no delay)")
 	scrapeCmd.Flags().StringSlice("site-delay", nil, "per-scraper delay override, e.g. --site-delay manyvids=0,pornhub=2000 (overrides --delay for matching sites)")
@@ -71,6 +73,7 @@ func runScrape(cmd *cobra.Command, args []string) error {
 	if dbPath == "" {
 		dbPath = cfg.DB
 	}
+	dbPath = config.ResolveDBPath(dbPath)
 
 	name, _ := cmd.Flags().GetString("name")
 	if name != "" && len(args) > 1 {
@@ -96,6 +99,9 @@ func runScrape(cmd *cobra.Command, args []string) error {
 	// --- pick store (opened once, shared across all URLs) ---
 	var st store.Store
 	if dbPath != "" {
+		if err := os.MkdirAll(filepath.Dir(dbPath), 0o700); err != nil {
+			return fmt.Errorf("creating database directory: %w", err)
+		}
 		db, err := store.NewSQLite(dbPath)
 		if err != nil {
 			return fmt.Errorf("opening database: %w", err)

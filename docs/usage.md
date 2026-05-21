@@ -26,7 +26,7 @@ For NFO sidecar file generation, see [identify.md](identify.md).
 | `--refresh` | bool | false | Re-fetch metadata for all known scenes; soft-delete missing ones |
 | `--output`, `-o` | string | `json` | Export format(s): `json`, `csv`, or `json,csv` |
 | `--out-dir` | string | `.` | Output directory |
-| `--db` | string | _(disabled)_ | Path to SQLite database; enables SQLite store |
+| `--db` | string | _(disabled)_ | Enable SQLite store (`--db` alone uses `~/.local/share/fss/fss.db`; `--db /path` uses a custom path) |
 | `--delay` | int | `500` | Milliseconds to sleep between page requests (default from config; `--delay 0` disables) |
 | `--site-delay` | []string | _(none)_ | Per-scraper delay overrides as `name=ms` pairs, e.g. `--site-delay manyvids=0,pornhub=2000` |
 | `--name` | string | _(none)_ | Human-readable label for this studio (stored when `--db` is set) |
@@ -75,7 +75,7 @@ Located at the XDG config path for your platform (see [README](../README.md)). A
 workers: 3        # int   — parallel metadata fetchers
 output: json      # str   — json | csv | json,csv
 out_dir: .        # str   — output directory path
-db: ""            # str   — SQLite path; empty string disables SQLite
+db: ""            # str   — "" = disabled; "default" = ~/.local/share/fss/fss.db; or a path
 delay: 500        # int   — ms between page requests; 0 disables
 user_agent: ""    # str   — "firefox" (default), "chrome", or a custom UA string
 
@@ -284,13 +284,21 @@ Use periodically (e.g. weekly) to catch deletions and accumulate accurate price 
 
 ### Enabling
 
-Pass `--db <path>` to any scrape command, or set `db` in your config file:
+Pass `--db` to any scrape command, or set `db` in your config file:
 
 ```bash
-fss scrape --db ./fss.db <studio-url>
+fss scrape --db <studio-url>                # uses default path: ~/.local/share/fss/fss.db
+fss scrape --db /custom/path.db <studio-url> # uses a custom path
 ```
 
-When `--db` is set, SQLite is the source of truth. JSON/CSV files are exported from it if `--output` requests them.
+Or in `config.yaml`:
+
+```yaml
+db: "default"           # uses ~/.local/share/fss/fss.db
+db: "/custom/path.db"   # uses a custom path
+```
+
+The data directory is created automatically if it doesn't exist. When `--db` is set, SQLite is the source of truth. JSON/CSV files are exported from it if `--output` requests them.
 
 ### Schema
 
@@ -380,7 +388,8 @@ Ten tables (three core + six junction/lookup + one metadata). Inspect with any S
 ### Listing studios
 
 ```bash
-fss list-studios --db ./fss.db
+fss list-studios --db              # uses default db location
+fss list-studios --db ./fss.db     # uses a custom path
 ```
 
 ### Example queries

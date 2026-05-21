@@ -19,8 +19,11 @@ output: json
 # Each studio gets its own file: <slugified-studio-url>.json (and/or .csv).
 out_dir: "."
 
-# Path to a SQLite database for persistent storage.
-# Leave empty to disable SQLite and use flat JSON files only.
+# SQLite database for persistent storage.
+# ""        — disabled, use flat JSON files only (default)
+# "default" — use XDG data dir (~/.local/share/fss/fss.db on Linux)
+# "/path"   — use an explicit path
+# The CLI equivalent is `--db` (no value = default) or `--db /path`.
 db: ""
 
 # Default delay between page requests, in milliseconds.

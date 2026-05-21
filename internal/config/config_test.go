@@ -360,3 +360,32 @@ func TestDefaultPath(t *testing.T) {
 		t.Errorf("DefaultPath() = %q, want suffix %q", p, filepath.Join("fss", "config.yaml"))
 	}
 }
+
+func TestDefaultDBPath(t *testing.T) {
+	p := DefaultDBPath()
+	if !strings.HasSuffix(p, filepath.Join("fss", "fss.db")) {
+		t.Errorf("DefaultDBPath() = %q, want suffix %q", p, filepath.Join("fss", "fss.db"))
+	}
+}
+
+func TestResolveDBPath(t *testing.T) {
+	tests := []struct {
+		name string
+		in   string
+		want string
+	}{
+		{"empty", "", ""},
+		{"default keyword", "default", DefaultDBPath()},
+		{"true keyword", "true", DefaultDBPath()},
+		{"explicit path", "/tmp/my.db", "/tmp/my.db"},
+		{"relative path", "./data/fss.db", "./data/fss.db"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := ResolveDBPath(tt.in)
+			if got != tt.want {
+				t.Errorf("ResolveDBPath(%q) = %q, want %q", tt.in, got, tt.want)
+			}
+		})
+	}
+}

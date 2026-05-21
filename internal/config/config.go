@@ -63,6 +63,25 @@ func DefaultPath() string {
 	return filepath.Join(xdg.ConfigHome, "fss", "config.yaml")
 }
 
+// DefaultDBPath returns the canonical SQLite database path for the current
+// platform, under the XDG data directory (e.g. ~/.local/share/fss/fss.db).
+func DefaultDBPath() string {
+	return filepath.Join(xdg.DataHome, "fss", "fss.db")
+}
+
+// ResolveDBPath interprets the db config value. Empty means disabled, "default"
+// or "true" means DefaultDBPath(), anything else is a literal path.
+func ResolveDBPath(raw string) string {
+	switch raw {
+	case "":
+		return ""
+	case "default", "true":
+		return DefaultDBPath()
+	default:
+		return raw
+	}
+}
+
 // windowsPathRe matches double-quoted YAML values that look like Windows
 // absolute paths (drive letter followed by :\). YAML treats backslashes as
 // escape characters inside double-quoted strings, so "C:\Users" fails

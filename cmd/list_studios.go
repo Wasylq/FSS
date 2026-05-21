@@ -5,6 +5,7 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/Wasylq/FSS/internal/config"
 	"github.com/Wasylq/FSS/internal/store"
 )
 
@@ -18,16 +19,16 @@ var listStudiosDB string
 
 func init() {
 	rootCmd.AddCommand(listStudiosCmd)
-	listStudiosCmd.Flags().StringVar(&listStudiosDB, "db", "", "path to SQLite database (required)")
-	// MarkFlagRequired only errors if the flag is unregistered — a programming
-	// bug we want to surface at startup, not silently swallow.
-	if err := listStudiosCmd.MarkFlagRequired("db"); err != nil {
-		panic(err)
-	}
+	listStudiosCmd.Flags().StringVar(&listStudiosDB, "db", "", "path to SQLite database (no value = default location)")
+	listStudiosCmd.Flags().Lookup("db").NoOptDefVal = "default"
 }
 
 func runListStudios(cmd *cobra.Command, _ []string) error {
-	db, err := store.NewSQLite(listStudiosDB)
+	path := config.ResolveDBPath(listStudiosDB)
+	if path == "" {
+		return fmt.Errorf("--db is required (pass --db for the default location, or --db /path/to/file.db)")
+	}
+	db, err := store.NewSQLite(path)
 	if err != nil {
 		return fmt.Errorf("opening db: %w", err)
 	}
