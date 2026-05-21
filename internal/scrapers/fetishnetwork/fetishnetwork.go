@@ -128,7 +128,7 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 				return
 			}
 			select {
-			case out <- scraper.Scene(item.toScene(now)):
+			case out <- scraper.Scene(item.toScene(studioURL, now)):
 			case <-ctx.Done():
 				return
 			}
@@ -217,11 +217,11 @@ func estimateTotal(body []byte, perPage int) int {
 	return max * perPage
 }
 
-func (item sceneItem) toScene(now time.Time) models.Scene {
+func (item sceneItem) toScene(studioURL string, now time.Time) models.Scene {
 	sc := models.Scene{
 		ID:        item.id,
 		SiteID:    "fetishnetwork",
-		StudioURL: siteBase,
+		StudioURL: studioURL,
 		Title:     item.title,
 		URL:       fmt.Sprintf("%s/t2/refstat.php?lid=%s&sid=%s", siteBase, item.id, defaultCat),
 		Thumbnail: item.thumb,

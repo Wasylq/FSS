@@ -157,7 +157,7 @@ func TestToScene(t *testing.T) {
 		subSite:  "BrutalPOV.com",
 		category: "Bondage / BDSM",
 	}
-	sc := item.toScene(time.Now().UTC())
+	sc := item.toScene("https://www.fetishnetwork.com", time.Now().UTC())
 	if sc.ID != "12345" {
 		t.Errorf("ID = %q", sc.ID)
 	}

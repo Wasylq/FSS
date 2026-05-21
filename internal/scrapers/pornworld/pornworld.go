@@ -96,7 +96,7 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 						return
 					}
 				}
-				scene, err := s.fetchDetail(ctx, entry)
+				scene, err := s.fetchDetail(ctx, entry, studioURL)
 				if err != nil {
 					select {
 					case out <- scraper.Error(err):
@@ -254,7 +254,7 @@ var (
 	detailTag = regexp.MustCompile(`<a href="/videos\?tags=[^"]*" class="link-secondary">([^<]+)</a>`)
 )
 
-func (s *Scraper) fetchDetail(ctx context.Context, entry listEntry) (models.Scene, error) {
+func (s *Scraper) fetchDetail(ctx context.Context, entry listEntry, studioURL string) (models.Scene, error) {
 	detailURL := s.base + entry.url
 
 	body, err := s.fetchHTML(ctx, detailURL)
@@ -266,7 +266,7 @@ func (s *Scraper) fetchDetail(ctx context.Context, entry listEntry) (models.Scen
 	scene := models.Scene{
 		ID:         entry.id,
 		SiteID:     "pornworld",
-		StudioURL:  s.base,
+		StudioURL:  studioURL,
 		Title:      entry.title,
 		URL:        detailURL,
 		Thumbnail:  entry.thumbnail,

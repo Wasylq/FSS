@@ -292,7 +292,7 @@ func TestFetchDetail(t *testing.T) {
 		studio:     "Listing Studio",
 	}
 
-	scene, err := s.fetchDetail(context.Background(), entry)
+	scene, err := s.fetchDetail(context.Background(), entry, ts.URL)
 	if err != nil {
 		t.Fatalf("fetchDetail: %v", err)
 	}
@@ -336,7 +336,7 @@ func TestFetchDetailStudioFallback(t *testing.T) {
 		url:   ts.URL + "/scenes/1234567",
 	}
 
-	scene, err := s.fetchDetail(context.Background(), entry)
+	scene, err := s.fetchDetail(context.Background(), entry, ts.URL)
 	if err != nil {
 		t.Fatalf("fetchDetail: %v", err)
 	}
