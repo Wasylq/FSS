@@ -201,7 +201,7 @@ func probeDuration(path string) float64 {
 		"-v", "error",
 		"-show_entries", "format=duration",
 		"-of", "default=noprint_wrappers=1:nokey=1",
-		path,
+		"--", path,
 	).Output()
 	if err != nil {
 		return 0
