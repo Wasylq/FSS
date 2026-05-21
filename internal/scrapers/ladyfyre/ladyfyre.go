@@ -359,7 +359,8 @@ func (s *Scraper) resolveURL(rawURL string) string {
 }
 
 func (s *Scraper) fetchDetail(ctx context.Context, entry listEntry) (models.Scene, error) {
-	body, err := s.fetchHTML(ctx, s.resolveURL(entry.url))
+	referer := s.base() + "/tour/categories/movies.html"
+	body, err := s.fetchHTMLWithReferer(ctx, s.resolveURL(entry.url), referer)
 	if err != nil {
 		return models.Scene{}, fmt.Errorf("detail %s: %w", entry.slug, err)
 	}
@@ -411,9 +412,18 @@ func parseDetail(body []byte, entry listEntry) models.Scene {
 }
 
 func (s *Scraper) fetchHTML(ctx context.Context, rawURL string) ([]byte, error) {
+	return s.fetchHTMLWithReferer(ctx, rawURL, "")
+}
+
+func (s *Scraper) fetchHTMLWithReferer(ctx context.Context, rawURL, referer string) ([]byte, error) {
+	h := httpx.BrowserHeaders(httpx.UserAgentFirefox)
+	if referer != "" {
+		h["Referer"] = referer
+		h["Sec-Fetch-Site"] = "same-origin"
+	}
 	resp, err := httpx.Do(ctx, s.client, httpx.Request{
 		URL:     rawURL,
-		Headers: httpx.BrowserHeaders(httpx.UserAgentFirefox),
+		Headers: h,
 	})
 	if err != nil {
 		return nil, err
