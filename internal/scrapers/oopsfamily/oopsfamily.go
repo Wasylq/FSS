@@ -86,6 +86,7 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 				return
 			}
 		}
+		scraper.Debugf(1, "oopsfamily: fetching page %d", page)
 
 		cards, hasNext, err := s.fetchListingPage(ctx, base, page)
 		if err != nil {
@@ -114,6 +115,7 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 
 	if len(collected) == 0 {
 		if stoppedEarly {
+			scraper.Debugf(1, "oopsfamily: hit known ID, stopping early")
 			select {
 			case out <- scraper.StoppedEarly():
 			case <-ctx.Done():
@@ -139,6 +141,7 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 	}
 
 	if stoppedEarly {
+		scraper.Debugf(1, "oopsfamily: hit known ID, stopping early")
 		select {
 		case out <- scraper.StoppedEarly():
 		case <-ctx.Done():

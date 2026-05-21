@@ -112,6 +112,7 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 				return
 			}
 		}
+		scraper.Debugf(1, "cumlouder: fetching page %d", page)
 
 		pageBody, err := s.fetch(ctx, fmt.Sprintf("%s/%d/", studioURL, page))
 		if err != nil {

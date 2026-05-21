@@ -203,6 +203,7 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 				return
 			}
 		}
+		scraper.Debugf(1, "rawfuckclub: fetching page %d", page)
 
 		u := pathBase
 		if page > 1 {
@@ -236,6 +237,7 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 
 		if !progressSent {
 			progressSent = true
+			scraper.Debugf(1, "rawfuckclub: %d total scenes", 0)
 			select {
 			case out <- scraper.Progress(0):
 			case <-ctx.Done():
@@ -275,6 +277,7 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 		}
 
 		if stoppedEarly {
+			scraper.Debugf(1, "rawfuckclub: hit known ID, stopping early")
 			select {
 			case out <- scraper.StoppedEarly():
 			case <-ctx.Done():

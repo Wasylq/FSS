@@ -102,6 +102,7 @@ func (s *Scraper) runUpdates(ctx context.Context, studioURL string, opts scraper
 				return
 			}
 		}
+		scraper.Debugf(1, "sofiemarie: fetching page %d", page)
 
 		var pageURL string
 		if page == 1 {
@@ -127,6 +128,7 @@ func (s *Scraper) runUpdates(ctx context.Context, studioURL string, opts scraper
 		if page == 1 {
 			total := estimateTotal(body, len(scenes))
 			if total > 0 {
+				scraper.Debugf(1, "sofiemarie: %d total scenes", total)
 				select {
 				case out <- scraper.Progress(total):
 				case <-ctx.Done():
@@ -191,6 +193,7 @@ func (s *Scraper) runModel(ctx context.Context, studioURL string, opts scraper.L
 				return
 			}
 		}
+		scraper.Debugf(1, "sofiemarie: fetching page %d", page)
 
 		pageURL := fmt.Sprintf("%s/sets.php?id=%s&page=%d", s.siteBase, modelID, page)
 		body, err := s.fetchPage(ctx, pageURL)
@@ -242,6 +245,7 @@ func (s *Scraper) runDVD(ctx context.Context, studioURL string, opts scraper.Lis
 func (s *Scraper) emitScenes(ctx context.Context, scenes []parsedScene, studioURL string, now time.Time, opts scraper.ListOpts, out chan<- scraper.SceneResult) (stopped bool) {
 	for _, ps := range scenes {
 		if opts.KnownIDs[ps.id] {
+			scraper.Debugf(1, "sofiemarie: hit known ID, stopping early")
 			select {
 			case out <- scraper.StoppedEarly():
 			case <-ctx.Done():

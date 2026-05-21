@@ -106,6 +106,7 @@ func (s *Scraper) run(ctx context.Context, studioURL, typePath, slug string, opt
 				return
 			}
 		}
+		scraper.Debugf(1, "faphouse: fetching page %d", page)
 
 		pageURL := fmt.Sprintf("%s/%s/%s?sort=new&page=%d", s.base, typePath, slug, page)
 		body, err := s.fetchPage(ctx, pageURL)

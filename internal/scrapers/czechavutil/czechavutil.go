@@ -305,6 +305,7 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 	cancelled := false
 	for _, entry := range entries {
 		if opts.KnownIDs[entry.slug] {
+			scraper.Debugf(1, "%s: hit known ID, stopping early", s.Cfg.SiteID)
 			select {
 			case out <- scraper.StoppedEarly():
 			case <-ctx.Done():

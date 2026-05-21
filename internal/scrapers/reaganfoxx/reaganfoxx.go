@@ -107,6 +107,7 @@ func (s *Scraper) enqueuePages(ctx context.Context, listingURL string, opts scra
 				return
 			}
 		}
+		scraper.Debugf(1, "reaganfoxx: fetching page %d", page)
 
 		pageURL := listingURL
 		if page > 1 {
@@ -134,6 +135,7 @@ func (s *Scraper) enqueuePages(ctx context.Context, listingURL string, opts scra
 		if page == 1 {
 			total := extractTotal(body)
 			if total > 0 {
+				scraper.Debugf(1, "reaganfoxx: %d total scenes", total)
 				select {
 				case out <- scraper.Progress(total):
 				case <-ctx.Done():
@@ -148,6 +150,7 @@ func (s *Scraper) enqueuePages(ctx context.Context, listingURL string, opts scra
 
 		for _, ls := range scenes {
 			if opts.KnownIDs[ls.id] {
+				scraper.Debugf(1, "reaganfoxx: hit known ID, stopping early")
 				select {
 				case out <- scraper.StoppedEarly():
 				case <-ctx.Done():

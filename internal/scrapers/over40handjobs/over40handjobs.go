@@ -204,6 +204,7 @@ func (s *Scraper) feedPaginated(ctx context.Context, opts scraper.ListOpts, work
 				return
 			}
 		}
+		scraper.Debugf(1, "over40handjobs: fetching page %d", page)
 
 		body, err := s.fetchPage(ctx, pageURL(s.base, page))
 		if err != nil {
@@ -230,6 +231,7 @@ func (s *Scraper) feedPaginated(ctx context.Context, opts scraper.ListOpts, work
 
 		for _, e := range entries {
 			if opts.KnownIDs[e.slug] {
+				scraper.Debugf(1, "over40handjobs: hit known ID, stopping early")
 				select {
 				case out <- scraper.StoppedEarly():
 				case <-ctx.Done():
@@ -272,6 +274,7 @@ func (s *Scraper) feedSingle(ctx context.Context, pageURL string, opts scraper.L
 
 	for _, e := range entries {
 		if opts.KnownIDs[e.slug] {
+			scraper.Debugf(1, "over40handjobs: hit known ID, stopping early")
 			select {
 			case out <- scraper.StoppedEarly():
 			case <-ctx.Done():

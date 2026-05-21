@@ -175,6 +175,7 @@ func (s *Scraper) scrapeHTMLPage(ctx context.Context, pageURL string, opts scrap
 
 	for _, item := range items {
 		if opts.KnownIDs[item.id] {
+			scraper.Debugf(1, "dorcelclub: hit known ID, stopping early")
 			select {
 			case out <- scraper.StoppedEarly():
 			case <-ctx.Done():
@@ -203,6 +204,7 @@ func (s *Scraper) paginateAJAX(ctx context.Context, basePath, sorting string, op
 				return
 			}
 		}
+		scraper.Debugf(1, "dorcelclub: fetching page %d", page)
 
 		ajaxURL := fmt.Sprintf("%s%s?lang=en&sorting=%s&page=%d", siteBase, basePath, sorting, page)
 		body, err := s.fetchAJAX(ctx, ajaxURL)
@@ -221,6 +223,7 @@ func (s *Scraper) paginateAJAX(ctx context.Context, basePath, sorting string, op
 
 		hasNext := btnMoreRe.MatchString(body)
 		if !totalSent {
+			scraper.Debugf(1, "dorcelclub: %d total scenes", 0)
 			select {
 			case out <- scraper.Progress(0):
 			case <-ctx.Done():
@@ -231,6 +234,7 @@ func (s *Scraper) paginateAJAX(ctx context.Context, basePath, sorting string, op
 
 		for _, item := range items {
 			if opts.KnownIDs[item.id] {
+				scraper.Debugf(1, "dorcelclub: hit known ID, stopping early")
 				select {
 				case out <- scraper.StoppedEarly():
 				case <-ctx.Done():

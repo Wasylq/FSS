@@ -103,6 +103,7 @@ func (s *Scraper) run(ctx context.Context, studioURL, slug string, opts scraper.
 				return
 			}
 		}
+		scraper.Debugf(1, "apclips: fetching page %d", page)
 
 		pageURL := fmt.Sprintf("%s/%s/videos?sort=date-new&page=%d", s.base, slug, page)
 		body, err := s.fetchPage(ctx, pageURL)

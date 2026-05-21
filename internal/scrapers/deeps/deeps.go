@@ -109,6 +109,7 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 					return
 				}
 			}
+			scraper.Debugf(1, "deeps: fetching page %d", page)
 
 			pageURL := buildPageURL(studioURL, page)
 			body, err := s.fetchPage(ctx, pageURL)
@@ -130,6 +131,7 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 				if total <= 0 {
 					total = len(items)
 				}
+				scraper.Debugf(1, "deeps: %d total scenes", total)
 				select {
 				case out <- scraper.Progress(total):
 				case <-ctx.Done():
@@ -141,6 +143,7 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 			for _, item := range items {
 				id := strings.ToUpper(item.code)
 				if opts.KnownIDs[id] {
+					scraper.Debugf(1, "deeps: hit known ID, stopping early")
 					select {
 					case out <- scraper.StoppedEarly():
 					case <-ctx.Done():

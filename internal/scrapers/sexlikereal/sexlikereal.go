@@ -136,6 +136,7 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 					return
 				}
 			}
+			scraper.Debugf(1, "sexlikereal: fetching page %d", page)
 
 			params := url.Values{
 				"page":    {strconv.Itoa(page)},
@@ -174,6 +175,7 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 			for _, item := range resp.Data {
 				id := strconv.Itoa(item.ID)
 				if opts.KnownIDs[id] {
+					scraper.Debugf(1, "sexlikereal: hit known ID, stopping early")
 					select {
 					case out <- scraper.StoppedEarly():
 					case <-ctx.Done():

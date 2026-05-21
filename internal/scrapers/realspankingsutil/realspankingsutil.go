@@ -76,6 +76,7 @@ type listingItem struct {
 func (s *Scraper) run(ctx context.Context, opts scraper.ListOpts, out chan<- scraper.SceneResult) {
 	defer close(out)
 
+	scraper.Debugf(1, "%s: starting scrape (type=%d)", s.Config.SiteID, s.Config.Type)
 	switch s.Config.Type {
 	case TypeRSI:
 		s.runPaged(ctx, opts, out, 0, s.buildRSIURL, parseRSI)
@@ -98,6 +99,7 @@ func (s *Scraper) runPaged(ctx context.Context, opts scraper.ListOpts, out chan<
 			return
 		}
 
+		scraper.Debugf(1, "%s: fetching page %d", s.Config.SiteID, page)
 		body, err := s.fetchPage(ctx, buildURL(page))
 		if err != nil {
 			select {
@@ -121,6 +123,7 @@ func (s *Scraper) runPaged(ctx context.Context, opts scraper.ListOpts, out chan<
 		case <-ctx.Done():
 			return
 		}
+		scraper.Debugf(1, "%s: fetching page %d", s.Config.SiteID, page)
 	}
 }
 
@@ -130,6 +133,7 @@ func (s *Scraper) runYears(ctx context.Context, opts scraper.ListOpts, out chan<
 		if ctx.Err() != nil {
 			return
 		}
+		scraper.Debugf(1, "%s: fetching year %d", s.Config.SiteID, year)
 
 		url := fmt.Sprintf("%s/updates.php?year=%d", s.base, year)
 		body, err := s.fetchPage(ctx, url)
@@ -175,6 +179,7 @@ func (s *Scraper) runSingle(ctx context.Context, opts scraper.ListOpts, out chan
 func (s *Scraper) sendItems(ctx context.Context, opts scraper.ListOpts, out chan<- scraper.SceneResult, items []listingItem) bool {
 	for _, item := range items {
 		if opts.KnownIDs[item.id] {
+			scraper.Debugf(1, "%s: hit known ID, stopping early", s.Config.SiteID)
 			select {
 			case out <- scraper.StoppedEarly():
 			case <-ctx.Done():

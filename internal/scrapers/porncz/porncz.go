@@ -147,6 +147,7 @@ func (s *Scraper) scrapeSinglePage(ctx context.Context, pageURL string, opts scr
 
 	for _, item := range items {
 		if opts.KnownIDs[item.slug] {
+			scraper.Debugf(1, "porncz: hit known ID, stopping early")
 			select {
 			case out <- scraper.StoppedEarly():
 			case <-ctx.Done():
@@ -176,6 +177,7 @@ func (s *Scraper) scrapePaginated(ctx context.Context, opts scraper.ListOpts, ou
 				return
 			}
 		}
+		scraper.Debugf(1, "porncz: fetching page %d", page)
 
 		pageURL := fmt.Sprintf("%s/en/videos?sort=new&page=%d", s.base, page)
 		body, err := s.fetchPage(ctx, pageURL)
@@ -195,6 +197,7 @@ func (s *Scraper) scrapePaginated(ctx context.Context, opts scraper.ListOpts, ou
 		if !totalSent {
 			total := parseTotalPages(body) * perPage
 			if total > 0 {
+				scraper.Debugf(1, "porncz: %d total scenes", total)
 				select {
 				case out <- scraper.Progress(total):
 				case <-ctx.Done():
@@ -206,6 +209,7 @@ func (s *Scraper) scrapePaginated(ctx context.Context, opts scraper.ListOpts, ou
 
 		for _, item := range items {
 			if opts.KnownIDs[item.slug] {
+				scraper.Debugf(1, "porncz: hit known ID, stopping early")
 				select {
 				case out <- scraper.StoppedEarly():
 				case <-ctx.Done():

@@ -100,6 +100,7 @@ func (s *Scraper) run(ctx context.Context, studioURL, memberID string, opts scra
 				return
 			}
 		}
+		scraper.Debugf(1, "iwantclips: fetching page %d", page)
 
 		docs, total, err := s.fetchPage(ctx, apiKey, tsBase, memberID, page)
 		if err != nil {
@@ -123,6 +124,7 @@ func (s *Scraper) run(ctx context.Context, studioURL, memberID string, opts scra
 		}
 
 		if page == 1 && total > 0 {
+			scraper.Debugf(1, "iwantclips: %d total scenes", total)
 			select {
 			case out <- scraper.Progress(total):
 			case <-ctx.Done():
@@ -148,6 +150,7 @@ func (s *Scraper) run(ctx context.Context, studioURL, memberID string, opts scra
 		totalPages := (total + s.perPage - 1) / s.perPage
 		if hitKnown || page >= totalPages || len(docs) == 0 {
 			if hitKnown {
+				scraper.Debugf(1, "iwantclips: hit known ID, stopping early")
 				select {
 				case out <- scraper.StoppedEarly():
 				case <-ctx.Done():

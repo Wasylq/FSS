@@ -66,6 +66,7 @@ func extractID(rawURL string) string {
 func (s *Scraper) run(ctx context.Context, opts scraper.ListOpts, out chan<- scraper.SceneResult) {
 	defer close(out)
 
+	scraper.Debugf(1, "%s: fetching video export", s.Cfg.ID)
 	export, err := s.fetchExport(ctx)
 	if err != nil {
 		select {
@@ -84,6 +85,7 @@ func (s *Scraper) run(ctx context.Context, opts scraper.ListOpts, out chan<- scr
 	}
 
 	if len(export) > 0 {
+		scraper.Debugf(1, "%s: %d total scenes from export", s.Cfg.ID, len(export))
 		select {
 		case out <- scraper.Progress(len(export)):
 		case <-ctx.Done():
@@ -105,6 +107,7 @@ func (s *Scraper) run(ctx context.Context, opts scraper.ListOpts, out chan<- scr
 			}
 		}
 
+		scraper.Debugf(1, "%s: fetching page %d", s.Cfg.ID, page)
 		cards, err := s.fetchListingPage(ctx, page)
 		if err != nil {
 			select {
@@ -124,6 +127,7 @@ func (s *Scraper) run(ctx context.Context, opts scraper.ListOpts, out chan<- scr
 				continue
 			}
 			if opts.KnownIDs[id] {
+				scraper.Debugf(1, "%s: hit known ID %s, stopping early", s.Cfg.ID, id)
 				stoppedEarly = true
 				break
 			}

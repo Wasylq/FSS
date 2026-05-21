@@ -174,6 +174,7 @@ func (s *Scraper) run(ctx context.Context, _ string, opts scraper.ListOpts, out 
 				return
 			}
 		}
+		scraper.Debugf(1, "barebackstudios: fetching page %d", page)
 
 		body, err := s.fetchPage(ctx, page)
 		if err != nil {
@@ -201,6 +202,7 @@ func (s *Scraper) run(ctx context.Context, _ string, opts scraper.ListOpts, out 
 		}
 
 		if page == 1 {
+			scraper.Debugf(1, "barebackstudios: %d total scenes", 0)
 			select {
 			case out <- scraper.Progress(0):
 			case <-ctx.Done():
@@ -216,6 +218,7 @@ func (s *Scraper) run(ctx context.Context, _ string, opts scraper.ListOpts, out 
 			seen[e.id] = true
 
 			if opts.KnownIDs[e.id] {
+				scraper.Debugf(1, "barebackstudios: hit known ID, stopping early")
 				select {
 				case out <- scraper.StoppedEarly():
 				case <-ctx.Done():

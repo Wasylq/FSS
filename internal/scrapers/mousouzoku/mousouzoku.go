@@ -152,6 +152,7 @@ func (s *Scraper) runPaginatedInner(ctx context.Context, basePath string, opts s
 				return false
 			}
 		}
+		scraper.Debugf(1, "mousouzoku: fetching page %d", page)
 
 		pagePath := basePath
 		if page > 1 {
@@ -170,6 +171,7 @@ func (s *Scraper) runPaginatedInner(ctx context.Context, basePath string, opts s
 		if !*progressSent {
 			*progressSent = true
 			if total := parseTotal(string(body)); total > 0 {
+				scraper.Debugf(1, "mousouzoku: %d total scenes", total)
 				select {
 				case out <- scraper.Progress(total):
 				case <-ctx.Done():
@@ -210,6 +212,7 @@ func (s *Scraper) runPaginatedInner(ctx context.Context, basePath string, opts s
 		}
 
 		if stoppedEarly {
+			scraper.Debugf(1, "mousouzoku: hit known ID, stopping early")
 			select {
 			case out <- scraper.StoppedEarly():
 			case <-ctx.Done():

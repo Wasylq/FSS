@@ -162,6 +162,7 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 				return
 			}
 		}
+		scraper.Debugf(1, "pornbox: fetching page %d", page)
 
 		u := s.listingURL(mode, id, page)
 		listing, err := s.fetchListing(ctx, u)
@@ -189,6 +190,7 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 			sceneID := strconv.Itoa(item.ID)
 
 			if opts.KnownIDs[sceneID] {
+				scraper.Debugf(1, "pornbox: hit known ID, stopping early")
 				select {
 				case out <- scraper.StoppedEarly():
 				case <-ctx.Done():

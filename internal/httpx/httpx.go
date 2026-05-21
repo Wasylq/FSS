@@ -13,6 +13,8 @@ import (
 	"net/http"
 	"strings"
 	"time"
+
+	"github.com/Wasylq/FSS/scraper"
 )
 
 const (
@@ -175,11 +177,17 @@ func Do(ctx context.Context, client *http.Client, r Request) (*http.Response, er
 			req.Header.Set(k, v)
 		}
 
+		scraper.Debugf(2, "%s %s", method, r.URL)
+
 		resp, err := client.Do(req)
 		if err != nil {
+			scraper.Debugf(2, "  error: %v", err)
 			attemptErrs = append(attemptErrs, fmt.Errorf("attempt %d: %w", attempt+1, err))
 			continue
 		}
+
+		scraper.Debugf(2, "  %d %s (content-length: %d)", resp.StatusCode, resp.Status, resp.ContentLength)
+
 		if resp.StatusCode == http.StatusTooManyRequests || resp.StatusCode >= 500 {
 			_ = resp.Body.Close()
 			attemptErrs = append(attemptErrs, fmt.Errorf("attempt %d: %w", attempt+1, &StatusError{StatusCode: resp.StatusCode}))

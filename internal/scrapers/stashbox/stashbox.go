@@ -252,6 +252,7 @@ func (s *Scraper) run(ctx context.Context, studioURL string, inst instance, enti
 				return
 			}
 		}
+		scraper.Debugf(1, "stashbox: fetching page %d", page)
 
 		input := buildInput(entityType, entityID, page)
 		resp, err := s.queryScenes(ctx, inst, input)
@@ -272,6 +273,7 @@ func (s *Scraper) run(ctx context.Context, studioURL string, inst instance, enti
 			if total <= 0 {
 				total = len(resp.Data.QueryScenes.Scenes)
 			}
+			scraper.Debugf(1, "stashbox: %d total scenes", total)
 			select {
 			case out <- scraper.Progress(total):
 			case <-ctx.Done():
@@ -281,6 +283,7 @@ func (s *Scraper) run(ctx context.Context, studioURL string, inst instance, enti
 
 		for _, gs := range resp.Data.QueryScenes.Scenes {
 			if opts.KnownIDs[gs.ID] {
+				scraper.Debugf(1, "stashbox: hit known ID, stopping early")
 				select {
 				case out <- scraper.StoppedEarly():
 				case <-ctx.Done():

@@ -161,6 +161,7 @@ func (s *Scraper) produceListing(ctx context.Context, studioURL string, opts scr
 				break
 			}
 		}
+		scraper.Debugf(1, "apovstory: fetching page %d", page)
 
 		entries, err := s.fetchPage(ctx, page)
 		if err != nil {
@@ -201,6 +202,7 @@ func (s *Scraper) produceListing(ctx context.Context, studioURL string, opts scr
 		}
 		if cancelled || hitKnown {
 			if hitKnown {
+				scraper.Debugf(1, "apovstory: hit known ID, stopping early")
 				select {
 				case out <- scraper.StoppedEarly():
 				case <-ctx.Done():

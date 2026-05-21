@@ -91,6 +91,7 @@ func (s *Scraper) run(ctx context.Context, studioURL, slug string, opts scraper.
 		}
 
 		if firstPage && len(results) > 0 {
+			scraper.Debugf(1, "loyalfans: %d total scenes", 0)
 			send(ctx, out, scraper.Progress(0))
 			firstPage = false
 		}
@@ -101,6 +102,7 @@ func (s *Scraper) run(ctx context.Context, studioURL, slug string, opts scraper.
 			}
 			scene := toScene(studioURL, slug, v)
 			if opts.KnownIDs[scene.ID] {
+				scraper.Debugf(1, "loyalfans: hit known ID, stopping early")
 				send(ctx, out, scraper.StoppedEarly())
 				return
 			}

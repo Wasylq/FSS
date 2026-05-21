@@ -92,6 +92,7 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 				return
 			}
 		}
+		scraper.Debugf(1, "fetishnetwork: fetching page %d", page)
 
 		pageURL := fmt.Sprintf("%s/t2/show.php?a=%s_%d", base, catID, page)
 		body, err := s.fetchPage(ctx, pageURL)
@@ -111,6 +112,7 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 		if page == 1 {
 			total := estimateTotal(body, len(items))
 			if total > 0 {
+				scraper.Debugf(1, "fetishnetwork: %d total scenes", total)
 				select {
 				case out <- scraper.Progress(total):
 				case <-ctx.Done():
@@ -121,6 +123,7 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 
 		for _, item := range items {
 			if opts.KnownIDs[item.id] {
+				scraper.Debugf(1, "fetishnetwork: hit known ID, stopping early")
 				select {
 				case out <- scraper.StoppedEarly():
 				case <-ctx.Done():

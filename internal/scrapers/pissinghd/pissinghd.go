@@ -119,6 +119,7 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 				return
 			}
 		}
+		scraper.Debugf(1, "pissinghd: fetching page %d", page)
 
 		pageURL := fmt.Sprintf("%s/videos?page=%d", base, page)
 		body, err := s.fetchPage(ctx, pageURL)
@@ -151,6 +152,7 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 			seen[item.id] = true
 
 			if opts.KnownIDs[item.id] {
+				scraper.Debugf(1, "pissinghd: hit known ID, stopping early")
 				select {
 				case out <- scraper.StoppedEarly():
 				case <-ctx.Done():

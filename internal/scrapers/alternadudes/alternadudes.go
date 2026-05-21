@@ -219,6 +219,7 @@ func (s *Scraper) produceListing(ctx context.Context, base string, opts scraper.
 				break
 			}
 		}
+		scraper.Debugf(1, "alternadudes: fetching page %d", page)
 
 		body, err := s.fetchPage(ctx, pageURL(base, page))
 		if err != nil {
@@ -237,6 +238,7 @@ func (s *Scraper) produceListing(ctx context.Context, base string, opts scraper.
 		if page == 1 {
 			total := estimateTotal(body, len(entries))
 			if total > 0 {
+				scraper.Debugf(1, "alternadudes: %d total scenes", total)
 				select {
 				case out <- scraper.Progress(total):
 				case <-ctx.Done():
@@ -266,6 +268,7 @@ func (s *Scraper) produceListing(ctx context.Context, base string, opts scraper.
 		}
 		if cancelled || hitKnown {
 			if hitKnown {
+				scraper.Debugf(1, "alternadudes: hit known ID, stopping early")
 				select {
 				case out <- scraper.StoppedEarly():
 				case <-ctx.Done():

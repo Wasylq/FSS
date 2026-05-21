@@ -145,6 +145,7 @@ func scrapeOne(ctx context.Context, st store.Store, studioURL, name, dbPath, out
 	}
 
 	delay := resolveSiteDelay(sc.ID(), defaultDelay, siteDelays)
+	scraper.Debugf(1, "scraper: %s, delay: %v, workers: %d", sc.ID(), delay, workers)
 
 	var scenes []models.Scene
 	switch {

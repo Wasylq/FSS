@@ -194,6 +194,7 @@ func (s *Scraper) scrapeListing(ctx context.Context, studioURL string, opts scra
 				return
 			}
 		}
+		scraper.Debugf(1, "bamvisions: fetching page %d", page)
 
 		pageURL := fmt.Sprintf("%s/categories/movies/%d/latest/", s.base, page)
 
@@ -224,6 +225,7 @@ func (s *Scraper) scrapeListing(ctx context.Context, studioURL string, opts scra
 
 		for _, item := range scenes {
 			if opts.KnownIDs[item.id] {
+				scraper.Debugf(1, "bamvisions: hit known ID, stopping early")
 				select {
 				case out <- scraper.StoppedEarly():
 				case <-ctx.Done():

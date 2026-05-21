@@ -86,6 +86,7 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 				return
 			}
 		}
+		scraper.Debugf(1, "visitx: fetching page %d", offset)
 
 		videos, total, err := s.fetchVideos(ctx, token, modelName, offset)
 		if err != nil {
@@ -98,6 +99,7 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 		}
 
 		if offset == 0 && total > 0 {
+			scraper.Debugf(1, "visitx: %d total scenes", total)
 			if !send(ctx, out, scraper.Progress(total)) {
 				return
 			}
@@ -108,6 +110,7 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 			id := strconv.Itoa(v.ID)
 
 			if opts.KnownIDs[id] {
+				scraper.Debugf(1, "visitx: hit known ID, stopping early")
 				send(ctx, out, scraper.StoppedEarly())
 				return
 			}

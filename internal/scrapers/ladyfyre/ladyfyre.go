@@ -149,6 +149,7 @@ func (s *Scraper) runPaginated(ctx context.Context, opts scraper.ListOpts, out c
 				break
 			}
 		}
+		scraper.Debugf(1, "ladyfyre: fetching page %d", page)
 
 		pageURL := fmt.Sprintf("%s/tour/categories/movies_%d_d.html", s.base(), page)
 		body, err := s.fetchHTML(ctx, pageURL)
@@ -194,6 +195,7 @@ func (s *Scraper) runPaginated(ctx context.Context, opts scraper.ListOpts, out c
 		}
 		if cancelled || hitKnown {
 			if hitKnown {
+				scraper.Debugf(1, "ladyfyre: hit known ID, stopping early")
 				select {
 				case out <- scraper.StoppedEarly():
 				case <-ctx.Done():
@@ -246,6 +248,7 @@ func (s *Scraper) processEntries(ctx context.Context, entries []listEntry, opts 
 
 	for _, e := range entries {
 		if opts.KnownIDs[e.slug] {
+			scraper.Debugf(1, "ladyfyre: hit known ID, stopping early")
 			select {
 			case out <- scraper.StoppedEarly():
 			case <-ctx.Done():

@@ -62,6 +62,7 @@ func (s *Scraper) Run(ctx context.Context, studioURL string, opts scraper.ListOp
 				return
 			}
 		}
+		scraper.Debugf(1, "%s: fetching page %d", s.Config.SiteID, page)
 
 		if searchAfter != nil {
 			baseQuery["search_after"] = searchAfter
@@ -92,6 +93,7 @@ func (s *Scraper) Run(ctx context.Context, studioURL string, opts scraper.ListOp
 			id := strconv.Itoa(hit.Source.ItemID)
 
 			if opts.KnownIDs[id] {
+				scraper.Debugf(1, "%s: hit known ID, stopping early", s.Config.SiteID)
 				select {
 				case out <- scraper.StoppedEarly():
 				case <-ctx.Done():

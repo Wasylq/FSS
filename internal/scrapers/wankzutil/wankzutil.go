@@ -57,13 +57,16 @@ func (s *Scraper) Run(ctx context.Context, studioURL string, opts scraper.ListOp
 	defer close(out)
 
 	channel := ParseChannel(studioURL)
+	if channel != "" {
+		scraper.Debugf(1, "%s: detected channel filter: %s", s.Config.SiteID, channel)
+	}
 	now := time.Now().UTC()
 
 	for page := 1; ; page++ {
 		if ctx.Err() != nil {
 			return
 		}
-
+		scraper.Debugf(1, "%s: fetching page %d", s.Config.SiteID, page)
 		videos, total, err := s.FetchPage(ctx, page, channel)
 		if err != nil {
 			select {
@@ -74,6 +77,7 @@ func (s *Scraper) Run(ctx context.Context, studioURL string, opts scraper.ListOp
 		}
 
 		if page == 1 {
+			scraper.Debugf(1, "%s: %d total scenes", s.Config.SiteID, total)
 			select {
 			case out <- scraper.Progress(total):
 			case <-ctx.Done():
@@ -88,6 +92,7 @@ func (s *Scraper) Run(ctx context.Context, studioURL string, opts scraper.ListOp
 		for _, v := range videos {
 			scene := ToScene(s.Config, studioURL, v, now)
 			if opts.KnownIDs != nil && opts.KnownIDs[scene.ID] {
+				scraper.Debugf(1, "%s: hit known ID %s, stopping early", s.Config.SiteID, scene.ID)
 				select {
 				case out <- scraper.StoppedEarly():
 				case <-ctx.Done():

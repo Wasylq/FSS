@@ -65,6 +65,7 @@ func (s *Scraper) run(ctx context.Context, opts scraper.ListOpts, out chan<- scr
 				return
 			}
 		}
+		scraper.Debugf(1, "jerkoffinstructions: fetching page %d", page)
 
 		body, err := s.fetchPage(ctx, page)
 		if err != nil {
@@ -78,6 +79,7 @@ func (s *Scraper) run(ctx context.Context, opts scraper.ListOpts, out chan<- scr
 		cards, total := parseListingPage(body)
 
 		if page == 1 && total > 0 {
+			scraper.Debugf(1, "jerkoffinstructions: %d total scenes", total)
 			select {
 			case out <- scraper.Progress(total):
 			case <-ctx.Done():
@@ -104,6 +106,7 @@ func (s *Scraper) run(ctx context.Context, opts scraper.ListOpts, out chan<- scr
 		}
 
 		if stoppedEarly {
+			scraper.Debugf(1, "jerkoffinstructions: hit known ID, stopping early")
 			select {
 			case out <- scraper.StoppedEarly():
 			case <-ctx.Done():

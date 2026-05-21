@@ -105,6 +105,7 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 					return
 				}
 			}
+			scraper.Debugf(1, "javdatabase: fetching page %d", page)
 
 			pageURL := buildPageURL(studioURL, page)
 			body, err := s.fetchPage(ctx, pageURL)
@@ -124,6 +125,7 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 			if page == 1 {
 				total := parseTotal(body)
 				if total > 0 {
+					scraper.Debugf(1, "javdatabase: %d total scenes", total)
 					select {
 					case out <- scraper.Progress(total):
 					case <-ctx.Done():
@@ -139,6 +141,7 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 				seen[item.id] = true
 
 				if opts.KnownIDs[item.id] {
+					scraper.Debugf(1, "javdatabase: hit known ID, stopping early")
 					select {
 					case out <- scraper.StoppedEarly():
 					case <-ctx.Done():

@@ -133,6 +133,7 @@ func (s *Scraper) runPaginated(ctx context.Context, opts scraper.ListOpts, work 
 				return
 			}
 		}
+		scraper.Debugf(1, "pornworld: fetching page %d", page)
 
 		pageURL := fmt.Sprintf("%s/videos?page=%d", s.base, page)
 		entries, err := s.fetchListing(ctx, pageURL)
@@ -170,6 +171,7 @@ func (s *Scraper) runPaginated(ctx context.Context, opts scraper.ListOpts, work 
 			}
 		}
 		if hitKnown {
+			scraper.Debugf(1, "pornworld: hit known ID, stopping early")
 			select {
 			case out <- scraper.StoppedEarly():
 			case <-ctx.Done():

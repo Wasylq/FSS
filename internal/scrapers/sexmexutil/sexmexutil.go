@@ -79,6 +79,7 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 	defer close(out)
 
 	slug := resolveListingSlug(studioURL, s.Cfg.SiteBase)
+	scraper.Debugf(1, "%s: listing slug: %s", s.Cfg.ID, slug)
 
 	for page := 1; ; page++ {
 		if ctx.Err() != nil {
@@ -92,6 +93,7 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 			}
 		}
 
+		scraper.Debugf(1, "%s: fetching page %d", s.Cfg.ID, page)
 		u := pageURL(s.Cfg.SiteBase, slug, page)
 		body, err := s.fetchPage(ctx, u)
 		if err != nil {
@@ -110,6 +112,7 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 		if page == 1 {
 			maxPage := extractMaxPage(body)
 			if maxPage > 0 {
+				scraper.Debugf(1, "%s: %d total scenes (estimated)", s.Cfg.ID, maxPage*len(cards))
 				select {
 				case out <- scraper.Progress(maxPage * len(cards)):
 				case <-ctx.Done():
@@ -123,6 +126,7 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 		for _, c := range cards {
 			scene := s.cardToScene(studioURL, c, now)
 			if opts.KnownIDs[scene.ID] {
+				scraper.Debugf(1, "%s: hit known ID %s, stopping early", s.Cfg.ID, scene.ID)
 				stoppedEarly = true
 				break
 			}

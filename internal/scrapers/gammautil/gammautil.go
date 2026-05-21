@@ -116,6 +116,7 @@ func (s *Scraper) Run(ctx context.Context, studioURL string, opts scraper.ListOp
 				return
 			}
 		}
+		scraper.Debugf(1, "%s: fetching page %d", s.Config.SiteID, page)
 
 		hits, total, err := s.FetchPage(ctx, apiKey, page, extraFilter)
 		if err != nil {
@@ -131,6 +132,7 @@ func (s *Scraper) Run(ctx context.Context, studioURL string, opts scraper.ListOp
 		}
 
 		if page == 0 && total > 0 {
+			scraper.Debugf(1, "%s: %d total scenes", s.Config.SiteID, total)
 			select {
 			case out <- scraper.Progress(total):
 			case <-ctx.Done():
@@ -142,6 +144,7 @@ func (s *Scraper) Run(ctx context.Context, studioURL string, opts scraper.ListOp
 		for _, hit := range hits {
 			id := strconv.Itoa(hit.ClipID)
 			if opts.KnownIDs[id] {
+				scraper.Debugf(1, "%s: hit known ID, stopping early", s.Config.SiteID)
 				select {
 				case out <- scraper.StoppedEarly():
 				case <-ctx.Done():

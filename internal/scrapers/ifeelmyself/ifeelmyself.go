@@ -99,6 +99,7 @@ func (s *Scraper) runPaginated(ctx context.Context, studioURL string, delay time
 				return
 			}
 		}
+		scraper.Debugf(1, "ifeelmyself: fetching page %d", offset)
 
 		pageURL := fmt.Sprintf("%s&offset=%d", baseURL, offset)
 		scenes, err := s.fetchPage(ctx, pageURL, studioURL)
@@ -115,6 +116,7 @@ func (s *Scraper) runPaginated(ctx context.Context, studioURL string, delay time
 		}
 
 		if !totalSent {
+			scraper.Debugf(1, "ifeelmyself: %d total scenes", 0)
 			select {
 			case out <- scraper.Progress(0):
 			case <-ctx.Done():
@@ -125,6 +127,7 @@ func (s *Scraper) runPaginated(ctx context.Context, studioURL string, delay time
 
 		for _, scene := range scenes {
 			if opts.KnownIDs[scene.ID] {
+				scraper.Debugf(1, "ifeelmyself: hit known ID, stopping early")
 				select {
 				case out <- scraper.StoppedEarly():
 				case <-ctx.Done():
@@ -166,6 +169,7 @@ func (s *Scraper) resolveArtistName(ctx context.Context, artistID string, delay 
 				return "", ctx.Err()
 			}
 		}
+		scraper.Debugf(1, "ifeelmyself: fetching page %d", page)
 
 		pageURL := fmt.Sprintf("%s/public/main.php?page=view&mode=all&offset=%d", siteBase, page*pageSize)
 		body, err := s.fetchBody(ctx, pageURL)
@@ -211,6 +215,7 @@ func (s *Scraper) runSearch(ctx context.Context, studioURL string, keyword strin
 
 	for _, scene := range scenes {
 		if opts.KnownIDs[scene.ID] {
+			scraper.Debugf(1, "ifeelmyself: hit known ID, stopping early")
 			select {
 			case out <- scraper.StoppedEarly():
 			case <-ctx.Done():

@@ -126,6 +126,7 @@ func (s *Scraper) enqueuePages(ctx context.Context, templateURL string, opts scr
 				return
 			}
 		}
+		scraper.Debugf(1, "xespl: fetching page %d", page)
 
 		pageURL := buildPageURL(templateURL, page)
 		body, err := s.fetchPage(ctx, pageURL)
@@ -146,6 +147,7 @@ func (s *Scraper) enqueuePages(ctx context.Context, templateURL string, opts scr
 			maxPage := parseMaxPage(body)
 			total := maxPage * len(scenes)
 			if total > 0 {
+				scraper.Debugf(1, "xespl: %d total scenes", total)
 				select {
 				case out <- scraper.Progress(total):
 				case <-ctx.Done():
@@ -156,6 +158,7 @@ func (s *Scraper) enqueuePages(ctx context.Context, templateURL string, opts scr
 
 		for _, ls := range scenes {
 			if opts.KnownIDs[ls.id] {
+				scraper.Debugf(1, "xespl: hit known ID, stopping early")
 				select {
 				case out <- scraper.StoppedEarly():
 				case <-ctx.Done():

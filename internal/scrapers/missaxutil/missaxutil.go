@@ -85,6 +85,7 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 
 	work := make(chan listEntry, opts.Workers)
 	var wg sync.WaitGroup
+	scraper.Debugf(1, "%s: fetching detail pages with %d workers", s.cfg.SiteID, opts.Workers)
 
 	for i := 0; i < opts.Workers; i++ {
 		wg.Add(1)
@@ -117,6 +118,7 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 	}
 
 	if modelRe.MatchString(studioURL) {
+		scraper.Debugf(1, "%s: detected model page", s.cfg.SiteID)
 		s.produceModel(ctx, studioURL, opts, out, work)
 	} else {
 		s.produceListing(ctx, opts, out, work)
@@ -136,6 +138,7 @@ func (s *Scraper) produceModel(ctx context.Context, studioURL string, opts scrap
 		return
 	}
 	if len(entries) > 0 {
+		scraper.Debugf(1, "%s: found %d scenes on model page", s.cfg.SiteID, len(entries))
 		select {
 		case out <- scraper.Progress(len(entries)):
 		case <-ctx.Done():
@@ -170,6 +173,7 @@ func (s *Scraper) produceListing(ctx context.Context, opts scraper.ListOpts, out
 			}
 		}
 
+		scraper.Debugf(1, "%s: fetching page %d", s.cfg.SiteID, page)
 		entries, err := s.fetchPage(ctx, page)
 		if err != nil {
 			select {
@@ -184,6 +188,7 @@ func (s *Scraper) produceListing(ctx context.Context, opts scraper.ListOpts, out
 		}
 
 		if page == 1 {
+			scraper.Debugf(1, "%s: %d total scenes (estimated)", s.cfg.SiteID, estimateTotal(len(entries)))
 			select {
 			case out <- scraper.Progress(estimateTotal(len(entries))):
 			case <-ctx.Done():
@@ -195,6 +200,7 @@ func (s *Scraper) produceListing(ctx context.Context, opts scraper.ListOpts, out
 		hitKnown := false
 		for _, e := range entries {
 			if opts.KnownIDs[e.id] {
+				scraper.Debugf(1, "%s: hit known ID %s, stopping early", s.cfg.SiteID, e.id)
 				hitKnown = true
 				break
 			}

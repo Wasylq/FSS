@@ -153,6 +153,7 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 			}
 		}
 
+		scraper.Debugf(1, "%s: fetching page %d", s.cfg.siteID, page)
 		posts, total, err := s.fetchPage(ctx, page, tagFilter)
 		if err != nil {
 			send(ctx, out, scraper.Error(fmt.Errorf("page %d: %w", page, err)))
@@ -160,6 +161,7 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 		}
 
 		if page == 1 && total > 0 {
+			scraper.Debugf(1, "%s: %d total scenes", s.cfg.siteID, total)
 			send(ctx, out, scraper.Progress(total))
 		}
 
@@ -171,6 +173,7 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 		for _, p := range posts {
 			id := strconv.Itoa(p.ID)
 			if opts.KnownIDs[id] {
+				scraper.Debugf(1, "%s: hit known ID, stopping early", s.cfg.siteID)
 				send(ctx, out, scraper.StoppedEarly())
 				return
 			}

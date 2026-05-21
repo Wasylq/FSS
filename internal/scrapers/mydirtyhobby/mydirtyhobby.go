@@ -93,6 +93,7 @@ func (s *Scraper) run(ctx context.Context, studioURL string, uid int, nick strin
 				return
 			}
 		}
+		scraper.Debugf(1, "mydirtyhobby: fetching page %d", page)
 
 		items, total, totalPages, err := s.fetchPage(ctx, uid, page)
 		if err != nil {
@@ -104,6 +105,7 @@ func (s *Scraper) run(ctx context.Context, studioURL string, uid int, nick strin
 		}
 
 		if page == 1 && total > 0 {
+			scraper.Debugf(1, "mydirtyhobby: %d total scenes", total)
 			select {
 			case out <- scraper.Progress(total):
 			case <-ctx.Done():
@@ -129,6 +131,7 @@ func (s *Scraper) run(ctx context.Context, studioURL string, uid int, nick strin
 
 		if hitKnown || page >= totalPages || len(items) == 0 {
 			if hitKnown {
+				scraper.Debugf(1, "mydirtyhobby: hit known ID, stopping early")
 				select {
 				case out <- scraper.StoppedEarly():
 				case <-ctx.Done():

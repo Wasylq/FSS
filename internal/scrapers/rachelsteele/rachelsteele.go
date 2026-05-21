@@ -154,6 +154,7 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 				break
 			}
 		}
+		scraper.Debugf(1, "rachelsteele: fetching page %d", page)
 
 		vp, err := s.fetchPage(ctx, page)
 		if err != nil {
@@ -197,6 +198,7 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 		}
 		if cancelled || hitKnown {
 			if hitKnown {
+				scraper.Debugf(1, "rachelsteele: hit known ID, stopping early")
 				select {
 				case out <- scraper.StoppedEarly():
 				case <-ctx.Done():

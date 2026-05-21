@@ -94,6 +94,7 @@ func (s *Scraper) run(ctx context.Context, studioURL, sid, slug string, opts scr
 				return
 			}
 		}
+		scraper.Debugf(1, "clips4sale: fetching page %d", page)
 		clips, clipsCount, err := s.fetchPage(ctx, sid, slug, page)
 		if err != nil {
 			select {
@@ -107,6 +108,7 @@ func (s *Scraper) run(ctx context.Context, studioURL, sid, slug string, opts scr
 		}
 		// After the first page, send a total hint so the consumer can show progress.
 		if page == 1 && clipsCount > 0 {
+			scraper.Debugf(1, "clips4sale: %d total scenes", clipsCount)
 			select {
 			case out <- scraper.Progress(clipsCount):
 			case <-ctx.Done():

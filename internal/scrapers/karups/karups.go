@@ -164,6 +164,7 @@ func isModelURL(u string) bool { return modelURLRe.MatchString(u) }
 func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOpts, out chan<- scraper.SceneResult) {
 	defer close(out)
 	if isModelURL(studioURL) {
+		scraper.Debugf(1, "%s: scraping model page", s.cfg.id)
 		s.runModel(ctx, studioURL, opts, out)
 	} else {
 		s.runPaginated(ctx, studioURL, opts, out)
@@ -188,6 +189,7 @@ func (s *Scraper) runModel(ctx context.Context, studioURL string, opts scraper.L
 	}
 
 	entries := parseListingPage(section)
+	scraper.Debugf(1, "%s: %d total scenes", s.cfg.id, len(entries))
 	select {
 	case out <- scraper.Progress(len(entries)):
 	case <-ctx.Done():
@@ -265,6 +267,7 @@ func (s *Scraper) runPaginated(ctx context.Context, studioURL string, opts scrap
 			}
 		}
 
+		scraper.Debugf(1, "%s: fetching page %d", s.cfg.id, page)
 		body, err := s.fetchPage(ctx, listingURL(base, page))
 		if err != nil {
 			select {

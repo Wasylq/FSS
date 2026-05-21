@@ -123,6 +123,7 @@ func (s *Scraper) runPaginated(ctx context.Context, pathPrefix string, opts scra
 				break
 			}
 		}
+		scraper.Debugf(1, "rawalphamales: fetching page %d", page)
 
 		pageURL := fmt.Sprintf("%s%s/page/%d/", s.base(), pathPrefix, page)
 		body, err := s.fetchHTML(ctx, pageURL)
@@ -168,6 +169,7 @@ func (s *Scraper) runPaginated(ctx context.Context, pathPrefix string, opts scra
 		}
 		if cancelled || hitKnown {
 			if hitKnown {
+				scraper.Debugf(1, "rawalphamales: hit known ID, stopping early")
 				select {
 				case out <- scraper.StoppedEarly():
 				case <-ctx.Done():

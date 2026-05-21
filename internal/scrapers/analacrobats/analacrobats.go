@@ -191,6 +191,7 @@ func (s *Scraper) scrapeListing(ctx context.Context, studioURL string, opts scra
 				return
 			}
 		}
+		scraper.Debugf(1, "analacrobats: fetching page %d", page)
 
 		pageURL := s.base + "/most-recent/"
 		if page > 1 {
@@ -214,6 +215,7 @@ func (s *Scraper) scrapeListing(ctx context.Context, studioURL string, opts scra
 		if page == 1 {
 			total := estimateTotal(body, len(scenes))
 			if total > 0 {
+				scraper.Debugf(1, "analacrobats: %d total scenes", total)
 				select {
 				case out <- scraper.Progress(total):
 				case <-ctx.Done():
@@ -224,6 +226,7 @@ func (s *Scraper) scrapeListing(ctx context.Context, studioURL string, opts scra
 
 		for _, item := range scenes {
 			if opts.KnownIDs[item.id] {
+				scraper.Debugf(1, "analacrobats: hit known ID, stopping early")
 				select {
 				case out <- scraper.StoppedEarly():
 				case <-ctx.Done():

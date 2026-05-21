@@ -111,6 +111,7 @@ func (s *Scraper) enqueueListingPages(ctx context.Context, opts scraper.ListOpts
 				return
 			}
 		}
+		scraper.Debugf(1, "houseofyre: fetching page %d", page)
 
 		var pageURL string
 		if page == 1 {
@@ -136,6 +137,7 @@ func (s *Scraper) enqueueListingPages(ctx context.Context, opts scraper.ListOpts
 		if page == 1 {
 			maxPage := extractMaxPage(body)
 			total := len(scenes) * maxPage
+			scraper.Debugf(1, "houseofyre: %d total scenes", total)
 			select {
 			case out <- scraper.Progress(total):
 			case <-ctx.Done():
@@ -145,6 +147,7 @@ func (s *Scraper) enqueueListingPages(ctx context.Context, opts scraper.ListOpts
 
 		for _, ls := range scenes {
 			if opts.KnownIDs[ls.id] {
+				scraper.Debugf(1, "houseofyre: hit known ID, stopping early")
 				select {
 				case out <- scraper.StoppedEarly():
 				case <-ctx.Done():
@@ -183,6 +186,7 @@ func (s *Scraper) enqueueModelPage(ctx context.Context, modelURL string, opts sc
 
 	for _, ls := range scenes {
 		if opts.KnownIDs[ls.id] {
+			scraper.Debugf(1, "houseofyre: hit known ID, stopping early")
 			select {
 			case out <- scraper.StoppedEarly():
 			case <-ctx.Done():

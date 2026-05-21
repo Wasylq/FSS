@@ -83,6 +83,7 @@ var (
 func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOpts, out chan<- scraper.SceneResult) {
 	defer close(out)
 
+	scraper.Debugf(1, "bootstrap: fetching CSRF token from %s", baseURL)
 	sess, err := bootstrap(ctx)
 	if err != nil {
 		select {
@@ -92,8 +93,10 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 
 		return
 	}
+	scraper.Debugf(1, "bootstrap: CSRF token acquired (%d chars)", len(sess.csrf))
 
 	slug := extractSlug(studioURL)
+	scraper.Debugf(1, "slug: %q", slug)
 
 	leaves, err := discoverLeaves(ctx, sess, slug, studioURL)
 	if err != nil {
@@ -104,6 +107,7 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 
 		return
 	}
+	scraper.Debugf(1, "discovered %d leaf categories: %v", len(leaves), leaves)
 
 	var entries []productEntry
 	for _, leaf := range leaves {
@@ -120,11 +124,13 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 				}
 				continue
 			}
+			scraper.Debugf(1, "  %s/%s: %d products", leaf, tab, len(products))
 			entries = append(entries, products...)
 		}
 	}
 
 	entries = dedup(entries)
+	scraper.Debugf(1, "%d entries after dedup", len(entries))
 
 	select {
 	case out <- scraper.Progress(len(entries)):
@@ -231,15 +237,18 @@ func extractSlug(u string) string {
 
 func discoverLeaves(ctx context.Context, sess *session, slug, studioURL string) ([]string, error) {
 	if slug == "" {
+		scraper.Debugf(1, "discover: no slug, scanning root category page")
 		return discoverFromPage(ctx, sess, baseURL+"/product-category", 0)
 	}
 
+	scraper.Debugf(1, "discover: fetching %s/product-category/%s", baseURL, slug)
 	body, err := fetchPage(ctx, sess, baseURL+"/product-category/"+slug)
 	if err != nil {
 		return nil, err
 	}
 
 	if modelCardRe.Match(body) {
+		scraper.Debugf(1, "discover: %s has subcategories (model cards found)", slug)
 		var leaves []string
 		for _, m := range subcatURLRe.FindAllSubmatch(body, -1) {
 			href := string(m[1])
@@ -333,6 +342,8 @@ func paginateLeaf(ctx context.Context, sess *session, slug, tab string, opts scr
 			return all, ctx.Err()
 		}
 
+		scraper.Debugf(1, "paginate: %s/%s page %d", slug, tab, page)
+
 		body := fmt.Sprintf("page=%d&start=%d&per_page=48&slug=/product-category/%s/%s&sort=1&more=0",
 			page, page, slug, tab)
 
@@ -364,6 +375,7 @@ func paginateLeaf(ctx context.Context, sess *session, slug, tab string, opts scr
 
 		html := ar.HTMLMod[0].Value
 		entries := parseProductCards(html)
+		scraper.Debugf(1, "paginate: page %d → %d cards, isLast=%v, nextPage=%d", page, len(entries), ar.IsLast, ar.NextPage)
 		if len(entries) == 0 {
 			break
 		}

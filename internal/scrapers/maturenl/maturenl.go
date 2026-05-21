@@ -114,6 +114,7 @@ func (s *Scraper) runPaginated(ctx context.Context, studioURL string, opts scrap
 				return
 			}
 		}
+		scraper.Debugf(1, "maturenl: fetching page %d", page)
 
 		body, err := s.fetch(ctx, pageURL(page))
 		if err != nil {
@@ -132,6 +133,7 @@ func (s *Scraper) runPaginated(ctx context.Context, studioURL string, opts scrap
 		if page == 1 {
 			total := estimateTotal(body, len(cards))
 			if total > 0 {
+				scraper.Debugf(1, "maturenl: %d total scenes", total)
 				select {
 				case out <- scraper.Progress(total):
 				case <-ctx.Done():
@@ -142,6 +144,7 @@ func (s *Scraper) runPaginated(ctx context.Context, studioURL string, opts scrap
 
 		for _, c := range cards {
 			if opts.KnownIDs[c.id] {
+				scraper.Debugf(1, "maturenl: hit known ID, stopping early")
 				select {
 				case out <- scraper.StoppedEarly():
 				case <-ctx.Done():
@@ -199,6 +202,7 @@ func (s *Scraper) runModel(ctx context.Context, studioURL string, modelID string
 				}
 
 				if opts.KnownIDs[updateID] {
+					scraper.Debugf(1, "maturenl: hit known ID, stopping early")
 					select {
 					case out <- scraper.StoppedEarly():
 					case <-ctx.Done():

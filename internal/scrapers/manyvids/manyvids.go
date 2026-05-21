@@ -128,6 +128,7 @@ func (s *Scraper) run(ctx context.Context, studioURL, cid string, opts scraper.L
 				break
 			}
 		}
+		scraper.Debugf(1, "manyvids: fetching page %d", page)
 		entries, totalPages, err := s.fetchPage(ctx, cid, page)
 		if err != nil {
 			select {
@@ -163,6 +164,7 @@ func (s *Scraper) run(ctx context.Context, studioURL, cid string, opts scraper.L
 		}
 		if cancelled || hitKnown || page >= totalPages {
 			if hitKnown {
+				scraper.Debugf(1, "manyvids: hit known ID, stopping early")
 				select {
 				case out <- scraper.StoppedEarly():
 				case <-ctx.Done():

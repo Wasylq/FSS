@@ -173,6 +173,7 @@ func (s *Scraper) runSinglePage(ctx context.Context, studioURL string, opts scra
 
 	for _, e := range entries {
 		if opts.KnownIDs[e.sceneID] {
+			scraper.Debugf(1, "titanmen: hit known ID, stopping early")
 			select {
 			case out <- scraper.StoppedEarly():
 			case <-ctx.Done():
@@ -236,6 +237,7 @@ func (s *Scraper) runPaginated(ctx context.Context, studioURL string, opts scrap
 				break
 			}
 		}
+		scraper.Debugf(1, "titanmen: fetching page %d", page)
 
 		pageURL := fmt.Sprintf("%s&page=%d", baseURL, page)
 		body, err := s.fetchHTML(ctx, pageURL)
@@ -279,6 +281,7 @@ func (s *Scraper) runPaginated(ctx context.Context, studioURL string, opts scrap
 		}
 		if cancelled || hitKnown {
 			if hitKnown {
+				scraper.Debugf(1, "titanmen: hit known ID, stopping early")
 				select {
 				case out <- scraper.StoppedEarly():
 				case <-ctx.Done():

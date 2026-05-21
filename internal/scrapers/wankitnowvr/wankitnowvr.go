@@ -102,6 +102,7 @@ func (s *Scraper) scrapeListing(ctx context.Context, studioURL string, opts scra
 				return
 			}
 		}
+		scraper.Debugf(1, "wankitnowvr: fetching page %d", page)
 
 		body, err := s.fetchPage(ctx, page)
 		if err != nil {
@@ -142,6 +143,7 @@ func (s *Scraper) scrapeListing(ctx context.Context, studioURL string, opts scra
 		}
 
 		if stoppedEarly {
+			scraper.Debugf(1, "wankitnowvr: hit known ID, stopping early")
 			select {
 			case out <- scraper.StoppedEarly():
 			case <-ctx.Done():

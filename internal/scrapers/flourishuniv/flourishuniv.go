@@ -229,6 +229,7 @@ func (s *Scraper) run(ctx context.Context, opts scraper.ListOpts, out chan<- scr
 
 	for _, ep := range eps {
 		if opts.KnownIDs[ep.slug] {
+			scraper.Debugf(1, "flourishuniv: hit known ID, stopping early")
 			select {
 			case out <- scraper.StoppedEarly():
 			case <-ctx.Done():

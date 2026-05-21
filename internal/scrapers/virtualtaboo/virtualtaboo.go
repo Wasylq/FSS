@@ -86,6 +86,7 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 	defer close(out)
 
 	if strings.Contains(studioURL, "/model/") {
+		scraper.Debugf(1, "%s: scraping model page", s.cfg.siteID)
 		s.runModelPage(ctx, studioURL, opts, out)
 		return
 	}
@@ -107,6 +108,7 @@ func (s *Scraper) runModelPage(ctx context.Context, modelURL string, opts scrape
 		return
 	}
 
+	scraper.Debugf(1, "%s: %d total scenes", s.cfg.siteID, len(entries))
 	select {
 	case out <- scraper.Progress(len(entries)):
 	case <-ctx.Done():
@@ -164,6 +166,7 @@ func (s *Scraper) runPaginated(ctx context.Context, opts scraper.ListOpts, out c
 			}
 		}
 
+		scraper.Debugf(1, "%s: fetching page %d", s.cfg.siteID, page)
 		pageURL := fmt.Sprintf("%s%s?page=%d", s.base(), s.cfg.listPath, page)
 		body, err := s.fetchHTML(ctx, pageURL)
 		if err != nil {

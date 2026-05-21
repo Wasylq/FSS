@@ -99,6 +99,7 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 			}
 		}
 
+		scraper.Debugf(1, "%s: fetching page %d", s.cfg.SiteID, page)
 		pageURL := fmt.Sprintf("%s/%s/page/%d", s.base, s.cfg.VideoPrefix, page)
 
 		body, err := fetchPage(ctx, s.client, pageURL)
@@ -114,6 +115,7 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 
 		if page == 1 {
 			total := s.estimateTotal(body, len(items))
+			scraper.Debugf(1, "%s: %d total scenes (estimated)", s.cfg.SiteID, total)
 			if total > 0 {
 				if !send(ctx, out, scraper.Progress(total)) {
 					return
@@ -125,6 +127,7 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 		now := time.Now().UTC()
 		for _, item := range items {
 			if opts.KnownIDs[item.ID] {
+				scraper.Debugf(1, "%s: hit known ID %s, stopping early", s.cfg.SiteID, item.ID)
 				send(ctx, out, scraper.StoppedEarly())
 				return
 			}

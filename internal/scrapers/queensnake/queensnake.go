@@ -65,6 +65,7 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 				return
 			}
 		}
+		scraper.Debugf(1, "queensnake: fetching page %d", page)
 
 		pageURL := fmt.Sprintf("%s/previewmovies/%d", s.siteBase, page)
 		body, err := s.fetchPage(ctx, pageURL)
@@ -84,6 +85,7 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 		if page == 0 {
 			total := estimateTotal(body, len(scenes))
 			if total > 0 {
+				scraper.Debugf(1, "queensnake: %d total scenes", total)
 				select {
 				case out <- scraper.Progress(total):
 				case <-ctx.Done():
@@ -94,6 +96,7 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 
 		for _, ps := range scenes {
 			if opts.KnownIDs[ps.filmID] {
+				scraper.Debugf(1, "queensnake: hit known ID, stopping early")
 				select {
 				case out <- scraper.StoppedEarly():
 				case <-ctx.Done():

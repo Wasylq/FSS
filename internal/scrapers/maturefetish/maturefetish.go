@@ -149,6 +149,7 @@ func (s *Scraper) runPaginated(ctx context.Context, studioURL string, opts scrap
 				break
 			}
 		}
+		scraper.Debugf(1, "maturefetish: fetching page %d", page)
 
 		body, err := s.fetch(ctx, pageURL(page))
 		if err != nil {
@@ -168,6 +169,7 @@ func (s *Scraper) runPaginated(ctx context.Context, studioURL string, opts scrap
 			sentTotal = true
 			total := estimateTotal(body, len(ids))
 			if total > 0 {
+				scraper.Debugf(1, "maturefetish: %d total scenes", total)
 				select {
 				case out <- scraper.Progress(total):
 				case <-ctx.Done():
@@ -193,6 +195,7 @@ func (s *Scraper) runPaginated(ctx context.Context, studioURL string, opts scrap
 		}
 		if cancelled || hitKnown {
 			if hitKnown {
+				scraper.Debugf(1, "maturefetish: hit known ID, stopping early")
 				select {
 				case out <- scraper.StoppedEarly():
 				case <-ctx.Done():
@@ -270,6 +273,7 @@ func (s *Scraper) runIDList(ctx context.Context, studioURL string, pageURL strin
 	cancelled := false
 	for _, uid := range ids {
 		if opts.KnownIDs[uid] {
+			scraper.Debugf(1, "maturefetish: hit known ID, stopping early")
 			select {
 			case out <- scraper.StoppedEarly():
 			case <-ctx.Done():

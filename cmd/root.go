@@ -7,6 +7,7 @@ import (
 
 	"github.com/Wasylq/FSS/internal/config"
 	"github.com/Wasylq/FSS/internal/httpx"
+	"github.com/Wasylq/FSS/scraper"
 )
 
 var cfg *config.Config
@@ -15,6 +16,9 @@ var rootCmd = &cobra.Command{
 	Use:   "fss",
 	Short: "FullStudioScraper — scrape all scenes and metadata from a studio URL",
 	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
+		verbose, _ := cmd.Flags().GetCount("debug")
+		scraper.SetVerbose(verbose)
+
 		switch cmd.Name() {
 		case "version", "list-scrapers":
 			return nil
@@ -27,6 +31,10 @@ var rootCmd = &cobra.Command{
 		httpx.SetDefaultUA(cfg.UserAgent)
 		return nil
 	},
+}
+
+func init() {
+	rootCmd.PersistentFlags().CountP("debug", "d", "increase debug verbosity (repeat for more: -d, -dd, -ddd)")
 }
 
 var buildVersion, buildCommit, buildDate string

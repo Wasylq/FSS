@@ -76,6 +76,7 @@ type wpTag struct {
 func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOpts, out chan<- scraper.SceneResult) {
 	defer close(out)
 
+	scraper.Debugf(1, "%s: fetching tags", s.Cfg.ID)
 	tagMap, err := s.fetchAllTags(ctx)
 	if err != nil {
 		select {
@@ -99,6 +100,7 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 			}
 		}
 
+		scraper.Debugf(1, "%s: fetching page %d", s.Cfg.ID, page)
 		posts, total, err := s.fetchPosts(ctx, page)
 		if err != nil {
 			select {
@@ -109,6 +111,7 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 		}
 
 		if page == 1 && total > 0 {
+			scraper.Debugf(1, "%s: %d total scenes", s.Cfg.ID, total)
 			select {
 			case out <- scraper.Progress(total):
 			case <-ctx.Done():
@@ -124,6 +127,7 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 		for _, p := range posts {
 			id := strconv.Itoa(p.ID)
 			if opts.KnownIDs[id] {
+				scraper.Debugf(1, "%s: hit known ID %s, stopping early", s.Cfg.ID, id)
 				stoppedEarly = true
 				break
 			}
@@ -154,6 +158,7 @@ func (s *Scraper) fetchAllTags(ctx context.Context) (map[int]string, error) {
 		if err := ctx.Err(); err != nil {
 			return nil, err
 		}
+		scraper.Debugf(1, "%s: fetching tags page %d", s.Cfg.ID, page)
 		u := fmt.Sprintf("%s/wp-json/wp/v2/tags?per_page=100&page=%d&_fields=id,name", s.Cfg.SiteBase, page)
 		resp, err := httpx.Do(ctx, s.Client, httpx.Request{
 			URL:     u,

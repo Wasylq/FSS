@@ -60,6 +60,7 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 				return
 			}
 		}
+		scraper.Debugf(1, "charleechase: fetching page %d", page)
 
 		pageURL := s.base + "/videos/page/" + strconv.Itoa(page)
 		items, err := s.fetchListing(ctx, pageURL)
@@ -75,6 +76,7 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 		now := time.Now().UTC()
 		for _, item := range items {
 			if opts.KnownIDs[item.id] {
+				scraper.Debugf(1, "charleechase: hit known ID, stopping early")
 				send(ctx, out, scraper.StoppedEarly())
 				return
 			}

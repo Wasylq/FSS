@@ -82,6 +82,7 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 
 	base := strings.TrimRight(studioURL, "/")
 
+	scraper.Debugf(1, "%s: fetching sitemap", s.config.SiteID)
 	urls, err := s.fetchSitemap(ctx, base+"/sitemap.xml")
 	if err != nil {
 		select {
@@ -101,6 +102,7 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 	if len(trailerURLs) == 0 {
 		return
 	}
+	scraper.Debugf(1, "%s: %d total scenes from sitemap", s.config.SiteID, len(trailerURLs))
 
 	select {
 	case out <- scraper.Progress(len(trailerURLs)):
@@ -125,6 +127,7 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 
 		slug := extractSlug(u)
 		if opts.KnownIDs[slug] {
+			scraper.Debugf(1, "%s: hit known ID, stopping early", s.config.SiteID)
 			select {
 			case out <- scraper.StoppedEarly():
 			case <-ctx.Done():

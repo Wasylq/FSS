@@ -97,6 +97,7 @@ func (s *Scraper) scrapeListingPages(ctx context.Context, studioURL string, dela
 				return
 			}
 		}
+		scraper.Debugf(1, "purecfnm: fetching page %d", page)
 
 		pageURL := fmt.Sprintf("%s/categories/%s_%d_d.html", s.base, slug, page)
 
@@ -117,6 +118,7 @@ func (s *Scraper) scrapeListingPages(ctx context.Context, studioURL string, dela
 		if page == 1 {
 			total := estimateTotal(body, len(scenes))
 			if total > 0 {
+				scraper.Debugf(1, "purecfnm: %d total scenes", total)
 				select {
 				case out <- scraper.Progress(total):
 				case <-ctx.Done():
@@ -127,6 +129,7 @@ func (s *Scraper) scrapeListingPages(ctx context.Context, studioURL string, dela
 
 		for _, item := range scenes {
 			if opts.KnownIDs[item.id] {
+				scraper.Debugf(1, "purecfnm: hit known ID, stopping early")
 				select {
 				case out <- scraper.StoppedEarly():
 				case <-ctx.Done():
@@ -167,6 +170,7 @@ func (s *Scraper) scrapeModelPage(ctx context.Context, studioURL string, opts sc
 
 	for _, item := range scenes {
 		if opts.KnownIDs[item.id] {
+			scraper.Debugf(1, "purecfnm: hit known ID, stopping early")
 			select {
 			case out <- scraper.StoppedEarly():
 			case <-ctx.Done():

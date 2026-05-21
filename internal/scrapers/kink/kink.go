@@ -126,6 +126,7 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 				break
 			}
 		}
+		scraper.Debugf(1, "kink: fetching page %d", page)
 
 		pageURL := lc.pageURL(page)
 		entries, totalPages, err := s.fetchListing(ctx, pageURL, lc.baseURL)
@@ -167,6 +168,7 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 		}
 		if cancelled || hitKnown {
 			if hitKnown {
+				scraper.Debugf(1, "kink: hit known ID, stopping early")
 				select {
 				case out <- scraper.StoppedEarly():
 				case <-ctx.Done():
@@ -224,6 +226,7 @@ func (s *Scraper) runSeries(ctx context.Context, lc listingConfig, opts scraper.
 			return
 		}
 		if opts.KnownIDs[id] {
+			scraper.Debugf(1, "kink: hit known ID, stopping early")
 			select {
 			case out <- scraper.StoppedEarly():
 			case <-ctx.Done():

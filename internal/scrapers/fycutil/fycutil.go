@@ -87,6 +87,7 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 				return
 			}
 		}
+		scraper.Debugf(1, "%s: fetching page %d", s.config.SiteID, page)
 
 		var pageURL string
 		if isModel {
@@ -117,6 +118,7 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 		}
 
 		if !totalSent {
+			scraper.Debugf(1, "%s: %d total scenes", s.config.SiteID, 0)
 			select {
 			case out <- scraper.Progress(0):
 			case <-ctx.Done():
@@ -128,6 +130,7 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 		for _, rel := range releases {
 			scene := s.toScene(rel, studioURL)
 			if opts.KnownIDs[scene.ID] {
+				scraper.Debugf(1, "%s: hit known ID, stopping early", s.config.SiteID)
 				select {
 				case out <- scraper.StoppedEarly():
 				case <-ctx.Done():

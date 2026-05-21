@@ -96,6 +96,7 @@ func (s *Scraper) run(ctx context.Context, base string, opts scraper.ListOpts, o
 			return
 		}
 
+		scraper.Debugf(1, "ladysonia: fetching page %d", page)
 		contents, err := parsePage(body)
 		if err != nil {
 			select {
@@ -116,6 +117,7 @@ func (s *Scraper) run(ctx context.Context, base string, opts scraper.ListOpts, o
 		for _, sc := range contents.Data {
 			id := strconv.Itoa(sc.ID)
 			if opts.KnownIDs[id] {
+				scraper.Debugf(1, "ladysonia: hit known ID, stopping early")
 				select {
 				case out <- scraper.StoppedEarly():
 				case <-ctx.Done():

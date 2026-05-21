@@ -216,12 +216,15 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 
 	switch lc.mode {
 	case modeModel:
+		scraper.Debugf(1, "%s: detected model page", s.cfg.ID)
 		s.scrapeSinglePage(ctx, studioURL, opts, out, now)
 		return
 	case modeDVD:
+		scraper.Debugf(1, "%s: detected DVD page", s.cfg.ID)
 		s.scrapeSinglePage(ctx, studioURL, opts, out, now)
 		return
 	case modeDVDListing:
+		scraper.Debugf(1, "%s: detected DVD listing mode", s.cfg.ID)
 		s.scrapeDVDListing(ctx, opts, out, now)
 		return
 	}
@@ -248,6 +251,7 @@ func (s *Scraper) scrapeSinglePage(ctx context.Context, studioURL string, opts s
 	if len(scenes) == 0 {
 		return
 	}
+	scraper.Debugf(1, "%s: found %d scenes on single page", s.cfg.ID, len(scenes))
 
 	select {
 	case out <- scraper.Progress(len(scenes)):
@@ -257,6 +261,7 @@ func (s *Scraper) scrapeSinglePage(ctx context.Context, studioURL string, opts s
 
 	for _, item := range scenes {
 		if opts.KnownIDs[item.id] {
+			scraper.Debugf(1, "%s: hit known ID %s, stopping early", s.cfg.ID, item.id)
 			select {
 			case out <- scraper.StoppedEarly():
 			case <-ctx.Done():
@@ -284,6 +289,7 @@ func (s *Scraper) scrapeListingPages(ctx context.Context, lc listingConfig, opts
 			}
 		}
 
+		scraper.Debugf(1, "%s: fetching page %d", s.cfg.ID, page)
 		pageURL := lc.pageURL(s.cfg.SiteBase, page)
 
 		body, err := s.fetchPage(ctx, pageURL)
@@ -302,6 +308,7 @@ func (s *Scraper) scrapeListingPages(ctx context.Context, lc listingConfig, opts
 
 		if page == 1 {
 			total := estimateTotal(body, len(scenes))
+			scraper.Debugf(1, "%s: %d total scenes (estimated)", s.cfg.ID, total)
 			if total > 0 {
 				select {
 				case out <- scraper.Progress(total):
@@ -313,6 +320,7 @@ func (s *Scraper) scrapeListingPages(ctx context.Context, lc listingConfig, opts
 
 		for _, item := range scenes {
 			if opts.KnownIDs[item.id] {
+				scraper.Debugf(1, "%s: hit known ID %s, stopping early", s.cfg.ID, item.id)
 				select {
 				case out <- scraper.StoppedEarly():
 				case <-ctx.Done():
@@ -367,6 +375,7 @@ func (s *Scraper) scrapeDVDListing(ctx context.Context, opts scraper.ListOpts, o
 	totalPages := 1
 
 	for page := 1; page <= totalPages; page++ {
+		scraper.Debugf(1, "%s: fetching DVD listing page %d", s.cfg.ID, page)
 		if ctx.Err() != nil {
 			return
 		}
@@ -409,6 +418,7 @@ func (s *Scraper) scrapeDVDListing(ctx context.Context, opts scraper.ListOpts, o
 		return
 	}
 
+	scraper.Debugf(1, "%s: fetching %d DVD detail pages", s.cfg.ID, len(allDVDs))
 	for i, dvdURL := range allDVDs {
 		if ctx.Err() != nil {
 			return
@@ -441,6 +451,7 @@ func (s *Scraper) scrapeDVDListing(ctx context.Context, opts scraper.ListOpts, o
 
 		for _, item := range scenes {
 			if opts.KnownIDs[item.id] {
+				scraper.Debugf(1, "%s: hit known ID %s, stopping early", s.cfg.ID, item.id)
 				select {
 				case out <- scraper.StoppedEarly():
 				case <-ctx.Done():

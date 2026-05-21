@@ -94,6 +94,7 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 				return
 			}
 		}
+		scraper.Debugf(1, "crunchboy: fetching page %d", page)
 
 		pageURL := fmt.Sprintf("%s%s?page=%d", s.base, listPath, page)
 		body, err := s.fetchPage(ctx, pageURL)

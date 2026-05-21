@@ -80,6 +80,7 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 				return
 			}
 		}
+		scraper.Debugf(1, "fancentro: fetching page %d", page)
 
 		items, total, lastPage, err := s.fetchPage(ctx, slug, page)
 		if err != nil {
@@ -92,6 +93,7 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 		}
 
 		if page == 1 && total > 0 {
+			scraper.Debugf(1, "fancentro: %d total scenes", total)
 			if !send(ctx, out, scraper.Progress(total)) {
 				return
 			}
@@ -102,6 +104,7 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 			id := strconv.Itoa(item.ID)
 
 			if opts.KnownIDs[id] {
+				scraper.Debugf(1, "fancentro: hit known ID, stopping early")
 				send(ctx, out, scraper.StoppedEarly())
 				return
 			}

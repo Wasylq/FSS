@@ -79,6 +79,7 @@ func (s *Scraper) Run(ctx context.Context, studioURL string, opts scraper.ListOp
 		for page := 1; ; page++ {
 			var url string
 			if singlePage {
+				scraper.Debugf(1, "%s: fetching page %d", s.Config.SiteID, page)
 				url = stripNATS(studioURL)
 			} else {
 				url = fmt.Sprintf("%s%s?page=%d", s.Config.SiteBase, s.Config.VideosPath, page)
@@ -104,6 +105,7 @@ func (s *Scraper) Run(ctx context.Context, studioURL string, opts scraper.ListOp
 				} else {
 					totalPages := extractMaxPage(body)
 					total := len(scenes) * totalPages
+					scraper.Debugf(1, "%s: %d total scenes", s.Config.SiteID, total)
 					select {
 					case out <- scraper.Progress(total):
 					case <-ctx.Done():
@@ -118,6 +120,7 @@ func (s *Scraper) Run(ctx context.Context, studioURL string, opts scraper.ListOp
 
 			for _, sc := range scenes {
 				if opts.KnownIDs[sc.id] {
+					scraper.Debugf(1, "%s: hit known ID, stopping early", s.Config.SiteID)
 					select {
 					case out <- scraper.StoppedEarly():
 					case <-ctx.Done():

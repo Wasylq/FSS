@@ -84,6 +84,7 @@ func (s *Scraper) runWithBase(ctx context.Context, baseURL string, studioURL str
 				return
 			}
 		}
+		scraper.Debugf(1, "puremature: fetching page %d", page)
 
 		pageURL := fmt.Sprintf("%s%spage=%d&per_page=%d",
 			baseURL, querySep(baseURL), page, pageSize)
@@ -113,6 +114,7 @@ func (s *Scraper) runWithBase(ctx context.Context, baseURL string, studioURL str
 			id := strconv.Itoa(item.ID)
 
 			if opts.KnownIDs[id] {
+				scraper.Debugf(1, "puremature: hit known ID, stopping early")
 				select {
 				case out <- scraper.StoppedEarly():
 				case <-ctx.Done():

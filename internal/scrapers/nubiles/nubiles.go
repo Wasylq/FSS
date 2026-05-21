@@ -257,6 +257,7 @@ func (s *Scraper) runModel(ctx context.Context, base string, f filter, opts scra
 
 	for _, e := range entries {
 		if opts.KnownIDs[e.id] {
+			scraper.Debugf(1, "nubiles: hit known ID, stopping early")
 			select {
 			case out <- scraper.StoppedEarly():
 			case <-ctx.Done():
@@ -288,6 +289,7 @@ func (s *Scraper) runPaginated(ctx context.Context, base string, f filter, opts 
 				break
 			}
 		}
+		scraper.Debugf(1, "nubiles: fetching page %d", offset)
 
 		pageURL := listingURL(base, f, offset)
 		entries, totalPages, err := s.fetchListing(ctx, pageURL)
@@ -333,6 +335,7 @@ func (s *Scraper) runPaginated(ctx context.Context, base string, f filter, opts 
 		}
 		if cancelled || hitKnown {
 			if hitKnown {
+				scraper.Debugf(1, "nubiles: hit known ID, stopping early")
 				select {
 				case out <- scraper.StoppedEarly():
 				case <-ctx.Done():

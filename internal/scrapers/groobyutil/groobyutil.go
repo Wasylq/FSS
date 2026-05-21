@@ -179,6 +179,7 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 	base := s.base
 
 	if modelSlugRe.MatchString(studioURL) {
+		scraper.Debugf(1, "%s: detected model page", s.cfg.SiteID)
 		s.scrapeModelPage(ctx, studioURL, opts, out, now, base)
 		return
 	}
@@ -205,6 +206,7 @@ func (s *Scraper) scrapeModelPage(ctx context.Context, studioURL string, opts sc
 	if len(scenes) == 0 {
 		return
 	}
+	scraper.Debugf(1, "%s: found %d scenes on model page", s.cfg.SiteID, len(scenes))
 
 	select {
 	case out <- scraper.Progress(len(scenes)):
@@ -214,6 +216,7 @@ func (s *Scraper) scrapeModelPage(ctx context.Context, studioURL string, opts sc
 
 	for _, item := range scenes {
 		if opts.KnownIDs[item.id] {
+			scraper.Debugf(1, "%s: hit known ID %s, stopping early", s.cfg.SiteID, item.id)
 			select {
 			case out <- scraper.StoppedEarly():
 			case <-ctx.Done():
@@ -241,6 +244,7 @@ func (s *Scraper) scrapeListingPages(ctx context.Context, opts scraper.ListOpts,
 			}
 		}
 
+		scraper.Debugf(1, "%s: fetching page %d", s.cfg.SiteID, page)
 		pageURL := fmt.Sprintf("%s%s/categories/movies_%d_d.html", base, s.cfg.TourPrefix, page)
 
 		body, err := s.fetchPage(ctx, pageURL)
@@ -259,6 +263,7 @@ func (s *Scraper) scrapeListingPages(ctx context.Context, opts scraper.ListOpts,
 
 		if page == 1 {
 			total := estimateTotal(body, len(scenes))
+			scraper.Debugf(1, "%s: %d total scenes (estimated)", s.cfg.SiteID, total)
 			if total > 0 {
 				select {
 				case out <- scraper.Progress(total):
@@ -270,6 +275,7 @@ func (s *Scraper) scrapeListingPages(ctx context.Context, opts scraper.ListOpts,
 
 		for _, item := range scenes {
 			if opts.KnownIDs[item.id] {
+				scraper.Debugf(1, "%s: hit known ID %s, stopping early", s.cfg.SiteID, item.id)
 				select {
 				case out <- scraper.StoppedEarly():
 				case <-ctx.Done():

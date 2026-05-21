@@ -167,6 +167,7 @@ func (s *siteScraper) scrapeSitemap(ctx context.Context, studioURL string, opts 
 
 		id := m[2]
 		if opts.KnownIDs[id] {
+			scraper.Debugf(1, "%s: hit known ID, stopping early", s.config.SiteID)
 			select {
 			case out <- scraper.StoppedEarly():
 			case <-ctx.Done():
@@ -218,6 +219,7 @@ func (s *siteScraper) scrapeModelPage(ctx context.Context, pageURL string, opts 
 
 	for _, item := range items {
 		if opts.KnownIDs[item.id] {
+			scraper.Debugf(1, "%s: hit known ID, stopping early", s.config.SiteID)
 			select {
 			case out <- scraper.StoppedEarly():
 			case <-ctx.Done():

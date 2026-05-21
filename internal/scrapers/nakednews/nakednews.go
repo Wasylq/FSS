@@ -236,6 +236,7 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 					return
 				}
 			}
+			scraper.Debugf(1, "nakednews: fetching page %d", page)
 
 			items, total, err := s.fetchPage(ctx, base, cfg, page)
 			if err != nil {
@@ -255,6 +256,7 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 				if t <= 0 {
 					t = len(items)
 				}
+				scraper.Debugf(1, "nakednews: %d total scenes", t)
 				select {
 				case out <- scraper.Progress(t):
 				case <-ctx.Done():
@@ -272,6 +274,7 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 
 				id := strconv.Itoa(item.ProgramSegmentID)
 				if opts.KnownIDs[id] {
+					scraper.Debugf(1, "nakednews: hit known ID, stopping early")
 					select {
 					case out <- scraper.StoppedEarly():
 					case <-ctx.Done():

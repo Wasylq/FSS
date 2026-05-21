@@ -243,6 +243,7 @@ func RunWorkerPool(ctx context.Context, client *http.Client, headers map[string]
 	sitemapURLs []string, studioURL string, opts scraper.ListOpts,
 	parse PageParser, out chan<- scraper.SceneResult) {
 
+	scraper.Debugf(1, "wputil: fetching %d sitemaps", len(sitemapURLs))
 	allURLs, err := FetchAllSitemaps(ctx, client, sitemapURLs, headers)
 	if err != nil {
 		select {
@@ -253,6 +254,7 @@ func RunWorkerPool(ctx context.Context, client *http.Client, headers map[string]
 	}
 
 	if len(allURLs) > 0 {
+		scraper.Debugf(1, "wputil: %d total pages from sitemaps", len(allURLs))
 		select {
 		case out <- scraper.Progress(len(allURLs)):
 		case <-ctx.Done():
@@ -263,6 +265,7 @@ func RunWorkerPool(ctx context.Context, client *http.Client, headers map[string]
 	if opts.Workers <= 0 {
 		opts.Workers = 3
 	}
+	scraper.Debugf(1, "wputil: fetching %d detail pages with %d workers", len(allURLs), opts.Workers)
 
 	work := make(chan SitemapURL, opts.Workers)
 	var wg sync.WaitGroup

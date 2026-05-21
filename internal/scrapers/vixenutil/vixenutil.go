@@ -140,6 +140,7 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 	defer close(out)
 
 	if m := performerSlug.FindStringSubmatch(studioURL); m != nil {
+		scraper.Debugf(1, "%s: detected performer page", s.cfg.SiteID)
 		s.scrapePerformerPage(ctx, studioURL, opts, out)
 		return
 	}
@@ -172,6 +173,7 @@ func (s *Scraper) scrapePerformerPage(ctx context.Context, studioURL string, opt
 	if len(videos) == 0 {
 		return
 	}
+	scraper.Debugf(1, "%s: found %d scenes on performer page", s.cfg.SiteID, len(videos))
 
 	select {
 	case out <- scraper.Progress(len(videos)):
@@ -185,6 +187,7 @@ func (s *Scraper) scrapePerformerPage(ctx context.Context, studioURL string, opt
 			continue
 		}
 		if opts.KnownIDs[id] {
+			scraper.Debugf(1, "%s: hit known ID, stopping early", s.cfg.SiteID)
 			select {
 			case out <- scraper.StoppedEarly():
 			case <-ctx.Done():
@@ -213,6 +216,7 @@ func (s *Scraper) scrapeListingPages(ctx context.Context, opts scraper.ListOpts,
 
 	work := make(chan workItem, workers)
 	var wg sync.WaitGroup
+	scraper.Debugf(1, "%s: fetching detail pages with %d workers", s.cfg.SiteID, workers)
 	for i := 0; i < workers; i++ {
 		wg.Add(1)
 		go func() {
@@ -244,7 +248,9 @@ func (s *Scraper) scrapeListingPages(ctx context.Context, opts scraper.ListOpts,
 				break
 			}
 		}
+		scraper.Debugf(1, "%s: fetching page %d", s.cfg.SiteID, page)
 
+		scraper.Debugf(1, "%s: fetching page %d", s.cfg.SiteID, page)
 		pageURL := fmt.Sprintf("%s/videos?page=%d", s.base, page)
 		body, err := s.fetchPage(ctx, pageURL)
 		if err != nil {
@@ -270,6 +276,7 @@ func (s *Scraper) scrapeListingPages(ctx context.Context, opts scraper.ListOpts,
 		}
 
 		if page == 1 && pp.TotalCount > 0 {
+			scraper.Debugf(1, "%s: %d total scenes", s.cfg.SiteID, pp.TotalCount)
 			select {
 			case out <- scraper.Progress(pp.TotalCount):
 			case <-ctx.Done():
@@ -283,6 +290,7 @@ func (s *Scraper) scrapeListingPages(ctx context.Context, opts scraper.ListOpts,
 				continue
 			}
 			if opts.KnownIDs[id] {
+				scraper.Debugf(1, "%s: hit known ID, stopping early", s.cfg.SiteID)
 				select {
 				case out <- scraper.StoppedEarly():
 				case <-ctx.Done():

@@ -130,6 +130,7 @@ func (s *Scraper) fetchPage(ctx context.Context, buildID string, page int) (*nex
 func (s *Scraper) run(ctx context.Context, opts scraper.ListOpts, out chan<- scraper.SceneResult) {
 	defer close(out)
 
+	scraper.Debugf(1, "%s: fetching build ID", s.cfg.ID)
 	buildID, err := s.fetchBuildID(ctx)
 	if err != nil {
 		select {
@@ -154,6 +155,7 @@ func (s *Scraper) run(ctx context.Context, opts scraper.ListOpts, out chan<- scr
 			}
 		}
 
+		scraper.Debugf(1, "%s: fetching page %d", s.cfg.ID, page)
 		data, err := s.fetchPage(ctx, buildID, page)
 		if err != nil {
 			select {
@@ -166,6 +168,7 @@ func (s *Scraper) run(ctx context.Context, opts scraper.ListOpts, out chan<- scr
 		contents := data.PageProps.Contents
 
 		if page == 1 && contents.Total > 0 {
+			scraper.Debugf(1, "%s: %d total scenes", s.cfg.ID, contents.Total)
 			select {
 			case out <- scraper.Progress(contents.Total):
 			case <-ctx.Done():
@@ -181,6 +184,7 @@ func (s *Scraper) run(ctx context.Context, opts scraper.ListOpts, out chan<- scr
 		for _, sc := range contents.Data {
 			id := strconv.Itoa(sc.ID)
 			if opts.KnownIDs[id] {
+				scraper.Debugf(1, "%s: hit known ID %s, stopping early", s.cfg.ID, id)
 				stoppedEarly = true
 				break
 			}

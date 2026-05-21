@@ -95,6 +95,7 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 					return
 				}
 			}
+			scraper.Debugf(1, "rocketinc: fetching page %d", page)
 
 			pageURL := buildPageURL(baseURL, page)
 			body, err := s.fetchPage(ctx, pageURL)
@@ -122,6 +123,7 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 
 			for _, slug := range slugs {
 				if opts.KnownIDs[slug] {
+					scraper.Debugf(1, "rocketinc: hit known ID, stopping early")
 					select {
 					case out <- scraper.StoppedEarly():
 					case <-ctx.Done():

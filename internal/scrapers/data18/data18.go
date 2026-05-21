@@ -188,6 +188,7 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 		total = len(entries)
 	}
 	if total > 0 {
+		scraper.Debugf(1, "data18: %d total scenes", total)
 		select {
 		case out <- scraper.Progress(total):
 		case <-ctx.Done():
@@ -222,6 +223,7 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 				break
 			}
 		}
+		scraper.Debugf(1, "data18: fetching page %d", page)
 
 		body, err := s.fetchAjax(ctx, lc.ajaxURL(page), studioURL)
 		if err != nil {
@@ -257,6 +259,7 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 func (s *Scraper) sendEntries(ctx context.Context, entries []listEntry, opts scraper.ListOpts, work chan<- listEntry, out chan<- scraper.SceneResult) bool {
 	for _, e := range entries {
 		if opts.KnownIDs[e.id] {
+			scraper.Debugf(1, "data18: hit known ID, stopping early")
 			select {
 			case out <- scraper.StoppedEarly():
 			case <-ctx.Done():

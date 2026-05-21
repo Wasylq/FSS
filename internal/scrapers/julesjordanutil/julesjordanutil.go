@@ -111,6 +111,7 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 
 	work := make(chan workItem)
 	var wg sync.WaitGroup
+	scraper.Debugf(1, "%s: fetching detail pages with %d workers", s.Config.SiteID, workers)
 	for i := 0; i < workers; i++ {
 		wg.Add(1)
 		go func() {
@@ -138,8 +139,10 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 		defer close(work)
 		switch {
 		case strings.Contains(studioURL, "/models/"):
+			scraper.Debugf(1, "%s: detected model page", s.Config.SiteID)
 			s.enqueueModelPage(ctx, studioURL, opts, out, work)
 		case strings.Contains(studioURL, "/dvds/"):
+			scraper.Debugf(1, "%s: detected DVD listing", s.Config.SiteID)
 			s.enqueueDVDPages(ctx, delay, opts, out, work)
 		default:
 			s.enqueueListingPages(ctx, delay, opts, out, work)
@@ -164,6 +167,7 @@ func (s *Scraper) enqueueListingPages(ctx context.Context, delay time.Duration, 
 			}
 		}
 
+		scraper.Debugf(1, "%s: fetching page %d", s.Config.SiteID, page)
 		pageURL := fmt.Sprintf("%s/categories/movies_%d_d.html", s.base, page)
 		body, err := s.fetchPage(ctx, pageURL)
 		if err != nil {
@@ -182,6 +186,7 @@ func (s *Scraper) enqueueListingPages(ctx context.Context, delay time.Duration, 
 		if page == 1 {
 			maxPage := s.extractMaxPage(body)
 			if maxPage > 0 {
+				scraper.Debugf(1, "%s: %d total scenes (estimated)", s.Config.SiteID, maxPage*len(items))
 				select {
 				case out <- scraper.Progress(maxPage * len(items)):
 				case <-ctx.Done():
@@ -192,6 +197,7 @@ func (s *Scraper) enqueueListingPages(ctx context.Context, delay time.Duration, 
 
 		for _, item := range items {
 			if opts.KnownIDs[item.slug] {
+				scraper.Debugf(1, "%s: hit known ID %s, stopping early", s.Config.SiteID, item.slug)
 				select {
 				case out <- scraper.StoppedEarly():
 				case <-ctx.Done():
@@ -223,6 +229,7 @@ func (s *Scraper) enqueueModelPage(ctx context.Context, studioURL string, opts s
 	if len(items) == 0 {
 		return
 	}
+	scraper.Debugf(1, "%s: found %d scenes on model page", s.Config.SiteID, len(items))
 
 	select {
 	case out <- scraper.Progress(len(items)):
@@ -232,6 +239,7 @@ func (s *Scraper) enqueueModelPage(ctx context.Context, studioURL string, opts s
 
 	for _, item := range items {
 		if opts.KnownIDs[item.slug] {
+			scraper.Debugf(1, "%s: hit known ID %s, stopping early", s.Config.SiteID, item.slug)
 			select {
 			case out <- scraper.StoppedEarly():
 			case <-ctx.Done():
@@ -252,6 +260,7 @@ func (s *Scraper) enqueueDVDPages(ctx context.Context, delay time.Duration, opts
 	seen := map[string]bool{}
 
 	for page := 1; ; page++ {
+		scraper.Debugf(1, "%s: fetching DVD page %d", s.Config.SiteID, page)
 		if ctx.Err() != nil {
 			return
 		}
@@ -328,6 +337,7 @@ func (s *Scraper) enqueueDVDPages(ctx context.Context, delay time.Duration, opts
 				seen[slug] = true
 
 				if opts.KnownIDs[slug] {
+					scraper.Debugf(1, "%s: hit known ID %s, stopping early", s.Config.SiteID, slug)
 					select {
 					case out <- scraper.StoppedEarly():
 					case <-ctx.Done():

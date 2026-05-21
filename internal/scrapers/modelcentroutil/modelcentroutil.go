@@ -66,6 +66,7 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 				return
 			}
 		}
+		scraper.Debugf(1, "%s: fetching page %d", s.Config.SiteID, offset)
 
 		listing, total, err := s.FetchListing(ctx, offset)
 		if err != nil {

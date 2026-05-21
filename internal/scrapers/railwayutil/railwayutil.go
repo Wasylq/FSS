@@ -62,6 +62,7 @@ type APIVideo struct {
 func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOpts, out chan<- scraper.SceneResult) {
 	defer close(out)
 
+	scraper.Debugf(1, "%s: fetching all videos from API", s.cfg.ID)
 	videos, err := s.fetchAll(ctx)
 	if err != nil {
 		select {
@@ -72,12 +73,16 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 	}
 
 	filter := ParseFilter(studioURL)
+	if filter != "" {
+		scraper.Debugf(1, "%s: detected model filter: %s", s.cfg.ID, filter)
+	}
 	var filtered []APIVideo
 	for _, v := range videos {
 		if filter == "" || matchesFilter(v.Name, filter) {
 			filtered = append(filtered, v)
 		}
 	}
+	scraper.Debugf(1, "%s: %d total scenes", s.cfg.ID, len(filtered))
 
 	select {
 	case out <- scraper.Progress(len(filtered)):

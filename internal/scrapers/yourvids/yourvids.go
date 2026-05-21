@@ -120,6 +120,7 @@ func (s *Scraper) run(ctx context.Context, studioURL, slug string, opts scraper.
 				return
 			}
 		}
+		scraper.Debugf(1, "yourvids: fetching page %d", page)
 
 		apiURL := fmt.Sprintf("%s/api/creators/%s/videos?page=%d&sort=newest", s.apiBase, slug, page)
 		resp, err := s.fetchAPI(ctx, apiURL)
@@ -216,6 +217,7 @@ func (s *Scraper) run(ctx context.Context, studioURL, slug string, opts scraper.
 	}
 
 	if stoppedEarly {
+		scraper.Debugf(1, "yourvids: hit known ID, stopping early")
 		select {
 		case out <- scraper.StoppedEarly():
 		case <-ctx.Done():

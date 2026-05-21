@@ -102,6 +102,7 @@ func (s *Scraper) enqueuePages(ctx context.Context, opts scraper.ListOpts, out c
 				return
 			}
 		}
+		scraper.Debugf(1, "xevbellringer: fetching page %d", page)
 
 		var pageURL string
 		if page == 1 {
@@ -127,6 +128,7 @@ func (s *Scraper) enqueuePages(ctx context.Context, opts scraper.ListOpts, out c
 		if page == 1 {
 			total := estimateTotal(body, len(scenes))
 			if total > 0 {
+				scraper.Debugf(1, "xevbellringer: %d total scenes", total)
 				select {
 				case out <- scraper.Progress(total):
 				case <-ctx.Done():
@@ -137,6 +139,7 @@ func (s *Scraper) enqueuePages(ctx context.Context, opts scraper.ListOpts, out c
 
 		for _, ls := range scenes {
 			if opts.KnownIDs[ls.id] {
+				scraper.Debugf(1, "xevbellringer: hit known ID, stopping early")
 				select {
 				case out <- scraper.StoppedEarly():
 				case <-ctx.Done():

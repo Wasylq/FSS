@@ -188,6 +188,7 @@ func (s *Scraper) Run(ctx context.Context, studioURL string, opts scraper.ListOp
 		workers = 4
 	}
 
+	scraper.Debugf(1, "%s: fetching listing page", s.Cfg.SiteID)
 	body, err := s.FetchPage(ctx, s.Base+"/updates.html")
 	if err != nil {
 		select {
@@ -216,6 +217,7 @@ func (s *Scraper) Run(ctx context.Context, studioURL string, opts scraper.ListOp
 		return
 	}
 
+	scraper.Debugf(1, "%s: %d total scenes", s.Cfg.SiteID, latestID)
 	select {
 	case out <- scraper.Progress(latestID):
 	case <-ctx.Done():
@@ -224,6 +226,7 @@ func (s *Scraper) Run(ctx context.Context, studioURL string, opts scraper.ListOp
 
 	work := make(chan int)
 	var wg sync.WaitGroup
+	scraper.Debugf(1, "%s: fetching %d detail pages with %d workers", s.Cfg.SiteID, latestID, workers)
 	for i := 0; i < workers; i++ {
 		wg.Add(1)
 		go func() {
@@ -252,6 +255,7 @@ func (s *Scraper) Run(ctx context.Context, studioURL string, opts scraper.ListOp
 		for id := latestID; id >= 1; id-- {
 			idStr := strconv.Itoa(id)
 			if opts.KnownIDs[idStr] {
+				scraper.Debugf(1, "%s: hit known ID, stopping early", s.Cfg.SiteID)
 				select {
 				case out <- scraper.StoppedEarly():
 				case <-ctx.Done():

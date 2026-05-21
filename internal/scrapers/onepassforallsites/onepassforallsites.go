@@ -195,6 +195,7 @@ func (s *Scraper) scrapePaginated(ctx context.Context, base string, opts scraper
 				return
 			}
 		}
+		scraper.Debugf(1, "1passforallsites: fetching page %d", page)
 
 		var pageURL string
 		if isHub {
@@ -220,6 +221,7 @@ func (s *Scraper) scrapePaginated(ctx context.Context, base string, opts scraper
 		if !totalSent {
 			total := parseTotalPages(body) * perPage
 			if total > 0 {
+				scraper.Debugf(1, "1passforallsites: %d total scenes", total)
 				select {
 				case out <- scraper.Progress(total):
 				case <-ctx.Done():
@@ -231,6 +233,7 @@ func (s *Scraper) scrapePaginated(ctx context.Context, base string, opts scraper
 
 		for _, item := range items {
 			if opts.KnownIDs[item.id] {
+				scraper.Debugf(1, "1passforallsites: hit known ID, stopping early")
 				select {
 				case out <- scraper.StoppedEarly():
 				case <-ctx.Done():

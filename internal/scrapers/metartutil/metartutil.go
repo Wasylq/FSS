@@ -99,6 +99,7 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 				return
 			}
 		}
+		scraper.Debugf(1, "%s: fetching page %d", s.Config.SiteID, page)
 
 		resp, err := s.fetchPage(ctx, page)
 		if err != nil {
@@ -128,6 +129,7 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 				continue
 			}
 			if opts.KnownIDs[g.UUID] {
+				scraper.Debugf(1, "%s: hit known ID, stopping early", s.Config.SiteID)
 				select {
 				case out <- scraper.StoppedEarly():
 				case <-ctx.Done():

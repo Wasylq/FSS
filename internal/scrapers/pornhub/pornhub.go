@@ -70,6 +70,7 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 				return
 			}
 		}
+		scraper.Debugf(1, "pornhub: fetching page %d", page)
 
 		pageURL, err := buildPageURL(studioURL, page)
 		if err != nil {
@@ -94,6 +95,7 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 		}
 
 		if page == 1 && total > 0 {
+			scraper.Debugf(1, "pornhub: %d total scenes", total)
 			select {
 			case out <- scraper.Progress(total):
 			case <-ctx.Done():
@@ -104,6 +106,7 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 		now := time.Now().UTC()
 		for _, item := range items {
 			if opts.KnownIDs[item.vkey] {
+				scraper.Debugf(1, "pornhub: hit known ID, stopping early")
 				select {
 				case out <- scraper.StoppedEarly():
 				case <-ctx.Done():

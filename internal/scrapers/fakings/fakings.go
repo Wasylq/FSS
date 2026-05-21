@@ -122,6 +122,7 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 				return
 			}
 		}
+		scraper.Debugf(1, "fakings: fetching page %d", page)
 
 		body, err := s.fetchHTML(ctx, pc.pageURL(page))
 		if err != nil {
@@ -141,6 +142,7 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 		if page == 1 {
 			total, take := parsePagination(rsc)
 			if total > 0 {
+				scraper.Debugf(1, "fakings: %d total scenes", total)
 				select {
 				case out <- scraper.Progress(total):
 				case <-ctx.Done():
@@ -156,6 +158,7 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 		for _, v := range videos {
 			scene := v.toScene(studioURL, now)
 			if opts.KnownIDs[scene.ID] {
+				scraper.Debugf(1, "fakings: hit known ID, stopping early")
 				select {
 				case out <- scraper.StoppedEarly():
 				case <-ctx.Done():
@@ -211,6 +214,7 @@ func (s *Scraper) runActress(ctx context.Context, pc pageConfig, studioURL strin
 			scene.Performers = []string{performer}
 		}
 		if opts.KnownIDs[scene.ID] {
+			scraper.Debugf(1, "fakings: hit known ID, stopping early")
 			select {
 			case out <- scraper.StoppedEarly():
 			case <-ctx.Done():
