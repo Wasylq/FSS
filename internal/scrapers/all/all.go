@@ -55,6 +55,7 @@ import (
 	_ "github.com/Wasylq/FSS/internal/scrapers/kmproduce"
 	_ "github.com/Wasylq/FSS/internal/scrapers/ladyfyre"
 	_ "github.com/Wasylq/FSS/internal/scrapers/ladysonia"
+	_ "github.com/Wasylq/FSS/internal/scrapers/legsemporium"
 	_ "github.com/Wasylq/FSS/internal/scrapers/loyalfans"
 	_ "github.com/Wasylq/FSS/internal/scrapers/lucasentertainment"
 	_ "github.com/Wasylq/FSS/internal/scrapers/manyvids"
