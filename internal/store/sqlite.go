@@ -442,11 +442,32 @@ func upsertScene(tx *sql.Tx, sc models.Scene) error {
 	return syncPriceHistory(tx, sc)
 }
 
-// syncRelation diffs the desired (name, position) set against the junction rows
-// already stored for this scene and applies only the deltas. Entity upserts use
-// INSERT ... ON CONFLICT ... RETURNING id to fetch the id in a single round
-// trip whether the entity is new or already known.
+var allowedRelationIDs = map[string]bool{
+	"performers":       true,
+	"tags":             true,
+	"categories":       true,
+	"scene_performers": true,
+	"scene_tags":       true,
+	"scene_categories": true,
+	"performer_id":     true,
+	"tag_id":           true,
+	"category_id":      true,
+	"position":         true,
+}
+
+func validateRelationIDs(names ...string) error {
+	for _, n := range names {
+		if !allowedRelationIDs[n] {
+			return fmt.Errorf("disallowed SQL identifier: %q", n)
+		}
+	}
+	return nil
+}
+
 func syncRelation(tx *sql.Tx, entityTable, junctionTable, fkCol, sceneID, siteID string, names []string, withPosition bool) error {
+	if err := validateRelationIDs(entityTable, junctionTable, fkCol); err != nil {
+		return err
+	}
 	type want struct {
 		name     string
 		position int
@@ -659,6 +680,13 @@ func syncPriceHistory(tx *sql.Tx, sc models.Scene) error {
 // for all scenes belonging to studioURL and attaches results to the scene slice.
 // orderCol is the column to ORDER BY (empty = no ordering).
 func (s *SQLite) loadRelation(studioURL, junctionTable, entityTable, fkCol, orderCol string, scenes []models.Scene) error {
+	ids := []string{junctionTable, entityTable, fkCol}
+	if orderCol != "" {
+		ids = append(ids, orderCol)
+	}
+	if err := validateRelationIDs(ids...); err != nil {
+		return err
+	}
 	if len(scenes) == 0 {
 		return nil
 	}
