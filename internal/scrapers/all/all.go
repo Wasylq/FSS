@@ -23,6 +23,7 @@ import (
 	_ "github.com/Wasylq/FSS/internal/scrapers/cherrypimps"
 	_ "github.com/Wasylq/FSS/internal/scrapers/clips4sale"
 	_ "github.com/Wasylq/FSS/internal/scrapers/crunchboy"
+	_ "github.com/Wasylq/FSS/internal/scrapers/cumlouder"
 	_ "github.com/Wasylq/FSS/internal/scrapers/czechav"
 	_ "github.com/Wasylq/FSS/internal/scrapers/czechvr"
 	_ "github.com/Wasylq/FSS/internal/scrapers/data18"
