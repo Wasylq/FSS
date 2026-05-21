@@ -122,7 +122,11 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 		return
 	}
 
-	details := s.fetchDetails(ctx, collected, opts.Delay)
+	workers := opts.Workers
+	if workers <= 0 {
+		workers = 4
+	}
+	details := s.fetchDetails(ctx, collected, opts.Delay, workers)
 
 	now := time.Now().UTC()
 	for _, c := range collected {
@@ -280,11 +284,10 @@ func parseDetailPage(body []byte) detailData {
 	return d
 }
 
-func (s *Scraper) fetchDetails(ctx context.Context, cards []listingCard, delay time.Duration) map[string]detailData {
+func (s *Scraper) fetchDetails(ctx context.Context, cards []listingCard, delay time.Duration, workers int) map[string]detailData {
 	results := make(map[string]detailData, len(cards))
 	var mu sync.Mutex
 
-	const workers = 4
 	work := make(chan listingCard, len(cards))
 	for _, c := range cards {
 		work <- c
