@@ -7,9 +7,11 @@ import (
 	"fmt"
 	"io/fs"
 	"os"
+	"os/signal"
 	"path/filepath"
 	"sort"
 	"strings"
+	"syscall"
 	"time"
 
 	"github.com/spf13/cobra"
@@ -85,7 +87,8 @@ type changelogFieldDiff struct {
 }
 
 func runStashImport(cmd *cobra.Command, _ []string) error {
-	ctx := cmd.Context()
+	ctx, stop := signal.NotifyContext(cmd.Context(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
 
 	client := stash.NewClient(stashURL(cmd), stashAPIKey(cmd))
 	if err := client.Ping(ctx); err != nil {

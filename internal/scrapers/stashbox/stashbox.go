@@ -30,8 +30,9 @@ func init() { scraper.Register(New()) }
 func (s *Scraper) ID() string { return "stashbox" }
 
 func (s *Scraper) Patterns() []string {
+	insts, _ := getInstances()
 	var patterns []string
-	for _, inst := range getInstances() {
+	for _, inst := range insts {
 		base := inst.baseURL
 		patterns = append(patterns,
 			base+"/performers/{id}",
@@ -54,7 +55,8 @@ func (s *Scraper) MatchesURL(u string) bool {
 	if !pathRe.MatchString(parsed.Path) {
 		return false
 	}
-	for _, inst := range getInstances() {
+	insts, _ := getInstances()
+	for _, inst := range insts {
 		if strings.EqualFold(parsed.Host, inst.host) {
 			return true
 		}
@@ -72,8 +74,11 @@ func (s *Scraper) ListScenes(ctx context.Context, studioURL string, opts scraper
 		return nil, fmt.Errorf("URL must match /{performers|studios}/{uuid}: %s", studioURL)
 	}
 
+	insts, err := getInstances()
+	if err != nil {
+		return nil, err
+	}
 	var inst *instance
-	insts := getInstances()
 	for i := range insts {
 		if strings.EqualFold(parsed.Host, insts[i].host) {
 			inst = &insts[i]
@@ -101,13 +106,18 @@ type instance struct {
 
 var (
 	instances     []instance
+	instancesErr  error
 	instancesOnce sync.Once
 )
 
-func getInstances() []instance {
+func getInstances() ([]instance, error) {
 	instancesOnce.Do(func() {
 		cfg, err := config.Load()
-		if err != nil || len(cfg.Stashbox) == 0 {
+		if err != nil {
+			instancesErr = fmt.Errorf("loading stashbox config: %w", err)
+			return
+		}
+		if len(cfg.Stashbox) == 0 {
 			return
 		}
 		for _, sb := range cfg.Stashbox {
@@ -127,7 +137,7 @@ func getInstances() []instance {
 			})
 		}
 	})
-	return instances
+	return instances, instancesErr
 }
 
 func deriveSiteID(host string) string {

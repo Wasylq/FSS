@@ -7,9 +7,11 @@ import (
 	"fmt"
 	"io/fs"
 	"os"
+	"os/signal"
 	"path/filepath"
 	"sort"
 	"strings"
+	"syscall"
 
 	"github.com/spf13/cobra"
 
@@ -49,7 +51,8 @@ var revertableFields = map[string]bool{
 }
 
 func runStashRevert(cmd *cobra.Command, args []string) error {
-	ctx := cmd.Context()
+	ctx, stop := signal.NotifyContext(cmd.Context(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
 
 	dir, _ := cmd.Flags().GetString("dir")
 	if dir == "" {

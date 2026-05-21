@@ -3,8 +3,10 @@ package cmd
 import (
 	"fmt"
 	"os"
+	"os/signal"
 	"path/filepath"
 	"strings"
+	"syscall"
 	"text/tabwriter"
 
 	"github.com/spf13/cobra"
@@ -28,7 +30,8 @@ func init() {
 }
 
 func runStashUnmatched(cmd *cobra.Command, _ []string) error {
-	ctx := cmd.Context()
+	ctx, stop := signal.NotifyContext(cmd.Context(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
 
 	client := stash.NewClient(stashURL(cmd), stashAPIKey(cmd))
 	if err := client.Ping(ctx); err != nil {
