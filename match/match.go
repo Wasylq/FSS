@@ -3,6 +3,7 @@ package match
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -210,12 +211,30 @@ func BuildIndex(scenes []models.Scene) *SceneIndex {
 	return idx
 }
 
+const maxJSONFileBytes = 256 << 20 // 256 MB
+
+func readBounded(path string, limit int64) ([]byte, error) {
+	f, err := os.Open(path)
+	if err != nil {
+		return nil, err
+	}
+	defer func() { _ = f.Close() }()
+	data, err := io.ReadAll(io.LimitReader(f, limit+1))
+	if err != nil {
+		return nil, err
+	}
+	if int64(len(data)) > limit {
+		return nil, fmt.Errorf("file exceeds %d bytes", limit)
+	}
+	return data, nil
+}
+
 // LoadJSONFiles reads FSS JSON files and returns all scenes.
 // Files that don't match the expected format are silently skipped.
 func LoadJSONFiles(paths []string) ([]models.Scene, error) {
 	var all []models.Scene
 	for _, p := range paths {
-		data, err := os.ReadFile(p)
+		data, err := readBounded(p, maxJSONFileBytes)
 		if err != nil {
 			return nil, fmt.Errorf("reading %s: %w", p, err)
 		}

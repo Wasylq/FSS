@@ -106,9 +106,13 @@ func Load() (*Config, error) {
 		}
 	}
 
-	raw, err := io.ReadAll(f)
+	const maxConfigBytes = 1 << 20 // 1 MB
+	raw, err := io.ReadAll(io.LimitReader(f, maxConfigBytes+1))
 	if err != nil {
 		return nil, fmt.Errorf("reading config %s: %w", path, err)
+	}
+	if len(raw) > maxConfigBytes {
+		return nil, fmt.Errorf("config %s exceeds %d bytes", path, maxConfigBytes)
 	}
 
 	raw = sanitizeWindowsPaths(raw)
