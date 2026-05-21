@@ -22,6 +22,10 @@ func NewSQLite(path string) (*SQLite, error) {
 		return nil, fmt.Errorf("opening sqlite %s: %w", path, err)
 	}
 	db.SetMaxOpenConns(1) // SQLite does not support concurrent writes
+	if _, err := db.Exec("PRAGMA journal_mode=WAL; PRAGMA synchronous=NORMAL;"); err != nil {
+		_ = db.Close()
+		return nil, fmt.Errorf("setting WAL mode: %w", err)
+	}
 	s := &SQLite{db: db}
 	if err := s.migrate(); err != nil {
 		_ = db.Close()
