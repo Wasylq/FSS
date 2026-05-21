@@ -11,13 +11,10 @@ import (
 )
 
 func WriteJSON(sf models.StudioFile, path string) error {
-	data, err := json.MarshalIndent(sf, "", "  ")
-	if err != nil {
-		return fmt.Errorf("marshalling JSON: %w", err)
-	}
 	return atomicWriteFile(path, func(w io.Writer) error {
-		_, err := w.Write(data)
-		return err
+		enc := json.NewEncoder(w)
+		enc.SetIndent("", "  ")
+		return enc.Encode(sf)
 	})
 }
 
