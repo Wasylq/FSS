@@ -27,7 +27,7 @@ var sites = []siteConfig{
 func init() {
 	for _, cfg := range sites {
 		escaped := strings.ReplaceAll(cfg.Domain, ".", `\.`)
-		re := regexp.MustCompile(fmt.Sprintf(`^https?://(?:www\.)?%s`, escaped))
+		re := regexp.MustCompile(fmt.Sprintf(`^https?://(?:www\.)?%s(?:/|$)`, escaped))
 
 		s := wankitnowutil.New(wankitnowutil.SiteConfig{
 			ID:       cfg.SiteID,

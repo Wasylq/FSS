@@ -24,7 +24,7 @@ const (
 	defaultDelay = 500 * time.Millisecond
 )
 
-var matchRe = regexp.MustCompile(`^https?://(?:www\.)?dorcelclub\.com`)
+var matchRe = regexp.MustCompile(`^https?://(?:www\.)?dorcelclub\.com(?:/|$)`)
 
 type Scraper struct {
 	client *http.Client

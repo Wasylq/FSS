@@ -17,7 +17,7 @@ import (
 
 const siteID = "analacrobats"
 
-var matchRe = regexp.MustCompile(`^https?://(?:www\.)?analacrobats\.com`)
+var matchRe = regexp.MustCompile(`^https?://(?:www\.)?analacrobats\.com(?:/|$)`)
 
 type Scraper struct {
 	client *http.Client

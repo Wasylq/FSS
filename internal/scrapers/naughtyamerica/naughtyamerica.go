@@ -48,7 +48,7 @@ func (s *Scraper) Patterns() []string {
 }
 
 var (
-	matchRe    = regexp.MustCompile(`^https?://(?:www\.)?(?:naughtyamerica(?:vr)?|myfriendshotmom|mysistershotfriend|tonightsgirlfriend|thundercock)\.com`)
+	matchRe    = regexp.MustCompile(`^https?://(?:www\.)?(?:naughtyamerica(?:vr)?|myfriendshotmom|mysistershotfriend|tonightsgirlfriend|thundercock)\.com(?:/|$)`)
 	pornstarRe = regexp.MustCompile(`/pornstar/([a-z0-9-]+)`)
 )
 

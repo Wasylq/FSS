@@ -63,7 +63,7 @@ func init() {
 	for _, d := range childDomains {
 		parts = append(parts, regexp.QuoteMeta(d))
 	}
-	matchRe = regexp.MustCompile(`^https?://(?:www\.)?(?:` + strings.Join(parts, "|") + `)`)
+	matchRe = regexp.MustCompile(`^https?://(?:www\.)?(?:` + strings.Join(parts, "|") + `)(?:/|$)`)
 	scraper.Register(New())
 }
 

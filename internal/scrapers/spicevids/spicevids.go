@@ -35,7 +35,7 @@ func (s *spicevidsScraper) Patterns() []string {
 	}
 }
 
-var matchRe = regexp.MustCompile(`^https?://(?:www\.)?spicevids\.com`)
+var matchRe = regexp.MustCompile(`^https?://(?:www\.)?spicevids\.com(?:/|$)`)
 
 func (s *spicevidsScraper) MatchesURL(u string) bool {
 	return matchRe.MatchString(u)

@@ -90,7 +90,7 @@ func init() {
 		for _, d := range allDomains {
 			reparts = append(reparts, strings.ReplaceAll(d, ".", `\.`))
 		}
-		re := regexp.MustCompile(fmt.Sprintf(`^https?://(?:www\.)?(?:%s)`, strings.Join(reparts, "|")))
+		re := regexp.MustCompile(fmt.Sprintf(`^https?://(?:www\.)?(?:%s)(?:/|$)`, strings.Join(reparts, "|")))
 
 		patterns := []string{cfg.Domain}
 		patterns = append(patterns, cfg.AltDomains...)

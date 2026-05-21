@@ -30,21 +30,21 @@ var sites = []siteConfig{
 		base:    "https://www.karupsow.com",
 		studio:  "Karups Older Women",
 		pattern: "karupsow.com",
-		matchRe: regexp.MustCompile(`^https?://(?:www\.)?karupsow\.com`),
+		matchRe: regexp.MustCompile(`^https?://(?:www\.)?karupsow\.com(?:/|$)`),
 	},
 	{
 		id:      "karupspc",
 		base:    "https://www.karupspc.com",
 		studio:  "Karups Private Collection",
 		pattern: "karupspc.com",
-		matchRe: regexp.MustCompile(`^https?://(?:www\.)?karupspc\.com`),
+		matchRe: regexp.MustCompile(`^https?://(?:www\.)?karupspc\.com(?:/|$)`),
 	},
 	{
 		id:      "karupsha",
 		base:    "https://www.karupsha.com",
 		studio:  "Karups Hometown Amateurs",
 		pattern: "karupsha.com",
-		matchRe: regexp.MustCompile(`^https?://(?:www\.)?karupsha\.com`),
+		matchRe: regexp.MustCompile(`^https?://(?:www\.)?karupsha\.com(?:/|$)`),
 	},
 }
 

@@ -21,7 +21,7 @@ const (
 	siteID      = "auntjudys"
 )
 
-var matchRe = regexp.MustCompile(`^https?://(?:www\.)?auntjudysxxx\.com`)
+var matchRe = regexp.MustCompile(`^https?://(?:www\.)?auntjudysxxx\.com(?:/|$)`)
 
 type Scraper struct {
 	client *http.Client

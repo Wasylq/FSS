@@ -37,7 +37,7 @@ func (s *Scraper) Patterns() []string {
 }
 
 var (
-	matchRe = regexp.MustCompile(`^https?://(?:www\.)?wankitnowvr\.com`)
+	matchRe = regexp.MustCompile(`^https?://(?:www\.)?wankitnowvr\.com(?:/|$)`)
 	modelRe = regexp.MustCompile(`/models/`)
 )
 

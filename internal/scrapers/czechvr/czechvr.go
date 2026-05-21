@@ -40,7 +40,7 @@ type siteScraper struct {
 }
 
 func newSiteScraper(cfg siteConfig) *siteScraper {
-	re := regexp.MustCompile(fmt.Sprintf(`^https?://(?:www\.)?%s`, strings.ReplaceAll(cfg.Domain, ".", `\.`)))
+	re := regexp.MustCompile(fmt.Sprintf(`^https?://(?:www\.)?%s(?:/|$)`, strings.ReplaceAll(cfg.Domain, ".", `\.`)))
 	return &siteScraper{
 		config:  cfg,
 		matchRe: re,

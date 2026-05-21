@@ -39,7 +39,7 @@ func New(cfg SiteConfig) *Scraper {
 	for _, alt := range cfg.AltDomains {
 		pattern += "|" + regexp.QuoteMeta(alt)
 	}
-	re := regexp.MustCompile(`^https?://(?:www\.)?(?:` + pattern + `)`)
+	re := regexp.MustCompile(`^https?://(?:www\.)?(?:` + pattern + `)(?:/|$)`)
 
 	modelRe := regexp.MustCompile(`/` + regexp.QuoteMeta(cfg.TourPrefix) + `/models/`)
 

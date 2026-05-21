@@ -53,7 +53,7 @@ var matchRe = regexp.MustCompile(`^https?://(?:www\.)?(?:` +
 	`hotlegsandfeet\.com|` +
 	`houseoftaboo\.com|` +
 	`onlyblowjob\.com|` +
-	`bustyworld\.com)`)
+	`bustyworld\.com)(?:/|$)`)
 
 func (s *Scraper) MatchesURL(u string) bool {
 	return matchRe.MatchString(u)

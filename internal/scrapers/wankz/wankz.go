@@ -41,7 +41,7 @@ func (s *siteScraper) ListScenes(ctx context.Context, studioURL string, opts scr
 func init() {
 	for _, cfg := range sites {
 		escaped := strings.ReplaceAll(cfg.Domain, ".", `\.`)
-		re := regexp.MustCompile(fmt.Sprintf(`^https?://(?:www\.)?%s`, escaped))
+		re := regexp.MustCompile(fmt.Sprintf(`^https?://(?:www\.)?%s(?:/|$)`, escaped))
 
 		s := &siteScraper{
 			wankz: wankzutil.NewScraper(wankzutil.SiteConfig{

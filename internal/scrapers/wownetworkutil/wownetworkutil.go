@@ -36,7 +36,7 @@ func New(cfg SiteConfig) *Scraper {
 	for _, d := range cfg.AltDomains {
 		domains = append(domains, regexp.QuoteMeta(d))
 	}
-	re := regexp.MustCompile(`^https?://(?:www\.)?(?:` + strings.Join(domains, "|") + `)`)
+	re := regexp.MustCompile(`^https?://(?:www\.)?(?:` + strings.Join(domains, "|") + `)(?:/|$)`)
 	return &Scraper{
 		config:  cfg,
 		client:  httpx.NewClient(30 * time.Second),

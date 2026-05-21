@@ -171,7 +171,7 @@ func init() {
 			re = regexp.MustCompile(cfg.MatchRe)
 		} else {
 			escaped := strings.ReplaceAll(cfg.Domain, ".", `\.`)
-			re = regexp.MustCompile(fmt.Sprintf(`^https?://(?:www\.)?%s`, escaped))
+			re = regexp.MustCompile(fmt.Sprintf(`^https?://(?:www\.)?%s(?:/|$)`, escaped))
 		}
 
 		siteName := cfg.SiteName

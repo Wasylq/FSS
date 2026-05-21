@@ -35,7 +35,7 @@ func NewScraper(cfg SiteConfig) *Scraper {
 		Cfg:     cfg,
 		Client:  httpx.NewClient(30 * time.Second),
 		Base:    "https://" + cfg.Domain,
-		matchRe: regexp.MustCompile(`^https?://(?:www\.)?` + regexp.QuoteMeta(cfg.Domain)),
+		matchRe: regexp.MustCompile(`^https?://(?:www\.)?` + regexp.QuoteMeta(cfg.Domain) + `(?:/|$)`),
 	}
 }
 

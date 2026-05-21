@@ -56,7 +56,7 @@ func buildMatchRe(domain string) *regexp.Regexp {
 		return re.(*regexp.Regexp)
 	}
 	escaped := strings.ReplaceAll(domain, ".", `\.`)
-	re := regexp.MustCompile(`^https?://(?:www\.)?` + escaped)
+	re := regexp.MustCompile(`^https?://(?:www\.)?` + escaped + `(?:/|$)`)
 	matchCache.Store(domain, re)
 	return re
 }

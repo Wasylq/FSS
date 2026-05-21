@@ -22,7 +22,7 @@ const (
 )
 
 var (
-	matchRe = regexp.MustCompile(`^https?://(?:www\.)?fetishnetwork\.com`)
+	matchRe = regexp.MustCompile(`^https?://(?:www\.)?fetishnetwork\.com(?:/|$)`)
 
 	cardStartRe = regexp.MustCompile(`<!-- start_link -->`)
 	sceneIDRe   = regexp.MustCompile(`refstat\.php\?lid=(\d+)&sid=\d+`)

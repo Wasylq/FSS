@@ -30,7 +30,7 @@ type Scraper struct {
 }
 
 func New(cfg SiteConfig) *Scraper {
-	re := regexp.MustCompile(`^https?://(?:www\.)?` + regexp.QuoteMeta(cfg.Domain))
+	re := regexp.MustCompile(`^https?://(?:www\.)?` + regexp.QuoteMeta(cfg.Domain) + `(?:/|$)`)
 	return &Scraper{
 		config:  cfg,
 		client:  httpx.NewClient(30 * time.Second),

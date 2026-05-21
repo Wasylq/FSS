@@ -41,7 +41,7 @@ func init() {
 		s := &Scraper{
 			cfg:     cfg,
 			client:  httpx.NewClient(30 * time.Second),
-			matchRe: regexp.MustCompile(fmt.Sprintf(`^https?://(?:www\.)?%s`, escaped)),
+			matchRe: regexp.MustCompile(fmt.Sprintf(`^https?://(?:www\.)?%s(?:/|$)`, escaped)),
 		}
 		scraper.Register(s)
 	}

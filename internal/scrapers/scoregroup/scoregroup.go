@@ -120,7 +120,7 @@ type siteScraper struct {
 func newScraper(cfg scoregrouputil.SiteConfig) *siteScraper {
 	domain := strings.TrimPrefix(cfg.SiteBase, "https://www.")
 	escaped := regexp.QuoteMeta(domain)
-	re := regexp.MustCompile(`^https?://(?:www\.)?` + escaped)
+	re := regexp.MustCompile(`^https?://(?:www\.)?` + escaped + `(?:/|$)`)
 	return &siteScraper{
 		sg:      scoregrouputil.NewScraper(cfg),
 		config:  cfg,
