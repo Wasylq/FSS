@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"net/http"
 	"regexp"
-	"strings"
 	"sync"
 	"time"
 
@@ -23,16 +22,18 @@ type SiteConfig struct {
 }
 
 type Scraper struct {
-	cfg    SiteConfig
-	client *http.Client
-	base   string
+	cfg     SiteConfig
+	client  *http.Client
+	base    string
+	matchRe *regexp.Regexp
 }
 
 func New(cfg SiteConfig) *Scraper {
 	return &Scraper{
-		cfg:    cfg,
-		client: httpx.NewClient(30 * time.Second),
-		base:   "https://www." + cfg.Domain,
+		cfg:     cfg,
+		client:  httpx.NewClient(30 * time.Second),
+		base:    "https://www." + cfg.Domain,
+		matchRe: regexp.MustCompile(`^https?://(?:www\.)?` + regexp.QuoteMeta(cfg.Domain) + `(?:/|$)`),
 	}
 }
 
@@ -47,7 +48,7 @@ func (s *Scraper) Patterns() []string {
 }
 
 func (s *Scraper) MatchesURL(u string) bool {
-	return strings.Contains(u, "://"+s.cfg.Domain) || strings.Contains(u, "://www."+s.cfg.Domain)
+	return s.matchRe.MatchString(u)
 }
 
 func (s *Scraper) ListScenes(ctx context.Context, studioURL string, opts scraper.ListOpts) (<-chan scraper.SceneResult, error) {
@@ -201,9 +202,6 @@ func (s *Scraper) scrapePerformerPage(ctx context.Context, studioURL string, opt
 func (s *Scraper) scrapeListingPages(ctx context.Context, opts scraper.ListOpts, out chan<- scraper.SceneResult) {
 	now := time.Now().UTC()
 	delay := opts.Delay
-	if delay == 0 {
-		delay = 500 * time.Millisecond
-	}
 	workers := opts.Workers
 	if workers <= 0 {
 		workers = 4

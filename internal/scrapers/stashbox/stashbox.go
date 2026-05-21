@@ -236,15 +236,10 @@ const perPage = 100
 
 // ---- runner ----
 
-const defaultDelay = 500 * time.Millisecond
-
 func (s *Scraper) run(ctx context.Context, studioURL string, inst instance, entityType, entityID string, opts scraper.ListOpts, out chan<- scraper.SceneResult) {
 	defer close(out)
 
 	delay := opts.Delay
-	if delay == 0 {
-		delay = defaultDelay
-	}
 
 	for page := 1; ; page++ {
 		if ctx.Err() != nil {

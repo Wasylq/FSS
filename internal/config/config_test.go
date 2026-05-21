@@ -159,8 +159,8 @@ func TestLoadDefaults(t *testing.T) {
 	if cfg.OutDir != "." {
 		t.Errorf("OutDir = %q, want .", cfg.OutDir)
 	}
-	if cfg.Delay != 0 {
-		t.Errorf("Delay = %d, want 0", cfg.Delay)
+	if cfg.Delay != 500 {
+		t.Errorf("Delay = %d, want 500", cfg.Delay)
 	}
 	if cfg.Stash.URL != "http://localhost:9999" {
 		t.Errorf("Stash.URL = %q", cfg.Stash.URL)

@@ -18,10 +18,9 @@ import (
 )
 
 const (
-	siteBase     = "https://www.dorcelclub.com"
-	siteID       = "dorcelclub"
-	studioName   = "Dorcel Club"
-	defaultDelay = 500 * time.Millisecond
+	siteBase   = "https://www.dorcelclub.com"
+	siteID     = "dorcelclub"
+	studioName = "Dorcel Club"
 )
 
 var matchRe = regexp.MustCompile(`^https?://(?:www\.)?dorcelclub\.com(?:/|$)`)
@@ -71,9 +70,6 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 	defer close(out)
 
 	delay := opts.Delay
-	if delay == 0 {
-		delay = defaultDelay
-	}
 	workers := opts.Workers
 	if workers <= 0 {
 		workers = 4

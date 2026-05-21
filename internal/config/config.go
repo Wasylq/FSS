@@ -47,7 +47,7 @@ func defaults() *Config {
 		Output:  "json",
 		OutDir:  ".",
 		DB:      "",
-		Delay:   0,
+		Delay:   500,
 		Stash: StashConfig{
 			URL:            "http://localhost:9999",
 			Tag:            "fss_import",

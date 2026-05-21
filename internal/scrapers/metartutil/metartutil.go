@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"strings"
+	"regexp"
 	"time"
 
 	"github.com/Wasylq/FSS/internal/httpx"
@@ -24,16 +24,18 @@ type SiteConfig struct {
 }
 
 type Scraper struct {
-	client *http.Client
-	base   string
-	Config SiteConfig
+	client  *http.Client
+	base    string
+	matchRe *regexp.Regexp
+	Config  SiteConfig
 }
 
 func NewScraper(cfg SiteConfig) *Scraper {
 	return &Scraper{
-		client: httpx.NewClient(30 * time.Second),
-		base:   "https://www." + cfg.Domain,
-		Config: cfg,
+		client:  httpx.NewClient(30 * time.Second),
+		base:    "https://www." + cfg.Domain,
+		matchRe: regexp.MustCompile(`^https?://(?:www\.)?` + regexp.QuoteMeta(cfg.Domain) + `(?:/|$)`),
+		Config:  cfg,
 	}
 }
 
@@ -44,8 +46,7 @@ func (s *Scraper) Patterns() []string {
 }
 
 func (s *Scraper) MatchesURL(u string) bool {
-	d := s.Config.Domain
-	return strings.Contains(u, "://"+d) || strings.Contains(u, "://www."+d)
+	return s.matchRe.MatchString(u)
 }
 
 func (s *Scraper) ListScenes(ctx context.Context, studioURL string, opts scraper.ListOpts) (<-chan scraper.SceneResult, error) {

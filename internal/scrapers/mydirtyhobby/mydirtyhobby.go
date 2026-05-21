@@ -21,7 +21,6 @@ const (
 	defaultSiteBase    = "https://www.mydirtyhobby.com"
 	defaultContentBase = "https://www.mydirtyhobby.com"
 	defaultPageSize    = 20
-	defaultDelay       = 500 * time.Millisecond
 )
 
 // Scraper implements scraper.StudioScraper for MyDirtyHobby.
@@ -82,9 +81,6 @@ func (s *Scraper) run(ctx context.Context, studioURL string, uid int, nick strin
 	defer close(out)
 
 	delay := opts.Delay
-	if delay == 0 {
-		delay = defaultDelay
-	}
 
 	for page := 1; ; page++ {
 		if ctx.Err() != nil {

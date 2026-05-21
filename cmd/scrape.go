@@ -35,7 +35,7 @@ func init() {
 	scrapeCmd.Flags().String("out-dir", "", "output directory (default from config)")
 	scrapeCmd.Flags().String("db", "", "enable SQLite store at this path")
 	scrapeCmd.Flags().String("name", "", "human-readable label for this studio (stored when --db is set)")
-	scrapeCmd.Flags().Int("delay", 0, "milliseconds between page requests (0 = no delay; applies to sites without a --site-delay override)")
+	scrapeCmd.Flags().Int("delay", 0, "milliseconds between page requests (default 500 from config; 0 = no delay)")
 	scrapeCmd.Flags().StringSlice("site-delay", nil, "per-scraper delay override, e.g. --site-delay manyvids=0,pornhub=2000 (overrides --delay for matching sites)")
 }
 
@@ -80,10 +80,9 @@ func runScrape(cmd *cobra.Command, args []string) error {
 		fmt.Fprintln(os.Stderr, "warning: --name has no effect without --db (studio names are only stored in SQLite)")
 	}
 
-	delayFlag, _ := cmd.Flags().GetInt("delay")
 	delayMS := cfg.Delay
-	if delayFlag > 0 {
-		delayMS = delayFlag
+	if cmd.Flags().Changed("delay") {
+		delayMS, _ = cmd.Flags().GetInt("delay")
 	}
 	defaultDelay := time.Duration(delayMS) * time.Millisecond
 

@@ -14,9 +14,8 @@ import (
 )
 
 const (
-	siteBase     = "https://beautifulagony.com"
-	pageSize     = 20
-	defaultDelay = 500 * time.Millisecond
+	siteBase = "https://beautifulagony.com"
+	pageSize = 20
 )
 
 type Scraper struct {
@@ -49,9 +48,6 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 	defer close(out)
 
 	delay := opts.Delay
-	if delay == 0 {
-		delay = defaultDelay
-	}
 
 	totalSent := false
 	for offset := 0; ; offset += pageSize {
