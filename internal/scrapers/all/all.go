@@ -73,6 +73,7 @@ import (
 	_ "github.com/Wasylq/FSS/internal/scrapers/nakednews"
 	_ "github.com/Wasylq/FSS/internal/scrapers/naughtyamerica"
 	_ "github.com/Wasylq/FSS/internal/scrapers/newsensations"
+	_ "github.com/Wasylq/FSS/internal/scrapers/nookies"
 	_ "github.com/Wasylq/FSS/internal/scrapers/nubiles"
 	_ "github.com/Wasylq/FSS/internal/scrapers/onepassforallsites"
 	_ "github.com/Wasylq/FSS/internal/scrapers/oopsfamily"
