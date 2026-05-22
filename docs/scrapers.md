@@ -280,6 +280,25 @@
 | [Smoking Erotica](https://smokingerotica.com) | `smokingerotica.com/#/models`, `smokingerotica.com/#/models/{name}` | Railway/Express | No | Thin wrapper around `railwayutil` |
 | [Smoking Models](https://smokingmodels.com) | `smokingmodels.com/#/models`, `smokingmodels.com/#/models/{name}` | Railway/Express | No | Thin wrapper around `railwayutil` |
 | [Spanking Glamour](https://spankingglamour.com) | `spankingglamour.com/#/models`, `spankingglamour.com/#/models/{name}` | Railway/Express | No | Thin wrapper around `railwayutil` |
+| [Spizoo](https://www.spizoo.com) | `spizoo.com`, `spizoo.com/models/{slug}.html` | Spizoo CMS (NATS) | No | HTML listing (24/page) + detail pages for dates/tags/duration, worker pool for details, `spizooutil` shared package, 19 sites |
+| [Cream Her](https://www.creamher.com) | `creamher.com` | Spizoo CMS | No | Uses `spizooutil` |
+| [Dr. Daddy POV](https://www.drdaddypov.com) | `drdaddypov.com` | Spizoo CMS | No | Uses `spizooutil` |
+| [First Class POV](https://www.firstclasspov.com) | `firstclasspov.com` | Spizoo CMS | No | Uses `spizooutil` |
+| [Goth Girlfriends](https://www.gothgirlfriends.com) | `gothgirlfriends.com` | Spizoo CMS | No | Uses `spizooutil` |
+| [Goth GirlfriendsVIP](https://www.gothgirlfriendsvip.com) | `gothgirlfriendsvip.com` | Spizoo CMS | No | Uses `spizooutil` |
+| [Intimate Lesbians](https://www.intimatelesbians.com) | `intimatelesbians.com` | Spizoo CMS | No | Uses `spizooutil` |
+| [Mr. LuckyLIFE](https://www.mrluckylife.com) | `mrluckylife.com` | Spizoo CMS | No | Uses `spizooutil` |
+| [Mr. LuckyPOV](https://www.mrluckypov.com) | `mrluckypov.com` | Spizoo CMS | No | Uses `spizooutil` |
+| [Mr. LuckyRaw](https://www.mrluckyraw.com) | `mrluckyraw.com` | Spizoo CMS | No | Uses `spizooutil` |
+| [Mr. LuckyVIP](https://www.mrluckyvip.com) | `mrluckyvip.com` | Spizoo CMS | No | Uses `spizooutil` |
+| [Pervert College](https://www.pervertcollege.com) | `pervertcollege.com` | Spizoo CMS | No | Uses `spizooutil` |
+| [Porn Goes Pro](https://www.porngoespro.com) | `porngoespro.com` | Spizoo CMS | No | Uses `spizooutil` |
+| [RawAttack](https://www.rawattack.com) | `rawattack.com` | Spizoo CMS | No | Uses `spizooutil` |
+| [Real Sensual](https://www.realsensual.com) | `realsensual.com` | Spizoo CMS | No | Uses `spizooutil` |
+| [TagTeamPOV](https://www.tagteampov.com) | `tagteampov.com` | Spizoo CMS | No | Uses `spizooutil` |
+| [The Stripper Experience](https://www.thestripperexperience.com) | `thestripperexperience.com` | Spizoo CMS | No | Uses `spizooutil` |
+| [TiffanyBrookesXXX](https://www.tiffanybrookesxxx.com) | `tiffanybrookesxxx.com` | Spizoo CMS | No | Uses `spizooutil` |
+| [Vlog XXX](https://www.vlogxxx.com) | `vlogxxx.com` | Spizoo CMS | No | Uses `spizooutil` |
 | [SpiceVids](https://www.spicevids.com) | `spicevids.com`, `spicevids.com/model/{id}/{slug}`, `spicevids.com/collection/{id}/{slug}`, `spicevids.com/category/{id}/{slug}`, `spicevids.com/series/{id}/{slug}` | Aylo/Juan | No | Single scraper using `ayloutil`; handles any SpiceVids URL (models, collections, categories, series) |
 | [Sofie Marie](https://sofiemariexxx.com) | `sofiemariexxx.com`, `sofiemariexxx.com/models/{slug}.html`, `sofiemariexxx.com/dvds/{slug}.html` | ELXComplete/Andomark | No | HTML scraping, paginated listing (movies category), model pages via `sets.php` pagination, DVD pages single-fetch |
 | [YummyGirl](https://yummygirl.com) | `yummygirl.com`, `yummygirl.com/models/{slug}.html` | Elevated X (Classic-VOD) | No | HTML scraping, paginated listing (`movies_{page}_d.html`), model pages via `sets.php` pagination with richer data (description, tags). Hub aggregates content from all YummyGirl network sites |
