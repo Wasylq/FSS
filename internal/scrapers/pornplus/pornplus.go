@@ -1,0 +1,282 @@
+package pornplus
+
+import (
+	"context"
+	"fmt"
+	"net/http"
+	"regexp"
+	"strconv"
+	"strings"
+	"time"
+
+	"github.com/Wasylq/FSS/internal/httpx"
+	"github.com/Wasylq/FSS/models"
+	"github.com/Wasylq/FSS/scraper"
+)
+
+const (
+	siteBase = "https://pornplus.com"
+	pageSize = 50
+)
+
+type Scraper struct {
+	client *http.Client
+}
+
+func New() *Scraper {
+	return &Scraper{
+		client: httpx.NewClient(30 * time.Second),
+	}
+}
+
+func init() { scraper.Register(New()) }
+
+func (s *Scraper) ID() string { return "pornplus" }
+
+func (s *Scraper) Patterns() []string {
+	return []string{
+		"pornplus.com",
+		"pornplus.com/models/{slug}",
+	}
+}
+
+var (
+	matchRe = regexp.MustCompile(`^https?://(?:www\.)?pornplus\.com(?:/|$)`)
+	modelRe = regexp.MustCompile(`/models/([^/?#]+)`)
+)
+
+func (s *Scraper) MatchesURL(u string) bool { return matchRe.MatchString(u) }
+
+func (s *Scraper) ListScenes(ctx context.Context, studioURL string, opts scraper.ListOpts) (<-chan scraper.SceneResult, error) {
+	out := make(chan scraper.SceneResult)
+	go s.run(ctx, studioURL, opts, out)
+	return out, nil
+}
+
+func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOpts, out chan<- scraper.SceneResult) {
+	defer close(out)
+
+	var baseURL string
+	if m := modelRe.FindStringSubmatch(studioURL); m != nil {
+		scraper.Debugf(1, "pornplus: scraping model page %s", m[1])
+		baseURL = fmt.Sprintf("%s/api/actors/%s/releases", siteBase, m[1])
+	} else {
+		baseURL = siteBase + "/api/releases?sort=latest"
+	}
+
+	s.paginate(ctx, baseURL, studioURL, opts, out)
+}
+
+func (s *Scraper) paginate(ctx context.Context, baseURL, studioURL string, opts scraper.ListOpts, out chan<- scraper.SceneResult) {
+	now := time.Now().UTC()
+
+	for page := 1; ; page++ {
+		if ctx.Err() != nil {
+			return
+		}
+		if page > 1 && opts.Delay > 0 {
+			select {
+			case <-time.After(opts.Delay):
+			case <-ctx.Done():
+				return
+			}
+		}
+
+		scraper.Debugf(1, "pornplus: fetching page %d", page)
+
+		pageURL := fmt.Sprintf("%s%spage=%d&per_page=%d",
+			baseURL, querySep(baseURL), page, pageSize)
+
+		result, err := s.fetch(ctx, pageURL)
+		if err != nil {
+			select {
+			case out <- scraper.Error(fmt.Errorf("page %d: %w", page, err)):
+			case <-ctx.Done():
+			}
+			return
+		}
+
+		if len(result.Items) == 0 {
+			return
+		}
+
+		if page == 1 && result.Pagination.TotalItems > 0 {
+			scraper.Debugf(1, "pornplus: %d total scenes", result.Pagination.TotalItems)
+			select {
+			case out <- scraper.Progress(result.Pagination.TotalItems):
+			case <-ctx.Done():
+				return
+			}
+		}
+
+		for _, item := range result.Items {
+			id := strconv.Itoa(item.ID)
+
+			if opts.KnownIDs[id] {
+				scraper.Debugf(1, "pornplus: hit known ID, stopping early")
+				select {
+				case out <- scraper.StoppedEarly():
+				case <-ctx.Done():
+				}
+				return
+			}
+
+			scene := itemToScene(item, studioURL, now)
+			select {
+			case out <- scraper.Scene(scene):
+			case <-ctx.Done():
+				return
+			}
+		}
+
+		if result.Pagination.NextPage == nil {
+			return
+		}
+	}
+}
+
+func querySep(u string) string {
+	if strings.Contains(u, "?") {
+		return "&"
+	}
+	return "?"
+}
+
+func (s *Scraper) fetch(ctx context.Context, url string) (*apiResponse, error) {
+	resp, err := httpx.Do(ctx, s.client, httpx.Request{
+		URL: url,
+		Headers: func() map[string]string {
+			h := httpx.BrowserHeaders(httpx.UserAgentFirefox)
+			h["x-site"] = "pornplus.com"
+			return h
+		}(),
+	})
+	if err != nil {
+		return nil, err
+	}
+	defer func() { _ = resp.Body.Close() }()
+
+	var result apiResponse
+	if err := httpx.DecodeJSON(resp.Body, &result); err != nil {
+		return nil, fmt.Errorf("decoding response: %w", err)
+	}
+	return &result, nil
+}
+
+type apiResponse struct {
+	Items      []apiScene `json:"items"`
+	Pagination struct {
+		TotalItems int     `json:"totalItems"`
+		TotalPages int     `json:"totalPages"`
+		NextPage   *string `json:"nextPage"`
+	} `json:"pagination"`
+}
+
+type apiScene struct {
+	ID              int        `json:"id"`
+	CachedSlug      string     `json:"cachedSlug"`
+	Title           string     `json:"title"`
+	Description     string     `json:"description"`
+	ReleasedAt      string     `json:"releasedAt"`
+	PosterURL       string     `json:"posterUrl"`
+	ThumbURL        string     `json:"thumbUrl"`
+	ThumbVideoURL   string     `json:"thumbVideoUrl"`
+	TrailerURL      string     `json:"trailerUrl"`
+	Tags            []string   `json:"tags"`
+	Actors          []apiActor `json:"actors"`
+	Sponsor         apiSponsor `json:"sponsor"`
+	DownloadOptions []struct {
+		Quality string `json:"quality"`
+	} `json:"downloadOptions"`
+}
+
+type apiActor struct {
+	ID         int    `json:"id"`
+	Name       string `json:"name"`
+	CachedSlug string `json:"cached_slug"`
+}
+
+type apiSponsor struct {
+	Name       string `json:"name"`
+	CachedSlug string `json:"cachedSlug"`
+}
+
+func itemToScene(item apiScene, studioURL string, now time.Time) models.Scene {
+	var performers []string
+	for _, a := range item.Actors {
+		if a.Name != "" {
+			performers = append(performers, a.Name)
+		}
+	}
+
+	tags := make([]string, 0, len(item.Tags))
+	for _, t := range item.Tags {
+		tag := strings.ReplaceAll(t, "_", " ")
+		tag = strings.TrimSpace(tag)
+		if tag != "" {
+			tags = append(tags, tag)
+		}
+	}
+
+	var resolution string
+	var height int
+	for _, opt := range item.DownloadOptions {
+		q, _ := strconv.Atoi(opt.Quality)
+		if q > height {
+			height = q
+		}
+	}
+	switch {
+	case height >= 2160:
+		resolution = "4K"
+	case height >= 1080:
+		resolution = "1080p"
+	case height >= 720:
+		resolution = "720p"
+	}
+
+	preview := item.TrailerURL
+	if preview == "" {
+		preview = item.ThumbVideoURL
+	}
+
+	siteID := "pornplus"
+	studio := "Porn+"
+	if item.Sponsor.Name != "" {
+		siteID = slugify(item.Sponsor.CachedSlug)
+		studio = item.Sponsor.Name
+	}
+
+	return models.Scene{
+		ID:          strconv.Itoa(item.ID),
+		SiteID:      siteID,
+		StudioURL:   studioURL,
+		Title:       item.Title,
+		URL:         siteBase + "/video/" + item.CachedSlug,
+		Thumbnail:   item.PosterURL,
+		Preview:     preview,
+		Description: strings.TrimSpace(item.Description),
+		Performers:  performers,
+		Tags:        tags,
+		Date:        parseDate(item.ReleasedAt),
+		Studio:      studio,
+		Resolution:  resolution,
+		Height:      height,
+		ScrapedAt:   now,
+	}
+}
+
+func slugify(s string) string {
+	return strings.ReplaceAll(strings.ToLower(strings.TrimSpace(s)), " ", "-")
+}
+
+func parseDate(s string) time.Time {
+	t, err := time.Parse(time.RFC3339, s)
+	if err != nil {
+		t, err = time.Parse("2006-01-02T15:04:05Z", s)
+		if err != nil {
+			return time.Time{}
+		}
+	}
+	return t.UTC()
+}

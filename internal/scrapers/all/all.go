@@ -83,6 +83,7 @@ import (
 	_ "github.com/Wasylq/FSS/internal/scrapers/pornbox"
 	_ "github.com/Wasylq/FSS/internal/scrapers/porncz"
 	_ "github.com/Wasylq/FSS/internal/scrapers/pornhub"
+	_ "github.com/Wasylq/FSS/internal/scrapers/pornplus"
 	_ "github.com/Wasylq/FSS/internal/scrapers/pornworld"
 	_ "github.com/Wasylq/FSS/internal/scrapers/povr"
 	_ "github.com/Wasylq/FSS/internal/scrapers/purecfnm"
