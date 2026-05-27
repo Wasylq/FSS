@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"sync"
 	"testing"
 	"time"
 
@@ -476,6 +477,42 @@ func TestMatchesURL(t *testing.T) {
 			t.Errorf("MatchesURL(%q) = %v, want %v", c.url, got, c.match)
 		}
 	}
+}
+
+// TestMatchesURL_concurrentSafe pins AUDIT.md §Concurrency #2: the previous
+// implementation lazily wrote to a package-level map[string]*regexp.Regexp
+// from MatchesURL with no locking. Under -race, concurrent invocations would
+// flag a data race (and could panic with "concurrent map writes" in prod).
+// matchRe is now built once in New() and only read after, so any number of
+// goroutines may call MatchesURL in parallel safely.
+func TestMatchesURL_concurrentSafe(t *testing.T) {
+	scrapers := []*Scraper{
+		New(SiteConfig{SiteID: "sarajay", Domain: "sarajay.com", VideoPrefix: "videos"}),
+		New(SiteConfig{SiteID: "vnagirls", Domain: "vnagirls.com", VideoPrefix: "videoset"}),
+		New(SiteConfig{SiteID: "milfvideos", Domain: "milf.example.com", VideoPrefix: "milf-videos"}),
+	}
+	urls := []string{
+		"https://sarajay.com/videos",
+		"https://vnagirls.com/videoset/page/2",
+		"https://milf.example.com/milf-videos",
+		"https://example.com/unrelated",
+	}
+
+	var wg sync.WaitGroup
+	for i := 0; i < 20; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			for j := 0; j < 200; j++ {
+				for _, s := range scrapers {
+					for _, u := range urls {
+						_ = s.MatchesURL(u)
+					}
+				}
+			}
+		}()
+	}
+	wg.Wait()
 }
 
 func TestToScene(t *testing.T) {

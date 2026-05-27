@@ -28,6 +28,7 @@ type Scraper struct {
 	base       string
 	hrefRe     *regexp.Regexp
 	pageLinkRe *regexp.Regexp
+	matchRe    *regexp.Regexp
 }
 
 func New(cfg SiteConfig) *Scraper {
@@ -41,6 +42,7 @@ func New(cfg SiteConfig) *Scraper {
 		base:       "https://" + host,
 		hrefRe:     buildHrefRe(cfg.VideoPrefix),
 		pageLinkRe: buildPageLinkRe(cfg.VideoPrefix),
+		matchRe:    BuildMatchRe(cfg.Domain, cfg.VideoPrefix),
 	}
 }
 
@@ -51,6 +53,7 @@ func NewWithBase(cfg SiteConfig, base string, client *http.Client) *Scraper {
 		base:       base,
 		hrefRe:     buildHrefRe(cfg.VideoPrefix),
 		pageLinkRe: buildPageLinkRe(cfg.VideoPrefix),
+		matchRe:    BuildMatchRe(cfg.Domain, cfg.VideoPrefix),
 	}
 }
 
@@ -60,8 +63,6 @@ func (s *Scraper) Patterns() []string {
 	return []string{s.cfg.Domain + "/" + s.cfg.VideoPrefix}
 }
 
-var domainRe = make(map[string]*regexp.Regexp)
-
 func BuildMatchRe(domain, prefix string) *regexp.Regexp {
 	escaped := strings.ReplaceAll(domain, ".", `\.`)
 	pattern := `^https?://(?:www\.)?` + escaped + `(?:/(?:sd3\.php\?show=recent_video_updates|` + prefix + `(?:/page/\d+)?))?/?$`
@@ -69,13 +70,7 @@ func BuildMatchRe(domain, prefix string) *regexp.Regexp {
 }
 
 func (s *Scraper) MatchesURL(u string) bool {
-	key := s.cfg.Domain
-	re, ok := domainRe[key]
-	if !ok {
-		re = BuildMatchRe(s.cfg.Domain, s.cfg.VideoPrefix)
-		domainRe[key] = re
-	}
-	return re.MatchString(u)
+	return s.matchRe.MatchString(u)
 }
 
 func (s *Scraper) ListScenes(ctx context.Context, studioURL string, opts scraper.ListOpts) (<-chan scraper.SceneResult, error) {
