@@ -214,6 +214,7 @@ func bootstrap(ctx context.Context) (*session, error) {
 	if err != nil {
 		return nil, fmt.Errorf("fetching homepage: %w", err)
 	}
+	defer func() { _ = resp.Body.Close() }()
 	body, err := httpx.ReadBody(resp.Body)
 	if err != nil {
 		return nil, fmt.Errorf("reading homepage: %w", err)
@@ -322,6 +323,7 @@ func fetchPage(ctx context.Context, sess *session, u string) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
+	defer func() { _ = resp.Body.Close() }()
 	return httpx.ReadBody(resp.Body)
 }
 
@@ -331,6 +333,26 @@ type ajaxResponse struct {
 	} `json:"htmlMod"`
 	IsLast   bool `json:"isLast"`
 	NextPage int  `json:"nextPage"`
+}
+
+// fetchAjaxPage POSTs one paginated AJAX request and decodes the response.
+// Kept as its own function so `defer resp.Body.Close()` fires per page — the
+// previous inline loop leaked one connection per page on long catalogs.
+func fetchAjaxPage(ctx context.Context, sess *session, body string, headers map[string]string) (ajaxResponse, error) {
+	var ar ajaxResponse
+	resp, err := httpx.Do(ctx, sess.client, httpx.Request{
+		URL:     baseURL + "/product-category",
+		Body:    []byte(body),
+		Headers: headers,
+	})
+	if err != nil {
+		return ar, err
+	}
+	defer func() { _ = resp.Body.Close() }()
+	if err := httpx.DecodeJSON(resp.Body, &ar); err != nil {
+		return ar, fmt.Errorf("decode: %w", err)
+	}
+	return ar, nil
 }
 
 func paginateLeaf(ctx context.Context, sess *session, slug, tab string, opts scraper.ListOpts) ([]productEntry, error) {
@@ -355,18 +377,9 @@ func paginateLeaf(ctx context.Context, sess *session, slug, tab string, opts scr
 			"Referer":          baseURL + "/product-category/" + slug,
 		}
 
-		resp, err := httpx.Do(ctx, sess.client, httpx.Request{
-			URL:     baseURL + "/product-category",
-			Body:    []byte(body),
-			Headers: h,
-		})
+		ar, err := fetchAjaxPage(ctx, sess, body, h)
 		if err != nil {
 			return all, fmt.Errorf("page %d: %w", page, err)
-		}
-
-		var ar ajaxResponse
-		if err := httpx.DecodeJSON(resp.Body, &ar); err != nil {
-			return all, fmt.Errorf("page %d decode: %w", page, err)
 		}
 
 		if len(ar.HTMLMod) == 0 {
