@@ -22,9 +22,19 @@ func NewSQLite(path string) (*SQLite, error) {
 		return nil, fmt.Errorf("opening sqlite %s: %w", path, err)
 	}
 	db.SetMaxOpenConns(1) // SQLite does not support concurrent writes
-	if _, err := db.Exec("PRAGMA journal_mode=WAL; PRAGMA synchronous=NORMAL;"); err != nil {
-		_ = db.Close()
-		return nil, fmt.Errorf("setting WAL mode: %w", err)
+	// Issue each PRAGMA in its own Exec. Multi-statement PRAGMA in a single
+	// Exec is unreliable across SQLite drivers, and silently dropping
+	// foreign_keys=ON would leave every ON DELETE CASCADE clause dead.
+	pragmas := []string{
+		"PRAGMA foreign_keys = ON",
+		"PRAGMA journal_mode = WAL",
+		"PRAGMA synchronous = NORMAL",
+	}
+	for _, p := range pragmas {
+		if _, err := db.Exec(p); err != nil {
+			_ = db.Close()
+			return nil, fmt.Errorf("%s: %w", p, err)
+		}
 	}
 	s := &SQLite{db: db}
 	if err := s.migrate(); err != nil {

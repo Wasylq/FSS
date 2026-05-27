@@ -793,3 +793,96 @@ func TestUnmarshalStringsInvalid(t *testing.T) {
 		t.Error("expected error for invalid JSON")
 	}
 }
+
+// TestSQLitePragmas pins AUDIT.md §Store #6, #7: foreign_keys was never set,
+// silently disabling the ON DELETE CASCADE clauses on the three junction
+// tables. journal_mode/synchronous were issued as a multi-statement Exec,
+// which is unreliable across drivers — we now issue each PRAGMA on its own.
+//
+// PRAGMA return-value reference: foreign_keys → 0/1, journal_mode → string
+// ("wal"), synchronous → 0/1/2/3 (NORMAL = 1).
+func TestSQLitePragmas(t *testing.T) {
+	s := newTestDB(t)
+
+	var fk int
+	if err := s.db.QueryRow("PRAGMA foreign_keys").Scan(&fk); err != nil {
+		t.Fatalf("PRAGMA foreign_keys: %v", err)
+	}
+	if fk != 1 {
+		t.Errorf("foreign_keys = %d, want 1", fk)
+	}
+
+	var journalMode string
+	if err := s.db.QueryRow("PRAGMA journal_mode").Scan(&journalMode); err != nil {
+		t.Fatalf("PRAGMA journal_mode: %v", err)
+	}
+	// In-memory databases don't support WAL and fall back to "memory" — accept
+	// either as long as the PRAGMA was applied (i.e. didn't error).
+	if journalMode != "wal" && journalMode != "memory" {
+		t.Errorf("journal_mode = %q, want wal or memory (for :memory: DB)", journalMode)
+	}
+
+	var sync int
+	if err := s.db.QueryRow("PRAGMA synchronous").Scan(&sync); err != nil {
+		t.Fatalf("PRAGMA synchronous: %v", err)
+	}
+	if sync != 1 {
+		t.Errorf("synchronous = %d, want 1 (NORMAL)", sync)
+	}
+}
+
+// TestSQLiteForeignKeysCascade proves that ON DELETE CASCADE actually fires
+// for the junction tables. With foreign_keys=OFF (the pre-fix state) a hard
+// DELETE on scenes would orphan scene_performers rows; this test would then
+// see lingering rows and fail.
+func TestSQLiteForeignKeysCascade(t *testing.T) {
+	s := newTestDB(t)
+	now := time.Now().UTC().Truncate(time.Second)
+
+	scene := models.Scene{
+		ID: "cascade-1", SiteID: "manyvids", StudioURL: testStudioURL,
+		Title: "X", ScrapedAt: now,
+		Performers: []string{"Alice", "Bob"},
+		Tags:       []string{"red", "blue"},
+		Categories: []string{"solo"},
+	}
+	if err := s.Save(testStudioURL, []models.Scene{scene}); err != nil {
+		t.Fatalf("Save: %v", err)
+	}
+
+	// Sanity: junction rows are present.
+	for _, table := range []string{"scene_performers", "scene_tags", "scene_categories"} {
+		var n int
+		if err := s.db.QueryRow(
+			"SELECT count(*) FROM "+table+" WHERE scene_id = ? AND site_id = ?",
+			scene.ID, scene.SiteID,
+		).Scan(&n); err != nil {
+			t.Fatalf("count %s: %v", table, err)
+		}
+		if n == 0 {
+			t.Fatalf("%s has 0 rows after Save (test setup wrong)", table)
+		}
+	}
+
+	// Hard-delete the scene. With foreign_keys=ON the cascade clauses fire
+	// and the junction rows go away.
+	if _, err := s.db.Exec(
+		"DELETE FROM scenes WHERE id = ? AND site_id = ?",
+		scene.ID, scene.SiteID,
+	); err != nil {
+		t.Fatalf("DELETE scenes: %v", err)
+	}
+
+	for _, table := range []string{"scene_performers", "scene_tags", "scene_categories"} {
+		var n int
+		if err := s.db.QueryRow(
+			"SELECT count(*) FROM "+table+" WHERE scene_id = ? AND site_id = ?",
+			scene.ID, scene.SiteID,
+		).Scan(&n); err != nil {
+			t.Fatalf("count %s after delete: %v", table, err)
+		}
+		if n != 0 {
+			t.Errorf("%s has %d orphan rows after DELETE scenes — cascade did not fire", table, n)
+		}
+	}
+}
