@@ -17,13 +17,17 @@ import (
 	"github.com/Wasylq/FSS/scraper"
 )
 
-var baseURL = "https://legsemporium.com"
+const defaultBaseURL = "https://legsemporium.com"
 
-func setBaseURL(u string) { baseURL = u }
+type Scraper struct {
+	base string
+}
 
-type Scraper struct{}
+func New() *Scraper { return &Scraper{base: defaultBaseURL} }
 
-func New() *Scraper { return &Scraper{} }
+// newWithBase is the test entrypoint: tests inject an httptest server URL
+// instead of mutating package state. Production code uses [New].
+func newWithBase(base string) *Scraper { return &Scraper{base: base} }
 
 func init() { scraper.Register(New()) }
 
@@ -49,6 +53,7 @@ func (s *Scraper) ListScenes(ctx context.Context, studioURL string, opts scraper
 type session struct {
 	client *http.Client
 	csrf   string
+	base   string
 }
 
 type productEntry struct {
@@ -83,8 +88,8 @@ var (
 func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOpts, out chan<- scraper.SceneResult) {
 	defer close(out)
 
-	scraper.Debugf(1, "bootstrap: fetching CSRF token from %s", baseURL)
-	sess, err := bootstrap(ctx)
+	scraper.Debugf(1, "bootstrap: fetching CSRF token from %s", s.base)
+	sess, err := bootstrap(ctx, s.base)
 	if err != nil {
 		select {
 		case out <- scraper.Error(fmt.Errorf("bootstrap: %w", err)):
@@ -202,13 +207,13 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 	}
 }
 
-func bootstrap(ctx context.Context) (*session, error) {
+func bootstrap(ctx context.Context, base string) (*session, error) {
 	jar, _ := cookiejar.New(nil)
 	client := httpx.NewClient(30 * time.Second)
 	client.Jar = jar
 
 	resp, err := httpx.Do(ctx, client, httpx.Request{
-		URL:     baseURL,
+		URL:     base,
 		Headers: httpx.BrowserHeaders(httpx.UserAgentFirefox),
 	})
 	if err != nil {
@@ -225,7 +230,7 @@ func bootstrap(ctx context.Context) (*session, error) {
 		return nil, fmt.Errorf("CSRF token not found")
 	}
 
-	return &session{client: client, csrf: string(m[1])}, nil
+	return &session{client: client, csrf: string(m[1]), base: base}, nil
 }
 
 func extractSlug(u string) string {
@@ -239,11 +244,11 @@ func extractSlug(u string) string {
 func discoverLeaves(ctx context.Context, sess *session, slug, studioURL string) ([]string, error) {
 	if slug == "" {
 		scraper.Debugf(1, "discover: no slug, scanning root category page")
-		return discoverFromPage(ctx, sess, baseURL+"/product-category", 0)
+		return discoverFromPage(ctx, sess, sess.base+"/product-category", 0)
 	}
 
-	scraper.Debugf(1, "discover: fetching %s/product-category/%s", baseURL, slug)
-	body, err := fetchPage(ctx, sess, baseURL+"/product-category/"+slug)
+	scraper.Debugf(1, "discover: fetching %s/product-category/%s", sess.base, slug)
+	body, err := fetchPage(ctx, sess, sess.base+"/product-category/"+slug)
 	if err != nil {
 		return nil, err
 	}
@@ -254,7 +259,7 @@ func discoverLeaves(ctx context.Context, sess *session, slug, studioURL string) 
 		for _, m := range subcatURLRe.FindAllSubmatch(body, -1) {
 			href := string(m[1])
 			href = strings.TrimRight(href, "/")
-			if href == studioURL || href == baseURL+"/product-category" {
+			if href == studioURL || href == sess.base+"/product-category" {
 				continue
 			}
 			subSlug := extractSlug(href)
@@ -299,7 +304,7 @@ func discoverFromPage(ctx context.Context, sess *session, pageURL string, depth 
 	seen := map[string]bool{}
 	for _, m := range subcatURLRe.FindAllSubmatch(body, -1) {
 		href := strings.TrimRight(string(m[1]), "/")
-		if seen[href] || href == pageURL || href == baseURL+"/product-category" {
+		if seen[href] || href == pageURL || href == sess.base+"/product-category" {
 			continue
 		}
 		seen[href] = true
@@ -341,7 +346,7 @@ type ajaxResponse struct {
 func fetchAjaxPage(ctx context.Context, sess *session, body string, headers map[string]string) (ajaxResponse, error) {
 	var ar ajaxResponse
 	resp, err := httpx.Do(ctx, sess.client, httpx.Request{
-		URL:     baseURL + "/product-category",
+		URL:     sess.base + "/product-category",
 		Body:    []byte(body),
 		Headers: headers,
 	})
@@ -374,7 +379,7 @@ func paginateLeaf(ctx context.Context, sess *session, slug, tab string, opts scr
 			"X-Requested-With": "XMLHttpRequest",
 			"X-CSRF-TOKEN":     sess.csrf,
 			"Content-Type":     "application/x-www-form-urlencoded",
-			"Referer":          baseURL + "/product-category/" + slug,
+			"Referer":          sess.base + "/product-category/" + slug,
 		}
 
 		ar, err := fetchAjaxPage(ctx, sess, body, h)
@@ -387,7 +392,7 @@ func paginateLeaf(ctx context.Context, sess *session, slug, tab string, opts scr
 		}
 
 		html := ar.HTMLMod[0].Value
-		entries := parseProductCards(html)
+		entries := parseProductCards(html, sess.base)
 		scraper.Debugf(1, "paginate: page %d → %d cards, isLast=%v, nextPage=%d", page, len(entries), ar.IsLast, ar.NextPage)
 		if len(entries) == 0 {
 			break
@@ -427,7 +432,7 @@ func paginateLeaf(ctx context.Context, sess *session, slug, tab string, opts scr
 	return all, nil
 }
 
-func parseProductCards(html string) []productEntry {
+func parseProductCards(html, base string) []productEntry {
 	ids := dataIDRe.FindAllStringSubmatch(html, -1)
 	titles := dataTitleRe.FindAllStringSubmatch(html, -1)
 	prices := dataPriceRe.FindAllStringSubmatch(html, -1)
@@ -460,7 +465,7 @@ func parseProductCards(html string) []productEntry {
 		if i < len(imgs) {
 			src := imgs[i][1]
 			if !strings.HasPrefix(src, "http") {
-				src = baseURL + src
+				src = base + src
 			}
 			entries[i].thumbnail = src
 		}
@@ -539,7 +544,7 @@ func fetchDetail(ctx context.Context, sess *session, e productEntry, studioURL s
 		if m := posterRe.FindSubmatch(body); m != nil {
 			src := string(m[1])
 			if !strings.HasPrefix(src, "http") {
-				src = baseURL + src
+				src = sess.base + src
 			}
 			scene.Thumbnail = src
 		}

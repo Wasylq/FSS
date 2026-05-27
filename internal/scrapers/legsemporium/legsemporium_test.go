@@ -115,7 +115,7 @@ func TestParseProductCards(t *testing.T) {
   </div>
 </div>`
 
-	entries := parseProductCards(html)
+	entries := parseProductCards(html, defaultBaseURL)
 	if len(entries) != 2 {
 		t.Fatalf("parseProductCards returned %d entries, want 2", len(entries))
 	}
@@ -165,7 +165,7 @@ func TestParseProductCardsSalePrice(t *testing.T) {
   </div>
 </div>`
 
-	entries := parseProductCards(html)
+	entries := parseProductCards(html, defaultBaseURL)
 	if len(entries) != 1 {
 		t.Fatalf("got %d entries, want 1", len(entries))
 	}
@@ -285,18 +285,18 @@ func TestFetchDetailPosterFallback(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	sess := &session{client: ts.Client()}
+	sess := &session{client: ts.Client(), base: defaultBaseURL}
 	e := productEntry{
 		id:    "303",
 		title: "No Thumb",
 		url:   ts.URL + "/product/no-thumb",
 	}
 
-	scene, err := fetchDetail(context.Background(), sess, e, "https://legsemporium.com")
+	scene, err := fetchDetail(context.Background(), sess, e, defaultBaseURL)
 	if err != nil {
 		t.Fatalf("fetchDetail error: %v", err)
 	}
-	if scene.Thumbnail != "https://legsemporium.com/media/poster.jpg" {
+	if scene.Thumbnail != defaultBaseURL+"/media/poster.jpg" {
 		t.Errorf("Thumbnail = %q, want poster fallback", scene.Thumbnail)
 	}
 }
@@ -363,11 +363,7 @@ func TestListScenes(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	origBaseURL := baseURL
-	defer func() { setBaseURL(origBaseURL) }()
-	setBaseURL(ts.URL)
-
-	s := New()
+	s := newWithBase(ts.URL)
 	ch, err := s.ListScenes(context.Background(), ts.URL+"/product-category/testmodel", scraper.ListOpts{})
 	if err != nil {
 		t.Fatalf("ListScenes error: %v", err)
@@ -445,11 +441,7 @@ func TestListScenesKnownIDs(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	origBaseURL := baseURL
-	defer func() { setBaseURL(origBaseURL) }()
-	setBaseURL(ts.URL)
-
-	s := New()
+	s := newWithBase(ts.URL)
 	ch, err := s.ListScenes(context.Background(), ts.URL+"/product-category/leaf", scraper.ListOpts{
 		KnownIDs: map[string]bool{"2": true},
 	})
