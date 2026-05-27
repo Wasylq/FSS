@@ -1,12 +1,16 @@
 package cmd
 
 import (
+	"context"
+	"path/filepath"
 	"slices"
 	"strings"
 	"testing"
 	"time"
 
+	"github.com/Wasylq/FSS/internal/store"
 	"github.com/Wasylq/FSS/models"
+	"github.com/Wasylq/FSS/scraper"
 )
 
 func TestMergeSiteDelays_emptyInputs(t *testing.T) {
@@ -238,6 +242,160 @@ func TestCarryOverPriceHistory_freeSnap(t *testing.T) {
 	if got.LowestPrice != 0 {
 		t.Errorf("lowestPrice = %.2f, want 0 (free)", got.LowestPrice)
 	}
+}
+
+// fakeScraper streams a fixed slice of scenes on each ListScenes call.
+// Each invocation reads from the next entry in batches, mimicking
+// successive scrape runs over time.
+type fakeScraper struct {
+	id      string
+	batches [][]models.Scene
+	call    int
+}
+
+func (f *fakeScraper) ID() string             { return f.id }
+func (f *fakeScraper) Patterns() []string     { return nil }
+func (f *fakeScraper) MatchesURL(string) bool { return true }
+
+func (f *fakeScraper) ListScenes(_ context.Context, _ string, _ scraper.ListOpts) (<-chan scraper.SceneResult, error) {
+	ch := make(chan scraper.SceneResult, len(f.batches[f.call])+1)
+	for _, s := range f.batches[f.call] {
+		ch <- scraper.Scene(s)
+	}
+	close(ch)
+	f.call++
+	return ch, nil
+}
+
+// TestScrapeAll_preservesPriceHistory pins finding 1.1 from AUDIT.md: --full
+// must carry forward existing price history across re-scrapes for both stores.
+// Before the fix, scrapeAll discarded all prior snapshots — Flat by overwrite,
+// SQLite by diff-based syncPriceHistory.
+func TestScrapeAll_preservesPriceHistory(t *testing.T) {
+	const studioURL = "https://example.com/studio/test"
+	t0 := time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC)
+	t1 := time.Date(2026, 2, 1, 0, 0, 0, 0, time.UTC)
+
+	build := func(date time.Time, price float64) models.Scene {
+		s := models.Scene{
+			ID:        "scene-1",
+			SiteID:    "fakesite",
+			StudioURL: studioURL,
+			Title:     "Test Scene",
+			URL:       "https://example.com/scene/1",
+			ScrapedAt: date,
+		}
+		s.AddPrice(snap(date, price))
+		return s
+	}
+
+	stores := map[string]func(t *testing.T) store.Store{
+		"flat": func(t *testing.T) store.Store {
+			return store.NewFlat(t.TempDir(), []string{"json"})
+		},
+		"sqlite": func(t *testing.T) store.Store {
+			path := filepath.Join(t.TempDir(), "test.db")
+			db, err := store.NewSQLite(path)
+			if err != nil {
+				t.Fatalf("NewSQLite: %v", err)
+			}
+			t.Cleanup(func() { _ = db.Close() })
+			return db
+		},
+	}
+
+	for name, factory := range stores {
+		t.Run(name, func(t *testing.T) {
+			st := factory(t)
+
+			// Initial scrape: store one snapshot at $9.99.
+			if err := st.Save(studioURL, []models.Scene{build(t0, 9.99)}); err != nil {
+				t.Fatalf("seed save: %v", err)
+			}
+
+			// --full re-scrape with a different price.
+			sc := &fakeScraper{
+				id:      "fakesite",
+				batches: [][]models.Scene{{build(t1, 4.99)}},
+			}
+			scenes, err := scrapeAll(context.Background(), sc, st, studioURL, 1, 0)
+			if err != nil {
+				t.Fatalf("scrapeAll: %v", err)
+			}
+			if err := st.Save(studioURL, scenes); err != nil {
+				t.Fatalf("save: %v", err)
+			}
+
+			got, err := st.Load(studioURL)
+			if err != nil {
+				t.Fatalf("load: %v", err)
+			}
+			if len(got) != 1 {
+				t.Fatalf("got %d scenes, want 1", len(got))
+			}
+			ph := got[0].PriceHistory
+			if len(ph) != 2 {
+				t.Fatalf("price history has %d snapshots, want 2: %+v", len(ph), ph)
+			}
+			if ph[0].Regular != 9.99 {
+				t.Errorf("snapshot[0] = %.2f, want 9.99 (original)", ph[0].Regular)
+			}
+			if ph[1].Regular != 4.99 {
+				t.Errorf("snapshot[1] = %.2f, want 4.99 (fresh)", ph[1].Regular)
+			}
+			if got[0].LowestPrice != 4.99 {
+				t.Errorf("lowestPrice = %.2f, want 4.99", got[0].LowestPrice)
+			}
+		})
+	}
+}
+
+// TestScrapeAll_dropsMissingScenes verifies the documented difference between
+// --full and --refresh: scenes that no longer appear on the site are dropped,
+// not soft-deleted.
+func TestScrapeAll_dropsMissingScenes(t *testing.T) {
+	const studioURL = "https://example.com/studio/test"
+	t0 := time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC)
+
+	build := func(id string) models.Scene {
+		return models.Scene{
+			ID:        id,
+			SiteID:    "fakesite",
+			StudioURL: studioURL,
+			Title:     "Scene " + id,
+			URL:       "https://example.com/scene/" + id,
+			ScrapedAt: t0,
+		}
+	}
+
+	st := store.NewFlat(t.TempDir(), []string{"json"})
+	if err := st.Save(studioURL, []models.Scene{build("1"), build("2")}); err != nil {
+		t.Fatalf("seed save: %v", err)
+	}
+
+	// --full sees only scene 2; scene 1 should be dropped (no soft-delete).
+	sc := &fakeScraper{
+		id:      "fakesite",
+		batches: [][]models.Scene{{build("2")}},
+	}
+	scenes, err := scrapeAll(context.Background(), sc, st, studioURL, 1, 0)
+	if err != nil {
+		t.Fatalf("scrapeAll: %v", err)
+	}
+	if len(scenes) != 1 || scenes[0].ID != "2" {
+		t.Fatalf("got %d scenes (ids=%v), want [2]", len(scenes), sceneIDs(scenes))
+	}
+	if scenes[0].DeletedAt != nil {
+		t.Error("scene 2 should not be soft-deleted")
+	}
+}
+
+func sceneIDs(s []models.Scene) []string {
+	ids := make([]string, len(s))
+	for i, sc := range s {
+		ids[i] = sc.ID
+	}
+	return ids
 }
 
 func TestParseFormats_json(t *testing.T) {

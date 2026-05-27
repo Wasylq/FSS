@@ -86,6 +86,7 @@ import (
 	_ "github.com/Wasylq/FSS/internal/scrapers/pornplus"
 	_ "github.com/Wasylq/FSS/internal/scrapers/pornworld"
 	_ "github.com/Wasylq/FSS/internal/scrapers/povr"
+	_ "github.com/Wasylq/FSS/internal/scrapers/prestige"
 	_ "github.com/Wasylq/FSS/internal/scrapers/purecfnm"
 	_ "github.com/Wasylq/FSS/internal/scrapers/puremature"
 	_ "github.com/Wasylq/FSS/internal/scrapers/queensnake"

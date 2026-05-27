@@ -151,7 +151,7 @@ func scrapeOne(ctx context.Context, st store.Store, studioURL, name, dbPath, out
 	switch {
 	case full:
 		fmt.Printf("Full scrape: %s\n", studioURL)
-		scenes, err = scrapeAll(ctx, sc, studioURL, workers, delay)
+		scenes, err = scrapeAll(ctx, sc, st, studioURL, workers, delay)
 	case refresh:
 		fmt.Printf("Refresh scrape: %s\n", studioURL)
 		scenes, err = scrapeRefresh(ctx, sc, st, studioURL, workers, delay)
@@ -200,9 +200,33 @@ func scrapeOne(ctx context.Context, st store.Store, studioURL, name, dbPath, out
 	return nil
 }
 
-// scrapeAll fetches every scene from scratch, ignoring any existing data.
-func scrapeAll(ctx context.Context, sc scraper.StudioScraper, studioURL string, workers int, delay time.Duration) ([]models.Scene, error) {
-	return collectScenes(ctx, sc, studioURL, scraper.ListOpts{Workers: workers, Delay: delay})
+// scrapeAll does a full traversal — no KnownIDs early-stop hint — but still
+// carries forward existing price history so the historical pricing record is
+// preserved across --full re-scrapes. Unlike --refresh, scenes that no longer
+// appear on the site are dropped rather than soft-deleted.
+func scrapeAll(ctx context.Context, sc scraper.StudioScraper, st store.Store, studioURL string, workers int, delay time.Duration) ([]models.Scene, error) {
+	existing, err := st.Load(studioURL)
+	if err != nil {
+		return nil, fmt.Errorf("loading existing scenes: %w", err)
+	}
+	existingByID := make(map[string]models.Scene, len(existing))
+	for _, s := range existing {
+		existingByID[s.ID] = s
+	}
+
+	fresh, err := collectScenes(ctx, sc, studioURL, scraper.ListOpts{Workers: workers, Delay: delay})
+	if err != nil {
+		return nil, err
+	}
+
+	result := make([]models.Scene, 0, len(fresh))
+	for _, s := range fresh {
+		if prev, ok := existingByID[s.ID]; ok {
+			s = carryOverPriceHistory(s, prev)
+		}
+		result = append(result, s)
+	}
+	return result, nil
 }
 
 // scrapeIncremental loads existing scene IDs, passes them to the scraper as a

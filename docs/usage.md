@@ -22,7 +22,7 @@ For NFO sidecar file generation, see [identify.md](identify.md).
 | Flag | Type | Default | Description |
 |------|------|---------|-------------|
 | `--workers`, `-w` | int | 3 | Max parallel metadata fetchers |
-| `--full` | bool | false | Ignore existing data, scrape everything from scratch |
+| `--full` | bool | false | Full traversal (no early-stop); preserves price history; drops scenes no longer on the site |
 | `--refresh` | bool | false | Re-fetch metadata for all known scenes; soft-delete missing ones |
 | `--output`, `-o` | string | `json` | Export format(s): `json`, `csv`, or `json,csv` |
 | `--out-dir` | string | `.` | Output directory |
@@ -33,7 +33,7 @@ For NFO sidecar file generation, see [identify.md](identify.md).
 
 `--full` and `--refresh` are mutually exclusive.
 
-**Per-site delay precedence:** `--site-delay <id>=N` (CLI) > `site_delays.<id>: N` (config) > `--delay`/`delay` (global). A site explicitly set to `0` disables delay even when the global default is non-zero. `--full` ignores all existing data. `--refresh` traverses the full scene list but re-uses existing IDs to update metadata in place and detect deletions.
+**Per-site delay precedence:** `--site-delay <id>=N` (CLI) > `site_delays.<id>: N` (config) > `--delay`/`delay` (global). A site explicitly set to `0` disables delay even when the global default is non-zero. `--full` re-fetches every scene (carrying price history forward) and drops scenes no longer on the site. `--refresh` traverses the full scene list but re-uses existing IDs to update metadata in place and detect deletions.
 
 ### `fss list-scrapers`
 
@@ -263,11 +263,11 @@ The fastest option. Suitable for routine daily runs.
 
 ### `--full`
 
-Ignores all existing data. Fetches every page, fetches every scene. Overwrites the store.
+Full traversal — no early-stop hint. Fetches every page and every scene.
 
-**Price history is not preserved** — all accumulated price snapshots are discarded and replaced with a single snapshot from this run. Use `--refresh` if you want to keep price history while re-fetching metadata.
+**Price history is preserved** — existing price snapshots are carried forward and the new snapshot is appended.
 
-Use when you want a clean slate or after a schema change.
+Differs from `--refresh` in one way: scenes that no longer appear on the site are dropped from the store rather than soft-deleted. Use when you want a clean slate of "what's currently on the site" without losing pricing history.
 
 ### `--refresh`
 
