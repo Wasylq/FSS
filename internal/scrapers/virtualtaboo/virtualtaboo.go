@@ -231,6 +231,11 @@ func (s *Scraper) runPaginated(ctx context.Context, opts scraper.ListOpts, out c
 func (s *Scraper) processEntries(ctx context.Context, entries []listEntry, opts scraper.ListOpts, out chan<- scraper.SceneResult) {
 	work := make(chan listEntry, opts.Workers)
 	var wg sync.WaitGroup
+	// LIFO: close(work) fires first so workers' `for ... range work` exits,
+	// then wg.Wait() blocks until they're all gone. Guarantees no leak even
+	// when the entry-feed loop below bails on ctx.Done.
+	defer wg.Wait()
+	defer close(work)
 	for i := 0; i < opts.Workers; i++ {
 		wg.Add(1)
 		go func() {
@@ -275,9 +280,6 @@ func (s *Scraper) processEntries(ctx context.Context, entries []listEntry, opts 
 			return
 		}
 	}
-
-	close(work)
-	wg.Wait()
 }
 
 var (
