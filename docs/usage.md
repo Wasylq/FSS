@@ -169,6 +169,8 @@ https://www.manyvids.com/Profile/590705/bettie-bondage/Store/Videos
 → manyvids.com-profile-590705-bettie-bondage-store-videos.csv
 ```
 
+Two distinct studio URLs can sanitise to the same slug (e.g. `/foo-bar` and `/foo/bar`, or `/Foo` and `/foo`). The full `studioUrl` is stored inside the JSON, and the store refuses to load or overwrite a file whose stored URL doesn't match the one you're scraping — you'll see a `slug collision` error. Rename or move one of the studio files to resolve.
+
 ### JSON
 
 The JSON file wraps the scene list with a small header:

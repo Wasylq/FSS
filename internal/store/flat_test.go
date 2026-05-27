@@ -332,3 +332,81 @@ func TestFlatExportNoop(t *testing.T) {
 		t.Errorf("Export should be no-op, got: %v", err)
 	}
 }
+
+// TestFlatSlugCollision pins AUDIT.md §Store #4: two distinct studio URLs
+// can sanitize to the same slug. The pre-fix store silently overwrote one
+// studio's data with the other on Save and silently returned the wrong
+// scenes on Load. The fix detects the mismatch via the stored StudioURL
+// and errors out — non-breaking for users with non-colliding URLs.
+func TestFlatSlugCollision(t *testing.T) {
+	collisionPairs := [][2]string{
+		// hyphen vs slash
+		{"https://example.com/foo-bar", "https://example.com/foo/bar"},
+		// case difference
+		{"https://example.com/Foo", "https://example.com/foo"},
+		// query string ignored by Slugify
+		{"https://example.com/videos?page=1", "https://example.com/videos?page=2"},
+	}
+
+	for _, pair := range collisionPairs {
+		urlA, urlB := pair[0], pair[1]
+		t.Run(urlA+"_vs_"+urlB, func(t *testing.T) {
+			// Sanity: confirm these still collide under the current Slugify.
+			if Slugify(urlA) != Slugify(urlB) {
+				t.Fatalf("test fixture no longer collides: %q vs %q", urlA, urlB)
+			}
+
+			f := newTestFlat(t)
+			now := time.Now().UTC().Truncate(time.Second)
+
+			// First studio saves cleanly.
+			scenesA := []models.Scene{{ID: "A", SiteID: "a", StudioURL: urlA, Title: "from A", ScrapedAt: now}}
+			if err := f.Save(urlA, scenesA); err != nil {
+				t.Fatalf("first Save: %v", err)
+			}
+
+			// Second studio attempts to write to the same slug — must error.
+			scenesB := []models.Scene{{ID: "B", SiteID: "b", StudioURL: urlB, Title: "from B", ScrapedAt: now}}
+			if err := f.Save(urlB, scenesB); err == nil {
+				t.Fatal("Save with colliding URL should error, got nil")
+			}
+
+			// First studio's data must survive.
+			got, err := f.Load(urlA)
+			if err != nil {
+				t.Fatalf("Load(urlA): %v", err)
+			}
+			if len(got) != 1 || got[0].ID != "A" {
+				t.Errorf("urlA data clobbered: got %+v", got)
+			}
+
+			// Load from the colliding URL must also error.
+			if _, err := f.Load(urlB); err == nil {
+				t.Error("Load with colliding URL should error, got nil")
+			}
+		})
+	}
+}
+
+// TestFlatSaveSameURLOverwrites confirms the collision check does NOT block
+// the normal incremental-update case where the same URL is saved repeatedly.
+func TestFlatSaveSameURLOverwrites(t *testing.T) {
+	f := newTestFlat(t)
+	now := time.Now().UTC().Truncate(time.Second)
+
+	first := []models.Scene{{ID: "1", SiteID: "x", StudioURL: flatTestURL, Title: "v1", ScrapedAt: now}}
+	if err := f.Save(flatTestURL, first); err != nil {
+		t.Fatalf("first Save: %v", err)
+	}
+	second := []models.Scene{{ID: "1", SiteID: "x", StudioURL: flatTestURL, Title: "v2", ScrapedAt: now}}
+	if err := f.Save(flatTestURL, second); err != nil {
+		t.Fatalf("second Save: %v", err)
+	}
+	got, err := f.Load(flatTestURL)
+	if err != nil {
+		t.Fatalf("Load: %v", err)
+	}
+	if len(got) != 1 || got[0].Title != "v2" {
+		t.Errorf("expected v2 after overwrite, got %+v", got)
+	}
+}

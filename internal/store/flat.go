@@ -32,7 +32,21 @@ func (f *Flat) csvPath(studioURL string) string {
 }
 
 func (f *Flat) Load(studioURL string) ([]models.Scene, error) {
-	data, err := os.ReadFile(f.jsonPath(studioURL))
+	sf, err := f.loadStudioFile(studioURL)
+	if err != nil || sf == nil {
+		return nil, err
+	}
+	return sf.Scenes, nil
+}
+
+// loadStudioFile reads the slug-keyed JSON file, parses it, and verifies the
+// stored StudioURL matches the requested one. Two distinct studio URLs can
+// slug to the same filename (e.g. "/foo-bar" and "/foo/bar"), and silently
+// overwriting one with the other was a documented data-loss bug. Returns
+// (nil, nil) when no file exists yet.
+func (f *Flat) loadStudioFile(studioURL string) (*models.StudioFile, error) {
+	path := f.jsonPath(studioURL)
+	data, err := os.ReadFile(path)
 	if os.IsNotExist(err) {
 		return nil, nil
 	}
@@ -43,12 +57,22 @@ func (f *Flat) Load(studioURL string) ([]models.Scene, error) {
 	if err := json.Unmarshal(data, &sf); err != nil {
 		return nil, fmt.Errorf("parsing store: %w", err)
 	}
-	return sf.Scenes, nil
+	if sf.StudioURL != "" && sf.StudioURL != studioURL {
+		return nil, fmt.Errorf(
+			"slug collision: %s stores data for %q but %q was requested — rename or move one of the studio files",
+			path, sf.StudioURL, studioURL,
+		)
+	}
+	return &sf, nil
 }
 
 func (f *Flat) Save(studioURL string, scenes []models.Scene) error {
 	if err := os.MkdirAll(f.dir, 0o755); err != nil {
 		return fmt.Errorf("creating output dir: %w", err)
+	}
+	// Refuse to clobber a file that belongs to a different studio URL.
+	if _, err := f.loadStudioFile(studioURL); err != nil {
+		return err
 	}
 	sf := models.StudioFile{
 		StudioURL:  studioURL,
