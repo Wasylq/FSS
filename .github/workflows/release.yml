@@ -381,6 +381,15 @@ jobs:
           subject-digest: ${{ steps.build.outputs.digest }}
           push-to-registry: false
 
+      - name: Lowercase image repo for Trivy
+        # OCI references must be all-lowercase. ${{ github.repository }} can
+        # contain uppercase (e.g. "Wasylq/FSS"), and GitHub expressions have
+        # no case-conversion function — so we bounce through bash to produce
+        # a lowercase ref that Trivy can parse. Same fix as docker.yml.
+        run: echo "IMAGE_REPO_LC=ghcr.io/${REPO,,}" >> "$GITHUB_ENV"
+        env:
+          REPO: ${{ github.repository }}
+
       - name: Trivy scan (informational)
         # Reports HIGH/CRITICAL CVEs in the pushed image; informational only
         # (`exit-code: '0'`) for the same reason govulncheck is informational
@@ -388,7 +397,7 @@ jobs:
         # every new CVE. Findings show up in the workflow log; bump deliberately.
         uses: aquasecurity/trivy-action@v0.36.0
         with:
-          image-ref: ghcr.io/${{ github.repository }}@${{ steps.build.outputs.digest }}
+          image-ref: ${{ env.IMAGE_REPO_LC }}@${{ steps.build.outputs.digest }}
           severity: HIGH,CRITICAL
           format: table
           exit-code: '0'
