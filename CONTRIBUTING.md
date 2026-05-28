@@ -356,6 +356,19 @@ These pins live inside `run:` shell strings (not `go.mod`) so Dependabot can't b
 
 Bump by editing the `@vX.Y.Z` suffix in each `go install` line. Check the upstream changelog for breaking format changes — `gotestsum` in particular feeds into the `test-output.txt` parser in the coverage summary step.
 
+### CI security checks
+
+`govulncheck` runs on every CI build but is **informational only** — it never fails the pipeline, and there is no release-time gate that fails on findings.
+
+Why: the Go vulnerability database reports findings against the Go toolchain itself (not just third-party deps), so a "fail on any finding" policy would force a Go toolchain bump every time a new Go point release lands — even for low-severity issues that don't affect this codebase. The trade-off is intentional: vulnerabilities surface as workflow warnings, and the maintainer decides when to bump `go.mod` and the runtime.
+
+When triaging a new govulncheck warning:
+
+1. Read the finding in the CI logs (`Vulncheck (informational)` job) — note the GO-YYYY-NNNN ID and which symbol triggers it.
+2. If it's a `stdlib` finding, decide whether the call path is actually reachable in this codebase (govulncheck's symbol-level analysis already filters most of these).
+3. Bump `go.mod`'s `go` directive and re-run `go mod tidy`. The next workflow run should clear the warning.
+4. If you can't bump immediately, link the issue ID in a TODO so a future release can clear it.
+
 ### AUR and Homebrew
 
 Packaging files live in `packaging/`:

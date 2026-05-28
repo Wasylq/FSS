@@ -5,7 +5,7 @@ pkgbase = fss
 	url = https://github.com/Wasylq/FSS
 	arch = x86_64
 	arch = aarch64
-	license = MIT
+	license = GPL-3.0-only
 	makedepends = go>=1.25
 	depends = glibc
 	source = fss-VERSION.tar.gz::https://github.com/Wasylq/FSS/archive/vVERSION.tar.gz

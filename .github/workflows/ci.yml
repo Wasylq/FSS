@@ -93,6 +93,20 @@ jobs:
           version: v2.11.4
           args: --timeout=5m
 
+      - name: Check AUR .SRCINFO is in sync with PKGBUILD
+        # Catches the class of drift we hit with license=MIT vs GPL-3.0-only:
+        # the committed .SRCINFO must match what `gen-srcinfo.sh` produces
+        # from the current PKGBUILD. If this fails locally, run
+        # `packaging/aur/gen-srcinfo.sh` and commit the result.
+        run: ./packaging/aur/gen-srcinfo.sh --check
+
+  # Vulncheck is intentionally informational and is NOT gated on release.
+  # The Go vulnerability database reports findings for older Go *toolchains*
+  # as well as third-party deps, so a "fail on any finding" policy would
+  # require bumping go.mod / the Go toolchain on every new Go point release
+  # to keep the pipeline green. We prefer to see findings as warnings and
+  # decide deliberately when to upgrade — see CONTRIBUTING.md → "CI
+  # security checks" for the rationale and the manual review cadence.
   vulncheck:
     name: Vulncheck (informational)
     runs-on: ubuntu-latest
@@ -110,6 +124,11 @@ jobs:
       - name: Run govulncheck
         run: govulncheck ./... || echo "::warning::govulncheck found vulnerabilities (see above)"
 
+  # Cross-build deliberately omits linux/amd64: the `test` job above runs on
+  # ubuntu-latest (linux/amd64) and does `go build ./...` natively before
+  # tests, so the native build is already gated. This matrix exists only to
+  # catch breakage in *cross-compilation* for the other platforms shipped by
+  # release.yml (which builds all five platforms, including linux/amd64).
   cross-build:
     name: Cross-build
     runs-on: ubuntu-latest
