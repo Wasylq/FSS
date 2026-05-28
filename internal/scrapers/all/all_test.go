@@ -76,10 +76,21 @@ func TestSitesMdInSync(t *testing.T) {
 // given scrapers. One row per unique domain — when multiple scraper IDs share
 // a domain (e.g. all 97 adultprime sub-studios on adultprime.com), the IDs
 // are folded into a single cell.
+//
+// stashbox is excluded: it's the only config-driven scraper in the registry,
+// so the domains it reports depend on whatever instances the developer
+// running the test has in their local config.yaml. Including it would make
+// sites.md drift between local runs and CI. stashbox is documented
+// separately in docs/scrapers.md.
 func buildSitesMd(scrapers []scraper.StudioScraper) []byte {
 	// Collect IDs per domain, preserving order seen + deduping per (domain, id).
 	idsByDomain := map[string][]string{}
+	rendered := 0
 	for _, s := range scrapers {
+		if s.ID() == "stashbox" {
+			continue
+		}
+		rendered++
 		seen := map[string]bool{}
 		for _, p := range s.Patterns() {
 			d := domainOfPattern(p)
@@ -102,7 +113,7 @@ func buildSitesMd(scrapers []scraper.StudioScraper) []byte {
 	var b bytes.Buffer
 	fmt.Fprintln(&b, "# Covered Sites — All Domains")
 	fmt.Fprintln(&b)
-	fmt.Fprintf(&b, "%d scrapers covering %d distinct domains. Auto-generated from the scraper registry by `TestSitesMdInSync` — do not hand-edit; instead update the scraper's `Patterns()` and re-run `go test ./internal/scrapers/all/...`.\n", len(scrapers), len(domains))
+	fmt.Fprintf(&b, "%d scrapers covering %d distinct domains. Auto-generated from the scraper registry by `TestSitesMdInSync` — do not hand-edit; instead update the scraper's `Patterns()` and re-run `go test ./internal/scrapers/all/...`. The `stashbox` scraper is omitted here because its covered hosts are config-driven; see [`scrapers.md`](scrapers.md).\n", rendered, len(domains))
 	fmt.Fprintln(&b)
 	fmt.Fprintln(&b, "Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scraper ID(s)** column lists every scraper that claims URLs on that domain — most domains have one entry, but table-driven networks (`adultprime`, `tmw`, `nextdoorstudios`, etc.) host many sub-studios on a single root domain. See [`scrapers.md`](scrapers.md) for what each ID covers.")
 	fmt.Fprintln(&b)
@@ -135,7 +146,7 @@ func formatIDs(ids []string) string {
 
 // domainOfPattern extracts the host from a scraper Pattern string.
 // Patterns generally look like "example.com" or "example.com/some/path", but a
-// handful (stashbox) ship full URLs like "https://example.org/...".
+// handful ship full URLs like "https://example.org/...".
 func domainOfPattern(p string) string {
 	p = strings.TrimSpace(p)
 	// Strip leading scheme if present.
