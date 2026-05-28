@@ -87,6 +87,17 @@ jobs:
       - name: Run go vet
         run: go vet ./...
 
+      - name: Run go vet (integration build tag)
+        # Static-only — compiles the integration_test.go files (gated by
+        # `//go:build integration`) and runs vet checks against them. This
+        # is NOT `go test`; nothing executes and no network traffic happens,
+        # so it's safe to run on shared GitHub runners even though live
+        # integration tests are blocked by site-side WAFs.
+        # Without this, broken integration test code (typos, undefined
+        # symbols, stale testutil signatures) stays invisible until a
+        # contributor runs `make smoke` locally.
+        run: go vet -tags=integration ./...
+
       - name: Run golangci-lint
         uses: golangci/golangci-lint-action@v9
         with:
