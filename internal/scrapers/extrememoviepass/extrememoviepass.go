@@ -123,6 +123,13 @@ var sites = []extrememoviepassutil.SiteConfig{
 		MatchRe:  regexp.MustCompile(`^https?://(?:www\.)?sexycuckold\.com`),
 	},
 	{
+		ID:       "smutbuttxxx",
+		SiteBase: "http://www.smutbuttxxx.com",
+		Studio:   "SmutButtXXX",
+		Patterns: []string{"smutbuttxxx.com", "smutbuttxxx.com/tour/"},
+		MatchRe:  regexp.MustCompile(`^https?://(?:www\.)?smutbuttxxx\.com`),
+	},
+	{
 		ID:       "slipperymassage",
 		SiteBase: "https://www.slipperymassage.com",
 		Studio:   "Slippery Massage",

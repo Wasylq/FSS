@@ -12,9 +12,10 @@ import (
 
 var sites = []adultdoorwayclassicutil.SiteConfig{
 	{
-		ID:       "blackpayback",
-		SiteBase: "https://blackpayback.com",
-		Studio:   "Black Payback",
+		ID:         "blackpayback",
+		SiteBase:   "https://blackpayback.com",
+		Studio:     "Black Payback",
+		TourPrefix: "/tour",
 		Patterns: []string{
 			"blackpayback.com",
 			"blackpayback.com/tour/categories/movies/{page}/latest/",

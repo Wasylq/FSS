@@ -63,8 +63,14 @@ type SiteConfig struct {
 	ID       string
 	SiteBase string
 	Studio   string
-	Patterns []string
-	MatchRe  *regexp.Regexp
+	// TourPrefix is "/tour" for sites whose listings are rooted at /tour/
+	// (e.g. blackpayback), or "" for sites that serve listings at the bare
+	// `/categories/movies/{N}/latest/` path (babearchives). The empty default
+	// keeps the original blackpayback behaviour intact via the SiteConfig
+	// rows that explicitly set TourPrefix to "/tour".
+	TourPrefix string
+	Patterns   []string
+	MatchRe    *regexp.Regexp
 }
 
 type Scraper struct {
@@ -101,10 +107,12 @@ func (s *Scraper) ListScenes(ctx context.Context, studioURL string, opts scraper
 // thumbRe pulls the lazy-loaded high-res thumb attribute `src0_1x`. The base
 // CDN path is `cdn77.{site}/tour/content/contentthumbs/{XX}/{YY}/{N}-1x.jpg`.
 var (
-	cardRe       = regexp.MustCompile(`(?s)<div class="item-thumb"[^>]*>\s*<a\s+href="([^"]*/tour/trailers/([a-z0-9][a-z0-9-]*)\.html)"[^>]*title="([^"]*)"`)
+	// Trailer URL accepts both `/tour/trailers/{slug}.html` (blackpayback) and
+	// `/trailers/{slug}.html` (babearchives — no /tour/ prefix).
+	cardRe       = regexp.MustCompile(`(?s)<div class="item-thumb"[^>]*>\s*<a\s+href="([^"]*(?:/tour)?/trailers/([a-z0-9][a-z0-9-]*)\.html)"[^>]*title="([^"]*)"`)
 	thumbRe      = regexp.MustCompile(`src0_1x="([^"]+)"`)
-	pageLinkRe   = regexp.MustCompile(`/tour/categories/movies/(\d+)/latest/?`)
-	categorySlug = regexp.MustCompile(`/tour/categories/([^/]+)/\d+/latest/?`)
+	pageLinkRe   = regexp.MustCompile(`(?:/tour)?/categories/movies/(\d+)/latest/?`)
+	categorySlug = regexp.MustCompile(`(?:/tour)?/categories/([^/]+)/\d+/latest/?`)
 )
 
 // Detail regexes.
@@ -115,7 +123,7 @@ var (
 	durationMinsRe  = regexp.MustCompile(`(\d+)\s*&nbsp;?\s*min\s*&nbsp;?\s*of\s*&nbsp;?\s*video`)
 	durationColonRe = regexp.MustCompile(`(\d{1,2}:\d{2}(?::\d{2})?)`)
 	featuringRe     = regexp.MustCompile(`(?s)<div class="featuring[^"]*"[^>]*>(.*?)</div>`)
-	tagItemRe       = regexp.MustCompile(`<a[^>]+href="[^"]*/tour/categories/[^"]+"[^>]*>([^<]+)</a>`)
+	tagItemRe       = regexp.MustCompile(`<a[^>]+href="[^"]*(?:/tour)?/categories/[^"]+"[^>]*>([^<]+)</a>`)
 )
 
 type sceneItem struct {
@@ -255,12 +263,12 @@ func parseStudioURL(studioURL string) listConfig {
 	return listConfig{mode: modeFullCatalog}
 }
 
-func (lc listConfig) pageURL(base string, page int) string {
+func (lc listConfig) pageURL(base, tourPrefix string, page int) string {
 	switch lc.mode {
 	case modeCategory:
-		return fmt.Sprintf("%s/tour/categories/%s/%d/latest/", base, lc.slug, page)
+		return fmt.Sprintf("%s%s/categories/%s/%d/latest/", base, tourPrefix, lc.slug, page)
 	default:
-		return fmt.Sprintf("%s/tour/categories/movies/%d/latest/", base, page)
+		return fmt.Sprintf("%s%s/categories/movies/%d/latest/", base, tourPrefix, page)
 	}
 }
 
@@ -302,7 +310,7 @@ func (s *Scraper) collectListing(ctx context.Context, lc listConfig, opts scrape
 			}
 		}
 
-		pageURL := lc.pageURL(s.cfg.SiteBase, page)
+		pageURL := lc.pageURL(s.cfg.SiteBase, s.cfg.TourPrefix, page)
 		scraper.Debugf(1, "%s: fetching listing page %d (%s)", s.cfg.ID, page, pageURL)
 
 		body, err := s.fetchPage(ctx, pageURL)

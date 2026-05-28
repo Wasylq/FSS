@@ -1,0 +1,293 @@
+// Package darkreachupdateitemutil scrapes Darkreach Communications sites
+// running the "updateItem" template family (spartavideo, watchyoujerk,
+// angelasommers). All three share a `<div class="updateItem">` card wrapper
+// and `/updates/{slug}.html` detail URLs, but the inner field layout varies:
+//
+//   - spartavideo:    `updateInfo` block with h5 title; no date/duration/models.
+//   - watchyoujerk:   `updateInfo` block with h5 title + `tour_update_models`
+//     performers (date is HTML-commented-out).
+//   - angelasommers:  `updateDetails` block with h4 title + duration
+//     ("10&nbsp;min") + date ("MM/DD/YYYY").
+//
+// The util extracts whatever's present per card and leaves the rest blank.
+// Listing pagination form: `{base}/categories/updates_{N}_d.html`.
+package darkreachupdateitemutil
+
+import (
+	"context"
+	"fmt"
+	"html"
+	"net/http"
+	"regexp"
+	"strconv"
+	"strings"
+	"time"
+
+	"github.com/Wasylq/FSS/internal/httpx"
+	"github.com/Wasylq/FSS/models"
+	"github.com/Wasylq/FSS/scraper"
+)
+
+type SiteConfig struct {
+	ID       string
+	SiteBase string // "https://spartavideo.com" — no trailing slash
+	Studio   string
+	// TourPrefix is "/tour" for sites whose paths are rooted at /tour/
+	// (hungarianhoneys), or "" for sites at the bare path (spartavideo).
+	TourPrefix string
+	// DetailPathSegment is the path component for scene-detail URLs — most
+	// sites use "/updates" (default) but some (terrorxxx) use "/trailers".
+	DetailPathSegment string
+	// ListingBase is the listing-URL stem WITHOUT the page-number suffix or
+	// extension — default is "/categories/updates" (yielding
+	// `/categories/updates_{N}_d.html`). Sites with a different base
+	// (e.g. terrorxxx's `/categories/Movies`) override this.
+	ListingBase string
+	Patterns    []string
+	MatchRe     *regexp.Regexp
+}
+
+type Scraper struct {
+	cfg    SiteConfig
+	client *http.Client
+}
+
+func New(cfg SiteConfig) *Scraper {
+	if cfg.DetailPathSegment == "" {
+		cfg.DetailPathSegment = "/updates"
+	}
+	if cfg.ListingBase == "" {
+		cfg.ListingBase = "/categories/updates"
+	}
+	return &Scraper{
+		cfg:    cfg,
+		client: httpx.NewClient(30 * time.Second),
+	}
+}
+
+func (s *Scraper) ID() string         { return s.cfg.ID }
+func (s *Scraper) Patterns() []string { return s.cfg.Patterns }
+func (s *Scraper) MatchesURL(u string) bool {
+	return s.cfg.MatchRe.MatchString(u)
+}
+
+func (s *Scraper) ListScenes(ctx context.Context, studioURL string, opts scraper.ListOpts) (<-chan scraper.SceneResult, error) {
+	out := make(chan scraper.SceneResult)
+	go s.run(ctx, studioURL, opts, out)
+	return out, nil
+}
+
+var (
+	cardStartRe = regexp.MustCompile(`<div class="updateItem">`)
+	// Anchor inside the card pointing at the detail page; first match wins.
+	// Accepts both /updates/{slug}.html and /trailers/{slug}.html so this
+	// util can also handle terrorxxx-style sites.
+	updateURLRe = regexp.MustCompile(`<a[^>]+href="([^"]*/(?:updates|trailers)/[A-Za-z0-9_-]+\.html)"`)
+	// Title is the text content of an <h4> or <h5> link wrapping the same URL.
+	titleH4Re = regexp.MustCompile(`(?s)<h4>\s*<a[^>]+href="[^"]*/(?:updates|trailers)/[^"]+"[^>]*>\s*([^<]+?)\s*</a>`)
+	titleH5Re = regexp.MustCompile(`(?s)<h5>\s*<a[^>]+href="[^"]*/(?:updates|trailers)/[^"]+"[^>]*>\s*([^<]+?)\s*</a>`)
+	thumbRe   = regexp.MustCompile(`src0_1x="([^"]+)"`)
+	slugRe    = regexp.MustCompile(`/(?:updates|trailers)/([A-Za-z0-9_-]+)\.html`)
+	// Performers from `<span class="tour_update_models">`.
+	performerSectionRe = regexp.MustCompile(`(?s)<span class="tour_update_models">(.*?)</span>`)
+	performerAnchorRe  = regexp.MustCompile(`<a[^>]+href="[^"]*/models/[^"]+"[^>]*>([^<]+)</a>`)
+	// Duration "10&nbsp;min" or "10 min". &nbsp; appears literally in the HTML.
+	durationMinsRe = regexp.MustCompile(`(\d+)\s*(?:&nbsp;|\s)*min(?:&nbsp;|\s|<|$)`)
+	// Date "08/25/2022".
+	dateRe = regexp.MustCompile(`(\d{2}/\d{2}/\d{4})`)
+	// Pagination max-page extraction. Accepts `updates_N_d.html` (default)
+	// and `Movies_N_d.html` (terrorxxx — capital M).
+	maxPageRe = regexp.MustCompile(`(?:updates|[Mm]ovies)_(\d+)_d\.html`)
+)
+
+type sceneItem struct {
+	id         string
+	title      string
+	url        string
+	thumb      string
+	date       time.Time
+	duration   int // seconds
+	performers []string
+}
+
+func parseListing(body []byte) []sceneItem {
+	page := string(body)
+	starts := cardStartRe.FindAllStringIndex(page, -1)
+	items := make([]sceneItem, 0, len(starts))
+	seen := make(map[string]bool, len(starts))
+
+	for i, loc := range starts {
+		end := len(page)
+		if i+1 < len(starts) {
+			end = starts[i+1][0]
+		}
+		block := page[loc[0]:end]
+
+		var item sceneItem
+		if m := updateURLRe.FindStringSubmatch(block); m != nil {
+			item.url = m[1]
+			if slug := slugRe.FindStringSubmatch(item.url); slug != nil {
+				item.id = slug[1]
+			}
+		}
+		if item.id == "" || seen[item.id] {
+			continue
+		}
+		seen[item.id] = true
+
+		// Title from h4 or h5 — different sites use different headings.
+		if m := titleH4Re.FindStringSubmatch(block); m != nil {
+			item.title = html.UnescapeString(strings.TrimSpace(m[1]))
+		} else if m := titleH5Re.FindStringSubmatch(block); m != nil {
+			item.title = html.UnescapeString(strings.TrimSpace(m[1]))
+		}
+
+		if m := thumbRe.FindStringSubmatch(block); m != nil {
+			item.thumb = m[1]
+		}
+
+		if m := performerSectionRe.FindStringSubmatch(block); m != nil {
+			for _, pm := range performerAnchorRe.FindAllStringSubmatch(m[1], -1) {
+				name := html.UnescapeString(strings.TrimSpace(pm[1]))
+				if name != "" {
+					item.performers = append(item.performers, name)
+				}
+			}
+		}
+
+		if m := durationMinsRe.FindStringSubmatch(block); m != nil {
+			mins, _ := strconv.Atoi(m[1])
+			item.duration = mins * 60
+		}
+
+		// Date: MM/DD/YYYY. Skip placeholder dates of all zeros.
+		for _, m := range dateRe.FindAllStringSubmatch(block, -1) {
+			if d, err := time.Parse("01/02/2006", m[1]); err == nil {
+				item.date = d.UTC()
+				break
+			}
+		}
+
+		items = append(items, item)
+	}
+	return items
+}
+
+func estimateTotal(body []byte, perPage int) int {
+	maxPage := 1
+	for _, m := range maxPageRe.FindAllSubmatch(body, -1) {
+		n, _ := strconv.Atoi(string(m[1]))
+		if n > maxPage {
+			maxPage = n
+		}
+	}
+	return maxPage * perPage
+}
+
+func (s *Scraper) listingURL(page int) string {
+	return fmt.Sprintf("%s%s%s_%d_d.html", s.cfg.SiteBase, s.cfg.TourPrefix, s.cfg.ListingBase, page)
+}
+
+func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOpts, out chan<- scraper.SceneResult) {
+	defer close(out)
+	scraper.Debugf(1, "%s: scraping full catalog", s.cfg.ID)
+
+	now := time.Now().UTC()
+	sentTotal := false
+
+	for page := 1; ; page++ {
+		if ctx.Err() != nil {
+			return
+		}
+		if page > 1 && opts.Delay > 0 {
+			select {
+			case <-time.After(opts.Delay):
+			case <-ctx.Done():
+				return
+			}
+		}
+
+		pageURL := s.listingURL(page)
+		scraper.Debugf(1, "%s: fetching page %d", s.cfg.ID, page)
+
+		body, err := s.fetchPage(ctx, pageURL)
+		if err != nil {
+			select {
+			case out <- scraper.Error(fmt.Errorf("page %d: %w", page, err)):
+			case <-ctx.Done():
+			}
+			return
+		}
+
+		items := parseListing(body)
+		if len(items) == 0 {
+			scraper.Debugf(1, "%s: page %d empty, stopping", s.cfg.ID, page)
+			return
+		}
+
+		if !sentTotal {
+			total := estimateTotal(body, len(items))
+			scraper.Debugf(1, "%s: %d total scenes (estimated)", s.cfg.ID, total)
+			if total > 0 {
+				select {
+				case out <- scraper.Progress(total):
+				case <-ctx.Done():
+					return
+				}
+			}
+			sentTotal = true
+		}
+
+		for _, item := range items {
+			if opts.KnownIDs[item.id] {
+				scraper.Debugf(1, "%s: hit known ID %s, stopping early", s.cfg.ID, item.id)
+				select {
+				case out <- scraper.StoppedEarly():
+				case <-ctx.Done():
+				}
+				return
+			}
+			select {
+			case out <- scraper.Scene(item.toScene(s.cfg.ID, s.cfg.SiteBase, s.cfg.Studio, now)):
+			case <-ctx.Done():
+				return
+			}
+		}
+	}
+}
+
+func (item sceneItem) toScene(siteID, siteBase, studio string, now time.Time) models.Scene {
+	url := item.url
+	if strings.HasPrefix(url, "/") {
+		url = siteBase + url
+	}
+	thumb := item.thumb
+	if thumb != "" && !strings.HasPrefix(thumb, "http") {
+		thumb = siteBase + "/" + strings.TrimLeft(thumb, "/")
+	}
+	return models.Scene{
+		ID:         item.id,
+		SiteID:     siteID,
+		StudioURL:  siteBase,
+		Title:      item.title,
+		URL:        url,
+		Thumbnail:  thumb,
+		Date:       item.date,
+		Duration:   item.duration,
+		Performers: item.performers,
+		Studio:     studio,
+		ScrapedAt:  now,
+	}
+}
+
+func (s *Scraper) fetchPage(ctx context.Context, url string) ([]byte, error) {
+	resp, err := httpx.Do(ctx, s.client, httpx.Request{
+		URL:     url,
+		Headers: httpx.BrowserHeaders(httpx.UserAgentFirefox),
+	})
+	if err != nil {
+		return nil, err
+	}
+	defer func() { _ = resp.Body.Close() }()
+	return httpx.ReadBody(resp.Body)
+}

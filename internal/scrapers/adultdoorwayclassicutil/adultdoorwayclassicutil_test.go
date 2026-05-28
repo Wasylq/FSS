@@ -192,16 +192,20 @@ func TestParseStudioURL(t *testing.T) {
 
 func TestListConfig_pageURL(t *testing.T) {
 	tests := []struct {
-		lc   listConfig
-		page int
-		want string
+		lc         listConfig
+		tourPrefix string
+		page       int
+		want       string
 	}{
-		{listConfig{mode: modeFullCatalog}, 1, "https://example.com/tour/categories/movies/1/latest/"},
-		{listConfig{mode: modeFullCatalog}, 19, "https://example.com/tour/categories/movies/19/latest/"},
-		{listConfig{mode: modeCategory, slug: "blondes"}, 2, "https://example.com/tour/categories/blondes/2/latest/"},
+		{listConfig{mode: modeFullCatalog}, "/tour", 1, "https://example.com/tour/categories/movies/1/latest/"},
+		{listConfig{mode: modeFullCatalog}, "/tour", 19, "https://example.com/tour/categories/movies/19/latest/"},
+		{listConfig{mode: modeCategory, slug: "blondes"}, "/tour", 2, "https://example.com/tour/categories/blondes/2/latest/"},
+		// Sites without /tour/ prefix (babearchives-style).
+		{listConfig{mode: modeFullCatalog}, "", 1, "https://example.com/categories/movies/1/latest/"},
+		{listConfig{mode: modeCategory, slug: "blondes"}, "", 3, "https://example.com/categories/blondes/3/latest/"},
 	}
 	for _, c := range tests {
-		got := c.lc.pageURL("https://example.com", c.page)
+		got := c.lc.pageURL("https://example.com", c.tourPrefix, c.page)
 		if got != c.want {
 			t.Errorf("got %q, want %q", got, c.want)
 		}
@@ -273,10 +277,11 @@ func TestListScenes_endToEnd(t *testing.T) {
 	defer ts.Close()
 
 	s := New(SiteConfig{
-		ID:       "blackpayback",
-		SiteBase: ts.URL,
-		Studio:   "Black Payback",
-		MatchRe:  regexp.MustCompile(`.*`),
+		ID:         "blackpayback",
+		SiteBase:   ts.URL,
+		Studio:     "Black Payback",
+		TourPrefix: "/tour",
+		MatchRe:    regexp.MustCompile(`.*`),
 	})
 
 	ch, err := s.ListScenes(context.Background(), ts.URL, scraper.ListOpts{Workers: 2})
@@ -343,10 +348,11 @@ func TestListScenes_knownIDsStopsEarly(t *testing.T) {
 	defer ts.Close()
 
 	s := New(SiteConfig{
-		ID:       "blackpayback",
-		SiteBase: ts.URL,
-		Studio:   "Black Payback",
-		MatchRe:  regexp.MustCompile(`.*`),
+		ID:         "blackpayback",
+		SiteBase:   ts.URL,
+		Studio:     "Black Payback",
+		TourPrefix: "/tour",
+		MatchRe:    regexp.MustCompile(`.*`),
 	})
 
 	ch, err := s.ListScenes(context.Background(), ts.URL, scraper.ListOpts{
