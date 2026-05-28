@@ -1,6 +1,6 @@
 # Covered Sites — All Domains
 
-941 scrapers covering 957 distinct domains. Auto-generated from the scraper registry by `TestSitesMdInSync` — do not hand-edit; instead update the scraper's `Patterns()` and re-run `go test ./internal/scrapers/all/...`. The `stashbox` scraper is omitted here because its covered hosts are config-driven; see [`scrapers.md`](scrapers.md).
+945 scrapers covering 970 distinct domains. Auto-generated from the scraper registry by `TestSitesMdInSync` — do not hand-edit; instead update the scraper's `Patterns()` and re-run `go test ./internal/scrapers/all/...`. The `stashbox` scraper is omitted here because its covered hosts are config-driven; see [`scrapers.md`](scrapers.md).
 
 Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scraper ID(s)** column lists every scraper that claims URLs on that domain — most domains have one entry, but table-driven networks (`adultprime`, `tmw`, `nextdoorstudios`, etc.) host many sub-studios on a single root domain. See [`scrapers.md`](scrapers.md) for what each ID covers.
 
@@ -38,6 +38,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | analacrobats.com | `analacrobats` |
 | analamateur.com | `analamateur` |
 | analbbc.com | `analbbc` |
+| analintroductions.com | `private` |
 | analized.com | `analized` |
 | analjesse.com | `analjesse` |
 | analqts.com | `analqts` |
@@ -111,6 +112,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | blackmoneyerotica.com | `blackmoneyerotica` |
 | blackpayback.com | `blackpayback` |
 | blackpynk.com | `blackpynk` |
+| blacksonsluts.com | `private` |
 | blacktgirlshardcore.com | `blacktgirlshardcore` |
 | blackvalleygirls.com | `blackvalleygirls` |
 | blondeslovedick.com | `porngutter` |
@@ -425,6 +427,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | hugerubberdicks.com | `hugerubberdicks` |
 | hungarianhoneys.com | `hungarianhoneys` |
 | ibonedyourmom.com | `ibonedyourmom` |
+| iconfessfiles.com | `private` |
 | iconmale.com | `iconmale` |
 | ideapocket.com | `ideapocket` |
 | ifeelmyself.com | `ifeelmyself` |
@@ -527,6 +530,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | militarygayxxx.com | `militarygayxxx` |
 | millymarks.com | `millymarks` |
 | missax.com | `missax` |
+| missionasspossible.com | `private` |
 | mixedx.com | `mixedx` |
 | modeltime.com | `modeltime` |
 | moderndaysins.com | `moderndaysins` |
@@ -673,6 +677,12 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | prestige-av.com | `prestige` |
 | prettydirty.com | `prettydirty` |
 | princesscum.com | `nubiles` |
+| private.com | `private` |
+| privateblack.com | `privateblack` |
+| privatecastings.com | `privatecastings` |
+| privateclassics.com | `privateclassics` |
+| privatefetish.com | `private` |
+| privatemilfs.com | `private` |
 | privateteenvideo.com | `tmw-privateteenvideo` |
 | propertysex.com | `propertysex` |
 | publicagent.com | `fakehub` |
@@ -712,6 +722,8 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | romemajor.com | `romemajor` |
 | roxired.com | `roxired` |
 | russian-tgirls.com | `russiantgirls` |
+| russianfakeagent.com | `private` |
+| russianteenass.com | `private` |
 | rylskyart.com | `rylskyart` |
 | s1s1s1.com | `s1no1style` |
 | sallydangeloxxx.com | `citygirlz` |
@@ -864,6 +876,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | thundercock.com | `naughtyamerica` |
 | tiffany-towers.com | `tiffany-towers` |
 | tiffanybrookesxxx.com | `tiffanybrookesxxx` |
+| tightandteen.com | `private` |
 | tiny4k.com | `tiny4k` |
 | tinysis.com | `tinysis` |
 | titanmen.com | `titanmen` |
