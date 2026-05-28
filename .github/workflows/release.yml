@@ -221,6 +221,23 @@ jobs:
 
             A mismatch — or `FAILED` from `sha256sum --check` — means the file is corrupted or tampered with; do not run it.
 
+            ### Verifying the Docker image
+
+            The Docker image is published with a [SLSA v1 build attestation](https://slsa.dev/) that you can verify before pulling. The attestation is stored on the GitHub release run (not embedded in the image index, so the manifest list stays clean).
+
+            Requires the [`gh` CLI](https://cli.github.com/) v2.49+:
+
+            ```sh
+            # Look up the image digest you want to verify
+            docker pull ghcr.io/wasylq/fss:${{ github.ref_name }}
+            digest=$(docker buildx imagetools inspect ghcr.io/wasylq/fss:${{ github.ref_name }} --format '{{json .Manifest}}' | jq -r '.digest')
+
+            # Verify provenance against the GitHub workflow that built it
+            gh attestation verify oci://ghcr.io/wasylq/fss@$digest --owner Wasylq
+            ```
+
+            A successful run prints the build workflow's identity (commit SHA, repo, runner). Failure means the image wasn't built by this repo's release pipeline.
+
   aur:
     name: Publish to AUR
     runs-on: ubuntu-latest
@@ -280,6 +297,15 @@ jobs:
     # Runs only after the gated release job succeeds, so no image lands on
     # GHCR unless the manual smoke-test gate was approved.
     needs: release
+    permissions:
+      contents: read
+      packages: write
+      # Needed for actions/attest-build-provenance — OIDC + attestation write.
+      # Attestation lives on the workflow run, not in the registry image
+      # index (`push-to-registry: false`), so the manifest list stays clean
+      # of `unknown/unknown` entries that pollute GHCR's UI.
+      id-token: write
+      attestations: write
     steps:
       - uses: actions/checkout@v6
         with:
@@ -320,12 +346,18 @@ jobs:
           echo "go_version=$(./scripts/go-version.sh)" >> "$GITHUB_OUTPUT"
 
       - name: Build and push
+        id: build
         uses: docker/build-push-action@v7
         with:
           context: .
           file: ./Dockerfile
           platforms: linux/amd64,linux/arm64
           push: true
+          # Intentionally disabled: provenance: true embeds attestation
+          # manifests in the image index as `unknown/unknown` entries,
+          # which clutters GHCR's UI. SLSA provenance is generated below
+          # via `actions/attest-build-provenance` and stored on the
+          # workflow run instead, verifiable via `gh attestation verify`.
           provenance: false
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
@@ -336,3 +368,28 @@ jobs:
             VERSION=${{ steps.args.outputs.version }}
             COMMIT=${{ steps.args.outputs.commit }}
             DATE=${{ steps.args.outputs.date }}
+
+      - name: Attest build provenance
+        # SLSA v1 attestation pinned to the pushed image digest. Stored on
+        # the workflow run, not in the registry — keeps the multi-arch
+        # manifest list free of `unknown/unknown` entries. Users verify with
+        #   gh attestation verify oci://ghcr.io/<owner>/<repo>@<digest> --owner <owner>
+        # (see the release notes' "Verifying the docker image" section).
+        uses: actions/attest-build-provenance@v4.1.0
+        with:
+          subject-name: ghcr.io/${{ github.repository }}
+          subject-digest: ${{ steps.build.outputs.digest }}
+          push-to-registry: false
+
+      - name: Trivy scan (informational)
+        # Reports HIGH/CRITICAL CVEs in the pushed image; informational only
+        # (`exit-code: '0'`) for the same reason govulncheck is informational
+        # — a "fail on any finding" gate would force base-image bumps on
+        # every new CVE. Findings show up in the workflow log; bump deliberately.
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          image-ref: ghcr.io/${{ github.repository }}@${{ steps.build.outputs.digest }}
+          severity: HIGH,CRITICAL
+          format: table
+          exit-code: '0'
+          ignore-unfixed: true
