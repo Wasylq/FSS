@@ -219,11 +219,32 @@ jobs:
 
             A mismatch — or `FAILED` from `sha256sum --check` — means the file is corrupted or tampered with; do not run it.
 
-      - name: Stamp PKGBUILD version
-        run: sed -i "s/^pkgver=VERSION$/pkgver=${GITHUB_REF#refs/tags/v}/" ./packaging/aur/PKGBUILD
+  aur:
+    name: Publish to AUR
+    runs-on: ubuntu-latest
+    # Decoupled from the `release` job: a transient AUR/SSH failure here used
+    # to leave AUR stale because the steps lived in the release job, which is
+    # one-shot and gates everything downstream. As its own job it can be re-run
+    # from the Actions UI without re-cutting the GitHub release.
+    needs: release
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
 
-      - name: Publish to AUR
+      - name: Stamp PKGBUILD version
+        # Defensive substitution: matches any prior pkgver= line so the step
+        # still works if the sentinel `VERSION` placeholder is ever changed.
+        run: sed -i "s/^pkgver=.*/pkgver=${GITHUB_REF#refs/tags/v}/" ./packaging/aur/PKGBUILD
+
+      # AUR pushes can fail transiently on the SSH side (aur.archlinux.org
+      # accepts only a handful of concurrent sessions). We retry once with a
+      # short delay before surfacing a real failure to the user — the job can
+      # still be re-run from the Actions UI if even the retry fails.
+      - name: Publish to AUR (attempt 1)
+        id: aur1
         uses: KSXGitHub/github-actions-deploy-aur@v4.1.3
+        continue-on-error: true
         with:
           pkgname: fss
           pkgbuild: ./packaging/aur/PKGBUILD
@@ -233,6 +254,22 @@ jobs:
           commit_message: "Update to ${{ github.ref_name }}"
           # Run `updpkgsums` so the committed PKGBUILD ships real sha256 hashes
           # for the GitHub source tarball — replaces the SKIP placeholder.
+          updpkgsums: true
+
+      - name: Wait before retry
+        if: steps.aur1.outcome == 'failure'
+        run: sleep 30
+
+      - name: Publish to AUR (attempt 2)
+        if: steps.aur1.outcome == 'failure'
+        uses: KSXGitHub/github-actions-deploy-aur@v4.1.3
+        with:
+          pkgname: fss
+          pkgbuild: ./packaging/aur/PKGBUILD
+          commit_username: Wasylq
+          commit_email: wasylq@protonmail.com
+          ssh_private_key: ${{ secrets.AUR_SSH_PRIVATE_KEY }}
+          commit_message: "Update to ${{ github.ref_name }}"
           updpkgsums: true
 
   docker:

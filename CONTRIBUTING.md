@@ -312,7 +312,7 @@ git tag -a v1.7.0 -m "v1.7.0"
 git push origin v1.7.0
 ```
 
-Then go to the **Actions → Release** run on GitHub, click *Review deployments*, tick `manual-smoke-gate`, and approve. The GitHub Release is published (with tarballs, zips, `.deb`, and `.rpm` packages), the AUR `fss` package is updated, and the Docker image (with semantic version tags) is built and pushed — all in the same run. Everything happens behind the single approval gate.
+Then go to the **Actions → Release** run on GitHub, click *Review deployments*, tick `manual-smoke-gate`, and approve. Once the `release` job finishes, two parallel jobs run automatically: `aur` publishes to the AUR (with one retry on transient SSH failure), and `docker` builds and pushes the image to `ghcr.io`. Both sit behind the single approval gate — if either fails you can re-run *just that job* from the Actions UI without re-cutting the GitHub Release.
 
 ### What the release produces
 
