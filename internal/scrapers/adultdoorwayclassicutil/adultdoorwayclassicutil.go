@@ -1,0 +1,432 @@
+// Package adultdoorwayclassicutil scrapes Adult Doorway sister sites running
+// the older Elevated X "Classic" template (flexslider banner + `item-thumb`
+// cards + `item-info` blocks). Black Payback is the only known instance in
+// the Adult Doorway tree today, but the util is intentionally table-driven so
+// further Classic-theme sites can be added as one-line config rows.
+//
+// Differences from the Modern variant (adultdoorwayutil):
+//
+//  1. Pagination: `/tour/categories/movies/{page}/latest/` (slash-segmented),
+//     not `movies_{page}_d.html`.
+//  2. Card markup uses `<div class="item-thumb">` wrapping a single anchor.
+//     There's no `item-update` wrapper and no `<!--//item-update-->` comment.
+//  3. Detail page has no publication date — only description + tags + a
+//     duration-in-minutes line in `<div class="videoInfo">`.
+//
+// Listing markup:
+//
+//	<div class="item-thumb">
+//	  <a href="https://blackpayback.com/tour/trailers/extra-mayo.html" title="Extra Mayo">
+//	    <img id="set-target-141" class="mainThumb thumbs stdimage"
+//	         src0_1x="https://cdn77.blackpayback.com/tour/content/contentthumbs/15/53/1553-1x.jpg" />
+//	  </a>
+//	</div>
+//	<div class="item-info clear">
+//	  <h4><a href=".../trailers/extra-mayo.html" title="Extra Mayo">Extra Mayo</a></h4>
+//	  <ul class="stars">…</ul>
+//	</div>
+//
+// Detail markup:
+//
+//	<h1>Extra Mayo</h1>
+//	<p>Description text…</p>
+//	<div class="videoInfo clear">
+//	  <p>868 Photos, 57 min of video</p>
+//	</div>
+//	<div class="featuring clear">
+//	  <ul>
+//	    <li class="label">Tags:</li>
+//	    <li><a href=".../categories/black-owned-business/1/latest/">Black Owned Business</a></li>
+//	    …
+//	  </ul>
+//	</div>
+package adultdoorwayclassicutil
+
+import (
+	"context"
+	"fmt"
+	"html"
+	"net/http"
+	"regexp"
+	"strconv"
+	"strings"
+	"sync"
+	"time"
+
+	"github.com/Wasylq/FSS/internal/httpx"
+	"github.com/Wasylq/FSS/models"
+	"github.com/Wasylq/FSS/scraper"
+)
+
+// SiteConfig describes one Classic-theme Adult Doorway site.
+type SiteConfig struct {
+	ID       string
+	SiteBase string
+	Studio   string
+	Patterns []string
+	MatchRe  *regexp.Regexp
+}
+
+type Scraper struct {
+	cfg    SiteConfig
+	client *http.Client
+}
+
+func New(cfg SiteConfig) *Scraper {
+	return &Scraper{
+		cfg:    cfg,
+		client: httpx.NewClient(30 * time.Second),
+	}
+}
+
+func (s *Scraper) ID() string         { return s.cfg.ID }
+func (s *Scraper) Patterns() []string { return s.cfg.Patterns }
+func (s *Scraper) MatchesURL(u string) bool {
+	return s.cfg.MatchRe.MatchString(u)
+}
+
+func (s *Scraper) ListScenes(ctx context.Context, studioURL string, opts scraper.ListOpts) (<-chan scraper.SceneResult, error) {
+	out := make(chan scraper.SceneResult)
+	go s.run(ctx, studioURL, opts, out)
+	return out, nil
+}
+
+// Listing regexes.
+//
+// cardRe captures (slug, title) from `<div class="item-thumb"><a href=".../trailers/<slug>.html" title="<title>">`.
+// We anchor on `item-thumb` so the flexslider banner at the top of every page
+// — which uses `<li><a href=".../trailers/...">` without an `item-thumb` —
+// is excluded.
+//
+// thumbRe pulls the lazy-loaded high-res thumb attribute `src0_1x`. The base
+// CDN path is `cdn77.{site}/tour/content/contentthumbs/{XX}/{YY}/{N}-1x.jpg`.
+var (
+	cardRe       = regexp.MustCompile(`(?s)<div class="item-thumb"[^>]*>\s*<a\s+href="([^"]*/tour/trailers/([a-z0-9][a-z0-9-]*)\.html)"[^>]*title="([^"]*)"`)
+	thumbRe      = regexp.MustCompile(`src0_1x="([^"]+)"`)
+	pageLinkRe   = regexp.MustCompile(`/tour/categories/movies/(\d+)/latest/?`)
+	categorySlug = regexp.MustCompile(`/tour/categories/([^/]+)/\d+/latest/?`)
+)
+
+// Detail regexes.
+var (
+	detailH1Re      = regexp.MustCompile(`<h1[^>]*>([^<]+)</h1>`)
+	detailDescRe    = regexp.MustCompile(`(?s)<h1[^>]*>[^<]+</h1>\s*(?:<br\s*/?>\s*)?<p>(.+?)</p>`)
+	videoInfoRe     = regexp.MustCompile(`(?s)<div class="videoInfo[^"]*"[^>]*>(.*?)</div>`)
+	durationMinsRe  = regexp.MustCompile(`(\d+)\s*&nbsp;?\s*min\s*&nbsp;?\s*of\s*&nbsp;?\s*video`)
+	durationColonRe = regexp.MustCompile(`(\d{1,2}:\d{2}(?::\d{2})?)`)
+	featuringRe     = regexp.MustCompile(`(?s)<div class="featuring[^"]*"[^>]*>(.*?)</div>`)
+	tagItemRe       = regexp.MustCompile(`<a[^>]+href="[^"]*/tour/categories/[^"]+"[^>]*>([^<]+)</a>`)
+)
+
+type sceneItem struct {
+	id          string // slug
+	title       string
+	url         string
+	thumb       string
+	duration    int // seconds (from detail "N min of video")
+	description string
+	tags        []string
+}
+
+// parseListing finds every distinct `item-thumb` card on the page. Banner
+// flexslider links are not wrapped in `item-thumb`, so they're skipped.
+func parseListing(body []byte) []sceneItem {
+	page := string(body)
+	matches := cardRe.FindAllStringSubmatchIndex(page, -1)
+	items := make([]sceneItem, 0, len(matches))
+	seen := make(map[string]bool, len(matches))
+
+	for _, loc := range matches {
+		url := page[loc[2]:loc[3]]
+		slug := page[loc[4]:loc[5]]
+		title := html.UnescapeString(strings.TrimSpace(page[loc[6]:loc[7]]))
+		if slug == "" || seen[slug] {
+			continue
+		}
+		seen[slug] = true
+
+		// Thumbnail lives inside the same anchor; scan a short window after
+		// the match end for `src0_1x="..."`.
+		end := loc[1]
+		windowEnd := end + 2000
+		if windowEnd > len(page) {
+			windowEnd = len(page)
+		}
+		var thumb string
+		if tm := thumbRe.FindStringSubmatch(page[end:windowEnd]); tm != nil {
+			thumb = tm[1]
+		}
+
+		items = append(items, sceneItem{
+			id:    slug,
+			title: title,
+			url:   url,
+			thumb: thumb,
+		})
+	}
+	return items
+}
+
+// estimateTotal reads pagination links on the page to compute max-page * items.
+func estimateTotal(body []byte, perPage int) int {
+	maxPage := 1
+	for _, m := range pageLinkRe.FindAllSubmatch(body, -1) {
+		n, _ := strconv.Atoi(string(m[1]))
+		if n > maxPage {
+			maxPage = n
+		}
+	}
+	return maxPage * perPage
+}
+
+func enrichFromDetail(body []byte, item *sceneItem) {
+	s := string(body)
+
+	if m := detailH1Re.FindStringSubmatch(s); m != nil {
+		if t := html.UnescapeString(strings.TrimSpace(m[1])); t != "" {
+			item.title = t
+		}
+	}
+	if m := detailDescRe.FindStringSubmatch(s); m != nil {
+		item.description = strings.TrimSpace(html.UnescapeString(stripTags(m[1])))
+	}
+	if m := videoInfoRe.FindStringSubmatch(s); m != nil {
+		section := m[1]
+		// Detail page typically shows "N min of video" (decimal minutes).
+		// A few sites may use HH:MM:SS — try both, prefer the colon form
+		// because it's more precise when present.
+		if d := durationColonRe.FindStringSubmatch(section); d != nil {
+			item.duration = parseColonDuration(d[1])
+		} else if d := durationMinsRe.FindStringSubmatch(section); d != nil {
+			mins, _ := strconv.Atoi(d[1])
+			item.duration = mins * 60
+		}
+	}
+	if m := featuringRe.FindStringSubmatch(s); m != nil {
+		for _, tm := range tagItemRe.FindAllStringSubmatch(m[1], -1) {
+			name := html.UnescapeString(strings.TrimSpace(tm[1]))
+			if name == "" {
+				continue
+			}
+			item.tags = append(item.tags, name)
+		}
+	}
+}
+
+// stripTags removes the minimum HTML noise (br, anchors) likely to sneak into
+// a <p> body. Not a general HTML sanitizer.
+func stripTags(s string) string {
+	s = regexp.MustCompile(`(?i)<br\s*/?>`).ReplaceAllString(s, " ")
+	s = regexp.MustCompile(`<[^>]+>`).ReplaceAllString(s, "")
+	return strings.Join(strings.Fields(s), " ")
+}
+
+func parseColonDuration(s string) int {
+	parts := strings.Split(s, ":")
+	total := 0
+	for _, p := range parts {
+		n, _ := strconv.Atoi(p)
+		total = total*60 + n
+	}
+	return total
+}
+
+// URL mode handling — full catalog vs category page.
+
+type listMode int
+
+const (
+	modeFullCatalog listMode = iota
+	modeCategory
+)
+
+type listConfig struct {
+	mode listMode
+	slug string
+}
+
+func parseStudioURL(studioURL string) listConfig {
+	if m := categorySlug.FindStringSubmatch(studioURL); m != nil {
+		slug := m[1]
+		if slug != "movies" {
+			return listConfig{mode: modeCategory, slug: slug}
+		}
+	}
+	return listConfig{mode: modeFullCatalog}
+}
+
+func (lc listConfig) pageURL(base string, page int) string {
+	switch lc.mode {
+	case modeCategory:
+		return fmt.Sprintf("%s/tour/categories/%s/%d/latest/", base, lc.slug, page)
+	default:
+		return fmt.Sprintf("%s/tour/categories/movies/%d/latest/", base, page)
+	}
+}
+
+func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOpts, out chan<- scraper.SceneResult) {
+	defer close(out)
+
+	lc := parseStudioURL(studioURL)
+	if lc.mode == modeCategory {
+		scraper.Debugf(1, "%s: scraping category %q", s.cfg.ID, lc.slug)
+	} else {
+		scraper.Debugf(1, "%s: scraping full catalog", s.cfg.ID)
+	}
+
+	items, sentTotal := s.collectListing(ctx, lc, opts, out)
+	if items == nil || ctx.Err() != nil {
+		return
+	}
+	if !sentTotal && len(items) > 0 {
+		select {
+		case out <- scraper.Progress(len(items)):
+		case <-ctx.Done():
+			return
+		}
+	}
+
+	s.fetchDetails(ctx, items, opts, out)
+}
+
+func (s *Scraper) collectListing(ctx context.Context, lc listConfig, opts scraper.ListOpts, out chan<- scraper.SceneResult) (items []sceneItem, sentTotal bool) {
+	for page := 1; ; page++ {
+		if ctx.Err() != nil {
+			return items, sentTotal
+		}
+		if page > 1 && opts.Delay > 0 {
+			select {
+			case <-time.After(opts.Delay):
+			case <-ctx.Done():
+				return items, sentTotal
+			}
+		}
+
+		pageURL := lc.pageURL(s.cfg.SiteBase, page)
+		scraper.Debugf(1, "%s: fetching listing page %d (%s)", s.cfg.ID, page, pageURL)
+
+		body, err := s.fetchPage(ctx, pageURL)
+		if err != nil {
+			select {
+			case out <- scraper.Error(fmt.Errorf("page %d: %w", page, err)):
+			case <-ctx.Done():
+			}
+			return nil, sentTotal
+		}
+
+		scenes := parseListing(body)
+		if len(scenes) == 0 {
+			return items, sentTotal
+		}
+
+		if !sentTotal {
+			total := estimateTotal(body, len(scenes))
+			scraper.Debugf(1, "%s: %d total scenes (estimated)", s.cfg.ID, total)
+			if total > 0 {
+				select {
+				case out <- scraper.Progress(total):
+				case <-ctx.Done():
+					return items, sentTotal
+				}
+			}
+			sentTotal = true
+		}
+
+		for _, item := range scenes {
+			if opts.KnownIDs[item.id] {
+				scraper.Debugf(1, "%s: hit known ID %s, stopping early", s.cfg.ID, item.id)
+				select {
+				case out <- scraper.StoppedEarly():
+				case <-ctx.Done():
+				}
+				return items, sentTotal
+			}
+			items = append(items, item)
+		}
+	}
+}
+
+func (s *Scraper) fetchDetails(ctx context.Context, items []sceneItem, opts scraper.ListOpts, out chan<- scraper.SceneResult) {
+	workers := opts.Workers
+	if workers <= 0 {
+		workers = 4
+	}
+	scraper.Debugf(1, "%s: fetching %d details with %d workers", s.cfg.ID, len(items), workers)
+
+	work := make(chan sceneItem, workers)
+	var wg sync.WaitGroup
+	defer wg.Wait()
+	defer close(work)
+
+	now := time.Now().UTC()
+	for i := 0; i < workers; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			for item := range work {
+				if opts.Delay > 0 {
+					select {
+					case <-time.After(opts.Delay):
+					case <-ctx.Done():
+						return
+					}
+				}
+				body, err := s.fetchPage(ctx, item.url)
+				if err != nil {
+					select {
+					case out <- scraper.Error(fmt.Errorf("detail %s: %w", item.url, err)):
+					case <-ctx.Done():
+						return
+					}
+					continue
+				}
+				enrichFromDetail(body, &item)
+				select {
+				case out <- scraper.Scene(item.toScene(s.cfg.ID, s.cfg.SiteBase, s.cfg.Studio, now)):
+				case <-ctx.Done():
+					return
+				}
+			}
+		}()
+	}
+
+	for _, item := range items {
+		select {
+		case work <- item:
+		case <-ctx.Done():
+			return
+		}
+	}
+}
+
+func (item sceneItem) toScene(siteID, siteBase, studio string, now time.Time) models.Scene {
+	url := item.url
+	if strings.HasPrefix(url, "/") {
+		url = siteBase + url
+	}
+	return models.Scene{
+		ID:          item.id,
+		SiteID:      siteID,
+		StudioURL:   siteBase,
+		Title:       item.title,
+		URL:         url,
+		Thumbnail:   item.thumb,
+		Duration:    item.duration,
+		Description: item.description,
+		Tags:        item.tags,
+		Studio:      studio,
+		ScrapedAt:   now,
+	}
+}
+
+func (s *Scraper) fetchPage(ctx context.Context, url string) ([]byte, error) {
+	resp, err := httpx.Do(ctx, s.client, httpx.Request{
+		URL:     url,
+		Headers: httpx.BrowserHeaders(httpx.UserAgentFirefox),
+	})
+	if err != nil {
+		return nil, err
+	}
+	defer func() { _ = resp.Body.Close() }()
+	return httpx.ReadBody(resp.Body)
+}

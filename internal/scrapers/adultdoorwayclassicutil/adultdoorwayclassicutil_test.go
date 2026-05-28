@@ -1,0 +1,372 @@
+package adultdoorwayclassicutil
+
+import (
+	"context"
+	"fmt"
+	"net/http"
+	"net/http/httptest"
+	"regexp"
+	"strings"
+	"testing"
+
+	"github.com/Wasylq/FSS/scraper"
+)
+
+// Fixtures derived from real blackpayback.com markup.
+
+const listingHTML = `<html><body>
+
+<!-- Flexslider banner — must NOT be parsed as a card -->
+<div class="flexslider">
+  <ul class="slides">
+    <li><a href="https://blackpayback.com/tour/trailers/banner-only.html" title="banner">
+      <img src="https://example.com/banner.jpg" />
+    </a></li>
+  </ul>
+</div>
+
+<div class="item-thumb">
+  <a href="https://blackpayback.com/tour/trailers/extra-mayo.html" title="Extra Mayo">
+    <img id="set-target-141" alt="Extra Mayo" class="mainThumb thumbs stdimage"
+         src0_1x="https://cdn77.blackpayback.com/tour/content/contentthumbs/15/53/1553-1x.jpg"
+         src0_2x="https://cdn77.blackpayback.com/tour/content/contentthumbs/15/53/1553-2x.jpg" />
+  </a>
+</div>
+<div class="item-info clear">
+  <h4><a href="https://blackpayback.com/tour/trailers/extra-mayo.html" title="Extra Mayo">Extra Mayo</a></h4>
+</div>
+
+<div class="item-thumb">
+  <a href="https://blackpayback.com/tour/trailers/asian-persuasion.html" title="Asian Persuasion">
+    <img id="set-target-140" alt="Asian Persuasion" class="mainThumb thumbs stdimage"
+         src0_1x="https://cdn77.blackpayback.com/tour/content/contentthumbs/15/52/1552-1x.jpg" />
+  </a>
+</div>
+<div class="item-info clear">
+  <h4><a href="https://blackpayback.com/tour/trailers/asian-persuasion.html" title="Asian Persuasion">Asian Persuasion</a></h4>
+</div>
+
+<ul class="pagination">
+  <li class="active"><a href="/tour/categories/movies/1/latest/">1</a></li>
+  <li><a href="/tour/categories/movies/2/latest/">2</a></li>
+  <li><a href="/tour/categories/movies/19/latest/">19</a></li>
+</ul>
+</body></html>`
+
+const detailHTML = `<html><body>
+<h1>Extra Mayo</h1>
+<p>We had fun with this one. She's a kooky, quirky broad who is definitely hungry. Goldey put her on her knees and she went to boppin.</p>
+<div class="videoInfo clear">
+  <p>868&nbsp;Photos, 57&nbsp;min&nbsp;of&nbsp;video</p>
+  <p><span>Rating:</span> 4.9/5.0</p>
+</div>
+<div class="featuring clear">
+  <ul>
+    <li class="label">Tags:</li>
+    <li><a href="https://blackpayback.com/tour/categories/black-owned-business/1/latest/">Black Owned Business</a></li>
+    <li><a href="https://blackpayback.com/tour/categories/blondes/1/latest/">Blondes</a></li>
+    <li><a href="https://blackpayback.com/tour/categories/deep-throat/1/latest/">Deep Throat</a></li>
+  </ul>
+</div>
+</body></html>`
+
+const detailHTMLColonRuntime = `<html><body>
+<h1>Long Form Scene</h1>
+<p>Description here.</p>
+<div class="videoInfo clear">
+  <p>1200&nbsp;Photos, 01:02:47&nbsp;of&nbsp;video</p>
+</div>
+<div class="featuring clear">
+  <ul>
+    <li class="label">Tags:</li>
+    <li><a href="https://blackpayback.com/tour/categories/anal/1/latest/">Anal</a></li>
+  </ul>
+</div>
+</body></html>`
+
+const emptyListingHTML = `<html><body><div class="content">No scenes.</div></body></html>`
+
+func TestParseListing_skipsBannerFlexslider(t *testing.T) {
+	items := parseListing([]byte(listingHTML))
+	if len(items) != 2 {
+		t.Fatalf("got %d items, want 2 (banner must be skipped)", len(items))
+	}
+
+	// Confirm "banner-only" was excluded.
+	for _, it := range items {
+		if it.id == "banner-only" {
+			t.Error("flexslider banner was picked up as a card")
+		}
+	}
+
+	first := items[0]
+	if first.id != "extra-mayo" {
+		t.Errorf("ID = %q, want extra-mayo", first.id)
+	}
+	if first.title != "Extra Mayo" {
+		t.Errorf("Title = %q", first.title)
+	}
+	if first.url != "https://blackpayback.com/tour/trailers/extra-mayo.html" {
+		t.Errorf("URL = %q", first.url)
+	}
+	wantThumb := "https://cdn77.blackpayback.com/tour/content/contentthumbs/15/53/1553-1x.jpg"
+	if first.thumb != wantThumb {
+		t.Errorf("Thumb = %q, want %q", first.thumb, wantThumb)
+	}
+}
+
+func TestParseListing_dedupesRepeatedCards(t *testing.T) {
+	doubled := listingHTML + listingHTML
+	items := parseListing([]byte(doubled))
+	if len(items) != 2 {
+		t.Fatalf("dedup failed: got %d, want 2", len(items))
+	}
+}
+
+func TestEnrichFromDetail(t *testing.T) {
+	var item sceneItem
+	item.id = "extra-mayo"
+	item.title = "Extra Mayo"
+	enrichFromDetail([]byte(detailHTML), &item)
+
+	if item.title != "Extra Mayo" {
+		t.Errorf("Title = %q", item.title)
+	}
+	if !strings.HasPrefix(item.description, "We had fun with this one") {
+		t.Errorf("Description prefix wrong: %q", item.description)
+	}
+	// 57 minutes = 3420s
+	if item.duration != 3420 {
+		t.Errorf("Duration = %d, want 3420", item.duration)
+	}
+	want := []string{"Black Owned Business", "Blondes", "Deep Throat"}
+	if len(item.tags) != len(want) {
+		t.Fatalf("Tags = %v, want %v", item.tags, want)
+	}
+	for i, w := range want {
+		if item.tags[i] != w {
+			t.Errorf("Tags[%d] = %q, want %q", i, item.tags[i], w)
+		}
+	}
+}
+
+func TestEnrichFromDetail_colonRuntime(t *testing.T) {
+	var item sceneItem
+	enrichFromDetail([]byte(detailHTMLColonRuntime), &item)
+	// 01:02:47 = 3767s
+	if item.duration != 3767 {
+		t.Errorf("Duration = %d, want 3767 (HH:MM:SS form)", item.duration)
+	}
+}
+
+func TestEstimateTotal(t *testing.T) {
+	got := estimateTotal([]byte(listingHTML), 2)
+	if got != 38 {
+		t.Errorf("estimateTotal = %d, want 38 (max page 19 × 2 items)", got)
+	}
+}
+
+func TestParseStudioURL(t *testing.T) {
+	tests := []struct {
+		url      string
+		wantMode listMode
+		wantSlug string
+	}{
+		{"https://blackpayback.com/", modeFullCatalog, ""},
+		{"https://blackpayback.com/tour/", modeFullCatalog, ""},
+		{"https://blackpayback.com/tour/categories/movies/1/latest/", modeFullCatalog, ""},
+		{"https://blackpayback.com/tour/categories/movies/5/latest/", modeFullCatalog, ""},
+		{"https://blackpayback.com/tour/categories/blondes/1/latest/", modeCategory, "blondes"},
+		{"https://blackpayback.com/tour/categories/deep-throat/3/latest/", modeCategory, "deep-throat"},
+	}
+	for _, c := range tests {
+		t.Run(c.url, func(t *testing.T) {
+			got := parseStudioURL(c.url)
+			if got.mode != c.wantMode || got.slug != c.wantSlug {
+				t.Errorf("got {mode=%d, slug=%q}, want {mode=%d, slug=%q}", got.mode, got.slug, c.wantMode, c.wantSlug)
+			}
+		})
+	}
+}
+
+func TestListConfig_pageURL(t *testing.T) {
+	tests := []struct {
+		lc   listConfig
+		page int
+		want string
+	}{
+		{listConfig{mode: modeFullCatalog}, 1, "https://example.com/tour/categories/movies/1/latest/"},
+		{listConfig{mode: modeFullCatalog}, 19, "https://example.com/tour/categories/movies/19/latest/"},
+		{listConfig{mode: modeCategory, slug: "blondes"}, 2, "https://example.com/tour/categories/blondes/2/latest/"},
+	}
+	for _, c := range tests {
+		got := c.lc.pageURL("https://example.com", c.page)
+		if got != c.want {
+			t.Errorf("got %q, want %q", got, c.want)
+		}
+	}
+}
+
+func TestMatchesURL(t *testing.T) {
+	s := New(SiteConfig{
+		ID:       "blackpayback",
+		SiteBase: "https://blackpayback.com",
+		Studio:   "Black Payback",
+		MatchRe:  regexp.MustCompile(`^https?://(?:[a-z0-9-]+\.)?blackpayback\.com`),
+	})
+	cases := []struct {
+		url   string
+		match bool
+	}{
+		{"https://blackpayback.com/tour/", true},
+		{"https://www.blackpayback.com", true},
+		{"https://t5m.blackpayback.com/track/...", true},
+		{"https://example.com/", false},
+	}
+	for _, c := range cases {
+		t.Run(c.url, func(t *testing.T) {
+			if got := s.MatchesURL(c.url); got != c.match {
+				t.Errorf("MatchesURL(%q) = %v, want %v", c.url, got, c.match)
+			}
+		})
+	}
+}
+
+// TestListScenes_endToEnd exercises the full flow against an in-process server.
+func TestListScenes_endToEnd(t *testing.T) {
+	hits := struct {
+		listing map[string]int
+		detail  map[string]int
+	}{
+		listing: map[string]int{},
+		detail:  map[string]int{},
+	}
+
+	var ts *httptest.Server
+	ts = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/html")
+		// Rewrite the absolute blackpayback.com URLs in the fixture to the
+		// test server so the worker pool stays in-process.
+		rewrite := func(s string) string {
+			return strings.ReplaceAll(s, "https://blackpayback.com", ts.URL)
+		}
+		switch {
+		case strings.HasPrefix(r.URL.Path, "/tour/categories/movies/1/latest"):
+			hits.listing[r.URL.Path]++
+			_, _ = fmt.Fprint(w, rewrite(listingHTML))
+		case strings.HasPrefix(r.URL.Path, "/tour/categories/movies/"):
+			hits.listing[r.URL.Path]++
+			_, _ = fmt.Fprint(w, emptyListingHTML)
+		case strings.HasPrefix(r.URL.Path, "/tour/trailers/"):
+			hits.detail[r.URL.Path]++
+			_, _ = fmt.Fprint(w, detailHTML)
+		default:
+			http.NotFound(w, r)
+		}
+	}))
+	defer ts.Close()
+
+	s := New(SiteConfig{
+		ID:       "blackpayback",
+		SiteBase: ts.URL,
+		Studio:   "Black Payback",
+		MatchRe:  regexp.MustCompile(`.*`),
+	})
+
+	ch, err := s.ListScenes(context.Background(), ts.URL, scraper.ListOpts{Workers: 2})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	var (
+		scenes   int
+		titles   []string
+		sawTotal bool
+	)
+	for r := range ch {
+		switch r.Kind {
+		case scraper.KindScene:
+			scenes++
+			titles = append(titles, r.Scene.Title)
+			if r.Scene.Description == "" {
+				t.Errorf("scene %q has empty description — detail fetch didn't enrich", r.Scene.Title)
+			}
+			if r.Scene.Duration == 0 {
+				t.Errorf("scene %q has zero duration", r.Scene.Title)
+			}
+			if len(r.Scene.Tags) == 0 {
+				t.Errorf("scene %q has no tags", r.Scene.Title)
+			}
+		case scraper.KindTotal:
+			sawTotal = true
+		case scraper.KindError:
+			t.Errorf("unexpected error: %v", r.Err)
+		}
+	}
+
+	if scenes != 2 {
+		t.Errorf("got %d scenes, want 2 (titles=%v)", scenes, titles)
+	}
+	if !sawTotal {
+		t.Error("expected a Progress message")
+	}
+	if hits.detail["/tour/trailers/extra-mayo.html"] == 0 {
+		t.Error("detail page never fetched")
+	}
+}
+
+func TestListScenes_knownIDsStopsEarly(t *testing.T) {
+	var ts *httptest.Server
+	ts = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/html")
+		rewrite := func(s string) string {
+			return strings.ReplaceAll(s, "https://blackpayback.com", ts.URL)
+		}
+		switch {
+		case strings.HasPrefix(r.URL.Path, "/tour/categories/movies/1/latest"):
+			_, _ = fmt.Fprint(w, rewrite(listingHTML))
+		case strings.HasPrefix(r.URL.Path, "/tour/trailers/"):
+			_, _ = fmt.Fprint(w, detailHTML)
+		default:
+			http.NotFound(w, r)
+		}
+	}))
+	defer ts.Close()
+
+	s := New(SiteConfig{
+		ID:       "blackpayback",
+		SiteBase: ts.URL,
+		Studio:   "Black Payback",
+		MatchRe:  regexp.MustCompile(`.*`),
+	})
+
+	ch, err := s.ListScenes(context.Background(), ts.URL, scraper.ListOpts{
+		Workers:  1,
+		KnownIDs: map[string]bool{"asian-persuasion": true},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	var (
+		scenes       int
+		stoppedEarly bool
+	)
+	for r := range ch {
+		switch r.Kind {
+		case scraper.KindScene:
+			scenes++
+		case scraper.KindStoppedEarly:
+			stoppedEarly = true
+		case scraper.KindError:
+			t.Errorf("unexpected error: %v", r.Err)
+		}
+	}
+
+	if scenes != 1 {
+		t.Errorf("got %d scenes, want 1 (stopped before known ID)", scenes)
+	}
+	if !stoppedEarly {
+		t.Error("expected StoppedEarly signal")
+	}
+}

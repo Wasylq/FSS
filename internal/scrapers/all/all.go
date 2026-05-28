@@ -5,6 +5,7 @@
 package all
 
 import (
+	_ "github.com/Wasylq/FSS/internal/scrapers/adultdoorway"
 	_ "github.com/Wasylq/FSS/internal/scrapers/adultprime"
 	_ "github.com/Wasylq/FSS/internal/scrapers/alisonangel"
 	_ "github.com/Wasylq/FSS/internal/scrapers/alternadudes"
@@ -20,6 +21,7 @@ import (
 	_ "github.com/Wasylq/FSS/internal/scrapers/bangbros"
 	_ "github.com/Wasylq/FSS/internal/scrapers/barebackstudios"
 	_ "github.com/Wasylq/FSS/internal/scrapers/beautifulagony"
+	_ "github.com/Wasylq/FSS/internal/scrapers/blackpayback"
 	_ "github.com/Wasylq/FSS/internal/scrapers/charleechase"
 	_ "github.com/Wasylq/FSS/internal/scrapers/cherrypimps"
 	_ "github.com/Wasylq/FSS/internal/scrapers/clips4sale"
