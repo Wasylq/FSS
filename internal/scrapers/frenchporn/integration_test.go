@@ -9,8 +9,8 @@ import (
 	"github.com/Wasylq/FSS/internal/scrapers/testutil"
 )
 
-// Sample the top-traffic sites + parent + a zero-stashdb-count site to verify
-// the JSON-LD pipeline holds across the network.
+// Sample the parent + a handful of representative children to verify the
+// JSON-LD pipeline holds across the network.
 
 func TestLiveFrenchpornParent(t *testing.T) {
 	testutil.RunLiveScrape(t, psmutil.New(siteByID(t, "frenchporn")), "https://www.frenchporn.fr/en/videos", 3)
@@ -36,8 +36,8 @@ func TestLiveCitebeurCategory(t *testing.T) {
 	testutil.RunLiveScrape(t, psmutil.New(siteByID(t, "citebeur")), "https://www.citebeur.com/en/videos/arab-french", 3)
 }
 
-// AttackBoys has 0 scenes on stashdb but is reachable; the live HTML still
-// has JSON-LD with VideoObjects, so the scraper should return at least 1.
+// Sanity-check one of the less-trafficked sites — confirms the JSON-LD
+// pipeline holds even when a child has a small catalog.
 func TestLiveAttackBoys(t *testing.T) {
 	testutil.RunLiveScrape(t, psmutil.New(siteByID(t, "attackboys")), "https://www.attackboys.com/en/videos", 2)
 }

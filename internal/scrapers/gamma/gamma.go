@@ -146,6 +146,56 @@ var sites = []siteConfig{
 	{"1000facials", "1000facials.com", "1000 Facials", "", "", ""},
 	{"onlyteenblowjobs", "onlyteenblowjobs.com", "Only Teen Blowjobs", "", "", ""},
 	{"immorallive", "immorallive.com", "Immoral Live", "", "", ""},
+
+	// ---- ASGMAX segment (Next Door Studios family — gay all-access network) ----
+	//
+	// Three groups, ordered so the more specific MatchRe sites are evaluated
+	// before the bare nextdoorstudios.com hub catches the rest:
+	//   1. Own-domain sites — /en/videos served by their own host.
+	//   2. Own-domain sites that redirect to nextdoorstudios.com/en/videos/sites/{slug}.
+	//      RefererBase pins the Algolia bootstrap to the hub so the apiKey's
+	//      Referer restriction matches when we make the search request.
+	//   3. Sub-sites that only live under nextdoorstudios.com/en/videos/sites/{slug}.
+	//   4. The bare nextdoorstudios.com network hub — last so it's a fallback
+	//      when nothing more specific matched.
+
+	// ASGMAX — own-domain sub-sites (apiKey extracted from each site's /en/videos).
+	{"nextdoorbuddies", "nextdoorbuddies.com", "Next Door Buddies", "nextdoorbuddies", "", ""},
+	{"nextdoorraw", "nextdoorraw.com", "Next Door Raw", "nextdoorraw", "", ""},
+	{"nextdoortwink", "nextdoortwink.com", "Next Door Twink", "nextdoortwink", "", ""},
+	{"nextdoortaboo", "nextdoortaboo.com", "Next Door Taboo", "nextdoortaboo", "", ""},
+	{"nextdoormale", "nextdoormale.com", "Next Door Male", "nextdoormale", "", ""},
+	{"nextdoorfilms", "nextdoorfilms.com", "Next Door Films", "nextdoorfilms", "", ""},
+	{"nextdoorhookups", "nextdoorhookups.com", "Next Door Hookups", "nextdoorhookups", "", ""},
+	{"nextdoorcasting", "nextdoorcasting.com", "Next Door Casting", "nextdoorcasting", "", ""},
+	{"codycummings", "codycummings.com", "Cody Cummings", "codycummings", "", ""},
+	{"rodsroom", "rodsroom.com", "Rod's Room", "rodsroom", "", ""},
+	{"stagcollective", "stagcollective.com", "Stag Collective", "stagcollective", "", ""},
+
+	// ASGMAX — own-domain sites that redirect to nextdoorstudios.com.
+	// RefererBase makes the apiKey bootstrap + Algolia Referer header consistent.
+	{"marcusmojo", "marcusmojo.com", "Marcus Mojo", "marcusmojo", "https://www.nextdoorstudios.com", ""},
+	{"masonwyler", "masonwyler.com", "Mason Wyler", "masonwyler", "https://www.nextdoorstudios.com", ""},
+	{"roddaily", "roddaily.com", "Rod Daily", "roddaily", "https://www.nextdoorstudios.com", ""},
+	{"samuelotoole", "samuelotoole.com", "Samuel O'Toole", "samuelotoole", "https://www.nextdoorstudios.com", ""},
+	{"trystanbull", "trystanbull.com", "Trystan Bull", "trystanbull", "https://www.nextdoorstudios.com", ""},
+	{"nextdoorebony", "nextdoorebony.com", "Next Door Ebony", "nextdoorebony", "https://www.nextdoorstudios.com", ""},
+
+	// ASGMAX — hub-only sub-sites with no own domain. Domain stays nextdoorstudios.com
+	// so the apiKey bootstrap works; specific MatchRe scopes URL matching.
+	{"austinwilde", "nextdoorstudios.com", "Austin Wilde", "austinwilde", "", `^https?://(?:www\.)?nextdoorstudios\.com/en/videos/sites/austinwilde(?:/|$)`},
+	{"tommydxxx", "nextdoorstudios.com", "Tommy D XXX", "tommydxxx", "", `^https?://(?:www\.)?nextdoorstudios\.com/en/videos/sites/tommydxxx(?:/|$)`},
+	{"nextdoororiginals", "nextdoorstudios.com", "Next Door Originals", "nextdoororiginals", "", `^https?://(?:www\.)?nextdoorstudios\.com/en/videos/sites/nextdoororiginals(?:/|$)`},
+	{"nextdoorhomemade", "nextdoorstudios.com", "Next Door Homemade", "nextdoorhomemade", "", `^https?://(?:www\.)?nextdoorstudios\.com/en/videos/sites/nextdoorhomemade(?:/|$)`},
+	// Sub-sites listed in nextdoorstudios.com's contentSource that don't have
+	// their own scraper entry above — included so users who paste these URLs
+	// get coverage too.
+	{"strokethatdick", "nextdoorstudios.com", "Stroke That Dick", "strokethatdick", "", `^https?://(?:www\.)?nextdoorstudios\.com/en/videos/sites/strokethatdick(?:/|$)`},
+	{"guysdoingporn", "nextdoorstudios.com", "Guys Doing Porn", "guysdoingporn", "", `^https?://(?:www\.)?nextdoorstudios\.com/en/videos/sites/guysdoingporn(?:/|$)`},
+
+	// ASGMAX — network hub (catches the bare nextdoorstudios.com URL).
+	// SiteName empty → no availableOnSite filter → whole asgmax catalog.
+	{"nextdoorstudios", "nextdoorstudios.com", "Next Door Studios", "", "", ""},
 }
 
 type siteScraper struct {

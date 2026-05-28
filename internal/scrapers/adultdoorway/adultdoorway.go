@@ -5,8 +5,7 @@
 // Sister site Black Payback uses the older Elevated X "Classic" template
 // (flexslider + item-thumb, different pagination form) — it's registered
 // separately by the blackpayback package via adultdoorwayclassicutil.
-// yournextdoorwhore.net is intentionally not covered: defunct, /tour/ 404s,
-// only 3 stashdb scenes.
+// yournextdoorwhore.net is intentionally not covered: defunct, /tour/ 404s.
 package adultdoorway
 
 import (

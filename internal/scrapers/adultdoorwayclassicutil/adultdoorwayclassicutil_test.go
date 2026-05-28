@@ -7,6 +7,7 @@ import (
 	"net/http/httptest"
 	"regexp"
 	"strings"
+	"sync"
 	"testing"
 
 	"github.com/Wasylq/FSS/scraper"
@@ -234,13 +235,13 @@ func TestMatchesURL(t *testing.T) {
 
 // TestListScenes_endToEnd exercises the full flow against an in-process server.
 func TestListScenes_endToEnd(t *testing.T) {
-	hits := struct {
-		listing map[string]int
-		detail  map[string]int
-	}{
-		listing: map[string]int{},
-		detail:  map[string]int{},
-	}
+	// hits maps are written from multiple worker goroutines via the
+	// httptest handler — guard with a mutex so -race stays clean.
+	var (
+		hitsMu  sync.Mutex
+		listing = map[string]int{}
+		detail  = map[string]int{}
+	)
 
 	var ts *httptest.Server
 	ts = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -250,15 +251,20 @@ func TestListScenes_endToEnd(t *testing.T) {
 		rewrite := func(s string) string {
 			return strings.ReplaceAll(s, "https://blackpayback.com", ts.URL)
 		}
+		bump := func(m map[string]int, k string) {
+			hitsMu.Lock()
+			m[k]++
+			hitsMu.Unlock()
+		}
 		switch {
 		case strings.HasPrefix(r.URL.Path, "/tour/categories/movies/1/latest"):
-			hits.listing[r.URL.Path]++
+			bump(listing, r.URL.Path)
 			_, _ = fmt.Fprint(w, rewrite(listingHTML))
 		case strings.HasPrefix(r.URL.Path, "/tour/categories/movies/"):
-			hits.listing[r.URL.Path]++
+			bump(listing, r.URL.Path)
 			_, _ = fmt.Fprint(w, emptyListingHTML)
 		case strings.HasPrefix(r.URL.Path, "/tour/trailers/"):
-			hits.detail[r.URL.Path]++
+			bump(detail, r.URL.Path)
 			_, _ = fmt.Fprint(w, detailHTML)
 		default:
 			http.NotFound(w, r)
@@ -310,7 +316,10 @@ func TestListScenes_endToEnd(t *testing.T) {
 	if !sawTotal {
 		t.Error("expected a Progress message")
 	}
-	if hits.detail["/tour/trailers/extra-mayo.html"] == 0 {
+	hitsMu.Lock()
+	detailHits := detail["/tour/trailers/extra-mayo.html"]
+	hitsMu.Unlock()
+	if detailHits == 0 {
 		t.Error("detail page never fetched")
 	}
 }
