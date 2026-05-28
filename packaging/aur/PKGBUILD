@@ -9,6 +9,9 @@ license=('GPL-3.0-only')
 depends=('glibc')
 makedepends=('go>=1.25')
 source=("${pkgname}-${pkgver}.tar.gz::https://github.com/Wasylq/FSS/archive/v${pkgver}.tar.gz")
+# The real sha256 is populated by `updpkgsums` in the release workflow before
+# the package is committed to AUR — see .github/workflows/release.yml. The
+# 'SKIP' placeholder lets makepkg parse the file locally without the source.
 sha256sums=('SKIP')
 
 build() {

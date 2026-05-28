@@ -123,6 +123,20 @@ jobs:
           name: release-binaries
           path: dist/
 
+      - name: Generate SHA256SUMS
+        run: |
+          cd dist
+          # Capture checksums into a variable BEFORE creating SHA256SUMS — bash
+          # creates redirect targets before expanding globs, so `* > SHA256SUMS`
+          # would otherwise hash an empty SHA256SUMS into its own listing.
+          # Sort by filename so the file is stable and diffable across runs.
+          sums=$(sha256sum -- *)
+          echo "$sums" | LC_ALL=C sort -k2 > SHA256SUMS
+          echo "Generated SHA256SUMS:"
+          cat SHA256SUMS
+          # Self-check: every line must verify cleanly before we hand it to users.
+          sha256sum --check --strict SHA256SUMS
+
       - name: Generate changelog
         id: changelog
         run: |
@@ -185,6 +199,26 @@ jobs:
             docker pull ghcr.io/wasylq/fss:${{ github.ref_name }}
             ```
 
+            ## Verifying your download
+
+            Every artifact attached to this release is hashed in **`SHA256SUMS`**. After downloading, verify the file you have against that line:
+
+            **Linux / macOS** — download `SHA256SUMS` next to your artifact, then run:
+            ```sh
+            sha256sum --ignore-missing --check SHA256SUMS
+            # fss-${{ github.ref_name }}-linux-amd64.tar.gz: OK
+            ```
+
+            On macOS, `shasum -a 256` works the same way (`shasum -a 256 -c SHA256SUMS`).
+
+            **Windows (PowerShell)**:
+            ```powershell
+            # Compare the printed hash against the matching line in SHA256SUMS.
+            Get-FileHash fss-${{ github.ref_name }}-windows-amd64.zip -Algorithm SHA256
+            ```
+
+            A mismatch — or `FAILED` from `sha256sum --check` — means the file is corrupted or tampered with; do not run it.
+
       - name: Stamp PKGBUILD version
         run: sed -i "s/^pkgver=VERSION$/pkgver=${GITHUB_REF#refs/tags/v}/" ./packaging/aur/PKGBUILD
 
@@ -197,7 +231,9 @@ jobs:
           commit_email: wasylq@protonmail.com
           ssh_private_key: ${{ secrets.AUR_SSH_PRIVATE_KEY }}
           commit_message: "Update to ${{ github.ref_name }}"
-          updpkgsums: false
+          # Run `updpkgsums` so the committed PKGBUILD ships real sha256 hashes
+          # for the GitHub source tarball — replaces the SKIP placeholder.
+          updpkgsums: true
 
   docker:
     name: Build and push docker image
