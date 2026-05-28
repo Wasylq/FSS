@@ -76,7 +76,9 @@ jobs:
           DATE="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
           LDFLAGS="-s -w -X main.version=v${VERSION} -X main.commit=${COMMIT} -X main.date=${DATE}"
 
-          go install github.com/goreleaser/nfpm/v2/cmd/nfpm@latest
+          # Pinned so a breaking nfpm bump can't silently corrupt .deb/.rpm
+          # artifacts on the next release. Bump deliberately.
+          go install github.com/goreleaser/nfpm/v2/cmd/nfpm@v2.46.3
 
           for arch in amd64 arm64; do
             echo "Packaging linux/${arch}..."

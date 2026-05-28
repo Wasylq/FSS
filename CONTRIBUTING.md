@@ -344,6 +344,18 @@ Before clicking approve, confirm:
 
 The gate is a **trust-me** check — nothing verifies that you actually ran the smoke tests. Its only job is to force a pause-and-think before a release goes public.
 
+### CI tool version pins
+
+These pins live inside `run:` shell strings (not `go.mod`) so Dependabot can't bump them automatically — review them when you cut a release:
+
+| Tool | Pin | Workflow |
+|------|-----|----------|
+| `gotestsum` | `v1.13.0` | `.github/workflows/ci.yml` (test job) |
+| `govulncheck` | `v1.3.0` | `.github/workflows/ci.yml` (vulncheck job) |
+| `nfpm` | `v2.46.3` | `.github/workflows/release.yml` (build job) |
+
+Bump by editing the `@vX.Y.Z` suffix in each `go install` line. Check the upstream changelog for breaking format changes — `gotestsum` in particular feeds into the `test-output.txt` parser in the coverage summary step.
+
 ### AUR and Homebrew
 
 Packaging files live in `packaging/`:
