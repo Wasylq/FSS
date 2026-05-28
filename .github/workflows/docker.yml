@@ -70,6 +70,9 @@ jobs:
           echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
           echo "commit=${GITHUB_SHA::8}" >> "$GITHUB_OUTPUT"
           echo "date=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$GITHUB_OUTPUT"
+          # Mirror go.mod's `go` directive into the Docker build so the
+          # builder image always matches the toolchain go.mod declares.
+          echo "go_version=$(./scripts/go-version.sh)" >> "$GITHUB_OUTPUT"
 
       - name: Build and push
         uses: docker/build-push-action@v7
@@ -84,6 +87,7 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
           build-args: |
+            GO_VERSION=${{ steps.args.outputs.go_version }}
             VERSION=${{ steps.args.outputs.version }}
             COMMIT=${{ steps.args.outputs.commit }}
             DATE=${{ steps.args.outputs.date }}

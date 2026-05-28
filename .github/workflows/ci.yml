@@ -111,6 +111,21 @@ jobs:
         # `packaging/aur/gen-srcinfo.sh` and commit the result.
         run: ./packaging/aur/gen-srcinfo.sh --check
 
+      - name: Check Dockerfile GO_VERSION matches go.mod
+        # CI builds pass GO_VERSION dynamically from go.mod via
+        # scripts/go-version.sh, but the Dockerfile's ARG default is the
+        # fallback for naive `docker build .` runs locally. Keep them in
+        # sync — bump both when bumping the Go toolchain.
+        run: |
+          gomod_ver=$(./scripts/go-version.sh)
+          dockerfile_ver=$(awk -F= '/^ARG GO_VERSION=/ { print $2; exit }' Dockerfile)
+          if [ "$gomod_ver" != "$dockerfile_ver" ]; then
+            echo "::error::go.mod says Go $gomod_ver but Dockerfile default ARG GO_VERSION=$dockerfile_ver."
+            echo "::error::Edit Dockerfile so the ARG GO_VERSION default matches go.mod."
+            exit 1
+          fi
+          echo "OK: Dockerfile GO_VERSION=$dockerfile_ver matches go.mod"
+
   # Vulncheck is intentionally informational and is NOT gated on release.
   # The Go vulnerability database reports findings for older Go *toolchains*
   # as well as third-party deps, so a "fail on any finding" policy would
