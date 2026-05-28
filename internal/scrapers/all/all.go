@@ -48,6 +48,8 @@ import (
 	_ "github.com/Wasylq/FSS/internal/scrapers/ftvmilfs"
 	_ "github.com/Wasylq/FSS/internal/scrapers/fyc"
 	_ "github.com/Wasylq/FSS/internal/scrapers/gamma"
+	_ "github.com/Wasylq/FSS/internal/scrapers/ghostpro"
+	_ "github.com/Wasylq/FSS/internal/scrapers/ghostproclassic"
 	_ "github.com/Wasylq/FSS/internal/scrapers/glamose"
 	_ "github.com/Wasylq/FSS/internal/scrapers/gloryquest"
 	_ "github.com/Wasylq/FSS/internal/scrapers/goldwinpass"

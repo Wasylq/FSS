@@ -1,6 +1,6 @@
 # Covered Sites — All Domains
 
-927 scrapers covering 924 distinct domains. Auto-generated from the scraper registry by `TestSitesMdInSync` — do not hand-edit; instead update the scraper's `Patterns()` and re-run `go test ./internal/scrapers/all/...`. The `stashbox` scraper is omitted here because its covered hosts are config-driven; see [`scrapers.md`](scrapers.md).
+940 scrapers covering 937 distinct domains. Auto-generated from the scraper registry by `TestSitesMdInSync` — do not hand-edit; instead update the scraper's `Patterns()` and re-run `go test ./internal/scrapers/all/...`. The `stashbox` scraper is omitted here because its covered hosts are config-driven; see [`scrapers.md`](scrapers.md).
 
 Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scraper ID(s)** column lists every scraper that claims URLs on that domain — most domains have one entry, but table-driven networks (`adultprime`, `tmw`, `nextdoorstudios`, etc.) host many sub-studios on a single root domain. See [`scrapers.md`](scrapers.md) for what each ID covers.
 
@@ -38,6 +38,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | analamateur.com | `analamateur` |
 | analbbc.com | `analbbc` |
 | analized.com | `analized` |
+| analjesse.com | `analjesse` |
 | analqts.com | `analqts` |
 | analrecruiters.com | `analrecruiters` |
 | analtherapyxxx.com | `analtherapy` |
@@ -54,6 +55,8 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | ashleysageellison.com | `ashleysageellison` |
 | asianamericantgirls.com | `asianamericantgirls` |
 | asiancoochies.com | `asiancoochies` |
+| asiansuckdolls.com | `asiansuckdolls` |
+| asiansybian.com | `asiansybian` |
 | asiantgirl.com | `asiantgirl` |
 | asmrfantasy.com | `asmrfantasy` |
 | atmovs.com | `tmw-atmovs` |
@@ -174,9 +177,12 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | codivorexxx.com | `codivorexxx` |
 | codycummings.com | `codycummings` |
 | college-uniform.com | `collegeuniform` |
+| creamedcuties.com | `creamedcuties` |
 | creamher.com | `creamher` |
 | creampie-angels.com | `tmw-creampie-angels` |
+| creampiecuties.com | `creampiecuties` |
 | creampieforgranny.com | `creampieforgranny` |
+| creampiethais.com | `creampiethais` |
 | creativeporn.com | `creativeporn` |
 | cristiannlive.com | `cristiann` |
 | crunchboy.com | `crunchboy` |
@@ -368,6 +374,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | gloryholesecrets.com | `gloryholesecrets` |
 | gloryquest.tv | `gloryquest` |
 | glowingdesire.com | `nubiles` |
+| gogobarauditions.com | `gogobarauditions` |
 | goldwinpass.com | `goldwinpass` |
 | gostuckyourself.net | `gostuckyourself` |
 | gothgirlfriends.com | `gothgirlfriends` |
@@ -526,6 +533,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | momwantscreampie.com | `nubiles` |
 | momwantstobreed.com | `nubiles` |
 | momxxx.org | `momxxx` |
+| mongerinasia.com | `mongerinasia` |
 | monstercockgang.com | `monstercockgang` |
 | monstercockmadness.com | `monstercockmadness` |
 | monstermalesprod.com | `monstermalesprod` |
@@ -777,6 +785,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | t.porn | `tporn` |
 | tabooheat.com | `tabooheat` |
 | tagteampov.com | `tagteampov` |
+| tailynn.com | `tailynn` |
 | takara-tv.jp | `takaratv` |
 | taratainton.com | `taratainton` |
 | tawny-peaks.com | `tawny-peaks` |
@@ -810,6 +819,8 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | tgirlshookup.com | `tgirlshookup` |
 | tgirltops.com | `tgirltops` |
 | tgirlx.com | `tgirlx` |
+| thaigirlswild.com | `thaigirlswild` |
+| thaipussymassage.com | `thaipussymassage` |
 | thatsitcomshow.com | `nubiles` |
 | theassfactory.com | `theassfactory` |
 | theavaaddams.com | `theavaaddams` |
@@ -872,6 +883,8 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | tsfactor.com | `tsfactor` |
 | tushy.com | `tushy` |
 | tushyraw.com | `tushyraw` |
+| tussinee.com | `tussinee` |
+| tussineegold.com | `tussineegold` |
 | twinkpop.com | `twinkpop` |
 | twistys.com | `twistys` |
 | uk-tgirls.com | `uktgirls` |
