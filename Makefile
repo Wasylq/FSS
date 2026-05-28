@@ -7,6 +7,16 @@ PKGS     := ./...
 SMOKE_TIMEOUT ?= 5m
 GOLINT   ?= golangci-lint
 
+# Use bash for all recipes (need PIPESTATUS, [[ ]], etc. in the smoke target).
+SHELL := /bin/bash
+# Stricter shell behaviour for every recipe:
+#   -u             : error on unset variables (catches typos like $$pas vs $$pass)
+#   -o pipefail    : a failing command in a pipe makes the pipe fail
+#   -c             : run argument as a command (required when overriding SHELLFLAGS)
+# `-e` is intentionally omitted: the `smoke` target uses `;`-chained commands so
+# the summary still prints when tests fail, which `set -e` would abort.
+.SHELLFLAGS := -u -o pipefail -c
+
 .DEFAULT_GOAL := help
 
 .PHONY: help
@@ -20,8 +30,6 @@ build: ## Build the fss binary into ./fss.
 .PHONY: test
 test: ## Run unit tests with race detector (no integration tag).
 	$(GO) test -race -count=1 $(PKGS)
-
-SHELL := /bin/bash
 
 .PHONY: smoke
 smoke: ## Run integration smoke tests against live sites + Stash. Manual only — never in CI.
