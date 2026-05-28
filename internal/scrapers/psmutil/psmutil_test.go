@@ -171,6 +171,60 @@ func TestParseListing_noJSONLD(t *testing.T) {
 	}
 }
 
+// TestParseListing_htmlFallback pins the Citebeur category-page case: the
+// page has no JSON-LD ItemList but does render the grid in plain HTML. The
+// fallback parser must surface URL/ID/title/thumbnail from the markup.
+const categoryHTMLFallback = `<html><body>
+<div class="row">
+
+<div class="video-gallery-0 col-12 col-md-6 col-lg-4">
+  <a href="/en/videos/detail/51582-arab-top-and-young-classy-bottom">
+    <div class="position-relative">
+      <img class="embed-responsive-item obj-adapt"
+           alt="grosse bite de rebeu en fond de gorge"
+           src="https://gcs.pornsitemanager.com/store/2/3/2/6a185fe252e81c6c64030232/sd/grosse-bite-de-rebeu-en-fond-de-gorge.jpg" />
+    </div>
+  </a>
+</div>
+
+<div class="video-gallery-1 col-12 col-md-6 col-lg-4">
+  <a href="/en/videos/detail/44742-the-good-neighbor-sucks-andolini">
+    <div class="position-relative">
+      <img class="embed-responsive-item obj-adapt"
+           alt="The Good Neighbor Sucks Andolini"
+           src="https://gcs.pornsitemanager.com/store/x/y/z/abc/sd/good-neighbor.jpg" />
+    </div>
+  </a>
+</div>
+
+</div>
+</body></html>`
+
+func TestParseListing_htmlFallback(t *testing.T) {
+	videos, err := parseListing([]byte(categoryHTMLFallback))
+	if err != nil {
+		t.Fatalf("HTML fallback must not error: %v", err)
+	}
+	if len(videos) != 2 {
+		t.Fatalf("got %d videos from HTML fallback, want 2", len(videos))
+	}
+	first := videos[0]
+	if first.URL != "/en/videos/detail/51582-arab-top-and-young-classy-bottom" {
+		t.Errorf("URL = %q", first.URL)
+	}
+	if first.Name != "grosse bite de rebeu en fond de gorge" {
+		t.Errorf("Name = %q", first.Name)
+	}
+	if !strings.Contains(first.ThumbnailURL, "gcs.pornsitemanager.com") {
+		t.Errorf("ThumbnailURL = %q", first.ThumbnailURL)
+	}
+	// Scene IDs derived from the URL slug — extractSceneID is exercised
+	// elsewhere; here we just check the URL/title made it through.
+	if videos[1].Name != "The Good Neighbor Sucks Andolini" {
+		t.Errorf("second Name = %q", videos[1].Name)
+	}
+}
+
 func TestExtractSceneID(t *testing.T) {
 	tests := []struct {
 		url  string

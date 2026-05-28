@@ -101,16 +101,28 @@ var (
 	// set-target IDs come in the form "set-target-{sceneID}-{thumbID}". We use
 	// the first number as the stable scene ID.
 	sceneIDRe = regexp.MustCompile(`id="set-target-(\d+)-\d+"`)
-	// modeldata block — title + date + performers area.
-	modeldataRe = regexp.MustCompile(`(?s)<div class="modeldata">(.*?)</div>`)
+	// modeldata block — title + date + performers area. Markup varies between
+	// sister sites: most write `<div class="modeldata">` but a few (e.g.
+	// pornonstage) inject a stray space `<div class="modeldata" >`. Accept
+	// both, plus any extra classes mixed in.
+	modeldataRe = regexp.MustCompile(`(?s)<div class="modeldata[^"]*"\s*[^>]*>(.*?)</div>`)
 	// Inside modeldata: the first <a> wraps the user-facing title.
 	// Title is the anchor's text content; the title= attribute holds an
 	// internal short code that we ignore.
 	titleRe = regexp.MustCompile(`(?s)<a [^>]*style="[^"]*font-size[^"]*"[^>]*>\s*([^<]+?)\s*</a>`)
-	dateRe  = regexp.MustCompile(`Date\s*<font[^>]*>\s*(\d{4}-\d{2}-\d{2})\s*</font>`)
-	// Duration lives in the description block: "31 min" or "1:02:47".
-	durationMinsRe = regexp.MustCompile(`fa-clock-o[^>]*></i>\s*(\d+)\s*min`)
-	viewsRe        = regexp.MustCompile(`fa-eye[^>]*></i>\s*(\d+)\s*Views`)
+	// Date forms seen across sister sites:
+	//   - sexycuckold:    `Date <font color="#48ff00">2026-05-28</font>`
+	//   - pornonstage:    `Updated 2026-05-28`
+	//   - other variants: bare `<font>2026-05-28</font>` after a label
+	// The bare YYYY-MM-DD with optional <font> wrapper covers all cases.
+	dateRe = regexp.MustCompile(`(?:Date|Updated)\s*(?:<font[^>]*>)?\s*(\d{4}-\d{2}-\d{2})`)
+	// Duration in the description block — two forms:
+	//   - sexycuckold:  "31 min"      (whole-minutes)
+	//   - pornonstage:  "14:12 min"   (MM:SS, then literal " min")
+	// The MM:SS form is matched first; the bare-minutes form is a fallback.
+	durationColonRe = regexp.MustCompile(`fa-clock-o[^>]*></i>\s*(\d+):(\d{2})(?::(\d{2}))?\s*min`)
+	durationMinsRe  = regexp.MustCompile(`fa-clock-o[^>]*></i>\s*(\d+)\s*min`)
+	viewsRe         = regexp.MustCompile(`fa-eye[^>]*></i>\s*(\d+)\s*Views`)
 	// Thumbnail — high-res lazy-load attribute.
 	thumbRe = regexp.MustCompile(`src0_1x="([^"]+)"`)
 	// Performers — anchors inside <span class="update_models">.
@@ -178,7 +190,20 @@ func parseListing(body []byte) []sceneItem {
 				item.date = d.UTC()
 			}
 		}
-		if m := durationMinsRe.FindStringSubmatch(block); m != nil {
+		// Try the more-precise MM:SS form first; fall back to bare minutes.
+		if m := durationColonRe.FindStringSubmatch(block); m != nil {
+			h, _ := strconv.Atoi(m[1])
+			mm, _ := strconv.Atoi(m[2])
+			ss := 0
+			if m[3] != "" {
+				// HH:MM:SS form — m[1] is hours, m[2] is minutes, m[3] is seconds.
+				ss, _ = strconv.Atoi(m[3])
+				item.duration = h*3600 + mm*60 + ss
+			} else {
+				// MM:SS form — m[1] is minutes, m[2] is seconds.
+				item.duration = h*60 + mm
+			}
+		} else if m := durationMinsRe.FindStringSubmatch(block); m != nil {
 			mins, _ := strconv.Atoi(m[1])
 			item.duration = mins * 60
 		}

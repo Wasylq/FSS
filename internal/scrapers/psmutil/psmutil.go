@@ -162,29 +162,74 @@ func fixControlChars(s string) string {
 	return b.String()
 }
 
-// parseListing extracts every VideoObject from the page's ItemList JSON-LD.
-// Returns nil on no-list (signal to stop pagination).
+// parseListing extracts every VideoObject from the page's ItemList JSON-LD,
+// falling back to HTML card-link extraction when no ItemList is present
+// (Citebeur category pages, for example, ship only the rendered grid). The
+// HTML fallback yields fewer fields per scene — only URL/ID/title/thumbnail
+// — but at least surfaces the catalog instead of returning zero.
+// Returns nil on a genuinely empty page (signal to stop pagination).
 func parseListing(body []byte) ([]videoObject, error) {
-	m := jsonLDRe.FindSubmatch(body)
-	if m == nil {
-		return nil, nil
-	}
-	cleaned := fixControlChars(string(m[1]))
-	var list itemList
-	if err := json.Unmarshal([]byte(cleaned), &list); err != nil {
-		return nil, fmt.Errorf("parse ItemList JSON-LD: %w", err)
-	}
-	if list.Type != "ItemList" {
-		// Detail pages also have JSON-LD but as VideoObject directly — listing-only.
-		return nil, nil
-	}
-	videos := make([]videoObject, 0, len(list.Items))
-	for _, it := range list.Items {
-		if it.Item.Type == "VideoObject" && it.Item.URL != "" {
-			videos = append(videos, it.Item)
+	if m := jsonLDRe.FindSubmatch(body); m != nil {
+		cleaned := fixControlChars(string(m[1]))
+		var list itemList
+		if err := json.Unmarshal([]byte(cleaned), &list); err != nil {
+			return nil, fmt.Errorf("parse ItemList JSON-LD: %w", err)
 		}
+		if list.Type == "ItemList" {
+			videos := make([]videoObject, 0, len(list.Items))
+			for _, it := range list.Items {
+				if it.Item.Type == "VideoObject" && it.Item.URL != "" {
+					videos = append(videos, it.Item)
+				}
+			}
+			if len(videos) > 0 {
+				return videos, nil
+			}
+		}
+		// Non-ItemList JSON-LD (BreadcrumbList on a no-results page) → fall through.
 	}
-	return videos, nil
+	return parseListingHTML(body), nil
+}
+
+// HTML fallback regexes. The grid card pattern:
+//
+//	<a href="/en/videos/detail/{ID}-{slug}">
+//	  <img class="…obj-adapt…" alt="{title}"
+//	       src="https://gcs.pornsitemanager.com/store/…/sd/{thumb}.jpg" />
+var (
+	htmlCardLinkRe = regexp.MustCompile(`href="(/[a-z]{2,3}/videos/detail/\d+-[a-z0-9-]+)"`)
+	htmlCardImgRe  = regexp.MustCompile(`<img[^>]+alt="([^"]*)"[^>]+src="(https://gcs\.pornsitemanager\.com[^"]+)"`)
+)
+
+func parseListingHTML(body []byte) []videoObject {
+	s := string(body)
+	// Each card opens with the detail-link anchor; the next 1KB usually contains
+	// the alt + src pair. We slice between successive anchors so a stray <img>
+	// elsewhere on the page can't pollute the wrong card.
+	matches := htmlCardLinkRe.FindAllStringSubmatchIndex(s, -1)
+	out := make([]videoObject, 0, len(matches))
+	seen := map[string]bool{}
+	for i, loc := range matches {
+		url := s[loc[2]:loc[3]]
+		if seen[url] {
+			continue
+		}
+		seen[url] = true
+
+		end := len(s)
+		if i+1 < len(matches) {
+			end = matches[i+1][0]
+		}
+		block := s[loc[0]:end]
+
+		v := videoObject{Type: "VideoObject", URL: url}
+		if m := htmlCardImgRe.FindStringSubmatch(block); m != nil {
+			v.Name = m[1]
+			v.ThumbnailURL = m[2]
+		}
+		out = append(out, v)
+	}
+	return out
 }
 
 // ---- URL handling ----

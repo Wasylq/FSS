@@ -75,6 +75,30 @@ const listingHTML = `<html><body>
 
 const emptyListingHTML = `<html><body><div class="pagination">no more</div></body></html>`
 
+// pornOnStageCardHTML mirrors live pornonstage.com markup — the modeldata div
+// has a stray space ("modeldata" >), uses "Updated YYYY-MM-DD" instead of
+// "Date <font>...</font>", and writes duration as MM:SS instead of just N.
+const pornOnStageCardHTML = `<html><body>
+<div class="modelfeature  grabthis">
+  <div class="modelimg">
+    <div class="wrapper">
+      <a href="https://join.pornonstage.com/signup/signup.php?nats=ABC" title="Watch Babe loves live porn">
+        <img id="set-target-15422-380217" class="update_thumb thumbs stdimage"
+             src0_1x="/tour/content//contentthumbs/32/64/23264-1x.jpg" />
+        <div class='description'>
+          <p class='description_content' align="center"><i class="fa fa-clock-o"></i> 14:12 min &nbsp;
+             <i class="fa fa-thumbs-up"></i> 80 %</p>
+        </div>
+      </a>
+    </div>
+  </div>
+  <div class="modeldata" >
+    <a href="https://join.pornonstage.com/signup/signup.php?nats=ABC" title="Sf Beograd05-17" style="font-size:16px; line-height: 1.9em;">Babe loves live porn</a>
+    <p><i class="fa fa-calendar-check-o"></i> Updated 2026-05-28</p>
+  </div>
+</div>
+</body></html>`
+
 func testConfig(base string) SiteConfig {
 	return SiteConfig{
 		ID:       "sexycuckold",
@@ -120,6 +144,30 @@ func TestParseListing_extractsCards(t *testing.T) {
 	}
 	if len(second.performers) != 2 {
 		t.Errorf("Second performers = %v", second.performers)
+	}
+}
+
+// TestParseListing_pornOnStageVariant pins live failures we hit on
+// pornonstage.com: stray whitespace in `<div class="modeldata" >`, the
+// "Updated YYYY-MM-DD" date phrasing, and MM:SS duration format.
+func TestParseListing_pornOnStageVariant(t *testing.T) {
+	items := parseListing([]byte(pornOnStageCardHTML))
+	if len(items) != 1 {
+		t.Fatalf("got %d items, want 1", len(items))
+	}
+	it := items[0]
+	if it.id != "15422" {
+		t.Errorf("ID = %q, want 15422", it.id)
+	}
+	if it.title != "Babe loves live porn" {
+		t.Errorf("Title = %q (modeldata-with-extra-space parse failed?)", it.title)
+	}
+	if it.date.Year() != 2026 || it.date.Month() != 5 || it.date.Day() != 28 {
+		t.Errorf("Date = %v, want 2026-05-28 (Updated-form parse failed?)", it.date)
+	}
+	// 14:12 → 14 minutes 12 seconds = 852 seconds.
+	if it.duration != 14*60+12 {
+		t.Errorf("Duration = %d, want %d (MM:SS form parse failed?)", it.duration, 14*60+12)
 	}
 }
 
