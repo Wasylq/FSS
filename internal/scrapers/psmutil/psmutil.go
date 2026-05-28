@@ -1,0 +1,374 @@
+// Package psmutil scrapes sites running PornSiteManager — a multi-tenant
+// adult CMS hosted at gcs.pornsitemanager.com that powers the Frenchporn
+// network (Citebeur, Eurocreme, Hard Kinks, AlphaMales, …) and likely other
+// brands too. Every site exposes its catalog through a JSON-LD ItemList
+// embedded directly in the HTML, so a clean scraper doesn't need detail-page
+// fetches at all.
+//
+// Detection signals:
+//
+//   - `gcs.pornsitemanager.com` referenced for thumbs / favicons.
+//   - Listing pages at `{base}/{locale}/videos` (locale is typically `en`).
+//   - `<script type="application/ld+json">` containing
+//     `{"@type": "ItemList", "itemListElement": [...]}` with 12 `VideoObject`
+//     entries per page.
+//   - Pagination via `?page=N`; past-end pages return HTTP 200 with zero items.
+//   - Scene URL form: `/{locale}/videos/detail/{ID}-{slug}` (numeric ID + slug).
+//
+// JSON-LD VideoObject fields used:
+//
+//	{
+//	  "url":           "https://www.citebeur.com/en/videos/detail/46311-hey-bro",
+//	  "name":          "Hey bro, let's fuck him together",
+//	  "thumbnailUrl":  "https://gcs.pornsitemanager.com/store/.../hd/img.jpg",
+//	  "datePublished": "2026-05-27",
+//	  "description":   "When Kalys arrives at the underground parking lot…",
+//	  "actor": [ {"name": "Choppeur"}, {"name": "Kévin Frenchboy"}, … ]
+//	}
+//
+// What's NOT in the JSON-LD (and skipped for now): duration, scene-specific
+// tags. The HTML has duration in some sites' player markup but not uniformly;
+// tags exist only as global sidebar category lists, not scene-specific.
+package psmutil
+
+import (
+	"context"
+	"encoding/json"
+	"fmt"
+	"html"
+	"net/http"
+	"regexp"
+	"strings"
+	"time"
+
+	"github.com/Wasylq/FSS/internal/httpx"
+	"github.com/Wasylq/FSS/models"
+	"github.com/Wasylq/FSS/scraper"
+)
+
+// SiteConfig describes one PornSiteManager-backed site.
+type SiteConfig struct {
+	ID       string
+	SiteBase string // e.g. "https://www.citebeur.com" — no trailing slash
+	Studio   string
+	Locale   string // typically "en"; falls back to "en" if zero
+	Patterns []string
+	MatchRe  *regexp.Regexp
+}
+
+type Scraper struct {
+	cfg    SiteConfig
+	client *http.Client
+}
+
+func New(cfg SiteConfig) *Scraper {
+	if cfg.Locale == "" {
+		cfg.Locale = "en"
+	}
+	return &Scraper{
+		cfg:    cfg,
+		client: httpx.NewClient(30 * time.Second),
+	}
+}
+
+func (s *Scraper) ID() string         { return s.cfg.ID }
+func (s *Scraper) Patterns() []string { return s.cfg.Patterns }
+func (s *Scraper) MatchesURL(u string) bool {
+	return s.cfg.MatchRe.MatchString(u)
+}
+
+func (s *Scraper) ListScenes(ctx context.Context, studioURL string, opts scraper.ListOpts) (<-chan scraper.SceneResult, error) {
+	out := make(chan scraper.SceneResult)
+	go s.run(ctx, studioURL, opts, out)
+	return out, nil
+}
+
+// ---- JSON-LD parsing ----
+
+// itemList captures the ItemList JSON-LD object embedded in listing pages.
+// We only need itemListElement[*].item; the wrapper exists just to anchor the
+// schema.org context.
+type itemList struct {
+	Type  string `json:"@type"`
+	Items []struct {
+		Item videoObject `json:"item"`
+	} `json:"itemListElement"`
+}
+
+type videoObject struct {
+	Type          string        `json:"@type"`
+	URL           string        `json:"url"`
+	Name          string        `json:"name"`
+	ThumbnailURL  string        `json:"thumbnailUrl"`
+	DatePublished string        `json:"datePublished"`
+	UploadDate    string        `json:"uploadDate"`
+	Description   string        `json:"description"`
+	Actor         []actorRef    `json:"actor"`
+	Author        *organization `json:"author"`
+}
+
+type actorRef struct {
+	Type string `json:"@type"`
+	Name string `json:"name"`
+}
+
+type organization struct {
+	Type string `json:"@type"`
+	Name string `json:"name"`
+}
+
+var jsonLDRe = regexp.MustCompile(`(?s)<script type="application/ld\+json">\s*(\{.*?\})\s*</script>`)
+
+// fixControlChars escapes raw newlines/tabs/carriage-returns that appear
+// *inside* JSON strings. PornSiteManager emits human-readable JSON-LD with
+// these unescaped, which is invalid per RFC 8259. We patch on the fly rather
+// than crashing.
+func fixControlChars(s string) string {
+	var b strings.Builder
+	b.Grow(len(s))
+	inString := false
+	escape := false
+	for _, c := range s {
+		if escape {
+			b.WriteRune(c)
+			escape = false
+			continue
+		}
+		if c == '\\' {
+			b.WriteRune(c)
+			escape = true
+			continue
+		}
+		if c == '"' {
+			inString = !inString
+			b.WriteRune(c)
+			continue
+		}
+		if inString {
+			switch c {
+			case '\n':
+				b.WriteString(`\n`)
+			case '\r':
+				b.WriteString(`\r`)
+			case '\t':
+				b.WriteString(`\t`)
+			default:
+				b.WriteRune(c)
+			}
+		} else {
+			b.WriteRune(c)
+		}
+	}
+	return b.String()
+}
+
+// parseListing extracts every VideoObject from the page's ItemList JSON-LD.
+// Returns nil on no-list (signal to stop pagination).
+func parseListing(body []byte) ([]videoObject, error) {
+	m := jsonLDRe.FindSubmatch(body)
+	if m == nil {
+		return nil, nil
+	}
+	cleaned := fixControlChars(string(m[1]))
+	var list itemList
+	if err := json.Unmarshal([]byte(cleaned), &list); err != nil {
+		return nil, fmt.Errorf("parse ItemList JSON-LD: %w", err)
+	}
+	if list.Type != "ItemList" {
+		// Detail pages also have JSON-LD but as VideoObject directly — listing-only.
+		return nil, nil
+	}
+	videos := make([]videoObject, 0, len(list.Items))
+	for _, it := range list.Items {
+		if it.Item.Type == "VideoObject" && it.Item.URL != "" {
+			videos = append(videos, it.Item)
+		}
+	}
+	return videos, nil
+}
+
+// ---- URL handling ----
+
+// sceneIDRe extracts the numeric scene ID from `/{locale}/videos/detail/{ID}-{slug}`.
+// Some PSM sites use non-numeric slug-only IDs (`/detail/kevin-frenchboy`); for
+// those we fall back to the full slug.
+var sceneIDRe = regexp.MustCompile(`/videos/detail/(\d+)-`)
+
+func extractSceneID(url string) string {
+	if m := sceneIDRe.FindStringSubmatch(url); m != nil {
+		return m[1]
+	}
+	// Fallback: last path segment, with .html / query / fragment stripped.
+	if i := strings.LastIndex(url, "/detail/"); i >= 0 {
+		rest := url[i+len("/detail/"):]
+		rest = strings.SplitN(rest, "?", 2)[0]
+		rest = strings.SplitN(rest, "#", 2)[0]
+		rest = strings.TrimSuffix(rest, ".html")
+		return rest
+	}
+	return url
+}
+
+// listingURL builds `{base}/{locale}/videos?page=N`. Category-mode URLs use
+// `{base}/{locale}/videos/{slug}?page=N` (see categoryFromURL).
+func (s *Scraper) listingURL(category string, page int) string {
+	path := "videos"
+	if category != "" {
+		path = "videos/" + category
+	}
+	if page <= 1 {
+		return fmt.Sprintf("%s/%s/%s", s.cfg.SiteBase, s.cfg.Locale, path)
+	}
+	return fmt.Sprintf("%s/%s/%s?page=%d", s.cfg.SiteBase, s.cfg.Locale, path, page)
+}
+
+// categoryFromURL returns the category slug if studioURL points at a tag/
+// category listing like `/en/videos/{slug}`, else empty (= full catalog).
+var categoryRe = regexp.MustCompile(`/[a-z]{2,3}/videos/([a-z0-9-]+)(?:[/?]|$)`)
+
+func categoryFromURL(studioURL string) string {
+	if m := categoryRe.FindStringSubmatch(studioURL); m != nil {
+		return m[1]
+	}
+	return ""
+}
+
+// ---- main scrape loop ----
+
+func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOpts, out chan<- scraper.SceneResult) {
+	defer close(out)
+
+	category := categoryFromURL(studioURL)
+	if category != "" {
+		scraper.Debugf(1, "%s: scraping category %q", s.cfg.ID, category)
+	} else {
+		scraper.Debugf(1, "%s: scraping full catalog", s.cfg.ID)
+	}
+
+	now := time.Now().UTC()
+	sentTotal := false
+	totalEmitted := 0
+
+	for page := 1; ; page++ {
+		if ctx.Err() != nil {
+			return
+		}
+		if page > 1 && opts.Delay > 0 {
+			select {
+			case <-time.After(opts.Delay):
+			case <-ctx.Done():
+				return
+			}
+		}
+
+		pageURL := s.listingURL(category, page)
+		scraper.Debugf(1, "%s: fetching listing page %d (%s)", s.cfg.ID, page, pageURL)
+
+		body, err := s.fetchPage(ctx, pageURL)
+		if err != nil {
+			select {
+			case out <- scraper.Error(fmt.Errorf("page %d: %w", page, err)):
+			case <-ctx.Done():
+			}
+			return
+		}
+
+		videos, err := parseListing(body)
+		if err != nil {
+			select {
+			case out <- scraper.Error(fmt.Errorf("page %d: %w", page, err)):
+			case <-ctx.Done():
+			}
+			return
+		}
+		if len(videos) == 0 {
+			scraper.Debugf(1, "%s: page %d has no videos, stopping", s.cfg.ID, page)
+			return
+		}
+
+		if !sentTotal {
+			// PSM doesn't expose a total count in JSON-LD; emit a Progress
+			// based on the first page's perPage * estimated-max-page from the
+			// pagination block. We just use the first page's count for now —
+			// the consumer's progress display shows "fetching: N scenes"
+			// without a denominator when total is unknown.
+			scraper.Debugf(1, "%s: first page has %d videos", s.cfg.ID, len(videos))
+			sentTotal = true
+		}
+
+		for _, v := range videos {
+			id := extractSceneID(v.URL)
+			if opts.KnownIDs[id] {
+				scraper.Debugf(1, "%s: hit known ID %s, stopping early", s.cfg.ID, id)
+				select {
+				case out <- scraper.StoppedEarly():
+				case <-ctx.Done():
+				}
+				return
+			}
+			scene := v.toScene(s.cfg.ID, s.cfg.SiteBase, s.cfg.Studio, now)
+			select {
+			case out <- scraper.Scene(scene):
+				totalEmitted++
+			case <-ctx.Done():
+				return
+			}
+		}
+
+		// Past-end behavior: PSM returns HTTP 200 with zero items, which we
+		// catch at the top of the next iteration via the len(videos)==0 check.
+	}
+}
+
+func (v videoObject) toScene(siteID, siteBase, studio string, now time.Time) models.Scene {
+	url := v.URL
+	if strings.HasPrefix(url, "/") {
+		url = siteBase + url
+	}
+
+	scene := models.Scene{
+		ID:          extractSceneID(v.URL),
+		SiteID:      siteID,
+		StudioURL:   siteBase,
+		Title:       html.UnescapeString(v.Name),
+		URL:         url,
+		Thumbnail:   v.ThumbnailURL,
+		Description: html.UnescapeString(v.Description),
+		Studio:      studio,
+		ScrapedAt:   now,
+	}
+
+	// Date: prefer the more-precise uploadDate (RFC3339-ish), fall back to
+	// datePublished (YYYY-MM-DD).
+	if v.UploadDate != "" {
+		if t, err := time.Parse(time.RFC3339, v.UploadDate); err == nil {
+			scene.Date = t.UTC()
+		}
+	}
+	if scene.Date.IsZero() && v.DatePublished != "" {
+		if t, err := time.Parse("2006-01-02", v.DatePublished); err == nil {
+			scene.Date = t.UTC()
+		}
+	}
+
+	for _, a := range v.Actor {
+		name := strings.TrimSpace(html.UnescapeString(a.Name))
+		if name != "" {
+			scene.Performers = append(scene.Performers, name)
+		}
+	}
+
+	return scene
+}
+
+func (s *Scraper) fetchPage(ctx context.Context, url string) ([]byte, error) {
+	resp, err := httpx.Do(ctx, s.client, httpx.Request{
+		URL:     url,
+		Headers: httpx.BrowserHeaders(httpx.UserAgentFirefox),
+	})
+	if err != nil {
+		return nil, err
+	}
+	defer func() { _ = resp.Body.Close() }()
+	return httpx.ReadBody(resp.Body)
+}
