@@ -34,6 +34,7 @@ import (
 	_ "github.com/Wasylq/FSS/internal/scrapers/darkreach"
 	_ "github.com/Wasylq/FSS/internal/scrapers/data18"
 	_ "github.com/Wasylq/FSS/internal/scrapers/deeps"
+	_ "github.com/Wasylq/FSS/internal/scrapers/dirtyflix"
 	_ "github.com/Wasylq/FSS/internal/scrapers/dorcelclub"
 	_ "github.com/Wasylq/FSS/internal/scrapers/eighteenvideoz"
 	_ "github.com/Wasylq/FSS/internal/scrapers/extrememoviepass"
