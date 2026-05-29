@@ -139,6 +139,16 @@ func atomicWriteFile(path string, writeFn func(io.Writer) error) error {
 	if err := os.Rename(tmpPath, path); err != nil {
 		return fmt.Errorf("renaming %s → %s: %w", tmpPath, path, err)
 	}
+	// POSIX makes the rename atomic w.r.t. concurrent readers but does
+	// NOT guarantee the new directory entry is on disk before a crash.
+	// fsync the parent directory so the rename survives a power loss.
+	// Best-effort: on Windows (and some FUSE filesystems) opening a
+	// directory for Sync isn't supported; treat ENOTDIR/permission
+	// errors as non-fatal since the write already succeeded.
+	if d, err := os.Open(dir); err == nil {
+		_ = d.Sync()
+		_ = d.Close()
+	}
 	return nil
 }
 
