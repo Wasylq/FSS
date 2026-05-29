@@ -106,6 +106,7 @@ import (
 	_ "github.com/Wasylq/FSS/internal/scrapers/privateblack"
 	_ "github.com/Wasylq/FSS/internal/scrapers/privatecastings"
 	_ "github.com/Wasylq/FSS/internal/scrapers/privateclassics"
+	_ "github.com/Wasylq/FSS/internal/scrapers/puba"
 	_ "github.com/Wasylq/FSS/internal/scrapers/purecfnm"
 	_ "github.com/Wasylq/FSS/internal/scrapers/puremature"
 	_ "github.com/Wasylq/FSS/internal/scrapers/queensnake"
