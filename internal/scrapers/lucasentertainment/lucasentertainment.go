@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/Wasylq/FSS/internal/httpx"
+	"github.com/Wasylq/FSS/parseutil"
 	"github.com/Wasylq/FSS/models"
 	"github.com/Wasylq/FSS/scraper"
 )
@@ -210,7 +211,6 @@ func (s *Scraper) fetchPage(ctx context.Context, page int, filter string) ([]wpP
 }
 
 var (
-	ogImageRe = regexp.MustCompile(`og:image"\s+content="([^"]+)"`)
 	htmlTagRe = regexp.MustCompile(`<[^>]+>`)
 )
 
@@ -242,8 +242,8 @@ func (s *Scraper) toScene(studioURL string, p wpPost, now time.Time) models.Scen
 		sc.Thumbnail = p.Embedded.Media[0].SourceURL
 	}
 	if sc.Thumbnail == "" {
-		if m := ogImageRe.FindStringSubmatch(p.YoastHead); m != nil {
-			sc.Thumbnail = m[1]
+		if v := parseutil.OpenGraph([]byte(p.YoastHead))["og:image"]; v != "" {
+			sc.Thumbnail = v
 		}
 	}
 

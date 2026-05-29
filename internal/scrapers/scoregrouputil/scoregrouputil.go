@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/Wasylq/FSS/internal/httpx"
+	"github.com/Wasylq/FSS/parseutil"
 	"github.com/Wasylq/FSS/models"
 	"github.com/Wasylq/FSS/scraper"
 )
@@ -287,7 +288,6 @@ func hasNextPage(body []byte, current int) bool {
 var (
 	metaDateRe    = regexp.MustCompile(`(?:itemprop="uploadDate"|name="Date")\s+content="([^"]+)"`)
 	visibleDateRe = regexp.MustCompile(`class="label">Date:\s*</span>\s*<span class="value">([^<]+)</span>`)
-	ogDescRe      = regexp.MustCompile(`property="og:description"\s+content="([^"]+)"`)
 	tagRe         = regexp.MustCompile(`href="[^"]*updates-tag/([^/]+)/\d+/[^"]*"[^>]*class="btn btn-ol-2[^"]*"[^>]*>\s*([^<]+)`)
 )
 
@@ -320,8 +320,8 @@ func (s *Scraper) fetchDetail(ctx context.Context, ls listingScene, delay time.D
 	}
 
 	desc := ""
-	if m := ogDescRe.FindSubmatch(body); m != nil {
-		desc = html.UnescapeString(string(m[1]))
+	if v := parseutil.OpenGraph(body)["og:description"]; v != "" {
+		desc = html.UnescapeString(v)
 		desc = strings.TrimSuffix(desc, "…")
 		desc = strings.TrimSpace(desc)
 	}
@@ -354,10 +354,8 @@ func (s *Scraper) fetchDetail(ctx context.Context, ls listingScene, delay time.D
 	}, nil
 }
 
-var ordinalSuffixRe = regexp.MustCompile(`(\d+)(?:st|nd|rd|th)`)
-
 func parseVisibleDate(s string) time.Time {
-	cleaned := ordinalSuffixRe.ReplaceAllString(strings.TrimSpace(s), "$1")
+	cleaned := parseutil.StripOrdinalSuffix(strings.TrimSpace(s))
 	if t, err := time.Parse("January 2, 2006", cleaned); err == nil {
 		return t.UTC()
 	}

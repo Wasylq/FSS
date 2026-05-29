@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/Wasylq/FSS/internal/httpx"
+	"github.com/Wasylq/FSS/parseutil"
 	"github.com/Wasylq/FSS/models"
 	"github.com/Wasylq/FSS/scraper"
 )
@@ -351,7 +352,6 @@ func hasNextPage(body []byte, current int) bool {
 }
 
 var (
-	ogDescRe   = regexp.MustCompile(`<meta property="og:description" content="([^"]*)"`)
 	updateTags = regexp.MustCompile(`(?s)<span class="update_tags">\s*(?:Tags:)?\s*(.*?)</span>`)
 	tagLinkRe  = regexp.MustCompile(`<a href="[^"]*?/tour/categories/[^"]*">([^<]+)</a>`)
 )
@@ -400,8 +400,8 @@ func parseDetail(body []byte, entry listEntry) models.Scene {
 		})
 	}
 
-	if m := ogDescRe.FindSubmatch(body); m != nil {
-		scene.Description = strings.TrimSpace(html.UnescapeString(string(m[1])))
+	if v := parseutil.OpenGraph(body)["og:description"]; v != "" {
+		scene.Description = strings.TrimSpace(html.UnescapeString(v))
 	}
 
 	if m := updateTags.FindSubmatch(body); m != nil {

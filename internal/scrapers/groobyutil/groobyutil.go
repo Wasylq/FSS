@@ -78,8 +78,6 @@ var (
 	maxPageRe   = regexp.MustCompile(`movies_(\d+)_d\.html`)
 
 	modelSlugRe = regexp.MustCompile(`/models/([^_/.]+?)(?:\.html)?$`)
-
-	ordinalRe = regexp.MustCompile(`(\d+)(?:st|nd|rd|th)`)
 )
 
 type sceneItem struct {
@@ -153,7 +151,7 @@ func parseListingPage(body []byte) []sceneItem {
 
 // parseGroobyDate parses "8th May 2026" → time.Time.
 func parseGroobyDate(s string) time.Time {
-	cleaned := ordinalRe.ReplaceAllString(s, "$1")
+	cleaned := parseutil.StripOrdinalSuffix(s)
 	t, err := time.Parse("2 January 2006", cleaned)
 	if err != nil {
 		return time.Time{}

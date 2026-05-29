@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/Wasylq/FSS/internal/httpx"
+	"github.com/Wasylq/FSS/parseutil"
 	"github.com/Wasylq/FSS/models"
 	"github.com/Wasylq/FSS/scraper"
 )
@@ -89,8 +90,6 @@ var (
 	modelsRe    = regexp.MustCompile(`(?s)<span class="models">(.*?)</span>\s*</span>`)
 	modelNameRe = regexp.MustCompile(`<a[^>]*>([^<]+)</a>`)
 
-	ordinalRe = regexp.MustCompile(`(\d+)(st|nd|rd|th)`)
-
 	baseURLRe = regexp.MustCompile(`^(https?://[^/]+)`)
 )
 
@@ -123,8 +122,7 @@ func parseListingPage(body []byte) []listEntry {
 }
 
 func parseDate(s string) time.Time {
-	s = strings.TrimSpace(s)
-	s = ordinalRe.ReplaceAllString(s, "$1")
+	s = parseutil.StripOrdinalSuffix(strings.TrimSpace(s))
 	t, err := time.Parse("January 2, 2006", s)
 	if err != nil {
 		t, _ = time.Parse("Jan 2, 2006", s)

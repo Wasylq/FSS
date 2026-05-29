@@ -17,7 +17,7 @@ go get github.com/Wasylq/FSS@latest # Or use tag for stable release
 | `models` | `github.com/Wasylq/FSS/models` | `Scene`, `PriceSnapshot` — the core data model |
 | `match` | `github.com/Wasylq/FSS/match` | Filename→title matching, cross-site merging, JSON loading |
 | `output` | `github.com/Wasylq/FSS/output` | `WriteJSON`, `WriteCSV`, `Slugify` — write FSS output files |
-| `parseutil` | `github.com/Wasylq/FSS/parseutil` | `ParseDurationColon`, `ParseDurationISO` — video duration parsing |
+| `parseutil` | `github.com/Wasylq/FSS/parseutil` | `ParseDurationColon`, `ParseDurationISO`, `StripOrdinalSuffix`, `OpenGraph` — shared parsing helpers |
 | `stash` | `github.com/Wasylq/FSS/stash` | GraphQL client for Stash |
 | `nfo` | `github.com/Wasylq/FSS/nfo` | Kodi-style NFO XML generation |
 | `identify` | `github.com/Wasylq/FSS/identify` | Video directory scan + match + NFO write |
@@ -357,17 +357,36 @@ slug := output.Slugify("https://www.manyvids.com/Profile/590705/bettie-bondage/S
 
 **Key functions:** `WriteJSON`, `WriteCSV`, `Slugify`. **Key var:** `CSVHeaders` (column order).
 
-## Duration Parsing (`parseutil`)
+## Parsing helpers (`parseutil`)
 
-The `parseutil` package parses video duration strings commonly found on adult content sites.
+The `parseutil` package exposes the parsing primitives FSS's own scrapers
+share. Public so external callers can reuse the same logic — the helpers
+are stable enough that duplicating them would just diverge.
 
 ```go
 import "github.com/Wasylq/FSS/parseutil"
 
+// Video duration strings commonly emitted on adult sites.
 parseutil.ParseDurationColon("30:00")    // → 1800 (seconds)
 parseutil.ParseDurationColon("01:02:03") // → 3723
-parseutil.ParseDurationISO("PT1H2M3S")  // → 3723
-parseutil.ParseDurationISO("PT30M")     // → 1800
+parseutil.ParseDurationISO("PT1H2M3S")   // → 3723
+parseutil.ParseDurationISO("PT30M")      // → 1800
+
+// English ordinal suffixes — strip before time.Parse against a bare-day
+// layout like "2 January 2006".
+parseutil.StripOrdinalSuffix("8th May 2026")       // → "8 May 2026"
+parseutil.StripOrdinalSuffix("22nd September 2024") // → "22 September 2024"
+
+// OpenGraph metadata — pulls every `<meta property="og:*" content="…">`
+// pair into a map. Handles both attribute orderings; values are raw,
+// caller decides on html.UnescapeString.
+og := parseutil.OpenGraph(htmlBody)
+title := og["og:title"]
+image := og["og:image"]
 ```
 
-Both functions return 0 for empty or unparseable input.
+The duration parsers return 0 for empty or unparseable input.
+`StripOrdinalSuffix` only touches digit-then-suffix runs, so plain
+words containing `st`/`nd`/`rd`/`th` (e.g. `"northwest"`) are safe.
+`OpenGraph` returns a non-nil empty map when no tags are present;
+repeated `og:foo` tags collapse to the last occurrence in source order.

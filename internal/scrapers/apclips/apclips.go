@@ -263,11 +263,8 @@ func parseDetailPage(body []byte) (time.Time, []string) {
 	return date, tags
 }
 
-var ordinalRe = regexp.MustCompile(`(\d+)(st|nd|rd|th)`)
-
 func parseDate(s string) time.Time {
-	s = strings.TrimSpace(s)
-	s = ordinalRe.ReplaceAllString(s, "$1")
+	s = parseutil.StripOrdinalSuffix(strings.TrimSpace(s))
 	t, err := time.Parse("Jan 2, 2006", s)
 	if err != nil {
 		return time.Time{}
