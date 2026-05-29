@@ -245,7 +245,7 @@ func (s *Scraper) run(ctx context.Context, studioURL string, inst instance, enti
 		if ctx.Err() != nil {
 			return
 		}
-		if page > 1 {
+		if page > 1 && delay > 0 {
 			select {
 			case <-time.After(delay):
 			case <-ctx.Done():

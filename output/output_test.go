@@ -342,3 +342,73 @@ func indexOf(header []string, name string) int {
 	}
 	return -1
 }
+
+// --- SweepStaleTempFiles ---
+
+func TestSweepStaleTempFiles(t *testing.T) {
+	dir := t.TempDir()
+	now := time.Now()
+
+	mustWrite := func(name string, mtime time.Time) string {
+		path := filepath.Join(dir, name)
+		if err := os.WriteFile(path, []byte("x"), 0o600); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.Chtimes(path, mtime, mtime); err != nil {
+			t.Fatal(err)
+		}
+		return path
+	}
+
+	stale := mustWrite(".fss-tmp-old1", now.Add(-1*time.Hour))
+	stale2 := mustWrite(".fss-tmp-old2", now.Add(-20*time.Minute))
+	fresh := mustWrite(".fss-tmp-fresh", now.Add(-1*time.Minute))
+	unrelated := mustWrite("studio.json", now.Add(-1*time.Hour))
+
+	removed := SweepStaleTempFiles(dir, 10*time.Minute)
+	if removed != 2 {
+		t.Errorf("removed = %d, want 2", removed)
+	}
+	for _, p := range []string{stale, stale2} {
+		if _, err := os.Stat(p); !os.IsNotExist(err) {
+			t.Errorf("expected %s removed, stat err=%v", p, err)
+		}
+	}
+	for _, p := range []string{fresh, unrelated} {
+		if _, err := os.Stat(p); err != nil {
+			t.Errorf("expected %s kept, stat err=%v", p, err)
+		}
+	}
+}
+
+func TestSweepStaleTempFiles_missingDir(t *testing.T) {
+	// Non-existent directory must not be an error.
+	if n := SweepStaleTempFiles(filepath.Join(t.TempDir(), "nope"), time.Minute); n != 0 {
+		t.Errorf("missing dir should yield 0 removals, got %d", n)
+	}
+}
+
+func TestSweepStaleTempFiles_emptyDir(t *testing.T) {
+	if n := SweepStaleTempFiles(t.TempDir(), time.Minute); n != 0 {
+		t.Errorf("empty dir should yield 0 removals, got %d", n)
+	}
+}
+
+func TestSweepStaleTempFiles_skipsSubdir(t *testing.T) {
+	dir := t.TempDir()
+	sub := filepath.Join(dir, ".fss-tmp-subdir")
+	if err := os.Mkdir(sub, 0o700); err != nil {
+		t.Fatal(err)
+	}
+	old := time.Now().Add(-1 * time.Hour)
+	if err := os.Chtimes(sub, old, old); err != nil {
+		t.Fatal(err)
+	}
+	if n := SweepStaleTempFiles(dir, 10*time.Minute); n != 0 {
+		t.Errorf("directories must not count, got %d removed", n)
+	}
+	// Subdirectory must still exist.
+	if _, err := os.Stat(sub); err != nil {
+		t.Errorf("subdir was wrongly removed: %v", err)
+	}
+}

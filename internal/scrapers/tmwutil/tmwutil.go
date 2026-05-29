@@ -170,10 +170,12 @@ func (s *Scraper) run(ctx context.Context, opts scraper.ListOpts, out chan<- scr
 				}
 			}
 
-			select {
-			case <-time.After(opts.Delay):
-			case <-ctx.Done():
-				return
+			if opts.Delay > 0 {
+				select {
+				case <-time.After(opts.Delay):
+				case <-ctx.Done():
+					return
+				}
 			}
 		}
 	}()

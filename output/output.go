@@ -73,6 +73,47 @@ func Slugify(rawURL string) string {
 	return sanitize(u.Hostname() + u.Path)
 }
 
+// SweepStaleTempFiles removes leftover `.fss-tmp-*` files in dir whose
+// last-modified time is older than maxAge. These are orphans from a
+// previous `atomicWriteFile` whose process died (SIGKILL, OOM, power
+// loss) between `os.CreateTemp` and the deferred `os.Remove`. The age
+// guard prevents racing with a concurrent live writer — a `--db` SQLite
+// scrape can sit holding an open temp for a long time, so we only
+// remove files clearly stale enough that no in-flight write could own
+// them.
+//
+// Returns the number of files removed. Errors stat'ing or removing a
+// single file are not propagated; this is a best-effort cleanup and a
+// failed remove just means a tiny disk leak, not a correctness issue.
+// Missing directories are not an error — Flat-store first run.
+func SweepStaleTempFiles(dir string, maxAge time.Duration) int {
+	entries, err := os.ReadDir(dir)
+	if err != nil {
+		return 0
+	}
+	cutoff := time.Now().Add(-maxAge)
+	removed := 0
+	for _, e := range entries {
+		if e.IsDir() {
+			continue
+		}
+		name := e.Name()
+		if !strings.HasPrefix(name, ".fss-tmp-") {
+			continue
+		}
+		info, err := e.Info()
+		if err != nil {
+			continue
+		}
+		if info.ModTime().After(cutoff) {
+			continue
+		}
+		_ = os.Remove(filepath.Join(dir, name))
+		removed++
+	}
+	return removed
+}
+
 func atomicWriteFile(path string, writeFn func(io.Writer) error) error {
 	dir := filepath.Dir(path)
 	tmp, err := os.CreateTemp(dir, ".fss-tmp-*")

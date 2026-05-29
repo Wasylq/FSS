@@ -138,10 +138,12 @@ func (s *Scraper) Run(ctx context.Context, studioURL string, opts scraper.ListOp
 				return
 			}
 
-			select {
-			case <-time.After(opts.Delay):
-			case <-ctx.Done():
-				return
+			if opts.Delay > 0 {
+				select {
+				case <-time.After(opts.Delay):
+				case <-ctx.Done():
+					return
+				}
 			}
 		}
 	}()

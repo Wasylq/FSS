@@ -113,6 +113,16 @@ func runScrape(cmd *cobra.Command, args []string) error {
 		st = store.NewFlat(outDir, formats)
 	}
 
+	// Sweep stale `.fss-tmp-*` orphans left by a previous process that
+	// was SIGKILLed between os.CreateTemp and the deferred os.Remove
+	// inside atomicWriteFile. The 10-minute floor guarantees we never
+	// race a concurrent live writer.
+	if outDir != "" {
+		if n := output.SweepStaleTempFiles(outDir, 10*time.Minute); n > 0 {
+			scraper.Debugf(1, "swept %d stale .fss-tmp-* file(s) from %s", n, outDir)
+		}
+	}
+
 	// --- graceful shutdown on Ctrl+C ---
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()

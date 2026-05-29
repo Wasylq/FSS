@@ -222,10 +222,12 @@ func (s *Scraper) scrapeListingPages(ctx context.Context, opts scraper.ListOpts,
 		go func() {
 			defer wg.Done()
 			for item := range work {
-				select {
-				case <-time.After(delay):
-				case <-ctx.Done():
-					return
+				if delay > 0 {
+					select {
+					case <-time.After(delay):
+					case <-ctx.Done():
+						return
+					}
 				}
 				scene := s.fetchAndBuildScene(ctx, item.node, now)
 				select {
@@ -241,7 +243,7 @@ func (s *Scraper) scrapeListingPages(ctx context.Context, opts scraper.ListOpts,
 		if ctx.Err() != nil {
 			break
 		}
-		if page > 1 {
+		if page > 1 && delay > 0 {
 			cancelled := false
 			select {
 			case <-time.After(delay):
