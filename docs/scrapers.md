@@ -173,6 +173,18 @@
 | [KM Produce](https://www.km-produce.com) | `km-produce.com`, `km-produce.com/works-vr`, `km-produce.com/works-sell`, `km-produce.com/works/tag/{slug}`, `km-produce.com/works/category/{name}`, `km-produce.com/{actress_slug}` | WordPress | Yes (JPY) | Main page scrapes both VR + sell catalogs (~16k titles), paginated listing + detail page worker pool, actress profile pages (single-page), tag/category/label filtering, price tracking |
 | [Madonna](https://madonna-av.com) | `madonna-av.com/works/list/series/{id}`, `madonna-av.com/works/list/release`, `madonna-av.com/works/list/date/{date}`, `madonna-av.com/works/list/genre/{id}`, `madonna-av.com/works/list/label/{id}`, `madonna-av.com/actress/detail/{id}` | Up-Timely CMS | No | Thin wrapper around `uptimelyutil` |
 | [ManyVids](https://www.manyvids.com) | `manyvids.com/Profile/{id}/{slug}/Store/Videos` | ManyVids | Yes | JSON API, detail-page worker pool |
+| [Bareback Cum Pigs](https://www.barebackcumpigs.com) | `barebackcumpigs.com` | My Gay Cash NATS CMS | No | Mars Media, table-driven `marsmedia` package, NATS API (page → servers → sets), 12 sites |
+| [Bareback That Hole](https://www.barebackthathole.com) | `barebackthathole.com` | My Gay Cash NATS CMS | No | Thin wrapper in `marsmedia` |
+| [Bear Films](https://www.bearfilms.com) | `bearfilms.com` | My Gay Cash NATS CMS | No | Thin wrapper in `marsmedia` |
+| [Breed Me Raw](https://www.breedmeraw.com) | `breedmeraw.com` | My Gay Cash NATS CMS | No | Thin wrapper in `marsmedia` |
+| [Bring Me A Boy](https://www.bringmeaboy.com) | `bringmeaboy.com` | My Gay Cash NATS CMS | No | Thin wrapper in `marsmedia` |
+| [Bulldog Pit](https://www.bulldogpit.com) | `bulldogpit.com` | My Gay Cash NATS CMS | No | Thin wrapper in `marsmedia` |
+| [Daddy On Twink](https://www.daddyontwink.com) | `daddyontwink.com` | My Gay Cash NATS CMS | No | Thin wrapper in `marsmedia` |
+| [Hairy And Raw](https://www.hairyandraw.com) | `hairyandraw.com` | My Gay Cash NATS CMS | No | Thin wrapper in `marsmedia` |
+| [Hard Brit Lads](https://www.hardbritlads.com) | `hardbritlads.com` | My Gay Cash NATS CMS | No | Thin wrapper in `marsmedia` |
+| [Southern Strokes](https://www.southernstrokes.com) | `southernstrokes.com` | My Gay Cash NATS CMS | No | Thin wrapper in `marsmedia` |
+| [Touch That Boy](https://www.touchthatboy.com) | `touchthatboy.com` | My Gay Cash NATS CMS | No | Thin wrapper in `marsmedia` |
+| [Twinks In Shorts](https://www.twinksinshorts.com) | `twinksinshorts.com` | My Gay Cash NATS CMS | No | Thin wrapper in `marsmedia` |
 | [Mature Fetish](https://maturefetish.com) | `maturefetish.com/en/updates`, `maturefetish.com/en/model/{id}/{page}/{slug}`, `maturefetish.com/en/niche/{id}/{page}/{slug}` | SvelteKit | No | HTML scraping, listing + detail worker pool for all modes. Same backend/CDN as Mature.nl |
 | [Mature.nl](https://www.mature.nl) | `mature.nl/en/updates`, `mature.nl/en/model/{id}`, `mature.nl/en/niche/{id}/{page}/{slug}` | Custom | No | HTML scraping, paginated listing + detail page worker pool for model URLs |
 | [MetArt](https://www.metart.com) | `metart.com` | MetArt Network | No | JSON API, table-driven `metart` package using `metartutil`, 13 sites |

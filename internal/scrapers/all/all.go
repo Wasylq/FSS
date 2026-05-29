@@ -75,6 +75,7 @@ import (
 	_ "github.com/Wasylq/FSS/internal/scrapers/loyalfans"
 	_ "github.com/Wasylq/FSS/internal/scrapers/lucasentertainment"
 	_ "github.com/Wasylq/FSS/internal/scrapers/manyvids"
+	_ "github.com/Wasylq/FSS/internal/scrapers/marsmedia"
 	_ "github.com/Wasylq/FSS/internal/scrapers/maturefetish"
 	_ "github.com/Wasylq/FSS/internal/scrapers/maturenl"
 	_ "github.com/Wasylq/FSS/internal/scrapers/metart"

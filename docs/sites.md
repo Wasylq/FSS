@@ -1,6 +1,6 @@
 # Covered Sites — All Domains
 
-1048 scrapers covering 1059 distinct domains. Auto-generated from the scraper registry by `TestSitesMdInSync` — do not hand-edit; instead update the scraper's `Patterns()` and re-run `go test ./internal/scrapers/all/...`. The `stashbox` scraper is omitted here because its covered hosts are config-driven; see [`scrapers.md`](scrapers.md).
+1060 scrapers covering 1071 distinct domains. Auto-generated from the scraper registry by `TestSitesMdInSync` — do not hand-edit; instead update the scraper's `Patterns()` and re-run `go test ./internal/scrapers/all/...`. The `stashbox` scraper is omitted here because its covered hosts are config-driven; see [`scrapers.md`](scrapers.md).
 
 Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scraper ID(s)** column lists every scraper that claims URLs on that domain — most domains have one entry, but table-driven networks (`adultprime`, `tmw`, `nextdoorstudios`, etc.) host many sub-studios on a single root domain. See [`scrapers.md`](scrapers.md) for what each ID covers.
 
@@ -1045,7 +1045,19 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | wow-orgasms.com | `tmw-wow-orgasms` |
 | wowgirls.com | `wowgirls` |
 | wtfpass.com | `wtfpass` |
+| www.barebackcumpigs.com | `barebackcumpigs` |
+| www.barebackthathole.com | `barebackthathole` |
+| www.bearfilms.com | `bearfilms` |
+| www.breedmeraw.com | `breedmeraw` |
+| www.bringmeaboy.com | `bringmeaboy` |
+| www.bulldogpit.com | `bulldogpit` |
+| www.daddyontwink.com | `daddyontwink` |
+| www.hairyandraw.com | `hairyandraw` |
+| www.hardbritlads.com | `hardbritlads` |
 | www.realspankingsinstitute.com | `realspankingsinstitute` |
+| www.southernstrokes.com | `southernstrokes` |
+| www.touchthatboy.com | `touchthatboy` |
+| www.twinksinshorts.com | `twinksinshorts` |
 | x-angels.com | `tmw-x-angels` |
 | x-sensual.com | `xsensual` |
 | xes.pl | `xespl` |
