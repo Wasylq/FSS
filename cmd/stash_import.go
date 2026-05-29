@@ -268,7 +268,7 @@ func runStashImport(cmd *cobra.Command, _ []string) error {
 
 		// Merge URLs with existing.
 		existingURLs := ss.URLs
-		mergedURLs := match.MergeURLs(existingURLs, merged.URLs)
+		mergedURLs := match.MergeStrings(existingURLs, merged.URLs)
 
 		// Check if there's anything to change.
 		changes := buildChanges(ss, merged, mergedURLs, allTags, setCover)

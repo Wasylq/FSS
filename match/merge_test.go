@@ -192,20 +192,3 @@ func TestResolutionTags(t *testing.T) {
 		}
 	}
 }
-
-func TestMergeURLs(t *testing.T) {
-	existing := []string{"https://a.com", "https://b.com"}
-	new := []string{"https://b.com", "https://c.com"}
-
-	result := MergeURLs(existing, new)
-	if len(result) != 3 {
-		t.Errorf("len = %d, want 3", len(result))
-	}
-}
-
-func TestMergeTagIDs(t *testing.T) {
-	result := MergeTagIDs([]string{"1", "2"}, []string{"2", "3"})
-	if len(result) != 3 {
-		t.Errorf("len = %d, want 3", len(result))
-	}
-}

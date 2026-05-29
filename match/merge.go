@@ -149,9 +149,3 @@ func MergeStrings(existing, new []string) []string {
 	}
 	return result
 }
-
-// MergeURLs returns the union of existing and new URLs.
-func MergeURLs(existing, new []string) []string { return MergeStrings(existing, new) }
-
-// MergeTagIDs returns the union of existing and new tag IDs.
-func MergeTagIDs(existing, new []string) []string { return MergeStrings(existing, new) }
