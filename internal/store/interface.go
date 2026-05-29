@@ -1,6 +1,29 @@
 package store
 
-import "github.com/Wasylq/FSS/models"
+import (
+	"fmt"
+
+	"github.com/Wasylq/FSS/models"
+)
+
+// validateScenes rejects scenes that would be unaddressable downstream:
+// the composite key `(id, site_id)` is used as a primary key in SQLite
+// and as a map key in both stores for relation lookups, so an empty
+// component would either fail at insert time, collide with other
+// empty-keyed scenes, or silently lose its performers/tags/price
+// history on Load. Catch it once at the store boundary so neither
+// implementation has to.
+func validateScenes(scenes []models.Scene) error {
+	for i, sc := range scenes {
+		if sc.ID == "" {
+			return fmt.Errorf("scene[%d]: ID is required (siteID=%q, title=%q)", i, sc.SiteID, sc.Title)
+		}
+		if sc.SiteID == "" {
+			return fmt.Errorf("scene[%d]: SiteID is required (id=%q, title=%q)", i, sc.ID, sc.Title)
+		}
+	}
+	return nil
+}
 
 // Store is the persistence layer. The default implementation uses flat JSON/CSV files.
 // An optional SQLite-backed implementation is selected with the --db flag.

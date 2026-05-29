@@ -259,7 +259,8 @@ func (s *SQLite) Load(studioURL string) ([]models.Scene, error) {
 		       duration, resolution, width, height, format,
 		       views, likes, comments,
 		       lowest_price, lowest_price_date, scraped_at, deleted_at
-		FROM scenes WHERE studio_url = ?`, studioURL)
+		FROM scenes WHERE studio_url = ?
+		ORDER BY scraped_at DESC, id`, studioURL)
 	if err != nil {
 		return nil, err
 	}
@@ -305,6 +306,10 @@ func (s *SQLite) Load(studioURL string) ([]models.Scene, error) {
 // expects everything not present to disappear. Incremental and
 // `--refresh` modes pass the merged set so nothing is dropped.
 func (s *SQLite) Save(studioURL string, scenes []models.Scene) error {
+	if err := validateScenes(scenes); err != nil {
+		return err
+	}
+
 	tx, err := s.db.Begin()
 	if err != nil {
 		return err

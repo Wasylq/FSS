@@ -269,6 +269,31 @@ func TestFlatMarkDeletedNonexistentID(t *testing.T) {
 	}
 }
 
+// TestFlatSaveRejectsEmptyKeyFields mirrors the SQLite store guard —
+// catching the missing required fields at the store boundary instead
+// of writing a JSON file whose entries have empty (ID, SiteID) pairs
+// that would never round-trip correctly.
+func TestFlatSaveRejectsEmptyKeyFields(t *testing.T) {
+	f := newTestFlat(t)
+	now := time.Now().UTC()
+
+	emptyID := models.Scene{ID: "", SiteID: "example", StudioURL: flatTestURL, Title: "x", ScrapedAt: now}
+	if err := f.Save(flatTestURL, []models.Scene{emptyID}); err == nil {
+		t.Errorf("Save with empty ID should error")
+	}
+
+	emptySite := models.Scene{ID: "1", SiteID: "", StudioURL: flatTestURL, Title: "y", ScrapedAt: now}
+	if err := f.Save(flatTestURL, []models.Scene{emptySite}); err == nil {
+		t.Errorf("Save with empty SiteID should error")
+	}
+
+	// No JSON file should have been created.
+	loaded, _ := f.Load(flatTestURL)
+	if len(loaded) != 0 {
+		t.Errorf("rejected Save still wrote: got %d scenes", len(loaded))
+	}
+}
+
 // TestFlatSaveAutoRevives locks in the documented Save contract: a
 // re-emitted scene with DeletedAt == nil clears any prior soft-delete.
 // Matches SQLite — see the cross-store contract documented on

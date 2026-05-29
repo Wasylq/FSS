@@ -67,6 +67,9 @@ func (f *Flat) loadStudioFile(studioURL string) (*models.StudioFile, error) {
 }
 
 func (f *Flat) Save(studioURL string, scenes []models.Scene) error {
+	if err := validateScenes(scenes); err != nil {
+		return err
+	}
 	if err := os.MkdirAll(f.dir, 0o755); err != nil {
 		return fmt.Errorf("creating output dir: %w", err)
 	}

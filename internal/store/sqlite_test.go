@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 
@@ -527,6 +528,73 @@ func TestSQLiteRelationLookupNoColonCollision(t *testing.T) {
 	}
 	if len(beta.PriceHistory) != 1 || beta.PriceHistory[0].Regular != 2.00 {
 		t.Errorf("beta PriceHistory = %+v, want [{Regular:2.00}]", beta.PriceHistory)
+	}
+}
+
+// TestSQLiteLoadOrderDeterministic locks in the documented Load order
+// (scraped_at DESC, then id ASC for tie-break). Two scenes with the
+// same scraped_at must come back in stable id order; newer scenes come
+// before older ones. Without ORDER BY, SQLite is free to return rows
+// in any order on subsequent calls — making diffs of JSON/CSV exports
+// noisy and tests flaky.
+func TestSQLiteLoadOrderDeterministic(t *testing.T) {
+	s := newTestDB(t)
+	t0 := time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC)
+	t1 := time.Date(2026, 2, 1, 0, 0, 0, 0, time.UTC)
+	t2 := time.Date(2026, 3, 1, 0, 0, 0, 0, time.UTC)
+
+	scenes := []models.Scene{
+		{ID: "b", SiteID: "manyvids", StudioURL: testStudioURL, Title: "B", ScrapedAt: t0},
+		{ID: "a", SiteID: "manyvids", StudioURL: testStudioURL, Title: "A", ScrapedAt: t2},
+		{ID: "c", SiteID: "manyvids", StudioURL: testStudioURL, Title: "C", ScrapedAt: t1},
+		// Tie on scraped_at — id breaks the tie ascending.
+		{ID: "y", SiteID: "manyvids", StudioURL: testStudioURL, Title: "Y", ScrapedAt: t1},
+		{ID: "x", SiteID: "manyvids", StudioURL: testStudioURL, Title: "X", ScrapedAt: t1},
+	}
+	if err := s.Save(testStudioURL, scenes); err != nil {
+		t.Fatal(err)
+	}
+	loaded, err := s.Load(testStudioURL)
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := []string{"a", "c", "x", "y", "b"} // t2; then t1 ASC by id; then t0
+	got := make([]string, len(loaded))
+	for i, sc := range loaded {
+		got[i] = sc.ID
+	}
+	if strings.Join(got, ",") != strings.Join(want, ",") {
+		t.Errorf("Load order = %v, want %v", got, want)
+	}
+}
+
+// TestSQLiteSaveRejectsEmptyKeyFields locks in the store-boundary
+// guard added with the validateScenes helper. A scene with an empty
+// ID or SiteID would either fail at insert time, collide with other
+// empty-keyed scenes, or silently lose its relations on Load — catch
+// it loudly at the boundary instead.
+func TestSQLiteSaveRejectsEmptyKeyFields(t *testing.T) {
+	s := newTestDB(t)
+	now := time.Now().UTC()
+
+	emptyID := models.Scene{ID: "", SiteID: "manyvids", StudioURL: testStudioURL, Title: "x", ScrapedAt: now}
+	if err := s.Save(testStudioURL, []models.Scene{emptyID}); err == nil {
+		t.Errorf("Save with empty ID should error")
+	} else if !strings.Contains(err.Error(), "ID is required") {
+		t.Errorf("error should mention ID: %v", err)
+	}
+
+	emptySite := models.Scene{ID: "1", SiteID: "", StudioURL: testStudioURL, Title: "y", ScrapedAt: now}
+	if err := s.Save(testStudioURL, []models.Scene{emptySite}); err == nil {
+		t.Errorf("Save with empty SiteID should error")
+	} else if !strings.Contains(err.Error(), "SiteID is required") {
+		t.Errorf("error should mention SiteID: %v", err)
+	}
+
+	// Nothing should have been written.
+	loaded, _ := s.Load(testStudioURL)
+	if len(loaded) != 0 {
+		t.Errorf("rejected Save still wrote: got %d scenes", len(loaded))
 	}
 }
 
