@@ -1,6 +1,6 @@
 # Covered Sites — All Domains
 
-1138 scrapers covering 1152 distinct domains. Auto-generated from the scraper registry by `TestSitesMdInSync` — do not hand-edit; instead update the scraper's `Patterns()` and re-run `go test ./internal/scrapers/all/...`. The `stashbox` scraper is omitted here because its covered hosts are config-driven; see [`scrapers.md`](scrapers.md).
+1143 scrapers covering 1158 distinct domains. Auto-generated from the scraper registry by `TestSitesMdInSync` — do not hand-edit; instead update the scraper's `Patterns()` and re-run `go test ./internal/scrapers/all/...`. The `stashbox` scraper is omitted here because its covered hosts are config-driven; see [`scrapers.md`](scrapers.md).
 
 Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scraper ID(s)** column lists every scraper that claims URLs on that domain — most domains have one entry, but table-driven networks (`adultprime`, `tmw`, `nextdoorstudios`, etc.) host many sub-studios on a single root domain. See [`scrapers.md`](scrapers.md) for what each ID covers.
 
@@ -386,6 +386,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | flatandfuckedmilfs.com | `flatandfuckedmilfs` |
 | flexidolls.com | `flexidolls` |
 | flourishuniv.com | `flourishuniv` |
+| footfetishaffiliates.com | `footfetishaffiliates` |
 | forbiddenhookups.puba.com | `pubaforbiddenhookups` |
 | fostertapes.com | `fostertapes` |
 | foxxedup.com | `foxxedup` |
@@ -1129,8 +1130,13 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | www.bulldogpit.com | `bulldogpit` |
 | www.coozhound.com | `coozhound` |
 | www.daddyontwink.com | `daddyontwink` |
+| www.footfetishaffiliates.com | `footfetishaffiliates` |
+| www.footfetishcardates.com | `footfetishcardates` |
+| www.goddessbrianna.net | `goddessbrianna` |
+| www.goddessfootdomination.com | `goddessfootdomination` |
 | www.hairyandraw.com | `hairyandraw` |
 | www.hardbritlads.com | `hardbritlads` |
+| www.jerktomyfeet.com | `jerktomyfeet` |
 | www.msnympho.com | `msnympho` |
 | www.priyaraiofficial.com | `pubapriyarai` |
 | www.puba.com | `puba`, `puba1girl1camera`, `pubaabigailmac` (+70 more) |

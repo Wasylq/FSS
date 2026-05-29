@@ -42,6 +42,7 @@ import (
 	_ "github.com/Wasylq/FSS/internal/scrapers/familytherapy"
 	_ "github.com/Wasylq/FSS/internal/scrapers/fancentro"
 	_ "github.com/Wasylq/FSS/internal/scrapers/faphouse"
+	_ "github.com/Wasylq/FSS/internal/scrapers/feetondemand"
 	_ "github.com/Wasylq/FSS/internal/scrapers/fetishnetwork"
 	_ "github.com/Wasylq/FSS/internal/scrapers/flourish"
 	_ "github.com/Wasylq/FSS/internal/scrapers/flourishuniv"
