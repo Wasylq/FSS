@@ -68,6 +68,7 @@ import (
 	_ "github.com/Wasylq/FSS/internal/scrapers/karups"
 	_ "github.com/Wasylq/FSS/internal/scrapers/kink"
 	_ "github.com/Wasylq/FSS/internal/scrapers/kmproduce"
+	_ "github.com/Wasylq/FSS/internal/scrapers/kocompany"
 	_ "github.com/Wasylq/FSS/internal/scrapers/ladyfyre"
 	_ "github.com/Wasylq/FSS/internal/scrapers/ladysonia"
 	_ "github.com/Wasylq/FSS/internal/scrapers/legsemporium"
