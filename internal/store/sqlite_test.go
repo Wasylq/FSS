@@ -264,6 +264,114 @@ func TestSQLiteSaveIdempotent(t *testing.T) {
 	}
 }
 
+// TestSQLiteSaveDropsMissing verifies the new --full contract: a Save
+// with a slice that omits a previously-stored scene must hard-delete
+// that scene (and its relations + price_history) from the store. This
+// is what makes SQLite match Flat's behaviour on `--full` re-scrapes.
+func TestSQLiteSaveDropsMissing(t *testing.T) {
+	s := newTestDB(t)
+	now := time.Now().UTC().Truncate(time.Second)
+
+	original := []models.Scene{
+		{
+			ID: "1", SiteID: "manyvids", StudioURL: testStudioURL,
+			Title: "Keep me", ScrapedAt: now,
+			Performers: []string{"Alice"},
+			Tags:       []string{"solo"},
+			Categories: []string{"foo"},
+		},
+		{
+			ID: "2", SiteID: "manyvids", StudioURL: testStudioURL,
+			Title: "Drop me", ScrapedAt: now,
+			Performers: []string{"Bob"},
+			Tags:       []string{"bdsm"},
+		},
+		{
+			ID: "3", SiteID: "manyvids", StudioURL: testStudioURL,
+			Title: "Drop me too", ScrapedAt: now,
+		},
+	}
+	original[1].AddPrice(models.PriceSnapshot{Date: now, Regular: 9.99})
+	original[2].AddPrice(models.PriceSnapshot{Date: now, Regular: 4.99})
+
+	if err := s.Save(testStudioURL, original); err != nil {
+		t.Fatal(err)
+	}
+
+	// Second save omits ID 2 and 3. The contract requires both to vanish.
+	if err := s.Save(testStudioURL, []models.Scene{original[0]}); err != nil {
+		t.Fatal(err)
+	}
+
+	loaded, err := s.Load(testStudioURL)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(loaded) != 1 || loaded[0].ID != "1" {
+		t.Fatalf("after Save omitting 2&3, got %d scenes: %+v", len(loaded), loaded)
+	}
+
+	// price_history rows for dropped scenes must be gone too — no FK
+	// CASCADE on that table so the Save must delete them explicitly.
+	row := s.db.QueryRow(
+		`SELECT COUNT(*) FROM price_history WHERE site_id = 'manyvids' AND scene_id IN ('2','3')`,
+	)
+	var n int
+	if err := row.Scan(&n); err != nil {
+		t.Fatal(err)
+	}
+	if n != 0 {
+		t.Errorf("price_history for dropped scenes survived: %d rows remain", n)
+	}
+
+	// Scene 1's relations must still be present (Save shouldn't have
+	// touched them as collateral).
+	loaded1 := loaded[0]
+	if len(loaded1.Performers) != 1 || loaded1.Performers[0] != "Alice" {
+		t.Errorf("kept scene lost performers: %v", loaded1.Performers)
+	}
+	if len(loaded1.Tags) != 1 || loaded1.Tags[0] != "solo" {
+		t.Errorf("kept scene lost tags: %v", loaded1.Tags)
+	}
+}
+
+// TestSQLiteSaveOnlyAffectsOwnStudio guards against a delete-missing
+// implementation that nukes scenes belonging to a different studio.
+func TestSQLiteSaveOnlyAffectsOwnStudio(t *testing.T) {
+	s := newTestDB(t)
+	now := time.Now().UTC().Truncate(time.Second)
+	const otherURL = "https://www.manyvids.com/Profile/999/other/Store/Videos"
+
+	// Two unrelated studios each with one scene.
+	if err := s.Save(testStudioURL, []models.Scene{
+		{ID: "1", SiteID: "manyvids", StudioURL: testStudioURL, Title: "A", ScrapedAt: now},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := s.Save(otherURL, []models.Scene{
+		{ID: "1", SiteID: "manyvids", StudioURL: otherURL, Title: "B", ScrapedAt: now},
+	}); err != nil {
+		t.Fatal(err)
+	}
+
+	// Empty save for testStudioURL must NOT touch otherURL's scene even
+	// though both share the same (id, site_id).
+	if err := s.Save(testStudioURL, nil); err != nil {
+		t.Fatal(err)
+	}
+
+	if got, _ := s.Load(testStudioURL); len(got) != 0 {
+		t.Errorf("testStudioURL should be empty after Save(nil), got %d scenes", len(got))
+	}
+	got, err := s.Load(otherURL)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(got) != 1 || got[0].Title != "B" {
+		t.Errorf("otherURL scene was clobbered: got %d scenes %+v", len(got), got)
+	}
+}
+
 func TestSQLitePriceHistoryAccumulates(t *testing.T) {
 	s := newTestDB(t)
 	now := time.Now().UTC().Truncate(time.Second)

@@ -8,7 +8,14 @@ type Store interface {
 	// Load returns all scenes previously scraped for this studio URL.
 	Load(studioURL string) ([]models.Scene, error)
 
-	// Save persists the full scene list for a studio URL, replacing any prior data.
+	// Save persists the full scene list for a studio URL, replacing any
+	// prior data: scenes whose (id, site_id) is absent from `scenes` are
+	// hard-deleted from the store (including their join rows and
+	// price_history). The cmd layer's `--full` path depends on this — it
+	// passes only freshly-scraped scenes and expects everything else to
+	// disappear. Incremental and `--refresh` modes pass the merged
+	// existing+fresh set so nothing is dropped. Use MarkDeleted for
+	// soft-delete semantics that preserve historical data.
 	Save(studioURL string, scenes []models.Scene) error
 
 	// MarkDeleted soft-deletes scenes by ID — sets DeletedAt, does not remove records.

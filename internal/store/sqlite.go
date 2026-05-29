@@ -292,18 +292,77 @@ func (s *SQLite) Load(studioURL string) ([]models.Scene, error) {
 	return scenes, nil
 }
 
+// Save replaces the stored scene set for studioURL with the passed
+// slice. Scenes whose `(id, site_id)` is absent from `scenes` are hard-
+// deleted from the `scenes` table (the `scene_performers`,
+// `scene_tags`, `scene_categories` join rows cascade away via the
+// schema's `ON DELETE CASCADE`; `price_history` rows have no FK
+// CASCADE so they are deleted explicitly inside the same transaction).
+//
+// This matches the Flat store's behaviour, which rewrites the whole
+// `<studio>.json` file. The cmd layer's `--full` path relies on this
+// contract: it builds `result` from freshly-scraped scenes only and
+// expects everything not present to disappear. Incremental and
+// `--refresh` modes pass the merged set so nothing is dropped.
 func (s *SQLite) Save(studioURL string, scenes []models.Scene) error {
 	tx, err := s.db.Begin()
 	if err != nil {
 		return err
 	}
 	defer func() { _ = tx.Rollback() }()
+
+	keep := make(map[sceneKey]struct{}, len(scenes))
+	for _, sc := range scenes {
+		keep[sceneKey{id: sc.ID, siteID: sc.SiteID}] = struct{}{}
+	}
+
+	rows, err := tx.Query(`SELECT id, site_id FROM scenes WHERE studio_url = ?`, studioURL)
+	if err != nil {
+		return fmt.Errorf("selecting existing scene keys: %w", err)
+	}
+	var toDelete []sceneKey
+	for rows.Next() {
+		var k sceneKey
+		if err := rows.Scan(&k.id, &k.siteID); err != nil {
+			_ = rows.Close()
+			return fmt.Errorf("scanning scene key: %w", err)
+		}
+		if _, kept := keep[k]; !kept {
+			toDelete = append(toDelete, k)
+		}
+	}
+	if err := rows.Close(); err != nil {
+		return fmt.Errorf("closing scene-keys cursor: %w", err)
+	}
+
+	for _, k := range toDelete {
+		// Delete price_history first — no FK CASCADE on that table.
+		if _, err := tx.Exec(
+			`DELETE FROM price_history WHERE scene_id = ? AND site_id = ?`,
+			k.id, k.siteID,
+		); err != nil {
+			return fmt.Errorf("deleting price_history for %s/%s: %w", k.siteID, k.id, err)
+		}
+		if _, err := tx.Exec(
+			`DELETE FROM scenes WHERE id = ? AND site_id = ? AND studio_url = ?`,
+			k.id, k.siteID, studioURL,
+		); err != nil {
+			return fmt.Errorf("deleting scene %s/%s: %w", k.siteID, k.id, err)
+		}
+	}
+
 	for _, sc := range scenes {
 		if err := upsertScene(tx, sc); err != nil {
 			return err
 		}
 	}
 	return tx.Commit()
+}
+
+// sceneKey is the composite primary key on the `scenes` table.
+type sceneKey struct {
+	id     string
+	siteID string
 }
 
 func (s *SQLite) MarkDeleted(studioURL, siteID string, ids []string) error {
