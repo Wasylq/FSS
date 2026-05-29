@@ -120,26 +120,23 @@ func (s *Scraper) run(ctx context.Context, opts scraper.ListOpts, out chan<- scr
 
 // The server returns 302 with Location: /index.php on every request,
 // but the response body still contains the full page HTML. The client
-// is configured not to follow redirects so we can read the body.
+// in New() has `CheckRedirect = http.ErrUseLastResponse` so net/http
+// returns the 302 response as-is instead of following it, and httpx.Do
+// passes any status < 400 through without classifying — so the bypass
+// that used to live here is no longer needed.
 func (s *Scraper) fetchPage(ctx context.Context, page int) ([]byte, error) {
 	u := fmt.Sprintf("%s/tour.php?p=%d", siteBase, page)
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, u, nil)
-	if err != nil {
-		return nil, err
-	}
-	req.Header.Set("User-Agent", httpx.UserAgentFirefox)
-	req.Header.Set("Cookie", "free_adult=dark_mode")
-
-	resp, err := s.client.Do(req)
+	resp, err := httpx.Do(ctx, s.client, httpx.Request{
+		URL: u,
+		Headers: map[string]string{
+			"User-Agent": httpx.UserAgentFirefox,
+			"Cookie":     "free_adult=dark_mode",
+		},
+	})
 	if err != nil {
 		return nil, err
 	}
 	defer func() { _ = resp.Body.Close() }()
-
-	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusFound {
-		return nil, &httpx.StatusError{StatusCode: resp.StatusCode}
-	}
-
 	return httpx.ReadBody(resp.Body)
 }
 

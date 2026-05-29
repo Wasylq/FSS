@@ -3,7 +3,6 @@ package cmd
 import (
 	"context"
 	"fmt"
-	"net/http"
 	"strings"
 	"time"
 
@@ -48,25 +47,26 @@ func runVersion(_ *cobra.Command, _ []string) error {
 }
 
 func fetchLatestRelease() (string, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
+	// Align ctx + client timeouts at 5s — the previous 1s ctx vs 5s
+	// client mismatch meant ctx always tripped first, making the
+	// transport-level deadline dead code.
+	const timeout = 5 * time.Second
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, "https://api.github.com/repos/Wasylq/FSS/releases/latest", nil)
-	if err != nil {
-		return "", err
-	}
-	req.Header.Set("Accept", "application/vnd.github+json")
-
-	client := httpx.NewClient(5 * time.Second)
-	resp, err := client.Do(req)
+	client := httpx.NewClient(timeout)
+	// Single attempt — `version` is a best-effort check and shouldn't
+	// stall the user with 0s/2s/4s retry backoff if GitHub is having
+	// a bad day.
+	resp, err := httpx.Do(ctx, client, httpx.Request{
+		URL:         "https://api.github.com/repos/Wasylq/FSS/releases/latest",
+		Headers:     map[string]string{"Accept": "application/vnd.github+json"},
+		MaxAttempts: 1,
+	})
 	if err != nil {
 		return "", err
 	}
 	defer func() { _ = resp.Body.Close() }()
-
-	if resp.StatusCode != http.StatusOK {
-		return "", fmt.Errorf("GitHub API returned %d", resp.StatusCode)
-	}
 
 	var release struct {
 		TagName string `json:"tag_name"`

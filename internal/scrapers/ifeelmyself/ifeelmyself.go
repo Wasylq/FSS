@@ -232,16 +232,14 @@ func (s *Scraper) runSearch(ctx context.Context, studioURL string, keyword strin
 
 func (s *Scraper) postSearch(ctx context.Context, keyword string) ([]byte, error) {
 	form := url.Values{"keyword": {keyword}, "view_by": {"thumbnails"}}
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost,
-		siteBase+"/public/main.php?page=quick_search",
-		strings.NewReader(form.Encode()))
-	if err != nil {
-		return nil, err
-	}
-	req.Header.Set("User-Agent", httpx.UserAgentFirefox)
-	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-
-	resp, err := s.client.Do(req)
+	resp, err := httpx.Do(ctx, s.client, httpx.Request{
+		URL:  siteBase + "/public/main.php?page=quick_search",
+		Body: []byte(form.Encode()),
+		Headers: map[string]string{
+			"User-Agent":   httpx.UserAgentFirefox,
+			"Content-Type": "application/x-www-form-urlencoded",
+		},
+	})
 	if err != nil {
 		return nil, err
 	}

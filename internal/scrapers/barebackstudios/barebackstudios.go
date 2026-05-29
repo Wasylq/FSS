@@ -264,20 +264,21 @@ func toScene(base string, e entry, now time.Time) models.Scene {
 }
 
 func (s *Scraper) verifyAge(ctx context.Context) error {
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, s.base+"/api/v1/site/verify_age/", nil)
-	if err != nil {
-		return err
-	}
-	req.Header.Set("User-Agent", httpx.UserAgentFirefox)
-	req.Header.Set("Content-Type", "application/json")
-	resp, err := s.client.Do(req)
+	// httpx.Do treats Body == nil as a GET; force POST explicitly.
+	// Non-2xx already returns *httpx.StatusError so callers can
+	// `errors.As` on it.
+	resp, err := httpx.Do(ctx, s.client, httpx.Request{
+		Method: http.MethodPost,
+		URL:    s.base + "/api/v1/site/verify_age/",
+		Headers: map[string]string{
+			"User-Agent":   httpx.UserAgentFirefox,
+			"Content-Type": "application/json",
+		},
+	})
 	if err != nil {
 		return err
 	}
 	_ = resp.Body.Close()
-	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("age verify returned %d", resp.StatusCode)
-	}
 	return nil
 }
 
