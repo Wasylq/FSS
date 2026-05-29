@@ -456,6 +456,80 @@ func TestSQLiteMarkDeleted(t *testing.T) {
 // incremental scrape relies on — when a scraper re-emits an ID after
 // a previous MarkDeleted, the store should reflect that the scene is
 // alive again.
+// TestSQLiteRelationLookupNoColonCollision guards against the previous
+// `siteID + ":" + sceneID` string-concat keying in loadRelation /
+// loadPriceHistory. Two scenes whose (siteID, ID) pairs produce the
+// same flattened string — e.g. ("a", "b:c") and ("a:b", "c") — used to
+// land on the same map slot, so the second scene's performers/tags/
+// price history would overwrite (or no-op against) the first.
+func TestSQLiteRelationLookupNoColonCollision(t *testing.T) {
+	s := newTestDB(t)
+	now := time.Now().UTC().Truncate(time.Second)
+
+	scenes := []models.Scene{
+		{
+			ID: "b:c", SiteID: "a", StudioURL: testStudioURL,
+			Title: "alpha", ScrapedAt: now,
+			Performers: []string{"Alpha"},
+			Tags:       []string{"x"},
+		},
+		{
+			ID: "c", SiteID: "a:b", StudioURL: testStudioURL,
+			Title: "beta", ScrapedAt: now,
+			Performers: []string{"Beta"},
+			Tags:       []string{"y"},
+		},
+	}
+	scenes[0].AddPrice(models.PriceSnapshot{Date: now, Regular: 1.00})
+	scenes[1].AddPrice(models.PriceSnapshot{Date: now, Regular: 2.00})
+
+	if err := s.Save(testStudioURL, scenes); err != nil {
+		t.Fatal(err)
+	}
+
+	loaded, err := s.Load(testStudioURL)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(loaded) != 2 {
+		t.Fatalf("got %d scenes, want 2", len(loaded))
+	}
+
+	// Build by composite key so we don't depend on Load's row order.
+	byKey := map[sceneKey]models.Scene{}
+	for _, sc := range loaded {
+		byKey[sceneKey{id: sc.ID, siteID: sc.SiteID}] = sc
+	}
+
+	alpha, ok := byKey[sceneKey{id: "b:c", siteID: "a"}]
+	if !ok {
+		t.Fatal("alpha key missing from loaded scenes")
+	}
+	if len(alpha.Performers) != 1 || alpha.Performers[0] != "Alpha" {
+		t.Errorf("alpha Performers = %v, want [Alpha]", alpha.Performers)
+	}
+	if len(alpha.Tags) != 1 || alpha.Tags[0] != "x" {
+		t.Errorf("alpha Tags = %v, want [x]", alpha.Tags)
+	}
+	if len(alpha.PriceHistory) != 1 || alpha.PriceHistory[0].Regular != 1.00 {
+		t.Errorf("alpha PriceHistory = %+v, want [{Regular:1.00}]", alpha.PriceHistory)
+	}
+
+	beta, ok := byKey[sceneKey{id: "c", siteID: "a:b"}]
+	if !ok {
+		t.Fatal("beta key missing from loaded scenes")
+	}
+	if len(beta.Performers) != 1 || beta.Performers[0] != "Beta" {
+		t.Errorf("beta Performers = %v, want [Beta]", beta.Performers)
+	}
+	if len(beta.Tags) != 1 || beta.Tags[0] != "y" {
+		t.Errorf("beta Tags = %v, want [y]", beta.Tags)
+	}
+	if len(beta.PriceHistory) != 1 || beta.PriceHistory[0].Regular != 2.00 {
+		t.Errorf("beta PriceHistory = %+v, want [{Regular:2.00}]", beta.PriceHistory)
+	}
+}
+
 func TestSQLiteSaveAutoRevives(t *testing.T) {
 	s := newTestDB(t)
 	now := time.Now().UTC().Truncate(time.Second)

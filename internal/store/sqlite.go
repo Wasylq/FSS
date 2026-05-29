@@ -759,9 +759,14 @@ func (s *SQLite) loadRelation(studioURL, junctionTable, entityTable, fkCol, orde
 	if len(scenes) == 0 {
 		return nil
 	}
-	idx := make(map[string]int, len(scenes))
+	// Index by the composite primary key `(id, site_id)`. Using a struct
+	// key instead of the previous `siteID+":"+id` string concatenation
+	// avoids collisions if a scraper ever stores IDs that contain a
+	// colon — `("a","b:c")` and `("a:b","c")` both used to map to the
+	// same string `"a:b:c"`.
+	idx := make(map[sceneKey]int, len(scenes))
 	for i, sc := range scenes {
-		idx[sc.SiteID+":"+sc.ID] = i
+		idx[sceneKey{id: sc.ID, siteID: sc.SiteID}] = i
 	}
 
 	q := `SELECT j.scene_id, j.site_id, e.name
@@ -784,7 +789,7 @@ func (s *SQLite) loadRelation(studioURL, junctionTable, entityTable, fkCol, orde
 		if err := rows.Scan(&sceneID, &siteID, &name); err != nil {
 			return err
 		}
-		i, ok := idx[siteID+":"+sceneID]
+		i, ok := idx[sceneKey{id: sceneID, siteID: siteID}]
 		if !ok {
 			continue
 		}
@@ -804,9 +809,9 @@ func (s *SQLite) loadPriceHistory(studioURL string, scenes []models.Scene) error
 	if len(scenes) == 0 {
 		return nil
 	}
-	idx := make(map[string]int, len(scenes))
+	idx := make(map[sceneKey]int, len(scenes))
 	for i, sc := range scenes {
-		idx[sc.SiteID+":"+sc.ID] = i
+		idx[sceneKey{id: sc.ID, siteID: sc.SiteID}] = i
 	}
 
 	rows, err := s.db.Query(`
@@ -836,7 +841,7 @@ func (s *SQLite) loadPriceHistory(studioURL string, scenes []models.Scene) error
 		}
 		p.IsFree = isFree != 0
 		p.IsOnSale = isOnSale != 0
-		if i, ok := idx[siteID+":"+sceneID]; ok {
+		if i, ok := idx[sceneKey{id: sceneID, siteID: siteID}]; ok {
 			scenes[i].PriceHistory = append(scenes[i].PriceHistory, p)
 		}
 	}
