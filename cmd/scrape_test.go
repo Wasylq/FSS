@@ -244,6 +244,45 @@ func TestCarryOverPriceHistory_freeSnap(t *testing.T) {
 	}
 }
 
+// TestCarryOverPriceHistory_multipleFreshSnapshots locks in the contract
+// that EVERY snapshot a scraper emits on a fresh scene survives the
+// carry-over — not just the last one. A previous implementation only
+// kept the trailing snapshot, which silently dropped data on any
+// scraper that ever emitted >1 snapshot per scrape (backfill, multi-
+// tier pricing, batched updates).
+func TestCarryOverPriceHistory_multipleFreshSnapshots(t *testing.T) {
+	t0 := time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC)
+	t1 := time.Date(2026, 2, 1, 0, 0, 0, 0, time.UTC)
+	t2 := time.Date(2026, 3, 1, 0, 0, 0, 0, time.UTC)
+	t3 := time.Date(2026, 4, 1, 0, 0, 0, 0, time.UTC)
+
+	existing := models.Scene{ID: "1"}
+	existing.AddPrice(snap(t0, 19.99))
+
+	fresh := models.Scene{ID: "1"}
+	fresh.AddPrice(snap(t1, 14.99))
+	fresh.AddPrice(snap(t2, 9.99))
+	fresh.AddPrice(snap(t3, 12.99))
+
+	got := carryOverPriceHistory(fresh, existing)
+	if len(got.PriceHistory) != 4 {
+		t.Fatalf("got %d snapshots, want 4 (1 existing + 3 fresh)", len(got.PriceHistory))
+	}
+	// Order must be existing-first, fresh-in-emit-order.
+	wantRegular := []float64{19.99, 14.99, 9.99, 12.99}
+	for i, w := range wantRegular {
+		if got.PriceHistory[i].Regular != w {
+			t.Errorf("snapshot[%d].Regular = %.2f, want %.2f", i, got.PriceHistory[i].Regular, w)
+		}
+	}
+	if got.LowestPrice != 9.99 {
+		t.Errorf("LowestPrice = %.2f, want 9.99 (must consider every fresh snapshot)", got.LowestPrice)
+	}
+	if got.LowestPriceDate == nil || !got.LowestPriceDate.Equal(t2) {
+		t.Errorf("LowestPriceDate = %v, want %v", got.LowestPriceDate, t2)
+	}
+}
+
 // fakeScraper streams a fixed slice of scenes on each ListScenes call.
 // Each invocation reads from the next entry in batches, mimicking
 // successive scrape runs over time.
