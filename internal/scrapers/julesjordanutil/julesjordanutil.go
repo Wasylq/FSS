@@ -16,7 +16,12 @@ import (
 	"github.com/Wasylq/FSS/scraper"
 )
 
-const defaultDelay = 500 * time.Millisecond
+// RecommendedDelay is the minimum delay between page fetches at which
+// Jules Jordan Network's NATS infrastructure does not rate-limit. It is
+// **not** silently enforced — the operator's `opts.Delay` is always
+// honoured — but `WarnDelayBelow` will surface a one-shot stderr
+// warning when the configured delay is lower.
+const RecommendedDelay = 500 * time.Millisecond
 
 type TemplateType int
 
@@ -99,10 +104,8 @@ type detailData struct {
 func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOpts, out chan<- scraper.SceneResult) {
 	defer close(out)
 
+	scraper.WarnDelayBelow(s.Config.SiteID, opts.Delay, RecommendedDelay)
 	delay := opts.Delay
-	if delay == 0 {
-		delay = defaultDelay
-	}
 
 	workers := opts.Workers
 	if workers <= 0 {

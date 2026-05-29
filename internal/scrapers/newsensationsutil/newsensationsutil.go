@@ -15,7 +15,12 @@ import (
 	"github.com/Wasylq/FSS/scraper"
 )
 
-const defaultDelay = 500 * time.Millisecond
+// RecommendedDelay is the minimum delay between page fetches at which
+// New Sensations' NATS tour does not rate-limit. It is **not** silently
+// enforced — the operator's `opts.Delay` is always honoured — but
+// `WarnDelayBelow` will surface a one-shot stderr warning when the
+// configured delay is lower.
+const RecommendedDelay = 500 * time.Millisecond
 
 type SiteConfig struct {
 	SiteID     string
@@ -92,10 +97,8 @@ type workItem struct {
 func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOpts, out chan<- scraper.SceneResult) {
 	defer close(out)
 
+	scraper.WarnDelayBelow(s.config.SiteID, opts.Delay, RecommendedDelay)
 	delay := opts.Delay
-	if delay == 0 {
-		delay = defaultDelay
-	}
 
 	workers := opts.Workers
 	if workers <= 0 {
@@ -134,10 +137,8 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 }
 
 func (s *Scraper) produceListing(ctx context.Context, studioURL string, opts scraper.ListOpts, out chan<- scraper.SceneResult, work chan<- workItem) {
+	// `run` already emitted the WarnDelayBelow once for this scraper.
 	delay := opts.Delay
-	if delay == 0 {
-		delay = defaultDelay
-	}
 
 	if s.getModelRe().MatchString(studioURL) {
 		scraper.Debugf(1, "%s: detected model page", s.config.SiteID)
