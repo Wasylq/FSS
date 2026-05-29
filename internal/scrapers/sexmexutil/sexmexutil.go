@@ -151,15 +151,17 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 
 // fetchPage fetches HTML, accepting HTTP 500 responses because
 // SexMex's CMS returns 500 status with valid HTML on some pages.
+// Routes through `httpx.DoWithStatus` so the request still benefits
+// from shared transport, retries on network errors, and level-2 debug
+// logging — only the status-code classification is delegated here.
 func (s *Scraper) fetchPage(ctx context.Context, rawURL string) ([]byte, error) {
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, rawURL, nil)
-	if err != nil {
-		return nil, err
-	}
-	req.Header.Set("User-Agent", httpx.UserAgentFirefox)
-	req.Header.Set("Accept", "text/html")
-
-	resp, err := s.Client.Do(req)
+	resp, err := httpx.DoWithStatus(ctx, s.Client, httpx.Request{
+		URL: rawURL,
+		Headers: map[string]string{
+			"User-Agent": httpx.UserAgentFirefox,
+			"Accept":     "text/html",
+		},
+	})
 	if err != nil {
 		return nil, err
 	}

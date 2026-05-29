@@ -225,6 +225,99 @@ func TestDo_exhaustsAllRetries(t *testing.T) {
 	}
 }
 
+// ---- DoWithStatus ----
+
+func TestDoWithStatus_passes500Through(t *testing.T) {
+	t.Parallel()
+	var calls int32
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		atomic.AddInt32(&calls, 1)
+		w.WriteHeader(http.StatusInternalServerError)
+		_, _ = w.Write([]byte("page body"))
+	}))
+	defer ts.Close()
+
+	resp, err := DoWithStatus(context.Background(), ts.Client(), Request{URL: ts.URL})
+	if err != nil {
+		t.Fatalf("DoWithStatus returned err: %v", err)
+	}
+	defer func() { _ = resp.Body.Close() }()
+	if resp.StatusCode != http.StatusInternalServerError {
+		t.Errorf("StatusCode = %d, want 500", resp.StatusCode)
+	}
+	body, _ := io.ReadAll(resp.Body)
+	if string(body) != "page body" {
+		t.Errorf("body = %q, want %q", string(body), "page body")
+	}
+	// 500 must NOT trigger retry — DoWithStatus delegates classification.
+	if got := atomic.LoadInt32(&calls); got != 1 {
+		t.Errorf("expected 1 call (no retry), got %d", got)
+	}
+}
+
+func TestDoWithStatus_passes4xxThrough(t *testing.T) {
+	t.Parallel()
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusForbidden)
+	}))
+	defer ts.Close()
+
+	resp, err := DoWithStatus(context.Background(), ts.Client(), Request{URL: ts.URL})
+	if err != nil {
+		t.Fatalf("DoWithStatus on 403 returned err: %v", err)
+	}
+	defer func() { _ = resp.Body.Close() }()
+	if resp.StatusCode != http.StatusForbidden {
+		t.Errorf("StatusCode = %d, want 403", resp.StatusCode)
+	}
+}
+
+func TestDoWithStatus_succeedsOn2xx(t *testing.T) {
+	t.Parallel()
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		_, _ = w.Write([]byte("ok"))
+	}))
+	defer ts.Close()
+
+	resp, err := DoWithStatus(context.Background(), ts.Client(), Request{URL: ts.URL})
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() { _ = resp.Body.Close() }()
+	if resp.StatusCode != http.StatusOK {
+		t.Errorf("StatusCode = %d, want 200", resp.StatusCode)
+	}
+}
+
+func TestDoWithStatus_retriesNetworkErrorThenSucceeds(t *testing.T) {
+	t.Parallel()
+	var calls int32
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		n := atomic.AddInt32(&calls, 1)
+		if n == 1 {
+			// Hijack and drop the connection to simulate a transport error.
+			hj, _ := w.(http.Hijacker)
+			conn, _, _ := hj.Hijack()
+			_ = conn.Close()
+			return
+		}
+		_, _ = w.Write([]byte("ok"))
+	}))
+	defer ts.Close()
+
+	resp, err := DoWithStatus(context.Background(), ts.Client(), Request{URL: ts.URL, MaxAttempts: 2})
+	if err != nil {
+		t.Fatalf("DoWithStatus should have retried network error and succeeded: %v", err)
+	}
+	defer func() { _ = resp.Body.Close() }()
+	if got := atomic.LoadInt32(&calls); got != 2 {
+		t.Errorf("expected 2 calls (1 dropped + 1 success), got %d", got)
+	}
+	if resp.StatusCode != http.StatusOK {
+		t.Errorf("StatusCode = %d, want 200", resp.StatusCode)
+	}
+}
+
 func TestReadBody_underLimit(t *testing.T) {
 	t.Parallel()
 	body := io.NopCloser(strings.NewReader("hello world"))

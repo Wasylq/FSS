@@ -138,6 +138,26 @@ func (e *StatusError) Error() string { return fmt.Sprintf("HTTP %d", e.StatusCod
 // Non-retryable 4xx responses fail fast with a *StatusError — the caller does
 // not have to guard against decoding an error page as a successful body.
 func Do(ctx context.Context, client *http.Client, r Request) (*http.Response, error) {
+	return doInner(ctx, client, r, true)
+}
+
+// DoWithStatus is like Do but passes any HTTP status (including 4xx and 5xx)
+// through to the caller without classifying — useful for endpoints that
+// legitimately return non-2xx with a meaningful body (e.g. SexMex's CMS
+// returns HTTP 500 + valid HTML on model pages). Network errors are still
+// retried with the same backoff as Do, but 429/5xx are NOT retried — the
+// caller asked for the raw response and presumably wants to act on it.
+// Default for `Do` (4xx fail-fast, 429/5xx retried) is the safer choice for
+// everything else.
+func DoWithStatus(ctx context.Context, client *http.Client, r Request) (*http.Response, error) {
+	return doInner(ctx, client, r, false)
+}
+
+// doInner is the shared retry + send loop. `classifyStatus` toggles the
+// status-code policy: true → 4xx fail-fast with *StatusError + retry 429/5xx
+// (Do's contract); false → return any HTTP response as-is and retry only
+// network errors (DoWithStatus's contract).
+func doInner(ctx context.Context, client *http.Client, r Request, classifyStatus bool) (*http.Response, error) {
 	method := r.Method
 	if method == "" {
 		if r.Body != nil {
@@ -188,6 +208,9 @@ func Do(ctx context.Context, client *http.Client, r Request) (*http.Response, er
 
 		scraper.Debugf(2, "  %d %s (content-length: %d)", resp.StatusCode, resp.Status, resp.ContentLength)
 
+		if !classifyStatus {
+			return resp, nil
+		}
 		if resp.StatusCode == http.StatusTooManyRequests || resp.StatusCode >= 500 {
 			_ = resp.Body.Close()
 			attemptErrs = append(attemptErrs, fmt.Errorf("attempt %d: %w", attempt+1, &StatusError{StatusCode: resp.StatusCode}))
