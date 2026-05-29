@@ -1,6 +1,6 @@
 # Covered Sites — All Domains
 
-961 scrapers covering 986 distinct domains. Auto-generated from the scraper registry by `TestSitesMdInSync` — do not hand-edit; instead update the scraper's `Patterns()` and re-run `go test ./internal/scrapers/all/...`. The `stashbox` scraper is omitted here because its covered hosts are config-driven; see [`scrapers.md`](scrapers.md).
+971 scrapers covering 996 distinct domains. Auto-generated from the scraper registry by `TestSitesMdInSync` — do not hand-edit; instead update the scraper's `Patterns()` and re-run `go test ./internal/scrapers/all/...`. The `stashbox` scraper is omitted here because its covered hosts are config-driven; see [`scrapers.md`](scrapers.md).
 
 Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scraper ID(s)** column lists every scraper that claims URLs on that domain — most domains have one entry, but table-driven networks (`adultprime`, `tmw`, `nextdoorstudios`, etc.) host many sub-studios on a single root domain. See [`scrapers.md`](scrapers.md) for what each ID covers.
 
@@ -9,6 +9,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | 1000facials.com | `1000facials` |
 | 18eighteen.com | `18eighteen` |
 | 18firstsex.com | `tmw-18firstsex` |
+| 18videoz.com | `18videoz` |
 | 1passforallsites.com | `1passforallsites` |
 | 3rddegreefilms.com | `3rddegreefilms` |
 | 3wayfuck.com | `porngutter` |
@@ -77,6 +78,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | badteenspunished.com | `nubiles` |
 | bang.com | `bang` |
 | bangbros.com | `bangbros` |
+| bangmyteenass.com | `bangmyteenass` |
 | barebackstudios.com | `barebackstudios` |
 | bbcpie.com | `bbcpie` |
 | beautifulagony.com | `beautifulagony` |
@@ -162,6 +164,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | canada-tgirl.com | `canadatgirl` |
 | carmenvalentina.com | `carmenvalentina` |
 | castingcouch-x.com | `castingcouchx` |
+| casualteensex.com | `casualteensex` |
 | caughtmycoach.com | `nubiles` |
 | cazzofilm.com | `cazzofilm` |
 | cfnmteens.com | `cfnmteens` |
@@ -333,6 +336,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | femoutsex.xxx | `femoutsex` |
 | fetishnetwork.com | `fetishnetwork` |
 | filthykings.com | `filthykings` |
+| firstanaldate.com | `firstanaldate` |
 | firstbgg.com | `tmw-firstbgg` |
 | firstclasspov.com | `firstclasspov` |
 | flatandfuckedmilfs.com | `flatandfuckedmilfs` |
@@ -630,6 +634,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | nylonsx.com | `tmw-nylonsx` |
 | ohmyholes.com | `tmw-ohmyholes` |
 | old-n-young.com | `tmw-old-n-young` |
+| olddicksyoungchix.com | `olddicksyoungchix` |
 | oldgoesyoung.com | `1passforallsites` |
 | oldhornymilfs.com | `oldhornymilfs` |
 | onlytarts.com | `onlytarts` |
@@ -750,6 +755,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | seancody.com | `seancody` |
 | seemomsuck.com | `seemomsuck` |
 | selfiefetish.com | `selfiefetish` |
+| sellyourgf.com | `sellyourgf` |
 | sensual.love | `sensuallove` |
 | sexart.com | `sexart` |
 | sexflexvideo.com | `sexflexvideo` |
@@ -844,11 +850,13 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | teenmegaworld.net | `tmw-18firstsex`, `tmw-aboutgirlslove`, `tmw-anal-angels` (+32 more) |
 | teenpies.com | `teenpies` |
 | teens3some.com | `tmw-teens3some` |
+| teensanalyzed.com | `teensanalyzed` |
 | teensexmania.com | `tmw-teensexmania` |
 | teensexmovs.com | `tmw-teensexmovs` |
 | teensloveanal.com | `teensloveanal` |
 | teensloveblackcocks.com | `teensloveblackcocks` |
 | teenstarsonly.com | `tmw-teenstarsonly` |
+| teenylovers.com | `teenylovers` |
 | terapatrick.com | `terapatrick` |
 | terrorxxx.com | `terrorxxx` |
 | tgirl40.com | `tgirl40` |
@@ -984,6 +992,8 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | xvirtual.com | `xvirtual` |
 | youngerloverofmine.com | `youngerloverofmine` |
 | youngermommy.com | `nubiles` |
+| younglibertines.com | `younglibertines` |
+| youngsexparties.com | `youngsexparties` |
 | yourmomdoesporn.com | `yourmomdoesporn` |
 | yourmomlovesanal.com | `yourmomlovesanal` |
 | yourmomsgotbigtits.com | `yourmomsgotbigtits` |
