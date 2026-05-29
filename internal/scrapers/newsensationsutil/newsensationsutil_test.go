@@ -341,11 +341,8 @@ func TestRun(t *testing.T) {
 
 	cfg := testCfg
 	cfg.SiteBase = ts.URL
-	s := &Scraper{
-		config:  cfg,
-		client:  ts.Client(),
-		matchRe: New(cfg).matchRe,
-	}
+	s := New(cfg)
+	s.client = ts.Client()
 
 	ch, err := s.ListScenes(context.Background(), ts.URL+"/tour_ts/models/test-model.html", scraper.ListOpts{
 		Delay:   time.Millisecond,
@@ -404,11 +401,8 @@ func TestKnownIDs(t *testing.T) {
 
 	cfg := testCfg
 	cfg.SiteBase = ts.URL
-	s := &Scraper{
-		config:  cfg,
-		client:  ts.Client(),
-		matchRe: New(cfg).matchRe,
-	}
+	s := New(cfg)
+	s.client = ts.Client()
 
 	ch, err := s.ListScenes(context.Background(), ts.URL+"/tour_ts/models/test-model.html", scraper.ListOpts{
 		KnownIDs: map[string]bool{"200": true},
@@ -440,11 +434,8 @@ func TestRunEmptyPage(t *testing.T) {
 
 	cfg := testCfg
 	cfg.SiteBase = ts.URL
-	s := &Scraper{
-		config:  cfg,
-		client:  ts.Client(),
-		matchRe: New(cfg).matchRe,
-	}
+	s := New(cfg)
+	s.client = ts.Client()
 
 	ch, err := s.ListScenes(context.Background(), ts.URL+"/tour_ts/models/empty.html", scraper.ListOpts{
 		Delay:   time.Millisecond,
@@ -490,11 +481,8 @@ func TestPagination(t *testing.T) {
 
 	cfg := testCfg
 	cfg.SiteBase = ts.URL
-	s := &Scraper{
-		config:  cfg,
-		client:  ts.Client(),
-		matchRe: New(cfg).matchRe,
-	}
+	s := New(cfg)
+	s.client = ts.Client()
 
 	ch, err := s.ListScenes(context.Background(), ts.URL+"/tour_ts/categories/movies_1_d.html", scraper.ListOpts{
 		Delay:   time.Millisecond,

@@ -32,11 +32,10 @@ type SiteConfig struct {
 }
 
 type Scraper struct {
-	config      SiteConfig
-	client      *http.Client
-	matchRe     *regexp.Regexp
-	modelRe     *regexp.Regexp
-	modelReOnce sync.Once
+	config  SiteConfig
+	client  *http.Client
+	matchRe *regexp.Regexp
+	modelRe *regexp.Regexp
 }
 
 func New(cfg SiteConfig) *Scraper {
@@ -69,15 +68,6 @@ func (s *Scraper) Patterns() []string {
 }
 
 func (s *Scraper) MatchesURL(u string) bool { return s.matchRe.MatchString(u) }
-
-func (s *Scraper) getModelRe() *regexp.Regexp {
-	s.modelReOnce.Do(func() {
-		if s.modelRe == nil {
-			s.modelRe = regexp.MustCompile(`/` + regexp.QuoteMeta(s.config.TourPrefix) + `/models/`)
-		}
-	})
-	return s.modelRe
-}
 
 func (s *Scraper) ListScenes(ctx context.Context, studioURL string, opts scraper.ListOpts) (<-chan scraper.SceneResult, error) {
 	out := make(chan scraper.SceneResult)
@@ -140,7 +130,7 @@ func (s *Scraper) produceListing(ctx context.Context, studioURL string, opts scr
 	// `run` already emitted the WarnDelayBelow once for this scraper.
 	delay := opts.Delay
 
-	if s.getModelRe().MatchString(studioURL) {
+	if s.modelRe.MatchString(studioURL) {
 		scraper.Debugf(1, "%s: detected model page", s.config.SiteID)
 		s.scrapeListingPage(ctx, studioURL, opts, out, work)
 		return
