@@ -1,6 +1,6 @@
 # Covered Sites — All Domains
 
-1137 scrapers covering 1150 distinct domains. Auto-generated from the scraper registry by `TestSitesMdInSync` — do not hand-edit; instead update the scraper's `Patterns()` and re-run `go test ./internal/scrapers/all/...`. The `stashbox` scraper is omitted here because its covered hosts are config-driven; see [`scrapers.md`](scrapers.md).
+1138 scrapers covering 1152 distinct domains. Auto-generated from the scraper registry by `TestSitesMdInSync` — do not hand-edit; instead update the scraper's `Patterns()` and re-run `go test ./internal/scrapers/all/...`. The `stashbox` scraper is omitted here because its covered hosts are config-driven; see [`scrapers.md`](scrapers.md).
 
 Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scraper ID(s)** column lists every scraper that claims URLs on that domain — most domains have one entry, but table-driven networks (`adultprime`, `tmw`, `nextdoorstudios`, etc.) host many sub-studios on a single root domain. See [`scrapers.md`](scrapers.md) for what each ID covers.
 
@@ -59,6 +59,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | angels.love | `angelslove` |
 | anilos.com | `nubiles` |
 | annalovesshemale.com | `annalovesshemale` |
+| any-pornstarplatinum-network-sister-site | `pornstarplatinum` |
 | apclips.com | `apclips` |
 | apovstory.com | `apovstory` |
 | asaakira.puba.com | `pubaasaakira` |
@@ -781,6 +782,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | pornonstage.com | `pornonstage` |
 | pornplus.com | `pornplus` |
 | pornpros.com | `pornpros` |
+| pornstarplatinum.com | `pornstarplatinum` |
 | porntugal.com | `porntugal` |
 | pornworld.com | `pornworld` |
 | povd.com | `povd` |

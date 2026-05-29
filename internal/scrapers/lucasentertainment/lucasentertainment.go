@@ -11,8 +11,8 @@ import (
 	"time"
 
 	"github.com/Wasylq/FSS/internal/httpx"
-	"github.com/Wasylq/FSS/parseutil"
 	"github.com/Wasylq/FSS/models"
+	"github.com/Wasylq/FSS/parseutil"
 	"github.com/Wasylq/FSS/scraper"
 )
 

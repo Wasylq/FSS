@@ -100,6 +100,7 @@ import (
 	_ "github.com/Wasylq/FSS/internal/scrapers/porngutter"
 	_ "github.com/Wasylq/FSS/internal/scrapers/pornhub"
 	_ "github.com/Wasylq/FSS/internal/scrapers/pornplus"
+	_ "github.com/Wasylq/FSS/internal/scrapers/pornstarplatinum"
 	_ "github.com/Wasylq/FSS/internal/scrapers/pornworld"
 	_ "github.com/Wasylq/FSS/internal/scrapers/povr"
 	_ "github.com/Wasylq/FSS/internal/scrapers/prestige"
