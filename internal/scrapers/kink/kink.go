@@ -117,12 +117,13 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 			break
 		}
 		if page > 1 && opts.Delay > 0 {
+			cancelled := false
 			select {
 			case <-time.After(opts.Delay):
 			case <-ctx.Done():
-				break
+				cancelled = true
 			}
-			if ctx.Err() != nil {
+			if cancelled {
 				break
 			}
 		}

@@ -163,12 +163,13 @@ func (s *Scraper) produceListing(ctx context.Context, opts scraper.ListOpts, out
 			break
 		}
 		if page > 1 && opts.Delay > 0 {
+			cancelled := false
 			select {
 			case <-time.After(opts.Delay):
 			case <-ctx.Done():
-				break
+				cancelled = true
 			}
-			if ctx.Err() != nil {
+			if cancelled {
 				break
 			}
 		}
@@ -189,9 +190,13 @@ func (s *Scraper) produceListing(ctx context.Context, opts scraper.ListOpts, out
 
 		if page == 1 {
 			scraper.Debugf(1, "%s: %d total scenes (estimated)", s.cfg.SiteID, estimateTotal(len(entries)))
+			cancelled := false
 			select {
 			case out <- scraper.Progress(estimateTotal(len(entries))):
 			case <-ctx.Done():
+				cancelled = true
+			}
+			if cancelled {
 				break
 			}
 		}

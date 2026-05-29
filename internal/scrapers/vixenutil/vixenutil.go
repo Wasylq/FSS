@@ -242,9 +242,13 @@ func (s *Scraper) scrapeListingPages(ctx context.Context, opts scraper.ListOpts,
 			break
 		}
 		if page > 1 {
+			cancelled := false
 			select {
 			case <-time.After(delay):
 			case <-ctx.Done():
+				cancelled = true
+			}
+			if cancelled {
 				break
 			}
 		}
@@ -277,9 +281,13 @@ func (s *Scraper) scrapeListingPages(ctx context.Context, opts scraper.ListOpts,
 
 		if page == 1 && pp.TotalCount > 0 {
 			scraper.Debugf(1, "%s: %d total scenes", s.cfg.SiteID, pp.TotalCount)
+			cancelled := false
 			select {
 			case out <- scraper.Progress(pp.TotalCount):
 			case <-ctx.Done():
+				cancelled = true
+			}
+			if cancelled {
 				break
 			}
 		}

@@ -119,12 +119,13 @@ func (s *Scraper) run(ctx context.Context, studioURL, cid string, opts scraper.L
 			break
 		}
 		if page > 1 && opts.Delay > 0 {
+			cancelled := false
 			select {
 			case <-time.After(opts.Delay):
 			case <-ctx.Done():
-				break
+				cancelled = true
 			}
-			if ctx.Err() != nil {
+			if cancelled {
 				break
 			}
 		}
@@ -138,9 +139,13 @@ func (s *Scraper) run(ctx context.Context, studioURL, cid string, opts scraper.L
 			break
 		}
 		if page == 1 && totalPages > 0 && len(entries) > 0 {
+			cancelled := false
 			select {
 			case out <- scraper.Progress(totalPages * len(entries)):
 			case <-ctx.Done():
+				cancelled = true
+			}
+			if cancelled {
 				break
 			}
 		}

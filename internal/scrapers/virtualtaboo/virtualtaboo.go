@@ -157,11 +157,13 @@ func (s *Scraper) runPaginated(ctx context.Context, opts scraper.ListOpts, out c
 			break
 		}
 		if page > 1 && opts.Delay > 0 {
+			cancelled := false
 			select {
 			case <-time.After(opts.Delay):
 			case <-ctx.Done():
+				cancelled = true
 			}
-			if ctx.Err() != nil {
+			if cancelled {
 				break
 			}
 		}
