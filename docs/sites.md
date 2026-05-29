@@ -1,6 +1,6 @@
 # Covered Sites — All Domains
 
-988 scrapers covering 1011 distinct domains. Auto-generated from the scraper registry by `TestSitesMdInSync` — do not hand-edit; instead update the scraper's `Patterns()` and re-run `go test ./internal/scrapers/all/...`. The `stashbox` scraper is omitted here because its covered hosts are config-driven; see [`scrapers.md`](scrapers.md).
+1005 scrapers covering 1028 distinct domains. Auto-generated from the scraper registry by `TestSitesMdInSync` — do not hand-edit; instead update the scraper's `Patterns()` and re-run `go test ./internal/scrapers/all/...`. The `stashbox` scraper is omitted here because its covered hosts are config-driven; see [`scrapers.md`](scrapers.md).
 
 Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scraper ID(s)** column lists every scraper that claims URLs on that domain — most domains have one entry, but table-driven networks (`adultprime`, `tmw`, `nextdoorstudios`, etc.) host many sub-studios on a single root domain. See [`scrapers.md`](scrapers.md) for what each ID covers.
 
@@ -167,6 +167,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | canada-tgirl.com | `canadatgirl` |
 | carmenvalentina.com | `carmenvalentina` |
 | carnalplus.com | `baptistboys`, `carnaloriginals`, `carnalplus` |
+| cashforsextape.com | `cashforsextape` |
 | castingcouch-x.com | `castingcouchx` |
 | casualteensex.com | `casualteensex` |
 | catholicboys.com | `catholicboys` |
@@ -191,6 +192,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | codivorexxx.com | `codivorexxx` |
 | codycummings.com | `codycummings` |
 | college-uniform.com | `collegeuniform` |
+| collegefuckparties.com | `collegefuckparties` |
 | creamedcuties.com | `creamedcuties` |
 | creamher.com | `creamher` |
 | creampie-angels.com | `tmw-creampie-angels` |
@@ -285,6 +287,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | dirtyscout.com | `bigstr` |
 | dogfartnetwork.com | `dogfartnetwork` |
 | doghousedigital.com | `doghousedigital` |
+| dollsporn.com | `dollsporn` |
 | dorcelclub.com | `dorcelclub` |
 | dothewife.com | `porngutter` |
 | doublepies.com | `nubiles` |
@@ -421,16 +424,21 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | hairycoochies.com | `hairycoochies` |
 | hairyundies.com | `hairyundies` |
 | hardcoredoorway.com | `hardcoredoorway` |
+| hardfuckgirls.com | `hardfuckgirls` |
+| hardfucktales.com | `hardfucktales` |
 | hardkinks.com | `hardkinks` |
 | harlemsex.com | `harlemsex` |
 | hayleyssecrets.com | `hayleyssecrets` |
 | hcjav.com | `porngutter` |
+| hdmassageporn.com | `hdmassageporn` |
+| hdsex18.com | `hdsex18` |
 | hentai.movie | `hentaimovie` |
 | hentaied.com | `hentaied` |
 | hentaied.pro | `twinz` |
 | hentaipros.com | `hentaipros` |
 | hentaisexschool.com | `hentaisexschool` |
 | herfirstporn.com | `herfirstporn` |
+| hersexdebut.com | `hersexdebut` |
 | heteroflexible.com | `heteroflexible` |
 | hijabhookup.com | `hijabhookup` |
 | holed.com | `holed` |
@@ -531,6 +539,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | mature.nl | `maturenl` |
 | maturefetish.com | `maturefetish` |
 | maturefucksteen.com | `porngutter` |
+| meetsuckandfuck.com | `meetsuckandfuck` |
 | megatitsminka.com | `megatitsminka` |
 | men.com | `men` |
 | menofuk.com | `men` |
@@ -599,6 +608,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | myfriendshotmom.com | `naughtyamerica` |
 | mylf.com | `mylf` |
 | mypervmom.com | `mypervmom` |
+| mypickupgirls.com | `mypickupgirls` |
 | mysislovesme.com | `mysislovesme` |
 | mysistershotfriend.com | `naughtyamerica` |
 | myteenoasis.com | `myteenoasis` |
@@ -656,6 +666,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | outofthefamily.com | `outofthefamily` |
 | over40handjobs.com | `over40handjobs` |
 | oyeloca.com | `oyeloca` |
+| pandafuck.com | `pandafuck` |
 | pansexualx.com | `pansexualx` |
 | papi.com | `realitydudes` |
 | parasited.com | `parasited` |
@@ -676,6 +687,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | petiteballerinasfucked.com | `nubiles` |
 | petitehdporn.com | `nubiles` |
 | pickinguppussy.com | `pickinguppussy` |
+| pickupfuck.com | `pickupfuck` |
 | pinkkittygirls.com | `pinkkittygirls` |
 | pissinghd.com | `pissinghd` |
 | plantsvscunts.com | `plantsvscunts` |
@@ -709,9 +721,11 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | privateclassics.com | `privateclassics` |
 | privatefetish.com | `private` |
 | privatemilfs.com | `private` |
+| privatesextapes.com | `privatesextapes` |
 | privateteenvideo.com | `tmw-privateteenvideo` |
 | propertysex.com | `propertysex` |
 | publicagent.com | `fakehub` |
+| publicsexadventures.com | `publicsexadventures` |
 | publicsexdate.com | `publicsexdate` |
 | punishteens.com | `punishteens` |
 | purecfnm.com | `purecfnm` |
@@ -834,6 +848,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | str8togay.com | `men` |
 | straplez.com | `straplez` |
 | strippers4k.com | `strippers4k` |
+| studentsexparties.com | `studentsexparties` |
 | stunning18.com | `stunning18` |
 | submissived.com | `submissived` |
 | suggabunny.com | `porngutter` |
@@ -888,6 +903,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | thaigirlswild.com | `thaigirlswild` |
 | thaipussymassage.com | `thaipussymassage` |
 | thatsitcomshow.com | `nubiles` |
+| theartporn.com | `theartporn` |
 | theassfactory.com | `theassfactory` |
 | theavaaddams.com | `theavaaddams` |
 | thegayoffice.com | `men` |
@@ -999,6 +1015,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | worshipjasmine.com | `worshipjasmine` |
 | wow-orgasms.com | `tmw-wow-orgasms` |
 | wowgirls.com | `wowgirls` |
+| wtfpass.com | `wtfpass` |
 | www.realspankingsinstitute.com | `realspankingsinstitute` |
 | x-angels.com | `tmw-x-angels` |
 | xes.pl | `xespl` |
