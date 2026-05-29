@@ -22,6 +22,7 @@ import (
 	_ "github.com/Wasylq/FSS/internal/scrapers/barebackstudios"
 	_ "github.com/Wasylq/FSS/internal/scrapers/beautifulagony"
 	_ "github.com/Wasylq/FSS/internal/scrapers/blackpayback"
+	_ "github.com/Wasylq/FSS/internal/scrapers/carnalplus"
 	_ "github.com/Wasylq/FSS/internal/scrapers/charleechase"
 	_ "github.com/Wasylq/FSS/internal/scrapers/cherrypimps"
 	_ "github.com/Wasylq/FSS/internal/scrapers/clips4sale"
