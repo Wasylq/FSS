@@ -93,7 +93,7 @@ func (f *Flat) Save(studioURL string, scenes []models.Scene) error {
 	return nil
 }
 
-func (f *Flat) MarkDeleted(studioURL, _ string, ids []string) error {
+func (f *Flat) MarkDeleted(studioURL, siteID string, ids []string) error {
 	scenes, err := f.Load(studioURL)
 	if err != nil {
 		return err
@@ -104,7 +104,12 @@ func (f *Flat) MarkDeleted(studioURL, _ string, ids []string) error {
 	}
 	now := time.Now().UTC()
 	for i := range scenes {
-		if set[scenes[i].ID] && scenes[i].DeletedAt == nil {
+		// Match the SQLite store: a scene is soft-deleted only when both
+		// its ID is in the set and its SiteID matches. Studio files that
+		// mix scenes from multiple sites (e.g. cross-site stash merges)
+		// can hold overlapping IDs across SiteIDs; without the SiteID
+		// filter those collateral scenes would be wiped too.
+		if set[scenes[i].ID] && scenes[i].SiteID == siteID && scenes[i].DeletedAt == nil {
 			scenes[i].DeletedAt = &now
 		}
 	}

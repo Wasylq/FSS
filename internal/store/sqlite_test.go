@@ -450,6 +450,71 @@ func TestSQLiteMarkDeleted(t *testing.T) {
 	}
 }
 
+// TestSQLiteSaveAutoRevives locks in the documented Save contract: a
+// re-emitted scene with DeletedAt == nil clears any prior soft-delete.
+// This is the "site brought the scene back" path that the cmd layer's
+// incremental scrape relies on — when a scraper re-emits an ID after
+// a previous MarkDeleted, the store should reflect that the scene is
+// alive again.
+func TestSQLiteSaveAutoRevives(t *testing.T) {
+	s := newTestDB(t)
+	now := time.Now().UTC().Truncate(time.Second)
+
+	scene := models.Scene{
+		ID: "1", SiteID: "manyvids", StudioURL: testStudioURL,
+		Title: "A", ScrapedAt: now,
+	}
+	if err := s.Save(testStudioURL, []models.Scene{scene}); err != nil {
+		t.Fatal(err)
+	}
+	if err := s.MarkDeleted(testStudioURL, "manyvids", []string{"1"}); err != nil {
+		t.Fatal(err)
+	}
+	loaded, _ := s.Load(testStudioURL)
+	if loaded[0].DeletedAt == nil {
+		t.Fatal("setup: scene should be soft-deleted after MarkDeleted")
+	}
+
+	// Re-emit the same scene with DeletedAt == nil — auto-revive.
+	revived := scene
+	revived.Title = "A (back)"
+	if err := s.Save(testStudioURL, []models.Scene{revived}); err != nil {
+		t.Fatal(err)
+	}
+	loaded, _ = s.Load(testStudioURL)
+	if len(loaded) != 1 {
+		t.Fatalf("got %d scenes, want 1", len(loaded))
+	}
+	if loaded[0].DeletedAt != nil {
+		t.Errorf("Save with DeletedAt=nil should auto-revive, got DeletedAt=%v", loaded[0].DeletedAt)
+	}
+	if loaded[0].Title != "A (back)" {
+		t.Errorf("Title not updated: %q", loaded[0].Title)
+	}
+}
+
+// TestSQLiteSavePreservesExplicitDeletedAt verifies the symmetric path:
+// when a Save includes a scene with DeletedAt explicitly set, the
+// stored value matches. This is how scrapeRefresh propagates soft-
+// deletes for scenes the scraper no longer sees.
+func TestSQLiteSavePreservesExplicitDeletedAt(t *testing.T) {
+	s := newTestDB(t)
+	now := time.Now().UTC().Truncate(time.Second)
+	earlier := now.Add(-24 * time.Hour)
+
+	scene := models.Scene{
+		ID: "1", SiteID: "manyvids", StudioURL: testStudioURL,
+		Title: "A", ScrapedAt: now, DeletedAt: &earlier,
+	}
+	if err := s.Save(testStudioURL, []models.Scene{scene}); err != nil {
+		t.Fatal(err)
+	}
+	loaded, _ := s.Load(testStudioURL)
+	if loaded[0].DeletedAt == nil || !loaded[0].DeletedAt.Equal(earlier) {
+		t.Errorf("DeletedAt = %v, want %v", loaded[0].DeletedAt, earlier)
+	}
+}
+
 // TestSQLiteRelationDiffAddRemove covers the syncRelation diff path: re-saving
 // a scene with a different relation set should add new entries and drop removed
 // ones, without re-touching unchanged rows.

@@ -16,6 +16,15 @@ type Store interface {
 	// disappear. Incremental and `--refresh` modes pass the merged
 	// existing+fresh set so nothing is dropped. Use MarkDeleted for
 	// soft-delete semantics that preserve historical data.
+	//
+	// Soft-delete state is NOT sticky across Save: each scene's
+	// `DeletedAt` is written verbatim. A re-emitted scene with
+	// `DeletedAt == nil` therefore auto-revives a prior soft-delete —
+	// "the site brought the scene back, so the store shouldn't lie
+	// about it being gone". `--refresh` mode is what stamps `DeletedAt`
+	// on scenes the scraper no longer sees; callers wanting to preserve
+	// an existing soft-delete must include the existing scene (with its
+	// `DeletedAt` intact) in the `scenes` slice.
 	Save(studioURL string, scenes []models.Scene) error
 
 	// MarkDeleted soft-deletes scenes by ID — sets DeletedAt, does not remove records.

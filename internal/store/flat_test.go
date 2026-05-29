@@ -211,7 +211,7 @@ func TestFlatMarkDeleted(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if err := f.MarkDeleted(flatTestURL, "test", []string{"1"}); err != nil {
+	if err := f.MarkDeleted(flatTestURL, "example", []string{"1"}); err != nil {
 		t.Fatalf("MarkDeleted: %v", err)
 	}
 
@@ -235,13 +235,13 @@ func TestFlatMarkDeletedIdempotent(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if err := f.MarkDeleted(flatTestURL, "test", []string{"1"}); err != nil {
+	if err := f.MarkDeleted(flatTestURL, "example", []string{"1"}); err != nil {
 		t.Fatal(err)
 	}
 	got1, _ := f.Load(flatTestURL)
 	firstDeleted := *got1[0].DeletedAt
 
-	if err := f.MarkDeleted(flatTestURL, "test", []string{"1"}); err != nil {
+	if err := f.MarkDeleted(flatTestURL, "example", []string{"1"}); err != nil {
 		t.Fatal(err)
 	}
 	got2, _ := f.Load(flatTestURL)
@@ -257,7 +257,7 @@ func TestFlatMarkDeletedNonexistentID(t *testing.T) {
 	if err := f.Save(flatTestURL, testScenes(now)); err != nil {
 		t.Fatal(err)
 	}
-	if err := f.MarkDeleted(flatTestURL, "test", []string{"nonexistent"}); err != nil {
+	if err := f.MarkDeleted(flatTestURL, "example", []string{"nonexistent"}); err != nil {
 		t.Fatal(err)
 	}
 
@@ -265,6 +265,97 @@ func TestFlatMarkDeletedNonexistentID(t *testing.T) {
 	for _, s := range got {
 		if s.DeletedAt != nil {
 			t.Errorf("scene %s should not be deleted", s.ID)
+		}
+	}
+}
+
+// TestFlatSaveAutoRevives locks in the documented Save contract: a
+// re-emitted scene with DeletedAt == nil clears any prior soft-delete.
+// Matches SQLite — see the cross-store contract documented on
+// `store.Store.Save`.
+func TestFlatSaveAutoRevives(t *testing.T) {
+	f := newTestFlat(t)
+	now := time.Now().UTC().Truncate(time.Second)
+
+	scene := models.Scene{
+		ID: "1", SiteID: "example", StudioURL: flatTestURL,
+		Title: "A", ScrapedAt: now,
+	}
+	if err := f.Save(flatTestURL, []models.Scene{scene}); err != nil {
+		t.Fatal(err)
+	}
+	if err := f.MarkDeleted(flatTestURL, "example", []string{"1"}); err != nil {
+		t.Fatal(err)
+	}
+	loaded, _ := f.Load(flatTestURL)
+	if loaded[0].DeletedAt == nil {
+		t.Fatal("setup: scene should be soft-deleted after MarkDeleted")
+	}
+
+	// Re-emit the same scene with DeletedAt == nil — auto-revive.
+	revived := scene
+	revived.Title = "A (back)"
+	if err := f.Save(flatTestURL, []models.Scene{revived}); err != nil {
+		t.Fatal(err)
+	}
+	loaded, _ = f.Load(flatTestURL)
+	if len(loaded) != 1 || loaded[0].DeletedAt != nil {
+		t.Errorf("Save with DeletedAt=nil should auto-revive, got %+v", loaded)
+	}
+	if loaded[0].Title != "A (back)" {
+		t.Errorf("Title not updated: %q", loaded[0].Title)
+	}
+}
+
+// TestFlatMarkDeletedSiteIDScoped guards against the previous bug where
+// `MarkDeleted` ignored its `siteID` argument and would soft-delete
+// every scene with a matching ID, including scenes from a different
+// site that happened to share the ID. Studio files produced by
+// cross-site stash merges can hold overlapping IDs across SiteIDs.
+func TestFlatMarkDeletedSiteIDScoped(t *testing.T) {
+	f := newTestFlat(t)
+	now := time.Now().UTC().Truncate(time.Second)
+
+	mixed := []models.Scene{
+		{ID: "1", SiteID: "example", StudioURL: flatTestURL, Title: "from example", ScrapedAt: now},
+		{ID: "1", SiteID: "other", StudioURL: flatTestURL, Title: "from other", ScrapedAt: now},
+	}
+	if err := f.Save(flatTestURL, mixed); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := f.MarkDeleted(flatTestURL, "example", []string{"1"}); err != nil {
+		t.Fatal(err)
+	}
+
+	got, err := f.Load(flatTestURL)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(got) != 2 {
+		t.Fatalf("got %d scenes after MarkDeleted, want 2", len(got))
+	}
+	for _, s := range got {
+		switch s.SiteID {
+		case "example":
+			if s.DeletedAt == nil {
+				t.Errorf("example/%s should be soft-deleted", s.ID)
+			}
+		case "other":
+			if s.DeletedAt != nil {
+				t.Errorf("other/%s should NOT be soft-deleted — different SiteID", s.ID)
+			}
+		}
+	}
+
+	// MarkDeleted with a SiteID nobody owns must be a no-op.
+	if err := f.MarkDeleted(flatTestURL, "nobody", []string{"1"}); err != nil {
+		t.Fatal(err)
+	}
+	got, _ = f.Load(flatTestURL)
+	for _, s := range got {
+		if s.SiteID == "other" && s.DeletedAt != nil {
+			t.Errorf("other/%s should still NOT be deleted after MarkDeleted(nobody)", s.ID)
 		}
 	}
 }
