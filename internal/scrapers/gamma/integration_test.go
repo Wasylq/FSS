@@ -57,3 +57,59 @@ func TestLiveBurningAngel(t *testing.T) {
 func TestLivePureTaboo(t *testing.T) {
 	testutil.RunLiveScrape(t, newTestScraper(findSite("puretaboo")), "https://www.puretaboo.com/", 2)
 }
+
+// Vivid network — every sub-site uses the same gamma/Algolia pipeline
+// with RefererBase pinned to vivid.com (the API key is signed for the
+// parent's Referer, so sub-domain Referers get HTTP 403 from Algolia).
+// One live smoke per site validates that wiring across all 13 entries.
+func TestLiveVivid(t *testing.T) {
+	testutil.RunLiveScrape(t, newTestScraper(findSite("vivid")), "https://www.vivid.com/", 2)
+}
+
+func TestLive65InchHugeAsses(t *testing.T) {
+	testutil.RunLiveScrape(t, newTestScraper(findSite("65inchhugeasses")), "https://www.65inchhugeasses.com/", 2)
+}
+
+func TestLiveBlackWhiteFuckfest(t *testing.T) {
+	testutil.RunLiveScrape(t, newTestScraper(findSite("blackwhitefuckfest")), "https://www.blackwhitefuckfest.com/", 2)
+}
+
+func TestLiveBrandNewFaces(t *testing.T) {
+	testutil.RunLiveScrape(t, newTestScraper(findSite("brandnewfaces")), "https://www.brandnewfaces.com/", 2)
+}
+
+func TestLiveGirlsWhoFuckGirls(t *testing.T) {
+	testutil.RunLiveScrape(t, newTestScraper(findSite("girlswhofuckgirls")), "https://www.girlswhofuckgirls.com/", 2)
+}
+
+func TestLiveMomIsAMilf(t *testing.T) {
+	testutil.RunLiveScrape(t, newTestScraper(findSite("momisamilf")), "https://www.momisamilf.com/", 2)
+}
+
+func TestLiveNastyStepFamily(t *testing.T) {
+	testutil.RunLiveScrape(t, newTestScraper(findSite("nastystepfamily")), "https://www.nastystepfamily.com/", 2)
+}
+
+func TestLiveNineteen(t *testing.T) {
+	testutil.RunLiveScrape(t, newTestScraper(findSite("nineteen")), "https://www.nineteen.com/", 2)
+}
+
+func TestLiveOrgyTrain(t *testing.T) {
+	testutil.RunLiveScrape(t, newTestScraper(findSite("orgytrain")), "https://www.orgytrain.com/", 2)
+}
+
+func TestLivePetited(t *testing.T) {
+	testutil.RunLiveScrape(t, newTestScraper(findSite("petited")), "https://www.petited.com/", 2)
+}
+
+func TestLiveTheBrats(t *testing.T) {
+	testutil.RunLiveScrape(t, newTestScraper(findSite("thebrats")), "https://www.thebrats.com/", 2)
+}
+
+func TestLiveVividClassic(t *testing.T) {
+	testutil.RunLiveScrape(t, newTestScraper(findSite("vividclassic")), "https://www.vividclassic.com/", 2)
+}
+
+func TestLiveWhereTheBoysArent(t *testing.T) {
+	testutil.RunLiveScrape(t, newTestScraper(findSite("wheretheboysarent")), "https://www.wheretheboysarent.com/", 2)
+}

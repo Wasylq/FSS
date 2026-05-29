@@ -66,6 +66,33 @@ var sites = []siteConfig{
 	{"mixedx", "mixedx.com", "MixedX", "", "", ""},
 	{"modeltime", "modeltime.com", "Model Time", "", "", ""},
 
+	// Adult Time segment — Vivid network. All sub-domains are reskinned
+	// vivid.com fronts that ship the same Algolia API key bootstrap
+	// (segment:adulttime), but the keys are Referer-signed for vivid.com
+	// — querying Algolia from the sub-domain's own Referer returns HTTP
+	// 403. Set `RefererBase` to vivid.com so both the API-key bootstrap
+	// fetch and the Algolia query use the parent's Referer header.
+	// Each per-site `availableOnSite:{siteid}` filter narrows the
+	// segment-wide pool to that brand. Vivid Celeb redirects to
+	// vivid.com/en/videos/sites/vividclassic so the `vividclassic`
+	// entry below covers it. TS Divas (`members.adulttime.com/en/channel/tsdivas`)
+	// requires Adult Time member login. Vivid Alt (`vividalt.com`) is an
+	// abandoned WordPress 2.8.5 blog (pre-REST-API, 2009) and is out of
+	// scope.
+	{"vivid", "vivid.com", "Vivid", "", "", ""},
+	{"65inchhugeasses", "65inchhugeasses.com", "65 Inch Huge Asses", "", "https://www.vivid.com", ""},
+	{"blackwhitefuckfest", "blackwhitefuckfest.com", "Black White Fuckfest", "", "https://www.vivid.com", ""},
+	{"brandnewfaces", "brandnewfaces.com", "Brand New Faces", "", "https://www.vivid.com", ""},
+	{"girlswhofuckgirls", "girlswhofuckgirls.com", "Girls Who Fuck Girls", "", "https://www.vivid.com", ""},
+	{"momisamilf", "momisamilf.com", "Mom Is a Milf", "", "https://www.vivid.com", ""},
+	{"nastystepfamily", "nastystepfamily.com", "Nasty Step Family", "", "https://www.vivid.com", ""},
+	{"nineteen", "nineteen.com", "Nineteen", "", "https://www.vivid.com", ""},
+	{"orgytrain", "orgytrain.com", "Orgy Train", "", "https://www.vivid.com", ""},
+	{"petited", "petited.com", "Petited", "", "https://www.vivid.com", ""},
+	{"thebrats", "thebrats.com", "The Brats", "", "https://www.vivid.com", ""},
+	{"vividclassic", "vividclassic.com", "Vivid Classic", "", "https://www.vivid.com", ""},
+	{"wheretheboysarent", "wheretheboysarent.com", "Where The Boys Aren't", "", "https://www.vivid.com", ""},
+
 	// Adult Time segment — Devil's Film (Network) sub-sites
 	{"devilsfilm", "devilsfilm.com", "Devil's Film", "", "", ""},
 	{"devilsfilmparodies", "devilsfilmparodies.com", "Devil's Film Parodies", "", "", ""},
