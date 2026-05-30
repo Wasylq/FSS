@@ -12,6 +12,7 @@ import (
 	"github.com/Wasylq/FSS/models"
 )
 
+// SceneIndex is a precomputed index of scene titles for fast filename matching.
 type SceneIndex struct {
 	byTitle             map[string][]models.Scene
 	byTitleSanitized    map[string][]models.Scene // titles with noise words stripped
@@ -101,6 +102,7 @@ func (si *substringIndex) findCandidateTitles(filenameWords []string, minWordRat
 	return titles
 }
 
+// MatchConfidence indicates how strong a filename-to-title match is.
 type MatchConfidence int
 
 const (
@@ -123,6 +125,7 @@ func (c MatchConfidence) String() string {
 	}
 }
 
+// MatchResult holds the matched scenes and confidence level for a single filename lookup.
 type MatchResult struct {
 	Confidence MatchConfidence
 	Scenes     []models.Scene // all matching FSS scenes (possibly from multiple sites)
@@ -136,6 +139,7 @@ var (
 	formatSuffixRe   = regexp.MustCompile(`(?i)\s*\(\s*(?:full\s+hd|4k|hd|mp4|mov|wmv|avi|mkv|1080p|720p|480p|sd)\s*\)\s*$`)
 )
 
+// Normalize lowercases, splits camelCase, and collapses non-alphanumeric runs into spaces.
 func Normalize(s string) string {
 	s = stripFormatSuffix(s)
 	s = camelLowerUpper.ReplaceAllString(s, "${1} ${2}")
@@ -184,6 +188,7 @@ func stripTrailingNumber(s string) string {
 	return trailingNumberRe.ReplaceAllString(s, "")
 }
 
+// BuildIndex creates a SceneIndex from a slice of scenes, building exact and substring lookup tables.
 func BuildIndex(scenes []models.Scene) *SceneIndex {
 	idx := &SceneIndex{
 		byTitle:             make(map[string][]models.Scene),

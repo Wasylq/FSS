@@ -7,6 +7,7 @@ import (
 	"github.com/Wasylq/FSS/match"
 )
 
+// Movie is a Kodi-style NFO structure for a single video.
 type Movie struct {
 	XMLName    xml.Name `xml:"movie"`
 	Title      string   `xml:"title"`
@@ -19,15 +20,18 @@ type Movie struct {
 	Tags       []string `xml:"tag,omitempty"`
 }
 
+// Thumb is a poster or fanart thumbnail URL with an aspect hint.
 type Thumb struct {
 	Aspect string `xml:"aspect,attr"`
 	URL    string `xml:",chardata"`
 }
 
+// Actor is a performer credit in the NFO.
 type Actor struct {
 	Name string `xml:"name"`
 }
 
+// FromMergedScene converts a cross-site merged scene into a Kodi NFO Movie.
 func FromMergedScene(m match.MergedScene) Movie {
 	mov := Movie{
 		Title:  m.Title,
@@ -52,6 +56,7 @@ func FromMergedScene(m match.MergedScene) Movie {
 	return mov
 }
 
+// Marshal serialises a Movie to XML with an XML declaration header.
 func Marshal(m Movie) ([]byte, error) {
 	body, err := xml.MarshalIndent(m, "", "  ")
 	if err != nil {

@@ -222,6 +222,7 @@ func (c *Client) FindSceneByID(ctx context.Context, id string) (*StashScene, boo
 	return result.FindScene, true, nil
 }
 
+// FindScenes returns one page of scenes matching filter, plus the total count.
 func (c *Client) FindScenes(ctx context.Context, filter FindScenesFilter, page, perPage int) ([]StashScene, int, error) {
 	sceneFilter := map[string]any{}
 	findFilter := map[string]any{
@@ -337,6 +338,7 @@ func (c *Client) FindAllScenes(ctx context.Context, filter FindScenesFilter, pro
 	return all, nil
 }
 
+// FindTagByName returns the ID of a tag with the exact name, or ("", false, nil) if not found.
 func (c *Client) FindTagByName(ctx context.Context, name string) (string, bool, error) {
 	data, err := c.do(ctx, graphqlRequest{
 		Query:     `query($name: String!) { findTags(tag_filter: { name: { value: $name, modifier: EQUALS } }) { tags { id name } } }`,
@@ -359,6 +361,7 @@ func (c *Client) FindTagByName(ctx context.Context, name string) (string, bool, 
 	return result.FindTags.Tags[0].ID, true, nil
 }
 
+// CreateTag creates a new tag and returns its ID.
 func (c *Client) CreateTag(ctx context.Context, name string) (string, error) {
 	data, err := c.do(ctx, graphqlRequest{
 		Query:     `mutation($input: TagCreateInput!) { tagCreate(input: $input) { id } }`,
@@ -378,6 +381,7 @@ func (c *Client) CreateTag(ctx context.Context, name string) (string, error) {
 	return result.TagCreate.ID, nil
 }
 
+// FindTagByAlias returns the ID of a tag that has the given alias, or ("", false, nil) if not found.
 func (c *Client) FindTagByAlias(ctx context.Context, alias string) (string, bool, error) {
 	data, err := c.do(ctx, graphqlRequest{
 		Query:     `query($alias: String!) { findTags(tag_filter: { aliases: { value: $alias, modifier: EQUALS } }) { tags { id name } } }`,
@@ -400,6 +404,7 @@ func (c *Client) FindTagByAlias(ctx context.Context, alias string) (string, bool
 	return result.FindTags.Tags[0].ID, true, nil
 }
 
+// EnsureTag finds a tag by name or alias, creating it if neither exists. Returns the ID.
 func (c *Client) EnsureTag(ctx context.Context, name string) (string, error) {
 	id, found, err := c.FindTagByName(ctx, name)
 	if err != nil {
@@ -422,6 +427,7 @@ func (c *Client) EnsureTag(ctx context.Context, name string) (string, error) {
 	return id, nil
 }
 
+// FindPerformerByName returns the ID of a performer with the exact name, or ("", false, nil) if not found.
 func (c *Client) FindPerformerByName(ctx context.Context, name string) (string, bool, error) {
 	data, err := c.do(ctx, graphqlRequest{
 		Query:     `query($name: String!) { findPerformers(performer_filter: { name: { value: $name, modifier: EQUALS } }) { performers { id name } } }`,
@@ -444,6 +450,7 @@ func (c *Client) FindPerformerByName(ctx context.Context, name string) (string, 
 	return result.FindPerformers.Performers[0].ID, true, nil
 }
 
+// CreatePerformer creates a new performer and returns its ID.
 func (c *Client) CreatePerformer(ctx context.Context, name string) (string, error) {
 	data, err := c.do(ctx, graphqlRequest{
 		Query:     `mutation($input: PerformerCreateInput!) { performerCreate(input: $input) { id } }`,
@@ -463,6 +470,7 @@ func (c *Client) CreatePerformer(ctx context.Context, name string) (string, erro
 	return result.PerformerCreate.ID, nil
 }
 
+// EnsurePerformer finds a performer by name, creating it if not found. Returns the ID.
 func (c *Client) EnsurePerformer(ctx context.Context, name string) (string, error) {
 	id, found, err := c.FindPerformerByName(ctx, name)
 	if err != nil {
@@ -478,6 +486,7 @@ func (c *Client) EnsurePerformer(ctx context.Context, name string) (string, erro
 	return id, nil
 }
 
+// FindStudioByName returns the ID of a studio with the exact name, or ("", false, nil) if not found.
 func (c *Client) FindStudioByName(ctx context.Context, name string) (string, bool, error) {
 	data, err := c.do(ctx, graphqlRequest{
 		Query:     `query($name: String!) { findStudios(studio_filter: { name: { value: $name, modifier: EQUALS } }) { studios { id name } } }`,
@@ -500,6 +509,7 @@ func (c *Client) FindStudioByName(ctx context.Context, name string) (string, boo
 	return result.FindStudios.Studios[0].ID, true, nil
 }
 
+// CreateStudio creates a new studio and returns its ID.
 func (c *Client) CreateStudio(ctx context.Context, name string) (string, error) {
 	data, err := c.do(ctx, graphqlRequest{
 		Query:     `mutation($input: StudioCreateInput!) { studioCreate(input: $input) { id } }`,
@@ -519,6 +529,7 @@ func (c *Client) CreateStudio(ctx context.Context, name string) (string, error) 
 	return result.StudioCreate.ID, nil
 }
 
+// EnsureStudio finds a studio by name, creating it if not found. Returns the ID.
 func (c *Client) EnsureStudio(ctx context.Context, name string) (string, error) {
 	id, found, err := c.FindStudioByName(ctx, name)
 	if err != nil {
@@ -539,6 +550,7 @@ mutation SceneUpdate($input: SceneUpdateInput!) {
   sceneUpdate(input: $input) { id }
 }`
 
+// UpdateScene pushes metadata changes to an existing Stash scene.
 func (c *Client) UpdateScene(ctx context.Context, input SceneUpdateInput) error {
 	if _, err := c.do(ctx, graphqlRequest{
 		Query:     sceneUpdateMutation,

@@ -28,6 +28,7 @@ var videoExtensions = map[string]bool{
 	".ts":   true,
 }
 
+// Result holds the outcome of matching a single video file against the scene index.
 type Result struct {
 	VideoPath  string
 	NFOPath    string
@@ -37,12 +38,14 @@ type Result struct {
 	SkipReason string
 }
 
+// Options controls the identify run behaviour.
 type Options struct {
 	Apply    bool
 	Force    bool
 	NoReport bool
 }
 
+// FindVideos recursively lists all video files under dir.
 func FindVideos(dir string) ([]string, error) {
 	var videos []string
 	err := filepath.WalkDir(dir, func(path string, d fs.DirEntry, err error) error {
@@ -61,6 +64,7 @@ func FindVideos(dir string) ([]string, error) {
 	return videos, err
 }
 
+// Run matches each video against the scene index and optionally writes NFO sidecar files.
 func Run(videos []string, idx *match.SceneIndex, opts Options) []Result {
 	var results []Result
 
@@ -112,6 +116,7 @@ func Run(videos []string, idx *match.SceneIndex, opts Options) []Result {
 	return results
 }
 
+// Stats aggregates identify results into counts.
 type Stats struct {
 	Total     int
 	Matched   int
@@ -120,6 +125,7 @@ type Stats struct {
 	Skipped   int
 }
 
+// Summarize tallies results into matched/unmatched/ambiguous/skipped counts.
 func Summarize(results []Result) Stats {
 	var s Stats
 	s.Total = len(results)
@@ -138,6 +144,7 @@ func Summarize(results []Result) Stats {
 	return s
 }
 
+// WriteReport writes an fss-report.txt listing unmatched and skipped files.
 func WriteReport(dir string, results []Result) error {
 	var sb strings.Builder
 	sb.WriteString("# FSS Identify Report\n")
