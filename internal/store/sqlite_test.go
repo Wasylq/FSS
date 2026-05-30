@@ -116,6 +116,37 @@ func newTestDB(t *testing.T) *SQLite {
 	return s
 }
 
+func TestSQLiteLock(t *testing.T) {
+	dir := t.TempDir()
+	s, err := NewSQLite(filepath.Join(dir, "test.db"))
+	if err != nil {
+		t.Fatalf("NewSQLite: %v", err)
+	}
+	t.Cleanup(func() { _ = s.Close() })
+
+	unlock, err := s.Lock(testStudioURL)
+	if err != nil {
+		t.Fatalf("Lock: %v", err)
+	}
+	if err := unlock.Close(); err != nil {
+		t.Fatalf("Close: %v", err)
+	}
+
+	// Re-acquire after release.
+	unlock2, err := s.Lock(testStudioURL)
+	if err != nil {
+		t.Fatalf("Lock after release: %v", err)
+	}
+	_ = unlock2.Close()
+
+	// Verify lock file was created in the DB directory.
+	slug := Slugify(testStudioURL)
+	lockPath := filepath.Join(dir, slug+".lock")
+	if _, err := os.Stat(lockPath); err != nil {
+		t.Errorf("lock file not created at %s: %v", lockPath, err)
+	}
+}
+
 func TestSQLiteSaveLoad(t *testing.T) {
 	s := newTestDB(t)
 	now := time.Now().UTC().Truncate(time.Second)

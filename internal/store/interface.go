@@ -2,6 +2,7 @@ package store
 
 import (
 	"fmt"
+	"io"
 
 	"github.com/Wasylq/FSS/models"
 )
@@ -28,6 +29,13 @@ func validateScenes(scenes []models.Scene) error {
 // Store is the persistence layer. The default implementation uses flat JSON/CSV files.
 // An optional SQLite-backed implementation is selected with the --db flag.
 type Store interface {
+	// Lock acquires a process-level advisory lock for the given studio URL,
+	// preventing concurrent scrapes of the same URL from racing on
+	// Load+Save. The caller must defer Close on the returned value to
+	// release the lock. On Unix the lock uses flock(2) on a sidecar
+	// `.lock` file; on Windows it is a no-op.
+	Lock(studioURL string) (io.Closer, error)
+
 	// Load returns all scenes previously scraped for this studio URL.
 	Load(studioURL string) ([]models.Scene, error)
 

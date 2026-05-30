@@ -3,6 +3,7 @@ package store
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"time"
@@ -29,6 +30,13 @@ func (f *Flat) jsonPath(studioURL string) string {
 
 func (f *Flat) csvPath(studioURL string) string {
 	return filepath.Join(f.dir, Slugify(studioURL)+".csv")
+}
+
+func (f *Flat) Lock(studioURL string) (io.Closer, error) {
+	if err := os.MkdirAll(f.dir, 0o755); err != nil {
+		return nil, fmt.Errorf("creating output dir for lock: %w", err)
+	}
+	return lockFile(filepath.Join(f.dir, Slugify(studioURL)+".lock"))
 }
 
 func (f *Flat) Load(studioURL string) ([]models.Scene, error) {
@@ -97,6 +105,12 @@ func (f *Flat) Save(studioURL string, scenes []models.Scene) error {
 }
 
 func (f *Flat) MarkDeleted(studioURL, siteID string, ids []string) error {
+	unlock, err := f.Lock(studioURL)
+	if err != nil {
+		return fmt.Errorf("locking studio for MarkDeleted: %w", err)
+	}
+	defer func() { _ = unlock.Close() }()
+
 	scenes, err := f.Load(studioURL)
 	if err != nil {
 		return err

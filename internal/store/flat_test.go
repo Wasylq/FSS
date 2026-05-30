@@ -385,6 +385,40 @@ func TestFlatMarkDeletedSiteIDScoped(t *testing.T) {
 	}
 }
 
+func TestFlatLock(t *testing.T) {
+	f := newTestFlat(t)
+
+	unlock, err := f.Lock(flatTestURL)
+	if err != nil {
+		t.Fatalf("Lock: %v", err)
+	}
+	if err := unlock.Close(); err != nil {
+		t.Fatalf("Close: %v", err)
+	}
+
+	// Re-acquire after release.
+	unlock2, err := f.Lock(flatTestURL)
+	if err != nil {
+		t.Fatalf("Lock after release: %v", err)
+	}
+	_ = unlock2.Close()
+}
+
+func TestFlatLockCreatesDir(t *testing.T) {
+	dir := filepath.Join(t.TempDir(), "nested", "deep")
+	f := NewFlat(dir, []string{"json"})
+
+	unlock, err := f.Lock(flatTestURL)
+	if err != nil {
+		t.Fatalf("Lock: %v", err)
+	}
+	_ = unlock.Close()
+
+	if _, err := os.Stat(dir); err != nil {
+		t.Errorf("Lock should create dir: %v", err)
+	}
+}
+
 func TestFlatSaveWithCSV(t *testing.T) {
 	f := newTestFlat(t, "json", "csv")
 	now := time.Now().UTC().Truncate(time.Second)

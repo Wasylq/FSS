@@ -4,6 +4,9 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"io"
+	"os"
+	"path/filepath"
 	"time"
 
 	"github.com/Wasylq/FSS/models"
@@ -13,7 +16,8 @@ import (
 // SQLite is the optional store backed by a SQLite database.
 // Enabled with the --db flag. JSON/CSV are exported from it on request.
 type SQLite struct {
-	db *sql.DB
+	db      *sql.DB
+	lockDir string
 }
 
 func NewSQLite(path string) (*SQLite, error) {
@@ -36,7 +40,7 @@ func NewSQLite(path string) (*SQLite, error) {
 			return nil, fmt.Errorf("%s: %w", p, err)
 		}
 	}
-	s := &SQLite{db: db}
+	s := &SQLite{db: db, lockDir: filepath.Dir(path)}
 	if err := s.migrate(); err != nil {
 		_ = db.Close()
 		return nil, fmt.Errorf("migrating schema: %w", err)
@@ -45,6 +49,13 @@ func NewSQLite(path string) (*SQLite, error) {
 }
 
 func (s *SQLite) Close() error { return s.db.Close() }
+
+func (s *SQLite) Lock(studioURL string) (io.Closer, error) {
+	if err := os.MkdirAll(s.lockDir, 0o700); err != nil {
+		return nil, fmt.Errorf("creating lock dir: %w", err)
+	}
+	return lockFile(filepath.Join(s.lockDir, Slugify(studioURL)+".lock"))
+}
 
 // ---- schema ----
 

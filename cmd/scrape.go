@@ -154,6 +154,12 @@ func scrapeOne(ctx context.Context, st store.Store, studioURL, name, dbPath, out
 		return err
 	}
 
+	unlock, err := st.Lock(studioURL)
+	if err != nil {
+		return fmt.Errorf("locking studio: %w", err)
+	}
+	defer func() { _ = unlock.Close() }()
+
 	delay := resolveSiteDelay(sc.ID(), defaultDelay, siteDelays)
 	scraper.Debugf(1, "scraper: %s, delay: %v, workers: %d", sc.ID(), delay, workers)
 
