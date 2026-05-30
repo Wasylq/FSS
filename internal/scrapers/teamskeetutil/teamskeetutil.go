@@ -41,7 +41,6 @@ func New(cfg SiteConfig) *Scraper {
 		cfg:    cfg,
 	}
 }
-
 func (s *Scraper) Run(ctx context.Context, studioURL string, opts scraper.ListOpts, out chan<- scraper.SceneResult) {
 	defer close(out)
 

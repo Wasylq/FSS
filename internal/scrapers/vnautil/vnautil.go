@@ -46,6 +46,8 @@ func New(cfg SiteConfig) *Scraper {
 	}
 }
 
+var _ scraper.StudioScraper = (*Scraper)(nil)
+
 func NewWithBase(cfg SiteConfig, base string, client *http.Client) *Scraper {
 	return &Scraper{
 		cfg:        cfg,

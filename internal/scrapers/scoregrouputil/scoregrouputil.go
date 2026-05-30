@@ -33,7 +33,6 @@ type Scraper struct {
 func New(cfg SiteConfig) *Scraper {
 	return &Scraper{Client: httpx.NewClient(30 * time.Second), cfg: cfg}
 }
-
 func (s *Scraper) Run(ctx context.Context, studioURL string, opts scraper.ListOpts, out chan<- scraper.SceneResult) {
 	defer close(out)
 

@@ -73,6 +73,8 @@ type siteScraper struct {
 	patterns []string
 }
 
+var _ scraper.StudioScraper = (*siteScraper)(nil)
+
 func (s *siteScraper) ID() string               { return s.config.SiteID }
 func (s *siteScraper) Patterns() []string       { return s.patterns }
 func (s *siteScraper) MatchesURL(u string) bool { return s.matchRe.MatchString(u) }

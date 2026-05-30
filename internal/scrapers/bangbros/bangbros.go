@@ -27,6 +27,8 @@ func New() *Scraper {
 	return &Scraper{aylo: ayloutil.New(config)}
 }
 
+var _ scraper.StudioScraper = (*Scraper)(nil)
+
 func init() {
 	scraper.Register(New())
 }

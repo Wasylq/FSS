@@ -117,6 +117,8 @@ type siteScraper struct {
 	matchRe *regexp.Regexp
 }
 
+var _ scraper.StudioScraper = (*siteScraper)(nil)
+
 func newScraper(cfg scoregrouputil.SiteConfig) *siteScraper {
 	domain := strings.TrimPrefix(cfg.SiteBase, "https://www.")
 	escaped := regexp.QuoteMeta(domain)

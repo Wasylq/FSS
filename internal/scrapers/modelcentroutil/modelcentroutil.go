@@ -41,7 +41,6 @@ func New(cfg SiteConfig) *Scraper {
 		Client: httpx.NewClient(30 * time.Second),
 	}
 }
-
 func (s *Scraper) ID() string         { return s.cfg.SiteID }
 func (s *Scraper) Patterns() []string { return []string{domainFromBase(s.cfg.SiteBase) + "/videos"} }
 

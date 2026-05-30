@@ -30,6 +30,8 @@ func New() *Scraper {
 	}
 }
 
+var _ scraper.StudioScraper = (*Scraper)(nil)
+
 func (s *Scraper) ID() string { return "nookies" }
 
 func (s *Scraper) Patterns() []string {

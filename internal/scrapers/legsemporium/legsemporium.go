@@ -40,6 +40,8 @@ func (s *Scraper) Patterns() []string {
 	}
 }
 
+var _ scraper.StudioScraper = (*Scraper)(nil)
+
 var matchRe = regexp.MustCompile(`^https?://(?:www\.)?legsemporium\.com(?:/|$)`)
 
 func (s *Scraper) MatchesURL(u string) bool { return matchRe.MatchString(u) }

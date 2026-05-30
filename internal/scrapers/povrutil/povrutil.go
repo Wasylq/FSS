@@ -33,6 +33,8 @@ func New(cfg SiteConfig) *Scraper {
 	}
 }
 
+var _ scraper.StudioScraper = (*Scraper)(nil)
+
 func (s *Scraper) ID() string               { return s.cfg.ID }
 func (s *Scraper) Patterns() []string       { return s.cfg.Patterns }
 func (s *Scraper) MatchesURL(u string) bool { return s.cfg.MatchRe.MatchString(u) }

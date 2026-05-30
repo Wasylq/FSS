@@ -36,6 +36,8 @@ func New() *Scraper {
 	}
 }
 
+var _ scraper.StudioScraper = (*Scraper)(nil)
+
 func (s *Scraper) ID() string { return siteID }
 
 func (s *Scraper) Patterns() []string {

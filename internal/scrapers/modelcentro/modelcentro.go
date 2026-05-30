@@ -52,6 +52,8 @@ type siteScraper struct {
 	matchRe *regexp.Regexp
 }
 
+var _ scraper.StudioScraper = (*siteScraper)(nil)
+
 func (s *siteScraper) MatchesURL(u string) bool { return s.matchRe.MatchString(u) }
 
 func init() {

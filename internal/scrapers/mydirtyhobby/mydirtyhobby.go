@@ -40,6 +40,8 @@ func New() *Scraper {
 	}
 }
 
+var _ scraper.StudioScraper = (*Scraper)(nil)
+
 func init() {
 	scraper.Register(New())
 }

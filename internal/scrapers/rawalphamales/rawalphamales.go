@@ -24,6 +24,8 @@ func New() *Scraper {
 	return &Scraper{client: httpx.NewClient(30 * time.Second)}
 }
 
+var _ scraper.StudioScraper = (*Scraper)(nil)
+
 func init() { scraper.Register(New()) }
 
 func (s *Scraper) ID() string { return "rawalphamales" }

@@ -44,6 +44,8 @@ type siteScraper struct {
 	inner   *fpnutil.Scraper
 }
 
+var _ scraper.StudioScraper = (*siteScraper)(nil)
+
 func newSiteScraper(cfg fpnutil.SiteConfig) *siteScraper {
 	re := regexp.MustCompile(fmt.Sprintf(`^https?://(?:www\.)?%s(?:/|$)`, strings.ReplaceAll(cfg.Domain, ".", `\.`)))
 	return &siteScraper{

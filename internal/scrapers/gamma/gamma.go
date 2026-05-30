@@ -231,6 +231,8 @@ type siteScraper struct {
 	matchRe *regexp.Regexp
 }
 
+var _ scraper.StudioScraper = (*siteScraper)(nil)
+
 func (s *siteScraper) ID() string               { return s.config.SiteID }
 func (s *siteScraper) Patterns() []string       { return []string{s.config.Domain} }
 func (s *siteScraper) MatchesURL(u string) bool { return s.matchRe.MatchString(u) }
