@@ -86,7 +86,7 @@ Scrapers never know which store is active.
 
 ## Shared Scraper Packages
 
-27+ `*util` packages eliminate duplication for sites that share a platform. The full list with detection signals is in `CLAUDE.md` under **Platform Detection for New Scrapers**. Key examples:
+27+ `*util` packages eliminate duplication for sites that share a platform. Key examples:
 
 ### ayloutil
 
@@ -122,7 +122,7 @@ For POVR/WankzVR VR platform sites (BrasilVR, MilfVR, TranzVR, WankzVR). Uses th
 
 **File:** `internal/scrapers/sexmexutil/`
 
-For SexMex Pro CMS sites (Exposed Latinas, SexMex, Trans Queens). Handles the `/es/`/`/en/` locale prefix and HTTP 500 responses with valid HTML (intentional — see Key Conventions in CLAUDE.md).
+For SexMex Pro CMS sites (Exposed Latinas, SexMex, Trans Queens). Handles the `/es/`/`/en/` locale prefix and HTTP 500 responses with valid HTML (intentional — the CMS returns HTTP 500 with a valid page body on some endpoints).
 
 ### scoregrouputil
 

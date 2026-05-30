@@ -23,6 +23,20 @@ FSS makes outbound HTTP requests to:
 
 No data is sent to any analytics services, or any other third party.
 
+### SSRF mitigations
+
+`fss stash import --cover` downloads thumbnail URLs from FSS JSON files and pushes them to Stash. When importing third-party JSON dumps, a malicious URL could target internal services. FSS validates cover URLs before fetching:
+
+- **Scheme**: only `http` and `https` are allowed. `file://`, `gopher://`, `data:`, etc. are rejected.
+- **Host**: must not resolve to a private (RFC1918), loopback, link-local, or unspecified IP address. This blocks `localhost`, cloud metadata endpoints (`169.254.169.254`), and internal network hosts.
+- **Size**: response bodies are capped at 10 MiB.
+
+If your cover images are hosted on a LAN media server (e.g. `192.168.1.50`), pass `--cover-allow-private` to bypass the IP check. The scheme and size restrictions still apply.
+
+See [docs/stash.md — Cover images](docs/stash.md#cover-images) for full details. The implementation is in `stash/client.go:validateCoverURL`.
+
+**Limitation**: the DNS lookup happens before the HTTP request. DNS rebinding attacks (where a hostname resolves to a public IP during validation but to a private IP during the actual fetch) are not mitigated. For the expected threat model — importing someone else's JSON dump — the attacker would also need to control DNS for a domain the user resolves, which is a low-probability scenario.
+
 ## Reporting a vulnerability
 
 If you find a security issue, please open a GitHub issue or email the maintainer directly. There is no bug bounty program.

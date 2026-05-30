@@ -116,7 +116,7 @@ var sites = []SiteConfig{
 		MatchRe:  regexp.MustCompile(`^https?://(?:vanessacage\.puba\.com|(?:www\.)?puba\.com/pornstarnetwork/[^?]*\?[^#]*[?&]group=49(?:&|$))`),
 	},
 	// Additional Puba network sub-sites (not in stashdb, discovered via
-	// the network's `?section=539` site index — see CLAUDE.md).
+	// the network's `?section=539` site index).
 	{
 		ID:       "pubaadventuresxxx",
 		SiteName: "Adventures XXX",

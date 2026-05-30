@@ -12,7 +12,7 @@
 //     `<span class="date">Puplished on: <b>05/19/2026</b></span>`,
 //     `<span class="time">28&nbsp;minute(s)&nbsp;Movie</span>`.
 //
-// CLAUDE.md predicts a shared `elevatedxoldutil` once a 6th `data-setid` site
+// A shared `elevatedxoldutil` might make sense once a 6th `data-setid` site
 // shows up — but in practice every site in that family has a different card
 // wrapper class (`update_details` / `latestUpdateB` / `videoBlock` / now
 // `th`), so a util would just be six regex sets in a trench coat. Standalone
