@@ -23,16 +23,18 @@ type SiteConfig struct {
 }
 
 type Scraper struct {
-	cfg    SiteConfig
-	client *http.Client
-	base   string
+	cfg     SiteConfig
+	client  *http.Client
+	base    string
+	matchRe *regexp.Regexp
 }
 
 func New(cfg SiteConfig) *Scraper {
 	return &Scraper{
-		cfg:    cfg,
-		client: httpx.NewClient(30 * time.Second),
-		base:   "https://www." + cfg.Domain,
+		cfg:     cfg,
+		client:  httpx.NewClient(30 * time.Second),
+		base:    "https://www." + cfg.Domain,
+		matchRe: regexp.MustCompile(`^https?://(?:www\.)?` + regexp.QuoteMeta(cfg.Domain) + `(?:/|$)`),
 	}
 }
 
@@ -48,19 +50,7 @@ func (s *Scraper) Patterns() []string {
 }
 
 func (s *Scraper) MatchesURL(u string) bool {
-	return buildMatchRe(s.cfg.Domain).MatchString(u)
-}
-
-var matchCache sync.Map
-
-func buildMatchRe(domain string) *regexp.Regexp {
-	if re, ok := matchCache.Load(domain); ok {
-		return re.(*regexp.Regexp)
-	}
-	escaped := strings.ReplaceAll(domain, ".", `\.`)
-	re := regexp.MustCompile(`^https?://(?:www\.)?` + escaped + `(?:/|$)`)
-	matchCache.Store(domain, re)
-	return re
+	return s.matchRe.MatchString(u)
 }
 
 var modelRe = regexp.MustCompile(`/tour/models/`)
