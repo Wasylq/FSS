@@ -21,6 +21,7 @@ type SiteConfig struct {
 	SiteID     string
 	Domain     string
 	StudioName string
+	MoviesOnly bool // use /api/movies endpoint; accept GALLERY type (errotica-archives)
 }
 
 type Scraper struct {
@@ -95,7 +96,7 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 		}
 		var scenes []models.Scene
 		for _, g := range resp.Galleries {
-			if g.Type != "MOVIE" {
+			if !s.cfg.MoviesOnly && g.Type != "MOVIE" {
 				continue
 			}
 			scenes = append(scenes, toScene(s.cfg, studioURL, s.base, g, now))
@@ -109,7 +110,11 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 }
 
 func (s *Scraper) fetchPage(ctx context.Context, page int) (*apiResponse, error) {
-	u := fmt.Sprintf("%s/api/updates?page=%d&limit=%d", s.base, page, pageSize)
+	endpoint := "updates"
+	if s.cfg.MoviesOnly {
+		endpoint = "movies"
+	}
+	u := fmt.Sprintf("%s/api/%s?page=%d&limit=%d", s.base, endpoint, page, pageSize)
 	resp, err := httpx.Do(ctx, s.client, httpx.Request{
 		URL: u,
 		Headers: func() map[string]string {
@@ -137,7 +142,7 @@ func toScene(cfg SiteConfig, studioURL, base string, g gallery, now time.Time) m
 		StudioURL:  studioURL,
 		Title:      g.Name,
 		URL:        base + g.Path,
-		Duration:   g.Runtime,
+		Duration:   max(g.Runtime, 0),
 		Performers: modelNames(g.Models),
 		Tags:       g.Categories,
 		Studio:     cfg.StudioName,

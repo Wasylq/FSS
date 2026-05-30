@@ -337,11 +337,18 @@ func (s *Scraper) fetchDetail(ctx context.Context, ls listingScene, delay time.D
 		}
 	}
 
+	title := ls.title
+	if title == "" {
+		if m := titleRe.FindSubmatch(body); m != nil {
+			title = strings.TrimSpace(string(m[1]))
+		}
+	}
+
 	return models.Scene{
 		ID:          ls.id,
 		SiteID:      s.cfg.SiteID,
 		StudioURL:   s.cfg.SiteBase,
-		Title:       ls.title,
+		Title:       title,
 		URL:         ls.url,
 		Date:        date,
 		Description: desc,

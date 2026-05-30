@@ -7,7 +7,7 @@ import (
 
 var sites = []metartutil.SiteConfig{
 	{SiteID: "alsscan", Domain: "alsscan.com", StudioName: "ALS Scan"},
-	{SiteID: "erroticaarchives", Domain: "errotica-archives.com", StudioName: "Errotica Archives"},
+	{SiteID: "erroticaarchives", Domain: "errotica-archives.com", StudioName: "Errotica Archives", MoviesOnly: true},
 	{SiteID: "eternaldesire", Domain: "eternaldesire.com", StudioName: "Eternal Desire"},
 	{SiteID: "lovehairy", Domain: "lovehairy.com", StudioName: "Love Hairy"},
 	{SiteID: "metart", Domain: "metart.com", StudioName: "MetArt"},
