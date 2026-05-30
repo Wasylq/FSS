@@ -175,22 +175,28 @@ func (s *Scraper) scrapeSinglePage(ctx context.Context, pageURL string, opts scr
 		return
 	}
 
-	s.fetchDetailsAndSend(ctx, items, opts, out)
+	now := time.Now().UTC()
+	scenes := s.fetchDetails(ctx, items, opts, now)
+	for _, sc := range scenes {
+		if opts.KnownIDs[sc.ID] {
+			scraper.Debugf(1, "nookies: hit known ID, stopping early")
+			select {
+			case out <- scraper.StoppedEarly():
+			case <-ctx.Done():
+			}
+			return
+		}
+		select {
+		case out <- scraper.Scene(sc):
+		case <-ctx.Done():
+			return
+		}
+	}
 }
 
 func (s *Scraper) scrapePaginated(ctx context.Context, baseURL string, opts scraper.ListOpts, out chan<- scraper.SceneResult) {
-	for page := 1; ; page++ {
-		if ctx.Err() != nil {
-			return
-		}
-		if page > 1 && opts.Delay > 0 {
-			select {
-			case <-time.After(opts.Delay):
-			case <-ctx.Done():
-				return
-			}
-		}
-
+	now := time.Now().UTC()
+	scraper.Paginate(ctx, opts, "nookies", out, func(ctx context.Context, page int) (scraper.PageResult, error) {
 		pageURL := baseURL
 		if page > 1 {
 			if strings.Contains(baseURL, "?") {
@@ -200,43 +206,24 @@ func (s *Scraper) scrapePaginated(ctx context.Context, baseURL string, opts scra
 			}
 		}
 
-		scraper.Debugf(1, "nookies: fetching page %d", page)
-
 		body, err := s.fetchPage(ctx, pageURL)
 		if err != nil {
-			select {
-			case out <- scraper.Error(fmt.Errorf("page %d: %w", page, err)):
-			case <-ctx.Done():
-			}
-			return
+			return scraper.PageResult{}, err
 		}
 
 		items := parseListingPage(body)
 		if len(items) == 0 {
-			return
+			return scraper.PageResult{}, nil
 		}
 
-		if page == 1 {
-			total := estimateTotal(body, len(items))
-			scraper.Debugf(1, "nookies: %d total scenes (estimated)", total)
-			if total > 0 {
-				select {
-				case out <- scraper.Progress(total):
-				case <-ctx.Done():
-					return
-				}
-			}
-		}
-
-		stopped := s.fetchDetailsAndSend(ctx, items, opts, out)
-		if stopped {
-			return
-		}
-
-		if !hasNextPage(body) {
-			return
-		}
-	}
+		total := estimateTotal(body, len(items))
+		scenes := s.fetchDetails(ctx, items, opts, now)
+		return scraper.PageResult{
+			Scenes: scenes,
+			Total:  total,
+			Done:   !hasNextPage(body),
+		}, nil
+	})
 }
 
 func estimateTotal(body []byte, perPage int) int {
@@ -260,7 +247,7 @@ func hasNextPage(body []byte) bool {
 	return nextPageRe.Match(body)
 }
 
-func (s *Scraper) fetchDetailsAndSend(ctx context.Context, items []listItem, opts scraper.ListOpts, out chan<- scraper.SceneResult) (stopped bool) {
+func (s *Scraper) fetchDetails(ctx context.Context, items []listItem, opts scraper.ListOpts, now time.Time) []models.Scene {
 	workers := opts.Workers
 	if workers <= 0 {
 		workers = 4
@@ -280,7 +267,7 @@ func (s *Scraper) fetchDetailsAndSend(ctx context.Context, items []listItem, opt
 
 	for i, it := range items {
 		if ctx.Err() != nil {
-			return false
+			break
 		}
 		wg.Add(1)
 		go func(idx int, item listItem) {
@@ -302,36 +289,17 @@ func (s *Scraper) fetchDetailsAndSend(ctx context.Context, items []listItem, opt
 	}
 	wg.Wait()
 
-	now := time.Now().UTC()
+	var scenes []models.Scene
 	for _, r := range results {
 		if ctx.Err() != nil {
-			return false
+			break
 		}
-		if r.err != nil {
-			select {
-			case out <- scraper.Error(fmt.Errorf("detail %s: %w", r.item.id, r.err)):
-			case <-ctx.Done():
-			}
+		if r.err != nil || r.item.id == "" {
 			continue
 		}
-
-		if opts.KnownIDs[r.item.id] {
-			scraper.Debugf(1, "nookies: hit known ID, stopping early")
-			select {
-			case out <- scraper.StoppedEarly():
-			case <-ctx.Done():
-			}
-			return true
-		}
-
-		scene := toScene(s.base, r.item, r.detail, now)
-		select {
-		case out <- scraper.Scene(scene):
-		case <-ctx.Done():
-			return false
-		}
+		scenes = append(scenes, toScene(s.base, r.item, r.detail, now))
 	}
-	return false
+	return scenes
 }
 
 func (s *Scraper) fetchDetail(ctx context.Context, rawURL string) (detailData, error) {

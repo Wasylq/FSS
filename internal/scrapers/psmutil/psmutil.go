@@ -291,78 +291,22 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 	}
 
 	now := time.Now().UTC()
-	sentTotal := false
-	totalEmitted := 0
-
-	for page := 1; ; page++ {
-		if ctx.Err() != nil {
-			return
-		}
-		if page > 1 && opts.Delay > 0 {
-			select {
-			case <-time.After(opts.Delay):
-			case <-ctx.Done():
-				return
-			}
-		}
-
+	scraper.Paginate(ctx, opts, s.cfg.ID, out, func(ctx context.Context, page int) (scraper.PageResult, error) {
 		pageURL := s.listingURL(category, page)
-		scraper.Debugf(1, "%s: fetching listing page %d (%s)", s.cfg.ID, page, pageURL)
-
 		body, err := s.fetchPage(ctx, pageURL)
 		if err != nil {
-			select {
-			case out <- scraper.Error(fmt.Errorf("page %d: %w", page, err)):
-			case <-ctx.Done():
-			}
-			return
+			return scraper.PageResult{}, err
 		}
-
 		videos, err := parseListing(body)
 		if err != nil {
-			select {
-			case out <- scraper.Error(fmt.Errorf("page %d: %w", page, err)):
-			case <-ctx.Done():
-			}
-			return
+			return scraper.PageResult{}, err
 		}
-		if len(videos) == 0 {
-			scraper.Debugf(1, "%s: page %d has no videos, stopping", s.cfg.ID, page)
-			return
+		scenes := make([]models.Scene, len(videos))
+		for i, v := range videos {
+			scenes[i] = v.toScene(s.cfg.ID, s.cfg.SiteBase, s.cfg.Studio, now)
 		}
-
-		if !sentTotal {
-			// PSM doesn't expose a total count in JSON-LD; emit a Progress
-			// based on the first page's perPage * estimated-max-page from the
-			// pagination block. We just use the first page's count for now —
-			// the consumer's progress display shows "fetching: N scenes"
-			// without a denominator when total is unknown.
-			scraper.Debugf(1, "%s: first page has %d videos", s.cfg.ID, len(videos))
-			sentTotal = true
-		}
-
-		for _, v := range videos {
-			id := extractSceneID(v.URL)
-			if opts.KnownIDs[id] {
-				scraper.Debugf(1, "%s: hit known ID %s, stopping early", s.cfg.ID, id)
-				select {
-				case out <- scraper.StoppedEarly():
-				case <-ctx.Done():
-				}
-				return
-			}
-			scene := v.toScene(s.cfg.ID, s.cfg.SiteBase, s.cfg.Studio, now)
-			select {
-			case out <- scraper.Scene(scene):
-				totalEmitted++
-			case <-ctx.Done():
-				return
-			}
-		}
-
-		// Past-end behavior: PSM returns HTTP 200 with zero items, which we
-		// catch at the top of the next iteration via the len(videos)==0 check.
-	}
+		return scraper.PageResult{Scenes: scenes}, nil
+	})
 }
 
 func (v videoObject) toScene(siteID, siteBase, studio string, now time.Time) models.Scene {

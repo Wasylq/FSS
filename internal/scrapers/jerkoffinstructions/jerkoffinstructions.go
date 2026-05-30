@@ -53,67 +53,20 @@ func (s *Scraper) run(ctx context.Context, opts scraper.ListOpts, out chan<- scr
 	defer close(out)
 
 	now := time.Now().UTC()
-
-	for page := 1; ; page++ {
-		if ctx.Err() != nil {
-			return
-		}
-		if page > 1 && opts.Delay > 0 {
-			select {
-			case <-time.After(opts.Delay):
-			case <-ctx.Done():
-				return
-			}
-		}
-		scraper.Debugf(1, "jerkoffinstructions: fetching page %d", page)
-
+	scraper.Paginate(ctx, opts, "jerkoffinstructions", out, func(ctx context.Context, page int) (scraper.PageResult, error) {
 		body, err := s.fetchPage(ctx, page)
 		if err != nil {
-			select {
-			case out <- scraper.Error(fmt.Errorf("page %d: %w", page, err)):
-			case <-ctx.Done():
-			}
-			return
+			return scraper.PageResult{}, err
 		}
 
 		cards, total := parseListingPage(body)
 
-		if page == 1 && total > 0 {
-			scraper.Debugf(1, "jerkoffinstructions: %d total scenes", total)
-			select {
-			case out <- scraper.Progress(total):
-			case <-ctx.Done():
-				return
-			}
+		scenes := make([]models.Scene, len(cards))
+		for i, c := range cards {
+			scenes[i] = buildScene(c, now)
 		}
-
-		if len(cards) == 0 {
-			return
-		}
-
-		stoppedEarly := false
-		for _, c := range cards {
-			if opts.KnownIDs[c.id] {
-				stoppedEarly = true
-				break
-			}
-			scene := buildScene(c, now)
-			select {
-			case out <- scraper.Scene(scene):
-			case <-ctx.Done():
-				return
-			}
-		}
-
-		if stoppedEarly {
-			scraper.Debugf(1, "jerkoffinstructions: hit known ID, stopping early")
-			select {
-			case out <- scraper.StoppedEarly():
-			case <-ctx.Done():
-			}
-			return
-		}
-	}
+		return scraper.PageResult{Scenes: scenes, Total: total}, nil
+	})
 }
 
 // ---- HTTP ----

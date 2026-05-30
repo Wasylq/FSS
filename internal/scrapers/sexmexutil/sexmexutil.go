@@ -81,70 +81,35 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 	slug := resolveListingSlug(studioURL, s.cfg.SiteBase)
 	scraper.Debugf(1, "%s: listing slug: %s", s.cfg.ID, slug)
 
-	for page := 1; ; page++ {
-		if ctx.Err() != nil {
-			return
-		}
-		if page > 1 && opts.Delay > 0 {
-			select {
-			case <-time.After(opts.Delay):
-			case <-ctx.Done():
-				return
-			}
-		}
-
-		scraper.Debugf(1, "%s: fetching page %d", s.cfg.ID, page)
+	now := time.Now().UTC()
+	var firstPageCount int
+	scraper.Paginate(ctx, opts, s.cfg.ID, out, func(ctx context.Context, page int) (scraper.PageResult, error) {
 		u := pageURL(s.cfg.SiteBase, slug, page)
 		body, err := s.fetchPage(ctx, u)
 		if err != nil {
-			select {
-			case out <- scraper.Error(fmt.Errorf("page %d: %w", page, err)):
-			case <-ctx.Done():
-			}
-			return
+			return scraper.PageResult{}, err
 		}
 
 		cards := parseCards(body)
 		if len(cards) == 0 {
-			return
+			return scraper.PageResult{}, nil
 		}
 
+		total := 0
 		if page == 1 {
+			firstPageCount = len(cards)
 			maxPage := extractMaxPage(body)
 			if maxPage > 0 {
-				scraper.Debugf(1, "%s: %d total scenes (estimated)", s.cfg.ID, maxPage*len(cards))
-				select {
-				case out <- scraper.Progress(maxPage * len(cards)):
-				case <-ctx.Done():
-					return
-				}
+				total = maxPage * firstPageCount
 			}
 		}
 
-		now := time.Now().UTC()
-		stoppedEarly := false
-		for _, c := range cards {
-			scene := s.cardToScene(studioURL, c, now)
-			if opts.KnownIDs[scene.ID] {
-				scraper.Debugf(1, "%s: hit known ID %s, stopping early", s.cfg.ID, scene.ID)
-				stoppedEarly = true
-				break
-			}
-			select {
-			case out <- scraper.Scene(scene):
-			case <-ctx.Done():
-				return
-			}
+		scenes := make([]models.Scene, len(cards))
+		for i, c := range cards {
+			scenes[i] = s.cardToScene(studioURL, c, now)
 		}
-
-		if stoppedEarly {
-			select {
-			case out <- scraper.StoppedEarly():
-			case <-ctx.Done():
-			}
-			return
-		}
-	}
+		return scraper.PageResult{Scenes: scenes, Total: total}, nil
+	})
 }
 
 // ---- page fetch ----

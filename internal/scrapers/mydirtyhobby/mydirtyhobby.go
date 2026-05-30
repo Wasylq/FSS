@@ -80,66 +80,22 @@ func (s *Scraper) ListScenes(ctx context.Context, studioURL string, opts scraper
 func (s *Scraper) run(ctx context.Context, studioURL string, uid int, nick string, opts scraper.ListOpts, out chan<- scraper.SceneResult) {
 	defer close(out)
 
-	delay := opts.Delay
-
-	for page := 1; ; page++ {
-		if ctx.Err() != nil {
-			return
-		}
-		if page > 1 {
-			select {
-			case <-time.After(delay):
-			case <-ctx.Done():
-				return
-			}
-		}
-		scraper.Debugf(1, "mydirtyhobby: fetching page %d", page)
-
+	now := time.Now().UTC()
+	scraper.Paginate(ctx, opts, "mydirtyhobby", out, func(ctx context.Context, page int) (scraper.PageResult, error) {
 		items, total, totalPages, err := s.fetchPage(ctx, uid, page)
 		if err != nil {
-			select {
-			case out <- scraper.Error(fmt.Errorf("page %d: %w", page, err)):
-			case <-ctx.Done():
-			}
-			return
+			return scraper.PageResult{}, err
 		}
-
-		if page == 1 && total > 0 {
-			scraper.Debugf(1, "mydirtyhobby: %d total scenes", total)
-			select {
-			case out <- scraper.Progress(total):
-			case <-ctx.Done():
-				return
-			}
+		scenes := make([]models.Scene, len(items))
+		for i, item := range items {
+			scenes[i] = toScene(studioURL, s.siteBase, uid, nick, item, now)
 		}
-
-		now := time.Now().UTC()
-		hitKnown := false
-		for _, item := range items {
-			id := strconv.Itoa(item.UVID)
-			if opts.KnownIDs[id] {
-				hitKnown = true
-				break
-			}
-			scene := toScene(studioURL, s.siteBase, uid, nick, item, now)
-			select {
-			case out <- scraper.Scene(scene):
-			case <-ctx.Done():
-				return
-			}
-		}
-
-		if hitKnown || page >= totalPages || len(items) == 0 {
-			if hitKnown {
-				scraper.Debugf(1, "mydirtyhobby: hit known ID, stopping early")
-				select {
-				case out <- scraper.StoppedEarly():
-				case <-ctx.Done():
-				}
-			}
-			return
-		}
-	}
+		return scraper.PageResult{
+			Scenes: scenes,
+			Total:  total,
+			Done:   page >= totalPages,
+		}, nil
+	})
 }
 
 // ---- API call ----

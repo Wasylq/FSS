@@ -49,69 +49,44 @@ func (s *Scraper) ListScenes(ctx context.Context, studioURL string, opts scraper
 func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOpts, out chan<- scraper.SceneResult) {
 	defer close(out)
 
-	for page := 1; ; page++ {
-		if ctx.Err() != nil {
-			return
-		}
-		if page > 1 && opts.Delay > 0 {
-			select {
-			case <-time.After(opts.Delay):
-			case <-ctx.Done():
-				return
-			}
-		}
-		scraper.Debugf(1, "charleechase: fetching page %d", page)
-
+	now := time.Now().UTC()
+	scraper.Paginate(ctx, opts, "charleechase", out, func(ctx context.Context, page int) (scraper.PageResult, error) {
 		pageURL := s.base + "/videos/page/" + strconv.Itoa(page)
 		items, err := s.fetchListing(ctx, pageURL)
 		if err != nil {
-			send(ctx, out, scraper.Error(fmt.Errorf("page %d: %w", page, err)))
-			return
+			return scraper.PageResult{}, err
 		}
 
-		if len(items) == 0 {
-			return
-		}
-
-		now := time.Now().UTC()
+		scenes := make([]models.Scene, 0, len(items))
 		for _, item := range items {
+			// Stop before detail-fetching known IDs; include a stub
+			// scene so Paginate can see the ID and trigger early-stop.
 			if opts.KnownIDs[item.id] {
-				scraper.Debugf(1, "charleechase: hit known ID, stopping early")
-				send(ctx, out, scraper.StoppedEarly())
-				return
+				scenes = append(scenes, models.Scene{ID: item.id})
+				break
 			}
 
 			if opts.Delay > 0 {
 				select {
 				case <-time.After(opts.Delay):
 				case <-ctx.Done():
-					return
+					return scraper.PageResult{}, ctx.Err()
 				}
 			}
 
-			detail, err := s.fetchDetail(ctx, item.href)
-			if err != nil {
-				if !send(ctx, out, scraper.Error(fmt.Errorf("detail %s: %w", item.id, err))) {
-					return
+			detail, detailErr := s.fetchDetail(ctx, item.href)
+			if detailErr != nil {
+				select {
+				case out <- scraper.Error(fmt.Errorf("detail %s: %w", item.id, detailErr)):
+				case <-ctx.Done():
 				}
 				detail = &detailData{}
 			}
 
-			scene := toScene(studioURL, item, detail, now)
-			if !send(ctx, out, scraper.Scene(scene)) {
-				return
-			}
+			scenes = append(scenes, toScene(studioURL, item, detail, now))
 		}
-	}
-}
-
-func send(ctx context.Context, ch chan<- scraper.SceneResult, r scraper.SceneResult) bool {
-	select {
-	case ch <- r:
-		return true
-	case <-ctx.Done():
-		return false
-	}
+		return scraper.PageResult{Scenes: scenes}, nil
+	})
 }
 
 // --- listing ---

@@ -61,9 +61,8 @@ var modelPageRe = regexp.MustCompile(`/models/([a-z0-9-]+)`)
 func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOpts, out chan<- scraper.SceneResult) {
 	defer close(out)
 
-	delay := opts.Delay
-	if delay == 0 {
-		delay = defaultDelay
+	if opts.Delay == 0 {
+		opts.Delay = defaultDelay
 	}
 
 	isModel := modelPageRe.MatchString(studioURL)
@@ -74,21 +73,7 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 		releasesKey = "releases"
 	}
 
-	totalSent := false
-	for page := 1; ; page++ {
-		if ctx.Err() != nil {
-			return
-		}
-
-		if page > 1 {
-			select {
-			case <-time.After(delay):
-			case <-ctx.Done():
-				return
-			}
-		}
-		scraper.Debugf(1, "%s: fetching page %d", s.cfg.SiteID, page)
-
+	scraper.Paginate(ctx, opts, s.cfg.SiteID, out, func(ctx context.Context, page int) (scraper.PageResult, error) {
 		var pageURL string
 		if isModel {
 			pageURL = studioURL
@@ -106,48 +91,19 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 
 		releases, hasNext, err := s.fetchPage(ctx, pageURL, dataKey, releasesKey)
 		if err != nil {
-			select {
-			case out <- scraper.Error(fmt.Errorf("page %d: %w", page, err)):
-			case <-ctx.Done():
-			}
-			return
+			return scraper.PageResult{}, err
 		}
 
 		if len(releases) == 0 {
-			return
+			return scraper.PageResult{}, nil
 		}
 
-		if !totalSent {
-			scraper.Debugf(1, "%s: %d total scenes", s.cfg.SiteID, 0)
-			select {
-			case out <- scraper.Progress(0):
-			case <-ctx.Done():
-				return
-			}
-			totalSent = true
+		scenes := make([]models.Scene, len(releases))
+		for i, rel := range releases {
+			scenes[i] = s.toScene(rel, studioURL)
 		}
-
-		for _, rel := range releases {
-			scene := s.toScene(rel, studioURL)
-			if opts.KnownIDs[scene.ID] {
-				scraper.Debugf(1, "%s: hit known ID, stopping early", s.cfg.SiteID)
-				select {
-				case out <- scraper.StoppedEarly():
-				case <-ctx.Done():
-				}
-				return
-			}
-			select {
-			case out <- scraper.Scene(scene):
-			case <-ctx.Done():
-				return
-			}
-		}
-
-		if !hasNext {
-			return
-		}
-	}
+		return scraper.PageResult{Scenes: scenes, Done: !hasNext}, nil
+	})
 }
 
 var nuxtDataRe = regexp.MustCompile(`<script[^>]*id="__NUXT_DATA__"[^>]*>(.*?)</script>`)

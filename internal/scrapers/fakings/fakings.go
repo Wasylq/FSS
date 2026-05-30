@@ -3,7 +3,6 @@ package fakings
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"regexp"
 	"strconv"
@@ -110,75 +109,37 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 		return
 	}
 
-	totalPages := 0
-	for page := 1; ; page++ {
-		if ctx.Err() != nil {
-			return
-		}
-		if page > 1 && opts.Delay > 0 {
-			select {
-			case <-time.After(opts.Delay):
-			case <-ctx.Done():
-				return
-			}
-		}
-		scraper.Debugf(1, "fakings: fetching page %d", page)
-
+	now := time.Now().UTC()
+	var totalPages int
+	scraper.Paginate(ctx, opts, "fakings", out, func(ctx context.Context, page int) (scraper.PageResult, error) {
 		body, err := s.fetchHTML(ctx, pc.pageURL(page))
 		if err != nil {
-			select {
-			case out <- scraper.Error(fmt.Errorf("page %d: %w", page, err)):
-			case <-ctx.Done():
-			}
-			return
+			return scraper.PageResult{}, err
 		}
 
 		rsc := extractRSC(body)
 		videos := parseGridVideos(rsc)
 		if len(videos) == 0 {
-			return
+			return scraper.PageResult{}, nil
 		}
 
+		total := 0
 		if page == 1 {
-			total, take := parsePagination(rsc)
-			if total > 0 {
-				scraper.Debugf(1, "fakings: %d total scenes", total)
-				select {
-				case out <- scraper.Progress(total):
-				case <-ctx.Done():
-					return
-				}
-			}
+			t, take := parsePagination(rsc)
+			total = t
 			if take > 0 {
-				totalPages = (total + take - 1) / take
+				totalPages = (t + take - 1) / take
 			}
 		}
 
-		now := time.Now().UTC()
-		for _, v := range videos {
-			scene := v.toScene(studioURL, now)
-			if opts.KnownIDs[scene.ID] {
-				scraper.Debugf(1, "fakings: hit known ID, stopping early")
-				select {
-				case out <- scraper.StoppedEarly():
-				case <-ctx.Done():
-				}
-				return
-			}
-			select {
-			case out <- scraper.Scene(scene):
-			case <-ctx.Done():
-				return
-			}
+		scenes := make([]models.Scene, len(videos))
+		for i, v := range videos {
+			scenes[i] = v.toScene(studioURL, now)
 		}
 
-		if totalPages > 0 && page >= totalPages {
-			return
-		}
-		if totalPages == 0 {
-			return
-		}
-	}
+		done := totalPages == 0 || (totalPages > 0 && page >= totalPages)
+		return scraper.PageResult{Scenes: scenes, Total: total, Done: done}, nil
+	})
 }
 
 func (s *Scraper) runActress(ctx context.Context, pc pageConfig, studioURL string, opts scraper.ListOpts, out chan<- scraper.SceneResult) {

@@ -142,80 +142,37 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 	scraper.Debugf(1, "%s: scraping WP REST catalog", s.cfg.ID)
 
 	now := time.Now().UTC()
-	sentTotal := false
-	totalPages := 0
-
-	for page := 1; ; page++ {
-		if ctx.Err() != nil {
-			return
-		}
-		if page > 1 && opts.Delay > 0 {
-			select {
-			case <-time.After(opts.Delay):
-			case <-ctx.Done():
-				return
-			}
-		}
-
+	var totalPages int
+	firstPage := true
+	scraper.Paginate(ctx, opts, s.cfg.ID, out, func(ctx context.Context, page int) (scraper.PageResult, error) {
 		pageURL := s.listingURL(page)
-		scraper.Debugf(1, "%s: fetching page %d", s.cfg.ID, page)
-
 		body, headers, err := s.fetchPage(ctx, pageURL)
 		if err != nil {
-			select {
-			case out <- scraper.Error(fmt.Errorf("page %d: %w", page, err)):
-			case <-ctx.Done():
-			}
-			return
+			return scraper.PageResult{}, err
 		}
 
 		var posts []wpPost
 		if err := json.Unmarshal(body, &posts); err != nil {
-			select {
-			case out <- scraper.Error(fmt.Errorf("page %d: parse: %w", page, err)):
-			case <-ctx.Done():
-			}
-			return
-		}
-		if len(posts) == 0 {
-			return
+			return scraper.PageResult{}, fmt.Errorf("parse: %w", err)
 		}
 
-		if !sentTotal {
-			total, _ := strconv.Atoi(headers.Get("X-WP-Total"))
+		var total int
+		if firstPage {
+			total, _ = strconv.Atoi(headers.Get("X-WP-Total"))
 			totalPages, _ = strconv.Atoi(headers.Get("X-WP-TotalPages"))
-			scraper.Debugf(1, "%s: %d total scenes across %d pages", s.cfg.ID, total, totalPages)
-			if total > 0 {
-				select {
-				case out <- scraper.Progress(total):
-				case <-ctx.Done():
-					return
-				}
-			}
-			sentTotal = true
+			firstPage = false
 		}
 
-		for _, post := range posts {
-			id := strconv.Itoa(post.ID)
-			if opts.KnownIDs[id] {
-				scraper.Debugf(1, "%s: hit known ID %s, stopping early", s.cfg.ID, id)
-				select {
-				case out <- scraper.StoppedEarly():
-				case <-ctx.Done():
-				}
-				return
-			}
-			select {
-			case out <- scraper.Scene(s.toScene(post, studioURL, now)):
-			case <-ctx.Done():
-				return
-			}
+		scenes := make([]models.Scene, len(posts))
+		for i, post := range posts {
+			scenes[i] = s.toScene(post, studioURL, now)
 		}
-
-		if totalPages > 0 && page >= totalPages {
-			return
-		}
-	}
+		return scraper.PageResult{
+			Scenes: scenes,
+			Total:  total,
+			Done:   totalPages > 0 && page >= totalPages,
+		}, nil
+	})
 }
 
 func (s *Scraper) toScene(p wpPost, studioURL string, now time.Time) models.Scene {

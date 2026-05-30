@@ -245,69 +245,30 @@ func (s *Scraper) scrapeModelPage(ctx context.Context, studioURL string, opts sc
 }
 
 func (s *Scraper) scrapeListingPages(ctx context.Context, opts scraper.ListOpts, out chan<- scraper.SceneResult, now time.Time) {
-	for page := 1; ; page++ {
-		if ctx.Err() != nil {
-			return
-		}
-		if page > 1 && opts.Delay > 0 {
-			select {
-			case <-time.After(opts.Delay):
-			case <-ctx.Done():
-				return
-			}
-		}
-		scraper.Debugf(1, "%s: fetching page %d", s.cfg.SiteID, page)
-
+	scraper.Paginate(ctx, opts, s.cfg.SiteID, out, func(ctx context.Context, page int) (scraper.PageResult, error) {
 		pageURL := fmt.Sprintf("%s/categories/movies_%d_d.html", s.base, page)
 
 		body, err := s.fetchPage(ctx, pageURL)
 		if err != nil {
-			select {
-			case out <- scraper.Error(fmt.Errorf("page %d: %w", page, err)):
-			case <-ctx.Done():
-			}
-			return
+			return scraper.PageResult{}, err
 		}
 
-		scenes := parseListingPage(body)
-		if len(scenes) == 0 {
-			return
+		items := parseListingPage(body)
+		if len(items) == 0 {
+			return scraper.PageResult{}, nil
 		}
 
+		total := 0
 		if page == 1 {
-			total := estimateTotal(body)
-			if total > 0 {
-				scraper.Debugf(1, "%s: %d total scenes", s.cfg.SiteID, total)
-				select {
-				case out <- scraper.Progress(total):
-				case <-ctx.Done():
-					return
-				}
-			}
+			total = estimateTotal(body)
 		}
 
-		for _, item := range scenes {
-			if opts.KnownIDs[item.id] {
-				scraper.Debugf(1, "%s: hit known ID, stopping early", s.cfg.SiteID)
-				select {
-				case out <- scraper.StoppedEarly():
-				case <-ctx.Done():
-				}
-				return
-			}
-
-			scene := s.buildScene(ctx, item, now)
-			select {
-			case out <- scraper.Scene(scene):
-			case <-ctx.Done():
-				return
-			}
+		scenes := make([]models.Scene, len(items))
+		for i, item := range items {
+			scenes[i] = s.buildScene(ctx, item, now)
 		}
-
-		if len(scenes) < perPage {
-			return
-		}
-	}
+		return scraper.PageResult{Scenes: scenes, Total: total, Done: len(items) < perPage}, nil
+	})
 }
 
 func (s *Scraper) buildScene(ctx context.Context, item sceneItem, now time.Time) models.Scene {

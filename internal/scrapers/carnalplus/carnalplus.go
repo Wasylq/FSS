@@ -221,23 +221,11 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 	scraper.Debugf(1, "carnalplus/%s: scraping (variant=%d)", s.cfg.ID, s.cfg.Variant)
 
 	now := time.Now().UTC()
-	sentTotal := false
 	wpTotalPages := 0
 
-	for page := 1; ; page++ {
-		if ctx.Err() != nil {
-			return
-		}
-		if page > 1 && opts.Delay > 0 {
-			select {
-			case <-time.After(opts.Delay):
-			case <-ctx.Done():
-				return
-			}
-		}
-
+	siteLabel := "carnalplus/" + s.cfg.ID
+	scraper.Paginate(ctx, opts, siteLabel, out, func(ctx context.Context, page int) (scraper.PageResult, error) {
 		pageURL := s.listingURL(page)
-		scraper.Debugf(1, "carnalplus/%s: fetching page %d", s.cfg.ID, page)
 
 		var (
 			items   []sceneItem
@@ -246,11 +234,7 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 		)
 		body, headers, err := s.fetchPage(ctx, pageURL)
 		if err != nil {
-			select {
-			case out <- scraper.Error(fmt.Errorf("page %d: %w", page, err)):
-			case <-ctx.Done():
-			}
-			return
+			return scraper.PageResult{}, err
 		}
 
 		switch s.cfg.Variant {
@@ -267,42 +251,18 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 		}
 
 		if len(items) == 0 {
-			return
+			return scraper.PageResult{}, nil
 		}
 
-		if !sentTotal {
-			scraper.Debugf(1, "carnalplus/%s: ~%d total (estimated)", s.cfg.ID, total)
-			if total > 0 {
-				select {
-				case out <- scraper.Progress(total):
-				case <-ctx.Done():
-					return
-				}
-			}
-			sentTotal = true
-		}
-
-		for _, item := range items {
-			if opts.KnownIDs[item.id] {
-				scraper.Debugf(1, "carnalplus/%s: hit known ID %s, stopping early", s.cfg.ID, item.id)
-				select {
-				case out <- scraper.StoppedEarly():
-				case <-ctx.Done():
-				}
-				return
-			}
-			select {
-			case out <- scraper.Scene(s.toScene(item, studioURL, now)):
-			case <-ctx.Done():
-				return
-			}
+		scenes := make([]models.Scene, len(items))
+		for i, item := range items {
+			scenes[i] = s.toScene(item, studioURL, now)
 		}
 
 		// WordPress pagination: stop once total_pages reached.
-		if s.cfg.Variant == VariantWordPress && wpTotalPages > 0 && page >= wpTotalPages {
-			return
-		}
-	}
+		done := s.cfg.Variant == VariantWordPress && wpTotalPages > 0 && page >= wpTotalPages
+		return scraper.PageResult{Scenes: scenes, Total: total, Done: done}, nil
+	})
 }
 
 // ---- NATS parser ----

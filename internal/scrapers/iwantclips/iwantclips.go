@@ -89,19 +89,9 @@ func (s *Scraper) run(ctx context.Context, studioURL, memberID string, opts scra
 		return
 	}
 
-	for page := 1; ; page++ {
-		if ctx.Err() != nil {
-			return
-		}
-		if page > 1 && opts.Delay > 0 {
-			select {
-			case <-time.After(opts.Delay):
-			case <-ctx.Done():
-				return
-			}
-		}
-		scraper.Debugf(1, "iwantclips: fetching page %d", page)
-
+	now := time.Now().UTC()
+	var lastTotal int
+	scraper.Paginate(ctx, opts, "iwantclips", out, func(ctx context.Context, page int) (scraper.PageResult, error) {
 		docs, total, err := s.fetchPage(ctx, apiKey, tsBase, memberID, page)
 		if err != nil {
 			// Typesense keys are ephemeral — refresh once on 401 and retry.
@@ -115,50 +105,24 @@ func (s *Scraper) run(ctx context.Context, studioURL, memberID string, opts scra
 				}
 			}
 			if err != nil {
-				select {
-				case out <- scraper.Error(fmt.Errorf("page %d: %w", page, err)):
-				case <-ctx.Done():
-				}
-				return
+				return scraper.PageResult{}, err
 			}
 		}
 
-		if page == 1 && total > 0 {
-			scraper.Debugf(1, "iwantclips: %d total scenes", total)
-			select {
-			case out <- scraper.Progress(total):
-			case <-ctx.Done():
-				return
-			}
+		if total > 0 {
+			lastTotal = total
 		}
 
-		now := time.Now().UTC()
-		hitKnown := false
-		for _, doc := range docs {
-			if opts.KnownIDs[doc.ContentID] {
-				hitKnown = true
-				break
-			}
-			scene := toScene(studioURL, doc, now)
-			select {
-			case out <- scraper.Scene(scene):
-			case <-ctx.Done():
-				return
-			}
+		scenes := make([]models.Scene, len(docs))
+		for i, doc := range docs {
+			scenes[i] = toScene(studioURL, doc, now)
 		}
 
-		totalPages := (total + s.perPage - 1) / s.perPage
-		if hitKnown || page >= totalPages || len(docs) == 0 {
-			if hitKnown {
-				scraper.Debugf(1, "iwantclips: hit known ID, stopping early")
-				select {
-				case out <- scraper.StoppedEarly():
-				case <-ctx.Done():
-				}
-			}
-			return
-		}
-	}
+		totalPages := (lastTotal + s.perPage - 1) / s.perPage
+		done := page >= totalPages
+
+		return scraper.PageResult{Scenes: scenes, Total: total, Done: done}, nil
+	})
 }
 
 // ---- page fetch (store HTML → Typesense key) ----

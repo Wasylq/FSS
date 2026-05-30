@@ -203,53 +203,34 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 		if ctx.Err() != nil {
 			return
 		}
-		stopped := s.scrapeStudio(ctx, cfg.ID, st.studio, st.total, studioURL, opts, out)
-		if stopped {
-			return
-		}
+		s.scrapeStudio(ctx, cfg.ID, st.studio, st.total, studioURL, opts, out)
 	}
 }
 
-func (s *Scraper) scrapeStudio(ctx context.Context, siteID int, studio configStudio, total int, studioURL string, opts scraper.ListOpts, out chan<- scraper.SceneResult) (stopped bool) {
+func (s *Scraper) scrapeStudio(ctx context.Context, cfgSiteID int, studio configStudio, total int, studioURL string, opts scraper.ListOpts, out chan<- scraper.SceneResult) {
 	scraper.Debugf(1, "teencoreclub: scraping studio %q (%d scenes)", studio.Name, total)
 
 	lastPage := (total + 49) / 50
 
-	for page := 1; page <= lastPage; page++ {
-		if ctx.Err() != nil {
-			return false
-		}
-		if page > 1 && opts.Delay > 0 {
-			select {
-			case <-time.After(opts.Delay):
-			case <-ctx.Done():
-				return false
-			}
-		}
-
-		scraper.Debugf(1, "teencoreclub: fetching %s page %d/%d", studio.Name, page, lastPage)
-
-		resp, err := s.fetchBrowsePage(ctx, siteID, studio.ID, page)
+	scraper.Paginate(ctx, opts, "teencoreclub", out, func(ctx context.Context, page int) (scraper.PageResult, error) {
+		resp, err := s.fetchBrowsePage(ctx, cfgSiteID, studio.ID, page)
 		if err != nil {
-			select {
-			case out <- scraper.Error(fmt.Errorf("studio %s page %d: %w", studio.Name, page, err)):
-			case <-ctx.Done():
-			}
-			return false
+			return scraper.PageResult{}, fmt.Errorf("studio %s: %w", studio.Name, err)
 		}
 
 		if len(resp.Videos.Data) == 0 {
-			return false
+			return scraper.PageResult{}, nil
 		}
 
-		if s.sendPage(ctx, resp.Videos.Data, studio, studioURL, opts, out) {
-			return true
+		scenes, err := s.enrichAndCollect(ctx, resp.Videos.Data, studio, studioURL, opts)
+		if err != nil {
+			return scraper.PageResult{}, err
 		}
-	}
-	return false
+		return scraper.PageResult{Scenes: scenes, Done: page >= lastPage}, nil
+	})
 }
 
-func (s *Scraper) sendPage(ctx context.Context, items []videoItem, studio configStudio, studioURL string, opts scraper.ListOpts, out chan<- scraper.SceneResult) (stopped bool) {
+func (s *Scraper) enrichAndCollect(ctx context.Context, items []videoItem, studio configStudio, studioURL string, opts scraper.ListOpts) ([]models.Scene, error) {
 	workers := opts.Workers
 	if workers <= 0 {
 		workers = 4
@@ -266,7 +247,7 @@ func (s *Scraper) sendPage(ctx context.Context, items []videoItem, studio config
 
 	for i, it := range items {
 		if ctx.Err() != nil {
-			return false
+			break
 		}
 		wg.Add(1)
 		go func(idx int, item videoItem) {
@@ -294,29 +275,14 @@ func (s *Scraper) sendPage(ctx context.Context, items []videoItem, studio config
 	wg.Wait()
 
 	now := time.Now().UTC()
+	var scenes []models.Scene
 	for _, r := range results {
 		if ctx.Err() != nil {
-			return false
+			break
 		}
-
-		id := strconv.Itoa(r.item.ID)
-		if opts.KnownIDs[id] {
-			scraper.Debugf(1, "teencoreclub: hit known ID, stopping early")
-			select {
-			case out <- scraper.StoppedEarly():
-			case <-ctx.Done():
-			}
-			return true
-		}
-
-		scene := toScene(r.item, r.detail, studio, studioURL, now)
-		select {
-		case out <- scraper.Scene(scene):
-		case <-ctx.Done():
-			return false
-		}
+		scenes = append(scenes, toScene(r.item, r.detail, studio, studioURL, now))
 	}
-	return false
+	return scenes, nil
 }
 
 func toScene(item videoItem, detail *videoDetail, studio configStudio, studioURL string, now time.Time) models.Scene {

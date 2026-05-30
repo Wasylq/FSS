@@ -66,19 +66,8 @@ func isModelURL(u string) bool {
 }
 
 func (s *Scraper) scrapeListingPages(ctx context.Context, opts scraper.ListOpts, out chan<- scraper.SceneResult, now time.Time) {
-	for page := 1; ; page++ {
-		if ctx.Err() != nil {
-			return
-		}
-		if page > 1 && opts.Delay > 0 {
-			select {
-			case <-time.After(opts.Delay):
-			case <-ctx.Done():
-				return
-			}
-		}
-		scraper.Debugf(1, "seemomsuck: fetching page %d", page)
-
+	firstPage := true
+	scraper.Paginate(ctx, opts, "seemomsuck", out, func(ctx context.Context, page int) (scraper.PageResult, error) {
 		var pageURL string
 		if page == 1 {
 			pageURL = s.siteBase + "/updates.html?sort=date"
@@ -88,49 +77,27 @@ func (s *Scraper) scrapeListingPages(ctx context.Context, opts scraper.ListOpts,
 
 		body, err := s.fetchPage(ctx, pageURL)
 		if err != nil {
-			select {
-			case out <- scraper.Error(fmt.Errorf("page %d: %w", page, err)):
-			case <-ctx.Done():
-			}
-			return
+			return scraper.PageResult{}, err
 		}
 
-		scenes := parseListingPage(body, s.siteBase)
-		if len(scenes) == 0 {
-			return
-		}
-
-		if page == 1 {
+		items := parseListingPage(body, s.siteBase)
+		var total int
+		if firstPage && len(items) > 0 {
 			maxPage := extractMaxPage(body)
-			total := len(scenes) * maxPage
-			scraper.Debugf(1, "seemomsuck: %d total scenes", total)
-			select {
-			case out <- scraper.Progress(total):
-			case <-ctx.Done():
-				return
-			}
+			total = len(items) * maxPage
+			firstPage = false
 		}
 
-		for _, ls := range scenes {
-			if opts.KnownIDs[ls.slug] {
-				scraper.Debugf(1, "seemomsuck: hit known ID, stopping early")
-				select {
-				case out <- scraper.StoppedEarly():
-				case <-ctx.Done():
-				}
-				return
-			}
-			select {
-			case out <- scraper.Scene(ls.toScene(s.siteBase, now)):
-			case <-ctx.Done():
-				return
-			}
+		scenes := make([]models.Scene, len(items))
+		for i, ls := range items {
+			scenes[i] = ls.toScene(s.siteBase, now)
 		}
-
-		if !hasNextPage(body, page) {
-			return
-		}
-	}
+		return scraper.PageResult{
+			Scenes: scenes,
+			Total:  total,
+			Done:   !hasNextPage(body, page),
+		}, nil
+	})
 }
 
 func (s *Scraper) scrapeModelPage(ctx context.Context, modelURL string, opts scraper.ListOpts, out chan<- scraper.SceneResult, now time.Time) {

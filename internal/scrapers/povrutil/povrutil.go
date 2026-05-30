@@ -94,60 +94,22 @@ func (s *Scraper) run(ctx context.Context, opts scraper.ListOpts, out chan<- scr
 	}
 
 	now := time.Now().UTC()
-
-	for page := 1; ; page++ {
-		if ctx.Err() != nil {
-			return
-		}
-		if page > 1 && opts.Delay > 0 {
-			select {
-			case <-time.After(opts.Delay):
-			case <-ctx.Done():
-				return
-			}
-		}
-
-		scraper.Debugf(1, "%s: fetching page %d", s.cfg.ID, page)
+	scraper.Paginate(ctx, opts, s.cfg.ID, out, func(ctx context.Context, page int) (scraper.PageResult, error) {
 		cards, err := s.fetchListingPage(ctx, page)
 		if err != nil {
-			select {
-			case out <- scraper.Error(fmt.Errorf("page %d: %w", page, err)):
-			case <-ctx.Done():
-			}
-			return
-		}
-		if len(cards) == 0 {
-			return
+			return scraper.PageResult{}, err
 		}
 
-		stoppedEarly := false
+		var scenes []models.Scene
 		for _, c := range cards {
 			id := extractID(c.path)
 			if id == "" {
 				continue
 			}
-			if opts.KnownIDs[id] {
-				scraper.Debugf(1, "%s: hit known ID %s, stopping early", s.cfg.ID, id)
-				stoppedEarly = true
-				break
-			}
-
-			scene := s.buildScene(c, lookup[c.path], id, now)
-			select {
-			case out <- scraper.Scene(scene):
-			case <-ctx.Done():
-				return
-			}
+			scenes = append(scenes, s.buildScene(c, lookup[c.path], id, now))
 		}
-
-		if stoppedEarly {
-			select {
-			case out <- scraper.StoppedEarly():
-			case <-ctx.Done():
-			}
-			return
-		}
-	}
+		return scraper.PageResult{Scenes: scenes}, nil
+	})
 }
 
 func (s *Scraper) buildScene(c listingCard, ev exportVideo, id string, now time.Time) models.Scene {

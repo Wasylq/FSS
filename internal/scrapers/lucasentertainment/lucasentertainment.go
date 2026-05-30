@@ -142,52 +142,25 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 		tagFilter = fmt.Sprintf("&tags=%d", tagID)
 	}
 
-	for page := 1; ; page++ {
-		if ctx.Err() != nil {
-			return
-		}
-		if page > 1 && opts.Delay > 0 {
-			select {
-			case <-time.After(opts.Delay):
-			case <-ctx.Done():
-				return
-			}
-		}
-
-		scraper.Debugf(1, "%s: fetching page %d", s.cfg.siteID, page)
+	now := time.Now().UTC()
+	scraper.Paginate(ctx, opts, s.cfg.siteID, out, func(ctx context.Context, page int) (scraper.PageResult, error) {
 		posts, total, err := s.fetchPage(ctx, page, tagFilter)
 		if err != nil {
-			send(ctx, out, scraper.Error(fmt.Errorf("page %d: %w", page, err)))
-			return
+			return scraper.PageResult{}, err
 		}
 
-		if page == 1 && total > 0 {
-			scraper.Debugf(1, "%s: %d total scenes", s.cfg.siteID, total)
-			send(ctx, out, scraper.Progress(total))
-		}
-
-		if len(posts) == 0 {
-			return
-		}
-
-		now := time.Now().UTC()
-		for _, p := range posts {
-			id := strconv.Itoa(p.ID)
-			if opts.KnownIDs[id] {
-				scraper.Debugf(1, "%s: hit known ID, stopping early", s.cfg.siteID)
-				send(ctx, out, scraper.StoppedEarly())
-				return
-			}
-			if !send(ctx, out, scraper.Scene(s.toScene(studioURL, p, now))) {
-				return
-			}
+		scenes := make([]models.Scene, len(posts))
+		for i, p := range posts {
+			scenes[i] = s.toScene(studioURL, p, now)
 		}
 
 		totalPages := (total + perPage - 1) / perPage
-		if page >= totalPages {
-			return
-		}
-	}
+		return scraper.PageResult{
+			Scenes: scenes,
+			Total:  total,
+			Done:   page >= totalPages,
+		}, nil
+	})
 }
 
 func (s *Scraper) fetchPage(ctx context.Context, page int, filter string) ([]wpPost, int, error) {

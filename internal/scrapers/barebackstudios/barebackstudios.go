@@ -163,33 +163,16 @@ func (s *Scraper) run(ctx context.Context, _ string, opts scraper.ListOpts, out 
 	}
 
 	seen := make(map[string]bool)
-	for page := 1; ; page++ {
-		if ctx.Err() != nil {
-			return
-		}
-		if page > 1 && opts.Delay > 0 {
-			select {
-			case <-time.After(opts.Delay):
-			case <-ctx.Done():
-				return
-			}
-		}
-		scraper.Debugf(1, "barebackstudios: fetching page %d", page)
-
+	now := time.Now().UTC()
+	scraper.Paginate(ctx, opts, "barebackstudios", out, func(ctx context.Context, page int) (scraper.PageResult, error) {
 		body, err := s.fetchPage(ctx, page)
 		if err != nil {
-			select {
-			case out <- scraper.Error(fmt.Errorf("page %d: %w", page, err)):
-			case <-ctx.Done():
-			}
-			return
+			return scraper.PageResult{}, err
 		}
-
 		entries := parseListing(body)
-		if len(entries) == 0 {
-			return
-		}
 
+		// Dedup: if every entry on this page was already seen on a
+		// previous page, the site is looping — stop.
 		allSeen := true
 		for _, e := range entries {
 			if !seen[e.id] {
@@ -198,42 +181,19 @@ func (s *Scraper) run(ctx context.Context, _ string, opts scraper.ListOpts, out 
 			}
 		}
 		if allSeen {
-			return
+			return scraper.PageResult{}, nil
 		}
 
-		if page == 1 {
-			scraper.Debugf(1, "barebackstudios: %d total scenes", 0)
-			select {
-			case out <- scraper.Progress(0):
-			case <-ctx.Done():
-				return
-			}
-		}
-
-		now := time.Now().UTC()
+		var scenes []models.Scene
 		for _, e := range entries {
 			if seen[e.id] {
 				continue
 			}
 			seen[e.id] = true
-
-			if opts.KnownIDs[e.id] {
-				scraper.Debugf(1, "barebackstudios: hit known ID, stopping early")
-				select {
-				case out <- scraper.StoppedEarly():
-				case <-ctx.Done():
-				}
-				return
-			}
-
-			sc := toScene(s.base, e, now)
-			select {
-			case out <- scraper.Scene(sc):
-			case <-ctx.Done():
-				return
-			}
+			scenes = append(scenes, toScene(s.base, e, now))
 		}
-	}
+		return scraper.PageResult{Scenes: scenes}, nil
+	})
 }
 
 func toScene(base string, e entry, now time.Time) models.Scene {

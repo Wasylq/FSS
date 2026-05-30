@@ -82,94 +82,63 @@ func (s *Scraper) ListScenes(ctx context.Context, studioURL string, opts scraper
 func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOpts, out chan<- scraper.SceneResult) {
 	defer close(out)
 
-	for page := 1; ; page++ {
-		if ctx.Err() != nil {
-			return
-		}
-		if page > 1 && opts.Delay > 0 {
-			select {
-			case <-time.After(opts.Delay):
-			case <-ctx.Done():
-				return
-			}
-		}
-
-		scraper.Debugf(1, "%s: fetching page %d", s.cfg.SiteID, page)
+	now := time.Now().UTC()
+	scraper.Paginate(ctx, opts, s.cfg.SiteID, out, func(ctx context.Context, page int) (scraper.PageResult, error) {
 		pageURL := fmt.Sprintf("%s/%s/page/%d", s.base, s.cfg.VideoPrefix, page)
 
 		body, err := fetchPage(ctx, s.client, pageURL)
 		if err != nil {
-			send(ctx, out, scraper.Error(fmt.Errorf("page %d: %w", page, err)))
-			return
+			return scraper.PageResult{}, err
 		}
 
 		items := s.parseListing(body)
 		if len(items) == 0 {
-			return
+			return scraper.PageResult{}, nil
 		}
 
+		total := 0
 		if page == 1 {
-			total := s.estimateTotal(body, len(items))
-			scraper.Debugf(1, "%s: %d total scenes (estimated)", s.cfg.SiteID, total)
-			if total > 0 {
-				if !send(ctx, out, scraper.Progress(total)) {
-					return
-				}
-			}
+			total = s.estimateTotal(body, len(items))
 		}
 
 		hasInlineTags := hasInlineTagsOrDuration(body)
-		now := time.Now().UTC()
-		for _, item := range items {
-			if opts.KnownIDs[item.ID] {
-				scraper.Debugf(1, "%s: hit known ID %s, stopping early", s.cfg.SiteID, item.ID)
-				send(ctx, out, scraper.StoppedEarly())
-				return
-			}
-
-			if !hasInlineTags {
-				if opts.Delay > 0 {
+		if !hasInlineTags {
+			for i, item := range items {
+				if ctx.Err() != nil {
+					return scraper.PageResult{}, ctx.Err()
+				}
+				if i > 0 && opts.Delay > 0 {
 					select {
 					case <-time.After(opts.Delay):
 					case <-ctx.Done():
-						return
+						return scraper.PageResult{}, ctx.Err()
 					}
 				}
 
 				detail, err := s.fetchDetail(ctx, item.Href)
 				if err != nil {
-					if !send(ctx, out, scraper.Error(fmt.Errorf("detail %s: %w", item.ID, err))) {
-						return
-					}
 					detail = &DetailData{}
 				}
 				if len(detail.Tags) > 0 {
-					item.Tags = detail.Tags
+					items[i].Tags = detail.Tags
 				}
 				if detail.Duration > 0 {
-					item.Duration = detail.Duration
+					items[i].Duration = detail.Duration
 				}
 			}
-
-			scene := ToScene(s.cfg, s.base, studioURL, item, now)
-			if !send(ctx, out, scraper.Scene(scene)) {
-				return
-			}
 		}
 
-		if !s.hasNextPage(body, page) {
-			return
+		scenes := make([]models.Scene, len(items))
+		for i, item := range items {
+			scenes[i] = ToScene(s.cfg, s.base, studioURL, item, now)
 		}
-	}
-}
 
-func send(ctx context.Context, ch chan<- scraper.SceneResult, r scraper.SceneResult) bool {
-	select {
-	case ch <- r:
-		return true
-	case <-ctx.Done():
-		return false
-	}
+		return scraper.PageResult{
+			Scenes: scenes,
+			Total:  total,
+			Done:   !s.hasNextPage(body, page),
+		}, nil
+	})
 }
 
 // --- listing parsing (generic, works across all VNA template variants) ---

@@ -185,21 +185,15 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 	pathBase, dateSorted := s.resolveMode(studioURL)
 
 	seen := make(map[string]bool)
-	progressSent := false
 
-	for page := 1; ; page++ {
-		if ctx.Err() != nil {
-			return
-		}
-		if page > 1 && opts.Delay > 0 {
-			select {
-			case <-time.After(opts.Delay):
-			case <-ctx.Done():
-				return
-			}
-		}
-		scraper.Debugf(1, "analvids: fetching page %d", page)
+	// Only pass KnownIDs when date-sorted; non-date-sorted modes
+	// (studio/model) don't support early-stop.
+	paginateOpts := opts
+	if !dateSorted {
+		paginateOpts.KnownIDs = nil
+	}
 
+	scraper.Paginate(ctx, paginateOpts, "analvids", out, func(ctx context.Context, page int) (scraper.PageResult, error) {
 		u := pathBase
 		if page > 1 {
 			u += "/" + strconv.Itoa(page)
@@ -207,18 +201,16 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 
 		body, err := s.fetch(ctx, u)
 		if err != nil {
-			select {
-			case out <- scraper.Error(fmt.Errorf("page %d: %w", page, err)):
-			case <-ctx.Done():
-			}
-			return
+			return scraper.PageResult{}, err
 		}
 
 		entries := parseListing(body)
 		if len(entries) == 0 {
-			return
+			return scraper.PageResult{}, nil
 		}
 
+		// Dedup: if every entry on this page was already seen on a
+		// previous page, the site is looping — stop.
 		allSeen := true
 		for _, e := range entries {
 			if !seen[e.id] {
@@ -227,36 +219,22 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 			}
 		}
 		if allSeen {
-			return
-		}
-
-		if !progressSent {
-			progressSent = true
-			scraper.Debugf(1, "analvids: %d total scenes", 0)
-			select {
-			case out <- scraper.Progress(0):
-			case <-ctx.Done():
-				return
-			}
+			return scraper.PageResult{}, nil
 		}
 
 		var work []listEntry
-		stoppedEarly := false
 		for _, e := range entries {
 			if seen[e.id] {
 				continue
 			}
 			seen[e.id] = true
-			if dateSorted && opts.KnownIDs[e.id] {
-				stoppedEarly = true
-				break
-			}
 			work = append(work, e)
 		}
 
-		scenes := s.fetchDetails(ctx, work, opts.Delay, studioURL)
+		results := s.fetchDetails(ctx, work, opts.Delay, studioURL)
 
-		for _, sc := range scenes {
+		var scenes []models.Scene
+		for _, sc := range results {
 			if sc.Err != nil {
 				select {
 				case out <- scraper.Error(sc.Err):
@@ -264,22 +242,10 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 				}
 				continue
 			}
-			select {
-			case out <- scraper.Scene(sc.Scene):
-			case <-ctx.Done():
-				return
-			}
+			scenes = append(scenes, sc.Scene)
 		}
-
-		if stoppedEarly {
-			scraper.Debugf(1, "analvids: hit known ID, stopping early")
-			select {
-			case out <- scraper.StoppedEarly():
-			case <-ctx.Done():
-			}
-			return
-		}
-	}
+		return scraper.PageResult{Scenes: scenes}, nil
+	})
 }
 
 type sceneOrErr struct {

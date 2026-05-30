@@ -85,62 +85,28 @@ type videoFormat struct {
 func (s *Scraper) run(ctx context.Context, base string, opts scraper.ListOpts, out chan<- scraper.SceneResult) {
 	defer close(out)
 
-	for page := 1; ; page++ {
-		url := fmt.Sprintf("%s/scenes?page=%d", base, page)
-		body, err := s.fetchPage(ctx, url)
+	scraper.Paginate(ctx, opts, "ladysonia", out, func(ctx context.Context, page int) (scraper.PageResult, error) {
+		u := fmt.Sprintf("%s/scenes?page=%d", base, page)
+		body, err := s.fetchPage(ctx, u)
 		if err != nil {
-			select {
-			case out <- scraper.Error(fmt.Errorf("page %d: %w", page, err)):
-			case <-ctx.Done():
-			}
-			return
+			return scraper.PageResult{}, err
 		}
 
-		scraper.Debugf(1, "ladysonia: fetching page %d", page)
 		contents, err := parsePage(body)
 		if err != nil {
-			select {
-			case out <- scraper.Error(fmt.Errorf("page %d: %w", page, err)):
-			case <-ctx.Done():
-			}
-			return
+			return scraper.PageResult{}, err
 		}
 
-		if page == 1 {
-			select {
-			case out <- scraper.Progress(contents.Total):
-			case <-ctx.Done():
-				return
-			}
+		scenes := make([]models.Scene, len(contents.Data))
+		for i, sc := range contents.Data {
+			scenes[i] = toScene(base, sc)
 		}
-
-		for _, sc := range contents.Data {
-			id := strconv.Itoa(sc.ID)
-			if opts.KnownIDs[id] {
-				scraper.Debugf(1, "ladysonia: hit known ID, stopping early")
-				select {
-				case out <- scraper.StoppedEarly():
-				case <-ctx.Done():
-				}
-				return
-			}
-			select {
-			case out <- scraper.Scene(toScene(base, sc)):
-			case <-ctx.Done():
-				return
-			}
-		}
-
-		if page >= contents.TotalPages {
-			return
-		}
-
-		select {
-		case <-time.After(opts.Delay):
-		case <-ctx.Done():
-			return
-		}
-	}
+		return scraper.PageResult{
+			Scenes: scenes,
+			Total:  contents.Total,
+			Done:   page >= contents.TotalPages,
+		}, nil
+	})
 }
 
 func (s *Scraper) fetchPage(ctx context.Context, url string) ([]byte, error) {

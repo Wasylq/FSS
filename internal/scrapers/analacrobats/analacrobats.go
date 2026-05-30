@@ -180,19 +180,7 @@ func (s *Scraper) scrapeModelPage(ctx context.Context, studioURL string, opts sc
 }
 
 func (s *Scraper) scrapeListing(ctx context.Context, studioURL string, opts scraper.ListOpts, out chan<- scraper.SceneResult, now time.Time) {
-	for page := 1; ; page++ {
-		if ctx.Err() != nil {
-			return
-		}
-		if page > 1 && opts.Delay > 0 {
-			select {
-			case <-time.After(opts.Delay):
-			case <-ctx.Done():
-				return
-			}
-		}
-		scraper.Debugf(1, "analacrobats: fetching page %d", page)
-
+	scraper.Paginate(ctx, opts, "analacrobats", out, func(ctx context.Context, page int) (scraper.PageResult, error) {
 		pageURL := s.base + "/most-recent/"
 		if page > 1 {
 			pageURL += fmt.Sprintf("page%d.html", page)
@@ -200,46 +188,25 @@ func (s *Scraper) scrapeListing(ctx context.Context, studioURL string, opts scra
 
 		body, err := s.fetchPage(ctx, pageURL)
 		if err != nil {
-			select {
-			case out <- scraper.Error(fmt.Errorf("page %d: %w", page, err)):
-			case <-ctx.Done():
-			}
-			return
+			return scraper.PageResult{}, err
 		}
 
-		scenes := parseListingPage(body)
-		if len(scenes) == 0 {
-			return
+		items := parseListingPage(body)
+		if len(items) == 0 {
+			return scraper.PageResult{}, nil
 		}
 
+		total := 0
 		if page == 1 {
-			total := estimateTotal(body, len(scenes))
-			if total > 0 {
-				scraper.Debugf(1, "analacrobats: %d total scenes", total)
-				select {
-				case out <- scraper.Progress(total):
-				case <-ctx.Done():
-					return
-				}
-			}
+			total = estimateTotal(body, len(items))
 		}
 
-		for _, item := range scenes {
-			if opts.KnownIDs[item.id] {
-				scraper.Debugf(1, "analacrobats: hit known ID, stopping early")
-				select {
-				case out <- scraper.StoppedEarly():
-				case <-ctx.Done():
-				}
-				return
-			}
-			select {
-			case out <- scraper.Scene(item.toScene(studioURL, s.base, now)):
-			case <-ctx.Done():
-				return
-			}
+		scenes := make([]models.Scene, len(items))
+		for i, item := range items {
+			scenes[i] = item.toScene(studioURL, s.base, now)
 		}
-	}
+		return scraper.PageResult{Scenes: scenes, Total: total}, nil
+	})
 }
 
 func (item sceneItem) toScene(studioURL, base string, now time.Time) models.Scene {

@@ -141,19 +141,8 @@ func (s *Scraper) runPaginatedInner(ctx context.Context, basePath string, opts s
 		workers = 4
 	}
 
-	for page := 1; ; page++ {
-		if ctx.Err() != nil {
-			return false
-		}
-		if page > 1 && opts.Delay > 0 {
-			select {
-			case <-time.After(opts.Delay):
-			case <-ctx.Done():
-				return false
-			}
-		}
-		scraper.Debugf(1, "mousouzoku: fetching page %d", page)
-
+	stoppedEarly := false
+	scraper.Paginate(ctx, opts, "mousouzoku", out, func(ctx context.Context, page int) (scraper.PageResult, error) {
 		pagePath := basePath
 		if page > 1 {
 			pagePath = strings.TrimRight(basePath, "/") + "/" + strconv.Itoa(page) + "/"
@@ -161,65 +150,60 @@ func (s *Scraper) runPaginatedInner(ctx context.Context, basePath string, opts s
 
 		body, err := s.fetch(ctx, pagePath)
 		if err != nil {
-			select {
-			case out <- scraper.Error(fmt.Errorf("page %s: %w", pagePath, err)):
-			case <-ctx.Done():
-			}
-			return false
+			return scraper.PageResult{}, fmt.Errorf("page %s: %w", pagePath, err)
 		}
 
+		var total int
 		if !*progressSent {
 			*progressSent = true
-			if total := parseTotal(string(body)); total > 0 {
-				scraper.Debugf(1, "mousouzoku: %d total scenes", total)
-				select {
-				case out <- scraper.Progress(total):
-				case <-ctx.Done():
-					return false
-				}
-			}
+			total = parseTotal(string(body))
 		}
 
 		slugs := parseListingSlugs(string(body))
 		if len(slugs) == 0 {
-			return false
+			return scraper.PageResult{}, nil
 		}
 
+		// Check KnownIDs before fetching details.
 		var work []string
-		stoppedEarly := false
+		hitKnown := false
 		for _, slug := range slugs {
 			if opts.KnownIDs[slug] {
-				stoppedEarly = true
+				hitKnown = true
 				break
 			}
 			work = append(work, slug)
 		}
 
-		scenes := s.fetchDetails(ctx, work, opts.Delay, workers)
-		for _, sc := range scenes {
-			if sc.err != nil {
+		results := s.fetchDetails(ctx, work, opts.Delay, workers)
+		var scenes []models.Scene
+		for _, r := range results {
+			if r.err != nil {
 				select {
-				case out <- scraper.Error(sc.err):
+				case out <- scraper.Error(r.err):
 				case <-ctx.Done():
 				}
 				continue
 			}
-			select {
-			case out <- scraper.Scene(sc.scene):
-			case <-ctx.Done():
-				return false
-			}
+			scenes = append(scenes, r.scene)
 		}
 
-		if stoppedEarly {
+		if hitKnown {
+			stoppedEarly = true
+			// Return scenes collected before the known ID. Paginate will
+			// send them, then see Done and stop. We handle StoppedEarly
+			// ourselves since the known ID was on a slug, not a returned scene.
 			scraper.Debugf(1, "mousouzoku: hit known ID, stopping early")
 			select {
 			case out <- scraper.StoppedEarly():
 			case <-ctx.Done():
 			}
-			return true
+			return scraper.PageResult{Scenes: scenes, Total: total, Done: true}, nil
 		}
-	}
+
+		return scraper.PageResult{Scenes: scenes, Total: total}, nil
+	})
+	return stoppedEarly
 }
 
 func parseListingSlugs(body string) []string {

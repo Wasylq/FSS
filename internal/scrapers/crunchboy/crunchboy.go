@@ -82,51 +82,30 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 	defer close(out)
 
 	listPath := listingPath(studioURL)
+	now := time.Now().UTC()
 
-	for page := 1; ; page++ {
-		if ctx.Err() != nil {
-			return
-		}
-		if page > 1 && opts.Delay > 0 {
-			select {
-			case <-time.After(opts.Delay):
-			case <-ctx.Done():
-				return
-			}
-		}
-		scraper.Debugf(1, "crunchboy: fetching page %d", page)
-
+	scraper.Paginate(ctx, opts, "crunchboy", out, func(ctx context.Context, page int) (scraper.PageResult, error) {
 		pageURL := fmt.Sprintf("%s%s?page=%d", s.base, listPath, page)
 		body, err := s.fetchPage(ctx, pageURL)
 		if err != nil {
-			send(ctx, out, scraper.Error(fmt.Errorf("page %d: %w", page, err)))
-			return
+			return scraper.PageResult{}, err
 		}
 
 		items, totalPages := parseListing(body)
 		if len(items) == 0 {
-			return
+			return scraper.PageResult{}, nil
 		}
 
-		if page == 1 && totalPages > 0 {
-			send(ctx, out, scraper.Progress(totalPages*perPage))
+		scenes := make([]models.Scene, len(items))
+		for i, item := range items {
+			scenes[i] = item.toScene(studioURL, now)
 		}
-
-		now := time.Now().UTC()
-		for _, item := range items {
-			if opts.KnownIDs[item.id] {
-				send(ctx, out, scraper.StoppedEarly())
-				return
-			}
-			if !send(ctx, out, scraper.Scene(item.toScene(studioURL, now))) {
-				return
-			}
-		}
-
-		if page >= totalPages {
-			return
-		}
-	}
+		return scraper.PageResult{
+			Scenes: scenes,
+			Total:  totalPages * perPage,
+			Done:   page >= totalPages,
+		}, nil
+	})
 }
 
 type parsedItem struct {
@@ -274,13 +253,4 @@ func (s *Scraper) fetchPage(ctx context.Context, url string) ([]byte, error) {
 	}
 	defer func() { _ = resp.Body.Close() }()
 	return httpx.ReadBody(resp.Body)
-}
-
-func send(ctx context.Context, ch chan<- scraper.SceneResult, r scraper.SceneResult) bool {
-	select {
-	case ch <- r:
-		return true
-	case <-ctx.Done():
-		return false
-	}
 }

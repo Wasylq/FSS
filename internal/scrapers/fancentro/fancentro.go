@@ -68,57 +68,19 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 		return
 	}
 
-	for page := 1; ; page++ {
-		if ctx.Err() != nil {
-			return
-		}
-
-		if page > 1 && opts.Delay > 0 {
-			select {
-			case <-time.After(opts.Delay):
-			case <-ctx.Done():
-				return
-			}
-		}
-		scraper.Debugf(1, "fancentro: fetching page %d", page)
-
+	now := time.Now().UTC()
+	scraper.Paginate(ctx, opts, siteID, out, func(ctx context.Context, page int) (scraper.PageResult, error) {
 		items, total, lastPage, err := s.fetchPage(ctx, slug, page)
 		if err != nil {
-			send(ctx, out, scraper.Error(err))
-			return
+			return scraper.PageResult{}, err
 		}
 
-		if len(items) == 0 {
-			return
+		scenes := make([]models.Scene, len(items))
+		for i, item := range items {
+			scenes[i] = toScene(item, studioURL, s.base, now)
 		}
-
-		if page == 1 && total > 0 {
-			scraper.Debugf(1, "fancentro: %d total scenes", total)
-			if !send(ctx, out, scraper.Progress(total)) {
-				return
-			}
-		}
-
-		now := time.Now().UTC()
-		for _, item := range items {
-			id := strconv.Itoa(item.ID)
-
-			if opts.KnownIDs[id] {
-				scraper.Debugf(1, "fancentro: hit known ID, stopping early")
-				send(ctx, out, scraper.StoppedEarly())
-				return
-			}
-
-			scene := toScene(item, studioURL, s.base, now)
-			if !send(ctx, out, scraper.Scene(scene)) {
-				return
-			}
-		}
-
-		if page >= lastPage {
-			return
-		}
-	}
+		return scraper.PageResult{Scenes: scenes, Total: total, Done: page >= lastPage}, nil
+	})
 }
 
 func send(ctx context.Context, ch chan<- scraper.SceneResult, r scraper.SceneResult) bool {

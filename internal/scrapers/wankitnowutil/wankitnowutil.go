@@ -143,72 +143,24 @@ func (s *Scraper) run(ctx context.Context, opts scraper.ListOpts, out chan<- scr
 	siteBase := s.siteBase()
 	now := time.Now().UTC()
 
-	for page := 1; ; page++ {
-		if ctx.Err() != nil {
-			return
-		}
-		if page > 1 && opts.Delay > 0 {
-			select {
-			case <-time.After(opts.Delay):
-			case <-ctx.Done():
-				return
-			}
-		}
-
-		scraper.Debugf(1, "%s: fetching page %d", s.cfg.ID, page)
+	scraper.Paginate(ctx, opts, s.cfg.ID, out, func(ctx context.Context, page int) (scraper.PageResult, error) {
 		data, err := s.fetchPage(ctx, buildID, page)
 		if err != nil {
-			select {
-			case out <- scraper.Error(fmt.Errorf("page %d: %w", page, err)):
-			case <-ctx.Done():
-			}
-			return
+			return scraper.PageResult{}, err
 		}
 
 		contents := data.PageProps.Contents
-
-		if page == 1 && contents.Total > 0 {
-			scraper.Debugf(1, "%s: %d total scenes", s.cfg.ID, contents.Total)
-			select {
-			case out <- scraper.Progress(contents.Total):
-			case <-ctx.Done():
-				return
-			}
-		}
-
-		if len(contents.Data) == 0 {
-			return
-		}
-
-		stoppedEarly := false
+		scenes := make([]models.Scene, 0, len(contents.Data))
 		for _, sc := range contents.Data {
-			id := strconv.Itoa(sc.ID)
-			if opts.KnownIDs[id] {
-				scraper.Debugf(1, "%s: hit known ID %s, stopping early", s.cfg.ID, id)
-				stoppedEarly = true
-				break
-			}
-
-			scene := toScene(sc, s.cfg.ID, siteBase, s.cfg.Studio, now)
-			select {
-			case out <- scraper.Scene(scene):
-			case <-ctx.Done():
-				return
-			}
+			scenes = append(scenes, toScene(sc, s.cfg.ID, siteBase, s.cfg.Studio, now))
 		}
 
-		if stoppedEarly {
-			select {
-			case out <- scraper.StoppedEarly():
-			case <-ctx.Done():
-			}
-			return
-		}
-
-		if page >= contents.TotalPages {
-			return
-		}
-	}
+		return scraper.PageResult{
+			Scenes: scenes,
+			Total:  contents.Total,
+			Done:   page >= contents.TotalPages,
+		}, nil
+	})
 }
 
 func toScene(sc sceneJSON, siteID, siteBase, studio string, now time.Time) models.Scene {

@@ -83,60 +83,33 @@ func (s *Scraper) run(ctx context.Context, studioURL, sid, slug string, opts scr
 	defer close(out)
 	now := time.Now().UTC()
 
-	for page := 1; ; page++ {
-		if ctx.Err() != nil {
-			return
-		}
-		if page > 1 && opts.Delay > 0 {
-			select {
-			case <-time.After(opts.Delay):
-			case <-ctx.Done():
-				return
-			}
-		}
-		scraper.Debugf(1, "clips4sale: fetching page %d", page)
+	// C4S uses recommended sort, not date order, so KnownIDs early-stop
+	// cannot be used. Clear KnownIDs so Paginate never triggers it.
+	paginateOpts := opts
+	paginateOpts.KnownIDs = nil
+
+	scraper.Paginate(ctx, paginateOpts, "clips4sale", out, func(ctx context.Context, page int) (scraper.PageResult, error) {
 		clips, clipsCount, err := s.fetchPage(ctx, sid, slug, page)
 		if err != nil {
-			select {
-			case out <- scraper.Error(fmt.Errorf("page %d: %w", page, err)):
-			case <-ctx.Done():
-			}
-			return
+			return scraper.PageResult{}, err
 		}
-		if len(clips) == 0 {
-			return
-		}
-		// After the first page, send a total hint so the consumer can show progress.
-		if page == 1 && clipsCount > 0 {
-			scraper.Debugf(1, "clips4sale: %d total scenes", clipsCount)
-			select {
-			case out <- scraper.Progress(clipsCount):
-			case <-ctx.Done():
-				return
-			}
-		}
+
+		var scenes []models.Scene
 		for _, clip := range clips {
-			// KnownIDs are not skipped: C4S uses recommended sort, not date order,
-			// so early-stop optimisation cannot be used. All clips are emitted in
-			// site order; scrapeIncremental carries price history for known IDs.
-			scene, err := toScene(studioURL, s.siteBase, clip, now)
-			if err != nil {
+			scene, sceneErr := toScene(studioURL, s.siteBase, clip, now)
+			if sceneErr != nil {
 				select {
-				case out <- scraper.Error(err):
+				case out <- scraper.Error(sceneErr):
 				case <-ctx.Done():
-					return
 				}
 				continue
 			}
-			select {
-			case out <- scraper.Scene(scene):
-			case <-ctx.Done():
-				return
-			}
+			scenes = append(scenes, scene)
 		}
 		// C4S may return fewer than pageLimit clips per page even mid-catalogue.
 		// Stop only when the page is empty; one extra empty-page request is fine.
-	}
+		return scraper.PageResult{Scenes: scenes, Total: clipsCount}, nil
+	})
 }
 
 // ---- page fetch ----

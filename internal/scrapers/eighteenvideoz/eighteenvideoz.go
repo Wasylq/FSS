@@ -401,71 +401,26 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 	scraper.Debugf(1, "%s: scraping", s.cfg.ID)
 
 	now := time.Now().UTC()
-	sentTotal := false
 	singlePage := s.cfg.PaginationPath == ""
-
-	for page := 1; ; page++ {
-		if ctx.Err() != nil {
-			return
-		}
-		if page > 1 && opts.Delay > 0 {
-			select {
-			case <-time.After(opts.Delay):
-			case <-ctx.Done():
-				return
-			}
-		}
-
+	scraper.Paginate(ctx, opts, s.cfg.ID, out, func(ctx context.Context, page int) (scraper.PageResult, error) {
 		pageURL := s.listingURL(page)
-		scraper.Debugf(1, "%s: fetching page %d (%s)", s.cfg.ID, page, pageURL)
-
 		body, err := s.fetchPage(ctx, pageURL)
 		if err != nil {
-			select {
-			case out <- scraper.Error(fmt.Errorf("page %d: %w", page, err)):
-			case <-ctx.Done():
-			}
-			return
+			return scraper.PageResult{}, err
 		}
 
 		items := parseListing(body)
 		if len(items) == 0 {
-			return
+			return scraper.PageResult{}, nil
 		}
 
-		if !sentTotal {
-			total := estimateTotal(body, len(items))
-			scraper.Debugf(1, "%s: ~%d total scenes (estimated)", s.cfg.ID, total)
-			if total > 0 {
-				select {
-				case out <- scraper.Progress(total):
-				case <-ctx.Done():
-					return
-				}
-			}
-			sentTotal = true
+		total := estimateTotal(body, len(items))
+		scenes := make([]models.Scene, len(items))
+		for i, item := range items {
+			scenes[i] = s.toScene(item, studioURL, now)
 		}
-
-		for _, item := range items {
-			if opts.KnownIDs[item.id] {
-				scraper.Debugf(1, "%s: hit known ID %s, stopping early", s.cfg.ID, item.id)
-				select {
-				case out <- scraper.StoppedEarly():
-				case <-ctx.Done():
-				}
-				return
-			}
-			select {
-			case out <- scraper.Scene(s.toScene(item, studioURL, now)):
-			case <-ctx.Done():
-				return
-			}
-		}
-
-		if singlePage {
-			return
-		}
-	}
+		return scraper.PageResult{Scenes: scenes, Total: total, Done: singlePage}, nil
+	})
 }
 
 func (s *Scraper) toScene(item sceneItem, studioURL string, now time.Time) models.Scene {

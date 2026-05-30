@@ -59,68 +59,22 @@ func (s *Scraper) ListScenes(ctx context.Context, studioURL string, opts scraper
 func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOpts, out chan<- scraper.SceneResult) {
 	defer close(out)
 
-	for page := 1; ; page++ {
-		if ctx.Err() != nil {
-			return
-		}
-		if page > 1 && opts.Delay > 0 {
-			select {
-			case <-time.After(opts.Delay):
-			case <-ctx.Done():
-				return
-			}
-		}
-		scraper.Debugf(1, "pornhub: fetching page %d", page)
-
+	now := time.Now().UTC()
+	scraper.Paginate(ctx, opts, "pornhub", out, func(ctx context.Context, page int) (scraper.PageResult, error) {
 		pageURL, err := buildPageURL(studioURL, page)
 		if err != nil {
-			select {
-			case out <- scraper.Error(err):
-			case <-ctx.Done():
-			}
-			return
+			return scraper.PageResult{}, err
 		}
-
 		items, total, err := s.fetchPage(ctx, pageURL)
 		if err != nil {
-			select {
-			case out <- scraper.Error(fmt.Errorf("page %d: %w", page, err)):
-			case <-ctx.Done():
-			}
-			return
+			return scraper.PageResult{}, err
 		}
-
-		if len(items) == 0 {
-			return
+		scenes := make([]models.Scene, len(items))
+		for i, item := range items {
+			scenes[i] = toScene(studioURL, item, now)
 		}
-
-		if page == 1 && total > 0 {
-			scraper.Debugf(1, "pornhub: %d total scenes", total)
-			select {
-			case out <- scraper.Progress(total):
-			case <-ctx.Done():
-				return
-			}
-		}
-
-		now := time.Now().UTC()
-		for _, item := range items {
-			if opts.KnownIDs[item.vkey] {
-				scraper.Debugf(1, "pornhub: hit known ID, stopping early")
-				select {
-				case out <- scraper.StoppedEarly():
-				case <-ctx.Done():
-				}
-				return
-			}
-			scene := toScene(studioURL, item, now)
-			select {
-			case out <- scraper.Scene(scene):
-			case <-ctx.Done():
-				return
-			}
-		}
-	}
+		return scraper.PageResult{Scenes: scenes, Total: total}, nil
+	})
 }
 
 // buildPageURL derives the paginated video-list URL from a studio URL.

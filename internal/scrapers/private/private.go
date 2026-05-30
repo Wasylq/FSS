@@ -379,67 +379,26 @@ func (s *Scraper) runFromResolved(ctx context.Context, target resolved, studioUR
 	scraper.Debugf(1, "private: scraping %s%s", target.base, target.basePath)
 
 	now := time.Now().UTC()
-	sentTotal := false
-
-	for page := 1; ; page++ {
-		if ctx.Err() != nil {
-			return
-		}
-		if page > 1 && opts.Delay > 0 {
-			select {
-			case <-time.After(opts.Delay):
-			case <-ctx.Done():
-				return
-			}
-		}
-
+	series := seriesFromPath(target.basePath)
+	firstPage := true
+	scraper.Paginate(ctx, opts, "private", out, func(ctx context.Context, page int) (scraper.PageResult, error) {
 		pageURL := listingURL(target, page)
-		scraper.Debugf(1, "private: fetching page %d (%s)", page, pageURL)
-
 		body, err := s.fetchPage(ctx, pageURL)
 		if err != nil {
-			select {
-			case out <- scraper.Error(fmt.Errorf("page %d: %w", page, err)):
-			case <-ctx.Done():
-			}
-			return
+			return scraper.PageResult{}, err
 		}
-
 		items := parseListing(body)
-		if len(items) == 0 {
-			return
+		var total int
+		if firstPage {
+			total = estimateTotal(body, len(items))
+			firstPage = false
 		}
-
-		if !sentTotal {
-			total := estimateTotal(body, len(items))
-			scraper.Debugf(1, "private: ~%d total scenes (estimated)", total)
-			if total > 0 {
-				select {
-				case out <- scraper.Progress(total):
-				case <-ctx.Done():
-					return
-				}
-			}
-			sentTotal = true
+		scenes := make([]models.Scene, len(items))
+		for i, item := range items {
+			scenes[i] = item.toScene(studioURL, series, now)
 		}
-
-		series := seriesFromPath(target.basePath)
-		for _, item := range items {
-			if opts.KnownIDs[item.id] {
-				scraper.Debugf(1, "private: hit known ID %s, stopping early", item.id)
-				select {
-				case out <- scraper.StoppedEarly():
-				case <-ctx.Done():
-				}
-				return
-			}
-			select {
-			case out <- scraper.Scene(item.toScene(studioURL, series, now)):
-			case <-ctx.Done():
-				return
-			}
-		}
-	}
+		return scraper.PageResult{Scenes: scenes, Total: total}, nil
+	})
 }
 
 // seriesFromPath returns the human-friendly Series label for a per-sub-site

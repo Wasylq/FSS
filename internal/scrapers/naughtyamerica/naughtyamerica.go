@@ -98,62 +98,22 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 		filter = "&performer=" + strings.ReplaceAll(performerFromSlug(m[1]), " ", "+")
 	}
 
-	for page := 1; ; page++ {
-		if ctx.Err() != nil {
-			return
-		}
-		if page > 1 && opts.Delay > 0 {
-			select {
-			case <-time.After(opts.Delay):
-			case <-ctx.Done():
-				return
-			}
-		}
-		scraper.Debugf(1, "naughtyamerica: fetching page %d", page)
-
+	now := time.Now().UTC()
+	scraper.Paginate(ctx, opts, "naughtyamerica", out, func(ctx context.Context, page int) (scraper.PageResult, error) {
 		resp, err := s.fetchPage(ctx, page, filter)
 		if err != nil {
-			select {
-			case out <- scraper.Error(fmt.Errorf("page %d: %w", page, err)):
-			case <-ctx.Done():
-			}
-			return
+			return scraper.PageResult{}, err
 		}
-
-		if page == 1 && resp.Total > 0 {
-			select {
-			case out <- scraper.Progress(resp.Total):
-			case <-ctx.Done():
-				return
-			}
+		scenes := make([]models.Scene, len(resp.Data))
+		for i, item := range resp.Data {
+			scenes[i] = toScene(studioURL, item, now)
 		}
-
-		if len(resp.Data) == 0 {
-			return
-		}
-
-		now := time.Now().UTC()
-		for _, item := range resp.Data {
-			id := strconv.Itoa(item.ID)
-			if opts.KnownIDs[id] {
-				scraper.Debugf(1, "naughtyamerica: hit known ID, stopping early")
-				select {
-				case out <- scraper.StoppedEarly():
-				case <-ctx.Done():
-				}
-				return
-			}
-			select {
-			case out <- scraper.Scene(toScene(studioURL, item, now)):
-			case <-ctx.Done():
-				return
-			}
-		}
-
-		if page >= resp.LastPage {
-			return
-		}
-	}
+		return scraper.PageResult{
+			Scenes: scenes,
+			Total:  resp.Total,
+			Done:   page >= resp.LastPage,
+		}, nil
+	})
 }
 
 func (s *Scraper) fetchPage(ctx context.Context, page int, filter string) (*apiResponse, error) {

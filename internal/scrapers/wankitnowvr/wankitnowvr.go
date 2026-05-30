@@ -91,66 +91,31 @@ func (s *Scraper) scrapeModelPage(ctx context.Context, studioURL string, opts sc
 }
 
 func (s *Scraper) scrapeListing(ctx context.Context, studioURL string, opts scraper.ListOpts, out chan<- scraper.SceneResult, now time.Time) {
-	for page := 1; ; page++ {
-		if ctx.Err() != nil {
-			return
-		}
-		if page > 1 && opts.Delay > 0 {
-			select {
-			case <-time.After(opts.Delay):
-			case <-ctx.Done():
-				return
-			}
-		}
-		scraper.Debugf(1, "wankitnowvr: fetching page %d", page)
-
+	scraper.Paginate(ctx, opts, "wankitnowvr", out, func(ctx context.Context, page int) (scraper.PageResult, error) {
 		body, err := s.fetchPage(ctx, page)
 		if err != nil {
-			select {
-			case out <- scraper.Error(fmt.Errorf("page %d: %w", page, err)):
-			case <-ctx.Done():
-			}
-			return
+			return scraper.PageResult{}, err
 		}
 
 		cards := parseListingPage(body)
 
+		total := 0
 		if page == 1 {
-			if total := parseLastPage(body); total > 0 {
-				select {
-				case out <- scraper.Progress(total * len(cards)):
-				case <-ctx.Done():
-					return
-				}
+			if lastPage := parseLastPage(body); lastPage > 0 {
+				total = lastPage * len(cards)
 			}
 		}
 
-		if len(cards) == 0 {
-			return
+		scenes := make([]models.Scene, len(cards))
+		for i, c := range cards {
+			scenes[i] = buildScene(c, studioURL, now)
 		}
 
-		stoppedEarly := false
-		for _, c := range cards {
-			if opts.KnownIDs[c.id] {
-				stoppedEarly = true
-				break
-			}
-			select {
-			case out <- scraper.Scene(buildScene(c, studioURL, now)):
-			case <-ctx.Done():
-				return
-			}
-		}
-
-		if stoppedEarly {
-			scraper.Debugf(1, "wankitnowvr: hit known ID, stopping early")
-			select {
-			case out <- scraper.StoppedEarly():
-			case <-ctx.Done():
-			}
-			return
-		}
-	}
+		return scraper.PageResult{
+			Scenes: scenes,
+			Total:  total,
+		}, nil
+	})
 }
 
 func (s *Scraper) fetchPage(ctx context.Context, page int) ([]byte, error) {

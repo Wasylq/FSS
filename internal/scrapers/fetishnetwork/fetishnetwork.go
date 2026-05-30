@@ -81,62 +81,29 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 	base := baseURL(studioURL)
 	now := time.Now().UTC()
 
-	for page := 1; ; page++ {
-		if ctx.Err() != nil {
-			return
-		}
-		if page > 1 && opts.Delay > 0 {
-			select {
-			case <-time.After(opts.Delay):
-			case <-ctx.Done():
-				return
-			}
-		}
-		scraper.Debugf(1, "fetishnetwork: fetching page %d", page)
-
+	scraper.Paginate(ctx, opts, "fetishnetwork", out, func(ctx context.Context, page int) (scraper.PageResult, error) {
 		pageURL := fmt.Sprintf("%s/t2/show.php?a=%s_%d", base, catID, page)
 		body, err := s.fetchPage(ctx, pageURL)
 		if err != nil {
-			select {
-			case out <- scraper.Error(fmt.Errorf("page %d: %w", page, err)):
-			case <-ctx.Done():
-			}
-			return
+			return scraper.PageResult{}, err
 		}
 
 		items := parseListingPage(body)
 		if len(items) == 0 {
-			return
+			return scraper.PageResult{}, nil
 		}
 
+		total := 0
 		if page == 1 {
-			total := estimateTotal(body, len(items))
-			if total > 0 {
-				scraper.Debugf(1, "fetishnetwork: %d total scenes", total)
-				select {
-				case out <- scraper.Progress(total):
-				case <-ctx.Done():
-					return
-				}
-			}
+			total = estimateTotal(body, len(items))
 		}
 
-		for _, item := range items {
-			if opts.KnownIDs[item.id] {
-				scraper.Debugf(1, "fetishnetwork: hit known ID, stopping early")
-				select {
-				case out <- scraper.StoppedEarly():
-				case <-ctx.Done():
-				}
-				return
-			}
-			select {
-			case out <- scraper.Scene(item.toScene(studioURL, now)):
-			case <-ctx.Done():
-				return
-			}
+		scenes := make([]models.Scene, len(items))
+		for i, item := range items {
+			scenes[i] = item.toScene(studioURL, now)
 		}
-	}
+		return scraper.PageResult{Scenes: scenes, Total: total}, nil
+	})
 }
 
 type sceneItem struct {

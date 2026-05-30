@@ -156,66 +156,26 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 
 	now := time.Now().UTC()
 	sentTotal := false
-
-	for page := 1; ; page++ {
-		if ctx.Err() != nil {
-			return
-		}
-		if page > 1 && opts.Delay > 0 {
-			select {
-			case <-time.After(opts.Delay):
-			case <-ctx.Done():
-				return
-			}
-		}
-
-		pageURL := s.listingURL(page)
-		scraper.Debugf(1, "goldwinpass: fetching page %d", page)
-
-		body, err := s.fetchPage(ctx, pageURL)
+	scraper.Paginate(ctx, opts, "goldwinpass", out, func(ctx context.Context, page int) (scraper.PageResult, error) {
+		body, err := s.fetchPage(ctx, s.listingURL(page))
 		if err != nil {
-			select {
-			case out <- scraper.Error(fmt.Errorf("page %d: %w", page, err)):
-			case <-ctx.Done():
-			}
-			return
+			return scraper.PageResult{}, err
 		}
 
 		items := parseListing(body)
-		if len(items) == 0 {
-			scraper.Debugf(1, "goldwinpass: page %d empty, stopping", page)
-			return
-		}
 
+		var total int
 		if !sentTotal {
-			total := estimateTotal(body, len(items))
-			scraper.Debugf(1, "goldwinpass: %d total scenes (estimated)", total)
-			if total > 0 {
-				select {
-				case out <- scraper.Progress(total):
-				case <-ctx.Done():
-					return
-				}
-			}
 			sentTotal = true
+			total = estimateTotal(body, len(items))
 		}
 
-		for _, item := range items {
-			if opts.KnownIDs[item.id] {
-				scraper.Debugf(1, "goldwinpass: hit known ID %s, stopping early", item.id)
-				select {
-				case out <- scraper.StoppedEarly():
-				case <-ctx.Done():
-				}
-				return
-			}
-			select {
-			case out <- scraper.Scene(item.toScene(s.base, now)):
-			case <-ctx.Done():
-				return
-			}
+		scenes := make([]models.Scene, len(items))
+		for i, item := range items {
+			scenes[i] = item.toScene(s.base, now)
 		}
-	}
+		return scraper.PageResult{Scenes: scenes, Total: total}, nil
+	})
 }
 
 func (item sceneItem) toScene(base string, now time.Time) models.Scene {

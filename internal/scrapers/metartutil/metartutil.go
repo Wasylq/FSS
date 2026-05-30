@@ -87,66 +87,25 @@ type apiPerson struct {
 func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOpts, out chan<- scraper.SceneResult) {
 	defer close(out)
 
-	progressSent := false
-	for page := 1; ; page++ {
-		if ctx.Err() != nil {
-			return
-		}
-		if page > 1 && opts.Delay > 0 {
-			select {
-			case <-time.After(opts.Delay):
-			case <-ctx.Done():
-				return
-			}
-		}
-		scraper.Debugf(1, "%s: fetching page %d", s.cfg.SiteID, page)
-
+	now := time.Now().UTC()
+	scraper.Paginate(ctx, opts, s.cfg.SiteID, out, func(ctx context.Context, page int) (scraper.PageResult, error) {
 		resp, err := s.fetchPage(ctx, page)
 		if err != nil {
-			select {
-			case out <- scraper.Error(fmt.Errorf("page %d: %w", page, err)):
-			case <-ctx.Done():
-			}
-			return
+			return scraper.PageResult{}, err
 		}
-
-		if !progressSent && resp.Total > 0 {
-			progressSent = true
-			select {
-			case out <- scraper.Progress(resp.Total):
-			case <-ctx.Done():
-				return
-			}
-		}
-
-		if len(resp.Galleries) == 0 {
-			return
-		}
-
-		now := time.Now().UTC()
+		var scenes []models.Scene
 		for _, g := range resp.Galleries {
 			if g.Type != "MOVIE" {
 				continue
 			}
-			if opts.KnownIDs[g.UUID] {
-				scraper.Debugf(1, "%s: hit known ID, stopping early", s.cfg.SiteID)
-				select {
-				case out <- scraper.StoppedEarly():
-				case <-ctx.Done():
-				}
-				return
-			}
-			select {
-			case out <- scraper.Scene(toScene(s.cfg, studioURL, s.base, g, now)):
-			case <-ctx.Done():
-				return
-			}
+			scenes = append(scenes, toScene(s.cfg, studioURL, s.base, g, now))
 		}
-
-		if len(resp.Galleries) < pageSize {
-			return
-		}
-	}
+		return scraper.PageResult{
+			Scenes: scenes,
+			Total:  resp.Total,
+			Done:   len(resp.Galleries) < pageSize,
+		}, nil
+	})
 }
 
 func (s *Scraper) fetchPage(ctx context.Context, page int) (*apiResponse, error) {

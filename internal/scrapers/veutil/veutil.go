@@ -87,67 +87,22 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 	}
 
 	now := time.Now().UTC()
-
-	for page := 1; ; page++ {
-		if ctx.Err() != nil {
-			return
-		}
-		if page > 1 && opts.Delay > 0 {
-			select {
-			case <-time.After(opts.Delay):
-			case <-ctx.Done():
-				return
-			}
-		}
-
-		scraper.Debugf(1, "%s: fetching page %d", s.cfg.ID, page)
+	scraper.Paginate(ctx, opts, s.cfg.ID, out, func(ctx context.Context, page int) (scraper.PageResult, error) {
 		posts, total, err := s.fetchPosts(ctx, page)
 		if err != nil {
-			select {
-			case out <- scraper.Error(fmt.Errorf("page %d: %w", page, err)):
-			case <-ctx.Done():
-			}
-			return
-		}
-
-		if page == 1 && total > 0 {
-			scraper.Debugf(1, "%s: %d total scenes", s.cfg.ID, total)
-			select {
-			case out <- scraper.Progress(total):
-			case <-ctx.Done():
-				return
-			}
+			return scraper.PageResult{}, err
 		}
 
 		if len(posts) == 0 {
-			return
+			return scraper.PageResult{}, nil
 		}
 
-		stoppedEarly := false
-		for _, p := range posts {
-			id := strconv.Itoa(p.ID)
-			if opts.KnownIDs[id] {
-				scraper.Debugf(1, "%s: hit known ID %s, stopping early", s.cfg.ID, id)
-				stoppedEarly = true
-				break
-			}
-
-			scene := s.postToScene(studioURL, p, tagMap, now)
-			select {
-			case out <- scraper.Scene(scene):
-			case <-ctx.Done():
-				return
-			}
+		scenes := make([]models.Scene, len(posts))
+		for i, p := range posts {
+			scenes[i] = s.postToScene(studioURL, p, tagMap, now)
 		}
-
-		if stoppedEarly {
-			select {
-			case out <- scraper.StoppedEarly():
-			case <-ctx.Done():
-			}
-			return
-		}
-	}
+		return scraper.PageResult{Scenes: scenes, Total: total}, nil
+	})
 }
 
 // ---- tag fetching ----

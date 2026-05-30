@@ -239,69 +239,36 @@ const perPage = 100
 func (s *Scraper) run(ctx context.Context, studioURL string, inst instance, entityType, entityID string, opts scraper.ListOpts, out chan<- scraper.SceneResult) {
 	defer close(out)
 
-	delay := opts.Delay
-
-	for page := 1; ; page++ {
-		if ctx.Err() != nil {
-			return
-		}
-		if page > 1 && delay > 0 {
-			select {
-			case <-time.After(delay):
-			case <-ctx.Done():
-				return
-			}
-		}
-		scraper.Debugf(1, "stashbox: fetching page %d", page)
-
+	scraper.Paginate(ctx, opts, "stashbox", out, func(ctx context.Context, page int) (scraper.PageResult, error) {
 		input := buildInput(entityType, entityID, page)
 		resp, err := s.queryScenes(ctx, inst, input)
 		if err != nil {
-			select {
-			case out <- scraper.Error(fmt.Errorf("page %d: %w", page, err)):
-			case <-ctx.Done():
-			}
-			return
+			return scraper.PageResult{}, err
 		}
 
-		if len(resp.Data.QueryScenes.Scenes) == 0 {
-			return
+		gqlScenes := resp.Data.QueryScenes.Scenes
+		if len(gqlScenes) == 0 {
+			return scraper.PageResult{}, nil
 		}
 
+		total := 0
 		if page == 1 {
-			total := resp.Data.QueryScenes.Count
+			total = resp.Data.QueryScenes.Count
 			if total <= 0 {
-				total = len(resp.Data.QueryScenes.Scenes)
-			}
-			scraper.Debugf(1, "stashbox: %d total scenes", total)
-			select {
-			case out <- scraper.Progress(total):
-			case <-ctx.Done():
-				return
+				total = len(gqlScenes)
 			}
 		}
 
-		for _, gs := range resp.Data.QueryScenes.Scenes {
-			if opts.KnownIDs[gs.ID] {
-				scraper.Debugf(1, "stashbox: hit known ID, stopping early")
-				select {
-				case out <- scraper.StoppedEarly():
-				case <-ctx.Done():
-				}
-				return
-			}
-			scene := toScene(studioURL, inst, gs)
-			select {
-			case out <- scraper.Scene(scene):
-			case <-ctx.Done():
-				return
-			}
+		scenes := make([]models.Scene, len(gqlScenes))
+		for i, gs := range gqlScenes {
+			scenes[i] = toScene(studioURL, inst, gs)
 		}
-
-		if page*perPage >= resp.Data.QueryScenes.Count {
-			return
-		}
-	}
+		return scraper.PageResult{
+			Scenes: scenes,
+			Total:  total,
+			Done:   page*perPage >= resp.Data.QueryScenes.Count,
+		}, nil
+	})
 }
 
 func buildInput(entityType, entityID string, page int) map[string]any {

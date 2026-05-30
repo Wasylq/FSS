@@ -684,79 +684,34 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 	}
 
 	now := time.Now().UTC()
-	sentTotal := false
-	emitted := 0
-
-	for page := 1; ; page++ {
-		if ctx.Err() != nil {
-			return
-		}
-		if page > 1 && opts.Delay > 0 {
-			cancelled := false
-			select {
-			case <-time.After(opts.Delay):
-			case <-ctx.Done():
-				cancelled = true
-			}
-			if cancelled {
-				return
-			}
-		}
-
-		scraper.Debugf(1, "pornstarplatinum: fetching page %d", page)
+	scraper.Paginate(ctx, opts, "pornstarplatinum", out, func(ctx context.Context, page int) (scraper.PageResult, error) {
 		body, err := s.fetchPage(ctx, page)
 		if err != nil {
-			select {
-			case out <- scraper.Error(fmt.Errorf("page %d: %w", page, err)):
-			case <-ctx.Done():
-			}
-			return
+			return scraper.PageResult{}, err
 		}
 
 		cards, maxPage := parseCards(body)
-		if len(cards) == 0 {
-			return
+		var scenes []models.Scene
+		for _, c := range cards {
+			if wantPerformer != "" && !strings.EqualFold(c.performer, wantPerformer) {
+				continue
+			}
+			scenes = append(scenes, s.toScene(c, studioURL, now))
 		}
 
 		// `total` is only meaningful when we're emitting the whole
 		// catalogue — for a per-performer filter we don't know upfront
 		// how many cards across the 295 pages actually match.
-		if !sentTotal && maxPage > 0 && wantPerformer == "" {
-			total := maxPage * len(cards)
-			scraper.Debugf(1, "pornstarplatinum: ~%d total scenes (%d pages)", total, maxPage)
-			select {
-			case out <- scraper.Progress(total):
-			case <-ctx.Done():
-				return
-			}
-			sentTotal = true
+		total := 0
+		if wantPerformer == "" && maxPage > 0 {
+			total = maxPage * len(cards)
 		}
-
-		for _, c := range cards {
-			if wantPerformer != "" && !strings.EqualFold(c.performer, wantPerformer) {
-				continue
-			}
-			if opts.KnownIDs[c.id] {
-				scraper.Debugf(1, "pornstarplatinum: hit known ID %s, stopping early", c.id)
-				select {
-				case out <- scraper.StoppedEarly():
-				case <-ctx.Done():
-				}
-				return
-			}
-			select {
-			case out <- scraper.Scene(s.toScene(c, studioURL, now)):
-				emitted++
-			case <-ctx.Done():
-				return
-			}
-		}
-
-		if maxPage > 0 && page >= maxPage {
-			scraper.Debugf(1, "pornstarplatinum: catalogue exhausted (%d scenes emitted)", emitted)
-			return
-		}
-	}
+		return scraper.PageResult{
+			Scenes: scenes,
+			Total:  total,
+			Done:   maxPage > 0 && page >= maxPage,
+		}, nil
+	})
 }
 
 func (s *Scraper) fetchPage(ctx context.Context, page int) ([]byte, error) {
@@ -780,50 +735,26 @@ func (s *Scraper) fetchPage(ctx context.Context, page int) ([]byte, error) {
 // parsePerSiteCards.
 func (s *Scraper) runPerSite(ctx context.Context, studioURL string, site *siteFilter, opts scraper.ListOpts, out chan<- scraper.SceneResult) {
 	now := time.Now().UTC()
-	sentTotal := false
-	emitted := 0
 
-	for page := 1; ; page++ {
-		if ctx.Err() != nil {
-			return
-		}
-		if page > 1 && opts.Delay > 0 {
-			cancelled := false
-			select {
-			case <-time.After(opts.Delay):
-			case <-ctx.Done():
-				cancelled = true
-			}
-			if cancelled {
-				return
-			}
-		}
+	label := site.Performer
+	if label == "" {
+		label = "themed"
+	}
+	paginateID := "pornstarplatinum/" + label
 
-		label := site.Performer
-		if label == "" {
-			label = "themed"
-		}
-		scraper.Debugf(1, "pornstarplatinum/%s: fetching page %d", label, page)
+	scraper.Paginate(ctx, opts, paginateID, out, func(ctx context.Context, page int) (scraper.PageResult, error) {
 		u := perSitePageURL(site, page)
 		resp, err := httpx.Do(ctx, s.client, httpx.Request{
 			URL:     u,
 			Headers: httpx.BrowserHeaders(httpx.UserAgentFirefox),
 		})
 		if err != nil {
-			select {
-			case out <- scraper.Error(fmt.Errorf("per-site page %d: %w", page, err)):
-			case <-ctx.Done():
-			}
-			return
+			return scraper.PageResult{}, err
 		}
 		body, err := httpx.ReadBody(resp.Body)
 		_ = resp.Body.Close()
 		if err != nil {
-			select {
-			case out <- scraper.Error(fmt.Errorf("per-site page %d read: %w", page, err)):
-			case <-ctx.Done():
-			}
-			return
+			return scraper.PageResult{}, fmt.Errorf("per-site page %d read: %w", page, err)
 		}
 
 		var (
@@ -838,45 +769,21 @@ func (s *Scraper) runPerSite(ctx context.Context, studioURL string, site *siteFi
 		default:
 			cards, maxPage = parsePerSiteCards(body, site.Performer, siteBaseFromVideos(site.PerSiteVideos))
 		}
-		if len(cards) == 0 {
-			return
-		}
 
-		if !sentTotal && maxPage > 0 {
-			total := maxPage * len(cards)
-			scraper.Debugf(1, "pornstarplatinum/%s: ~%d total scenes (%d pages)", site.Performer, total, maxPage)
-			select {
-			case out <- scraper.Progress(total):
-			case <-ctx.Done():
-				return
-			}
-			sentTotal = true
+		scenes := make([]models.Scene, len(cards))
+		for i, c := range cards {
+			scenes[i] = s.toScene(c, studioURL, now)
 		}
-
-		for _, c := range cards {
-			if opts.KnownIDs[c.id] {
-				scraper.Debugf(1, "pornstarplatinum/%s: hit known ID %s, stopping early", site.Performer, c.id)
-				select {
-				case out <- scraper.StoppedEarly():
-				case <-ctx.Done():
-				}
-				return
-			}
-			// Series tracks the configured performer for downstream
-			// per-pornstar filtering, same as the catalogue path.
-			select {
-			case out <- scraper.Scene(s.toScene(c, studioURL, now)):
-				emitted++
-			case <-ctx.Done():
-				return
-			}
+		total := 0
+		if maxPage > 0 {
+			total = maxPage * len(cards)
 		}
-
-		if maxPage > 0 && page >= maxPage {
-			scraper.Debugf(1, "pornstarplatinum/%s: per-site listing exhausted (%d scenes emitted)", site.Performer, emitted)
-			return
-		}
-	}
+		return scraper.PageResult{
+			Scenes: scenes,
+			Total:  total,
+			Done:   maxPage > 0 && page >= maxPage,
+		}, nil
+	})
 }
 
 func (s *Scraper) toScene(c card, studioURL string, now time.Time) models.Scene {

@@ -91,19 +91,7 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 func (s *Scraper) runUpdates(ctx context.Context, studioURL string, opts scraper.ListOpts, out chan<- scraper.SceneResult) {
 	now := time.Now().UTC()
 
-	for page := 1; ; page++ {
-		if ctx.Err() != nil {
-			return
-		}
-		if page > 1 && opts.Delay > 0 {
-			select {
-			case <-time.After(opts.Delay):
-			case <-ctx.Done():
-				return
-			}
-		}
-		scraper.Debugf(1, "sofiemarie: fetching page %d", page)
-
+	scraper.Paginate(ctx, opts, "sofiemarie", out, func(ctx context.Context, page int) (scraper.PageResult, error) {
 		var pageURL string
 		if page == 1 {
 			pageURL = s.siteBase + "/categories/movies.html"
@@ -113,154 +101,97 @@ func (s *Scraper) runUpdates(ctx context.Context, studioURL string, opts scraper
 
 		body, err := s.fetchPage(ctx, pageURL)
 		if err != nil {
-			select {
-			case out <- scraper.Error(fmt.Errorf("page %d: %w", page, err)):
-			case <-ctx.Done():
-			}
-			return
+			return scraper.PageResult{}, err
 		}
 
-		scenes := parseSceneBlocks(body)
-		if len(scenes) == 0 {
-			return
+		parsed := parseSceneBlocks(body)
+		if len(parsed) == 0 {
+			return scraper.PageResult{}, nil
 		}
 
+		total := 0
 		if page == 1 {
-			total := estimateTotal(body, len(scenes))
-			if total > 0 {
-				scraper.Debugf(1, "sofiemarie: %d total scenes", total)
-				select {
-				case out <- scraper.Progress(total):
-				case <-ctx.Done():
-					return
-				}
-			}
+			total = estimateTotal(body, len(parsed))
 		}
 
-		if s.emitScenes(ctx, scenes, studioURL, now, opts, out) {
-			return
+		scenes := make([]models.Scene, len(parsed))
+		for i, ps := range parsed {
+			scenes[i] = toScene(ps, s.siteBase, studioURL, now)
 		}
-
-		if !hasNextPage(body, page) {
-			return
-		}
-	}
+		return scraper.PageResult{Scenes: scenes, Total: total, Done: !hasNextPage(body, page)}, nil
+	})
 }
 
 func (s *Scraper) runModel(ctx context.Context, studioURL string, opts scraper.ListOpts, out chan<- scraper.SceneResult) {
 	now := time.Now().UTC()
 
-	body, err := s.fetchPage(ctx, studioURL)
-	if err != nil {
-		select {
-		case out <- scraper.Error(fmt.Errorf("model page: %w", err)):
-		case <-ctx.Done():
-		}
-		return
-	}
-
-	modelID, maxPage := extractModelPagination(body)
-
-	scenes := parseSceneBlocks(body)
-	if len(scenes) == 0 {
-		return
-	}
-
-	if maxPage > 0 {
-		select {
-		case out <- scraper.Progress(len(scenes) * maxPage):
-		case <-ctx.Done():
-			return
-		}
-	}
-
-	if s.emitScenes(ctx, scenes, studioURL, now, opts, out) {
-		return
-	}
-
-	if modelID == "" || maxPage <= 1 {
-		return
-	}
-
-	for page := 2; page <= maxPage; page++ {
-		if ctx.Err() != nil {
-			return
-		}
-		if opts.Delay > 0 {
-			select {
-			case <-time.After(opts.Delay):
-			case <-ctx.Done():
-				return
+	var modelID string
+	var maxPage int
+	scraper.Paginate(ctx, opts, "sofiemarie", out, func(ctx context.Context, page int) (scraper.PageResult, error) {
+		var pageURL string
+		if page == 1 {
+			pageURL = studioURL
+		} else {
+			if modelID == "" || page > maxPage {
+				return scraper.PageResult{}, nil
 			}
+			pageURL = fmt.Sprintf("%s/sets.php?id=%s&page=%d", s.siteBase, modelID, page)
 		}
-		scraper.Debugf(1, "sofiemarie: fetching page %d", page)
 
-		pageURL := fmt.Sprintf("%s/sets.php?id=%s&page=%d", s.siteBase, modelID, page)
 		body, err := s.fetchPage(ctx, pageURL)
 		if err != nil {
-			select {
-			case out <- scraper.Error(fmt.Errorf("model page %d: %w", page, err)):
-			case <-ctx.Done():
+			return scraper.PageResult{}, err
+		}
+
+		parsed := parseSceneBlocks(body)
+		if len(parsed) == 0 {
+			return scraper.PageResult{}, nil
+		}
+
+		total := 0
+		if page == 1 {
+			modelID, maxPage = extractModelPagination(body)
+			if maxPage > 0 {
+				total = len(parsed) * maxPage
 			}
-			return
 		}
 
-		scenes := parseSceneBlocks(body)
-		if len(scenes) == 0 {
-			return
+		scenes := make([]models.Scene, len(parsed))
+		for i, ps := range parsed {
+			scenes[i] = toScene(ps, s.siteBase, studioURL, now)
 		}
-
-		if s.emitScenes(ctx, scenes, studioURL, now, opts, out) {
-			return
-		}
-	}
+		return scraper.PageResult{
+			Scenes: scenes,
+			Total:  total,
+			Done:   modelID == "" || maxPage <= 1 || page >= maxPage,
+		}, nil
+	})
 }
 
 func (s *Scraper) runDVD(ctx context.Context, studioURL string, opts scraper.ListOpts, out chan<- scraper.SceneResult) {
 	now := time.Now().UTC()
 
-	body, err := s.fetchPage(ctx, studioURL)
-	if err != nil {
-		select {
-		case out <- scraper.Error(fmt.Errorf("dvd page: %w", err)):
-		case <-ctx.Done():
-		}
-		return
-	}
-
-	scenes := parseSceneBlocks(body)
-	if len(scenes) == 0 {
-		return
-	}
-
-	select {
-	case out <- scraper.Progress(len(scenes)):
-	case <-ctx.Done():
-		return
-	}
-
-	s.emitScenes(ctx, scenes, studioURL, now, opts, out)
-}
-
-func (s *Scraper) emitScenes(ctx context.Context, scenes []parsedScene, studioURL string, now time.Time, opts scraper.ListOpts, out chan<- scraper.SceneResult) (stopped bool) {
-	for _, ps := range scenes {
-		if opts.KnownIDs[ps.id] {
-			scraper.Debugf(1, "sofiemarie: hit known ID, stopping early")
-			select {
-			case out <- scraper.StoppedEarly():
-			case <-ctx.Done():
-			}
-			return true
+	scraper.Paginate(ctx, opts, "sofiemarie", out, func(ctx context.Context, page int) (scraper.PageResult, error) {
+		if page > 1 {
+			return scraper.PageResult{}, nil
 		}
 
-		scene := toScene(ps, s.siteBase, studioURL, now)
-		select {
-		case out <- scraper.Scene(scene):
-		case <-ctx.Done():
-			return true
+		body, err := s.fetchPage(ctx, studioURL)
+		if err != nil {
+			return scraper.PageResult{}, err
 		}
-	}
-	return false
+
+		parsed := parseSceneBlocks(body)
+		if len(parsed) == 0 {
+			return scraper.PageResult{}, nil
+		}
+
+		scenes := make([]models.Scene, len(parsed))
+		for i, ps := range parsed {
+			scenes[i] = toScene(ps, s.siteBase, studioURL, now)
+		}
+		return scraper.PageResult{Scenes: scenes, Total: len(scenes), Done: true}, nil
+	})
 }
 
 func (s *Scraper) fetchPage(ctx context.Context, url string) ([]byte, error) {

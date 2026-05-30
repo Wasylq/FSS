@@ -258,74 +258,34 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 	scraper.Debugf(1, "sindrive: scraping %s%s", parsed.Host, listingPath)
 
 	now := time.Now().UTC()
-	sentTotal := false
-
-	for page := 1; ; page++ {
-		if ctx.Err() != nil {
-			return
-		}
-		if page > 1 && opts.Delay > 0 {
-			select {
-			case <-time.After(opts.Delay):
-			case <-ctx.Done():
-				return
-			}
-		}
-
+	base := parsed.Scheme + "://" + parsed.Host
+	scraper.Paginate(ctx, opts, scraperID, out, func(ctx context.Context, page int) (scraper.PageResult, error) {
 		pageURL, err := s.listingURL(studioURL, listingPath, page)
 		if err != nil {
-			select {
-			case out <- scraper.Error(fmt.Errorf("sindrive: build URL: %w", err)):
-			case <-ctx.Done():
-			}
-			return
+			return scraper.PageResult{}, fmt.Errorf("build URL: %w", err)
 		}
-		scraper.Debugf(1, "sindrive: fetching page %d", page)
 
 		body, err := s.fetchPage(ctx, pageURL)
 		if err != nil {
-			select {
-			case out <- scraper.Error(fmt.Errorf("page %d: %w", page, err)):
-			case <-ctx.Done():
-			}
-			return
+			return scraper.PageResult{}, err
 		}
 
 		items := parseListing(body)
 		if len(items) == 0 {
-			return
+			return scraper.PageResult{}, nil
 		}
 
-		if !sentTotal {
-			total := estimateTotal(body, len(items))
-			scraper.Debugf(1, "sindrive: %d total scenes (estimated)", total)
-			if total > 0 {
-				select {
-				case out <- scraper.Progress(total):
-				case <-ctx.Done():
-					return
-				}
-			}
-			sentTotal = true
+		total := 0
+		if page == 1 {
+			total = estimateTotal(body, len(items))
 		}
 
-		base := parsed.Scheme + "://" + parsed.Host
-		for _, item := range items {
-			if opts.KnownIDs[item.id] {
-				scraper.Debugf(1, "sindrive: hit known ID %s, stopping early", item.id)
-				select {
-				case out <- scraper.StoppedEarly():
-				case <-ctx.Done():
-				}
-				return
-			}
-			select {
-			case out <- scraper.Scene(item.toScene(base, studioURL, now)):
-			case <-ctx.Done():
-				return
-			}
+		scenes := make([]models.Scene, len(items))
+		for i, item := range items {
+			scenes[i] = item.toScene(base, studioURL, now)
 		}
-	}
+		return scraper.PageResult{Scenes: scenes, Total: total}, nil
+	})
 }
 
 func (item sceneItem) toScene(siteBase, studioURL string, now time.Time) models.Scene {

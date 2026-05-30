@@ -92,39 +92,25 @@ func (s *Scraper) run(ctx context.Context, studioURL, slug string, opts scraper.
 
 	now := time.Now().UTC()
 
-	for page := 1; ; page++ {
-		if ctx.Err() != nil {
-			return
-		}
-		if page > 1 && opts.Delay > 0 {
-			select {
-			case <-time.After(opts.Delay):
-			case <-ctx.Done():
-				return
-			}
-		}
-		scraper.Debugf(1, "apclips: fetching page %d", page)
-
+	scraper.Paginate(ctx, opts, "apclips", out, func(ctx context.Context, page int) (scraper.PageResult, error) {
 		pageURL := fmt.Sprintf("%s/%s/videos?sort=date-new&page=%d", s.base, slug, page)
 		body, err := s.fetchPage(ctx, pageURL)
 		if err != nil {
-			send(ctx, out, scraper.Error(fmt.Errorf("page %d: %w", page, err)))
-			return
+			return scraper.PageResult{}, err
 		}
 
 		cards, total := parseListingPage(body)
 		if len(cards) == 0 {
-			return
+			return scraper.PageResult{}, nil
 		}
 
-		if page == 1 && total > 0 {
-			send(ctx, out, scraper.Progress(total))
-		}
-
+		scenes := make([]models.Scene, 0, len(cards))
 		for _, c := range cards {
+			// Stop before detail-fetching known IDs; include a stub
+			// scene so Paginate can see the ID and trigger early-stop.
 			if opts.KnownIDs[c.id] {
-				send(ctx, out, scraper.StoppedEarly())
-				return
+				scenes = append(scenes, models.Scene{ID: c.id})
+				break
 			}
 
 			if c.detailPath != "" {
@@ -132,28 +118,21 @@ func (s *Scraper) run(ctx context.Context, studioURL, slug string, opts scraper.
 					select {
 					case <-time.After(opts.Delay):
 					case <-ctx.Done():
-						return
+						return scraper.PageResult{}, ctx.Err()
 					}
 				}
-				detailBody, err := s.fetchPage(ctx, s.base+c.detailPath)
-				if err == nil {
+				detailBody, detailErr := s.fetchPage(ctx, s.base+c.detailPath)
+				if detailErr == nil {
 					c.date, c.tags = parseDetailPage(detailBody)
 				}
 			}
 
-			scene := toScene(c, slug, studioURL, now)
-			if !send(ctx, out, scraper.Scene(scene)) {
-				return
-			}
+			scenes = append(scenes, toScene(c, slug, studioURL, now))
 		}
 
-		if total > 0 && page*perPage >= total {
-			break
-		}
-		if len(cards) < perPage {
-			break
-		}
-	}
+		done := (total > 0 && page*perPage >= total) || len(cards) < perPage
+		return scraper.PageResult{Scenes: scenes, Total: total, Done: done}, nil
+	})
 }
 
 func (s *Scraper) fetchPage(ctx context.Context, url string) ([]byte, error) {
@@ -311,13 +290,4 @@ func toScene(c card, slug, studioURL string, now time.Time) models.Scene {
 	})
 
 	return sc
-}
-
-func send(ctx context.Context, ch chan<- scraper.SceneResult, r scraper.SceneResult) bool {
-	select {
-	case ch <- r:
-		return true
-	case <-ctx.Done():
-		return false
-	}
 }

@@ -236,68 +236,25 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 	scraper.Debugf(1, "%s: scraping full catalog", s.cfg.ID)
 
 	now := time.Now().UTC()
-	sentTotal := false
-
-	for page := 1; ; page++ {
-		if ctx.Err() != nil {
-			return
-		}
-		if page > 1 && opts.Delay > 0 {
-			select {
-			case <-time.After(opts.Delay):
-			case <-ctx.Done():
-				return
-			}
-		}
-
+	scraper.Paginate(ctx, opts, s.cfg.ID, out, func(ctx context.Context, page int) (scraper.PageResult, error) {
 		pageURL := s.listingURL(page)
-		scraper.Debugf(1, "%s: fetching listing page %d", s.cfg.ID, page)
-
 		body, err := s.fetchPage(ctx, pageURL)
 		if err != nil {
-			select {
-			case out <- scraper.Error(fmt.Errorf("page %d: %w", page, err)):
-			case <-ctx.Done():
-			}
-			return
+			return scraper.PageResult{}, err
 		}
 
 		items := parseListing(body)
 		if len(items) == 0 {
-			scraper.Debugf(1, "%s: page %d empty, stopping", s.cfg.ID, page)
-			return
+			return scraper.PageResult{}, nil
 		}
 
-		if !sentTotal {
-			total := estimateTotal(body, len(items))
-			scraper.Debugf(1, "%s: %d total scenes (estimated)", s.cfg.ID, total)
-			if total > 0 {
-				select {
-				case out <- scraper.Progress(total):
-				case <-ctx.Done():
-					return
-				}
-			}
-			sentTotal = true
+		total := estimateTotal(body, len(items))
+		scenes := make([]models.Scene, len(items))
+		for i, item := range items {
+			scenes[i] = item.toScene(s.cfg.ID, s.cfg.SiteBase, s.cfg.Studio, now)
 		}
-
-		for _, item := range items {
-			if opts.KnownIDs[item.id] {
-				scraper.Debugf(1, "%s: hit known ID %s, stopping early", s.cfg.ID, item.id)
-				select {
-				case out <- scraper.StoppedEarly():
-				case <-ctx.Done():
-				}
-				return
-			}
-			scene := item.toScene(s.cfg.ID, s.cfg.SiteBase, s.cfg.Studio, now)
-			select {
-			case out <- scraper.Scene(scene):
-			case <-ctx.Done():
-				return
-			}
-		}
-	}
+		return scraper.PageResult{Scenes: scenes, Total: total}, nil
+	})
 }
 
 func (item sceneItem) toScene(siteID, siteBase, studio string, now time.Time) models.Scene {

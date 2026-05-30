@@ -62,60 +62,27 @@ func (s *Scraper) Run(ctx context.Context, studioURL string, opts scraper.ListOp
 	}
 	now := time.Now().UTC()
 
-	for page := 1; ; page++ {
-		if ctx.Err() != nil {
-			return
-		}
-		scraper.Debugf(1, "%s: fetching page %d", s.cfg.SiteID, page)
-		videos, total, err := s.FetchPage(ctx, page, channel)
+	var total int
+	scraper.Paginate(ctx, opts, s.cfg.SiteID, out, func(ctx context.Context, page int) (scraper.PageResult, error) {
+		videos, t, err := s.FetchPage(ctx, page, channel)
 		if err != nil {
-			select {
-			case out <- scraper.Error(err):
-			case <-ctx.Done():
-			}
-			return
+			return scraper.PageResult{}, err
 		}
-
 		if page == 1 {
-			scraper.Debugf(1, "%s: %d total scenes", s.cfg.SiteID, total)
-			select {
-			case out <- scraper.Progress(total):
-			case <-ctx.Done():
-				return
-			}
+			total = t
 		}
 
-		if len(videos) == 0 {
-			return
+		scenes := make([]models.Scene, len(videos))
+		for i, v := range videos {
+			scenes[i] = ToScene(s.cfg, studioURL, v, now)
 		}
 
-		for _, v := range videos {
-			scene := ToScene(s.cfg, studioURL, v, now)
-			if opts.KnownIDs != nil && opts.KnownIDs[scene.ID] {
-				scraper.Debugf(1, "%s: hit known ID %s, stopping early", s.cfg.SiteID, scene.ID)
-				select {
-				case out <- scraper.StoppedEarly():
-				case <-ctx.Done():
-				}
-				return
-			}
-			select {
-			case out <- scraper.Scene(scene):
-			case <-ctx.Done():
-				return
-			}
-		}
-
-		if page*PageSize >= total {
-			return
-		}
-
-		select {
-		case <-time.After(opts.Delay):
-		case <-ctx.Done():
-			return
-		}
-	}
+		return scraper.PageResult{
+			Scenes: scenes,
+			Total:  total,
+			Done:   page*PageSize >= total,
+		}, nil
+	})
 }
 
 func (s *Scraper) FetchPage(ctx context.Context, page int, channel string) ([]Video, int, error) {

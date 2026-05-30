@@ -106,61 +106,22 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 	base := resolveBase(studioURL)
 	now := time.Now().UTC()
 	seen := make(map[string]bool)
-	sentTotal := false
 
-	for page := 1; ; page++ {
-		if ctx.Err() != nil {
-			return
-		}
-		if page > 1 && opts.Delay > 0 {
-			select {
-			case <-time.After(opts.Delay):
-			case <-ctx.Done():
-				return
-			}
-		}
-		scraper.Debugf(1, "pissinghd: fetching page %d", page)
-
+	scraper.Paginate(ctx, opts, "pissinghd", out, func(ctx context.Context, page int) (scraper.PageResult, error) {
 		pageURL := fmt.Sprintf("%s/videos?page=%d", base, page)
 		body, err := s.fetchPage(ctx, pageURL)
 		if err != nil {
-			select {
-			case out <- scraper.Error(fmt.Errorf("page %d: %w", page, err)):
-			case <-ctx.Done():
-			}
-			return
+			return scraper.PageResult{}, err
 		}
 
 		items := parseListingPage(body)
-		if len(items) == 0 {
-			return
-		}
-
-		if !sentTotal {
-			sentTotal = true
-			select {
-			case out <- scraper.Progress(len(items)):
-			case <-ctx.Done():
-				return
-			}
-		}
-
+		var scenes []models.Scene
 		for _, item := range items {
 			if seen[item.id] {
 				continue
 			}
 			seen[item.id] = true
-
-			if opts.KnownIDs[item.id] {
-				scraper.Debugf(1, "pissinghd: hit known ID, stopping early")
-				select {
-				case out <- scraper.StoppedEarly():
-				case <-ctx.Done():
-				}
-				return
-			}
-
-			scene := models.Scene{
+			scenes = append(scenes, models.Scene{
 				ID:          item.id,
 				SiteID:      "pissinghd",
 				StudioURL:   studioURL,
@@ -170,15 +131,13 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 				URL:         fmt.Sprintf("%s/videos?page=%d", tourBase, page),
 				Studio:      "Pissing",
 				ScrapedAt:   now,
-			}
-
-			select {
-			case out <- scraper.Scene(scene):
-			case <-ctx.Done():
-				return
-			}
+			})
 		}
-	}
+		return scraper.PageResult{
+			Scenes: scenes,
+			Total:  len(items),
+		}, nil
+	})
 }
 
 func (s *Scraper) fetchPage(ctx context.Context, url string) ([]byte, error) {

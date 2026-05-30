@@ -16,9 +16,8 @@ import (
 )
 
 const (
-	defaultBase  = "https://www.purecfnm.com"
-	siteID       = "purecfnm"
-	defaultDelay = 500 * time.Millisecond
+	defaultBase = "https://www.purecfnm.com"
+	siteID      = "purecfnm"
 )
 
 var matchRe = regexp.MustCompile(`^https?://(?:www\.)?purecfnm\.com(?:/|$)`)
@@ -58,17 +57,12 @@ func (s *Scraper) ListScenes(ctx context.Context, studioURL string, opts scraper
 func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOpts, out chan<- scraper.SceneResult) {
 	defer close(out)
 
-	delay := opts.Delay
-	if delay == 0 {
-		delay = defaultDelay
-	}
-
 	now := time.Now().UTC()
 
 	if strings.Contains(studioURL, "/models/") {
 		s.scrapeModelPage(ctx, studioURL, opts, out, now)
 	} else {
-		s.scrapeListingPages(ctx, studioURL, delay, opts, out, now)
+		s.scrapeListingPages(ctx, studioURL, opts, out, now)
 	}
 }
 
@@ -83,66 +77,28 @@ func extractSlug(studioURL string) string {
 	return "movies"
 }
 
-func (s *Scraper) scrapeListingPages(ctx context.Context, studioURL string, delay time.Duration, opts scraper.ListOpts, out chan<- scraper.SceneResult, now time.Time) {
+func (s *Scraper) scrapeListingPages(ctx context.Context, studioURL string, opts scraper.ListOpts, out chan<- scraper.SceneResult, now time.Time) {
 	slug := extractSlug(studioURL)
+	firstPage := true
 
-	for page := 1; ; page++ {
-		if ctx.Err() != nil {
-			return
-		}
-		if page > 1 && delay > 0 {
-			select {
-			case <-time.After(delay):
-			case <-ctx.Done():
-				return
-			}
-		}
-		scraper.Debugf(1, "purecfnm: fetching page %d", page)
-
+	scraper.Paginate(ctx, opts, "purecfnm", out, func(ctx context.Context, page int) (scraper.PageResult, error) {
 		pageURL := fmt.Sprintf("%s/categories/%s_%d_d.html", s.base, slug, page)
-
 		body, err := s.fetchPage(ctx, pageURL)
 		if err != nil {
-			select {
-			case out <- scraper.Error(fmt.Errorf("page %d: %w", page, err)):
-			case <-ctx.Done():
-			}
-			return
+			return scraper.PageResult{}, err
 		}
-
-		scenes := parseListingPage(body, s.base)
-		if len(scenes) == 0 {
-			return
+		items := parseListingPage(body, s.base)
+		var total int
+		if firstPage {
+			total = estimateTotal(body, len(items))
+			firstPage = false
 		}
-
-		if page == 1 {
-			total := estimateTotal(body, len(scenes))
-			if total > 0 {
-				scraper.Debugf(1, "purecfnm: %d total scenes", total)
-				select {
-				case out <- scraper.Progress(total):
-				case <-ctx.Done():
-					return
-				}
-			}
+		scenes := make([]models.Scene, len(items))
+		for i, item := range items {
+			scenes[i] = item.toScene(studioURL, s.base, now)
 		}
-
-		for _, item := range scenes {
-			if opts.KnownIDs[item.id] {
-				scraper.Debugf(1, "purecfnm: hit known ID, stopping early")
-				select {
-				case out <- scraper.StoppedEarly():
-				case <-ctx.Done():
-				}
-				return
-			}
-			select {
-			case out <- scraper.Scene(item.toScene(studioURL, s.base, now)):
-			case <-ctx.Done():
-				return
-			}
-		}
-	}
+		return scraper.PageResult{Scenes: scenes, Total: total}, nil
+	})
 }
 
 // --- model page ---

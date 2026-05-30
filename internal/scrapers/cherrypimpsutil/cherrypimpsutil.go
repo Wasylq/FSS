@@ -277,63 +277,31 @@ func (s *Scraper) scrapeSinglePage(ctx context.Context, studioURL string, opts s
 }
 
 func (s *Scraper) scrapeListingPages(ctx context.Context, lc listingConfig, opts scraper.ListOpts, out chan<- scraper.SceneResult, now time.Time) {
-	for page := 1; ; page++ {
-		if ctx.Err() != nil {
-			return
-		}
-		if page > 1 && opts.Delay > 0 {
-			select {
-			case <-time.After(opts.Delay):
-			case <-ctx.Done():
-				return
-			}
-		}
-
-		scraper.Debugf(1, "%s: fetching page %d", s.cfg.ID, page)
+	scraper.Paginate(ctx, opts, s.cfg.ID, out, func(ctx context.Context, page int) (scraper.PageResult, error) {
 		pageURL := lc.pageURL(s.cfg.SiteBase, page)
 
 		body, err := s.fetchPage(ctx, pageURL)
 		if err != nil {
-			select {
-			case out <- scraper.Error(fmt.Errorf("page %d: %w", page, err)):
-			case <-ctx.Done():
-			}
-			return
+			return scraper.PageResult{}, err
 		}
 
-		scenes := parseListingPage(body)
-		if len(scenes) == 0 {
-			return
-		}
+		items := parseListingPage(body)
 
+		total := 0
 		if page == 1 {
-			total := estimateTotal(body, len(scenes))
-			scraper.Debugf(1, "%s: %d total scenes (estimated)", s.cfg.ID, total)
-			if total > 0 {
-				select {
-				case out <- scraper.Progress(total):
-				case <-ctx.Done():
-					return
-				}
-			}
+			total = estimateTotal(body, len(items))
 		}
 
-		for _, item := range scenes {
-			if opts.KnownIDs[item.id] {
-				scraper.Debugf(1, "%s: hit known ID %s, stopping early", s.cfg.ID, item.id)
-				select {
-				case out <- scraper.StoppedEarly():
-				case <-ctx.Done():
-				}
-				return
-			}
-			select {
-			case out <- scraper.Scene(item.toScene(s.cfg.ID, s.cfg.SiteBase, s.cfg.Studio, now)):
-			case <-ctx.Done():
-				return
-			}
+		scenes := make([]models.Scene, len(items))
+		for i, item := range items {
+			scenes[i] = item.toScene(s.cfg.ID, s.cfg.SiteBase, s.cfg.Studio, now)
 		}
-	}
+
+		return scraper.PageResult{
+			Scenes: scenes,
+			Total:  total,
+		}, nil
+	})
 }
 
 func parseDVDCards(body []byte) []string {
@@ -370,20 +338,20 @@ func estimateDVDTotal(body []byte) int {
 	return max
 }
 
-func (s *Scraper) scrapeDVDListing(ctx context.Context, opts scraper.ListOpts, out chan<- scraper.SceneResult, now time.Time) {
+func (s *Scraper) collectDVDURLs(ctx context.Context, opts scraper.ListOpts) ([]string, error) {
 	var allDVDs []string
 	totalPages := 1
 
 	for page := 1; page <= totalPages; page++ {
 		scraper.Debugf(1, "%s: fetching DVD listing page %d", s.cfg.ID, page)
 		if ctx.Err() != nil {
-			return
+			return nil, ctx.Err()
 		}
 		if page > 1 && opts.Delay > 0 {
 			select {
 			case <-time.After(opts.Delay):
 			case <-ctx.Done():
-				return
+				return nil, ctx.Err()
 			}
 		}
 
@@ -396,11 +364,7 @@ func (s *Scraper) scrapeDVDListing(ctx context.Context, opts scraper.ListOpts, o
 
 		body, err := s.fetchPage(ctx, pageURL)
 		if err != nil {
-			select {
-			case out <- scraper.Error(fmt.Errorf("dvd listing page %d: %w", page, err)):
-			case <-ctx.Done():
-			}
-			return
+			return nil, fmt.Errorf("dvd listing page %d: %w", page, err)
 		}
 
 		dvds := parseDVDCards(body)
@@ -413,58 +377,53 @@ func (s *Scraper) scrapeDVDListing(ctx context.Context, opts scraper.ListOpts, o
 			totalPages = estimateDVDTotal(body)
 		}
 	}
+	return allDVDs, nil
+}
+
+func (s *Scraper) scrapeDVDListing(ctx context.Context, opts scraper.ListOpts, out chan<- scraper.SceneResult, now time.Time) {
+	allDVDs, err := s.collectDVDURLs(ctx, opts)
+	if err != nil {
+		select {
+		case out <- scraper.Error(err):
+		case <-ctx.Done():
+		}
+		return
+	}
 
 	if len(allDVDs) == 0 {
 		return
 	}
 
 	scraper.Debugf(1, "%s: fetching %d DVD detail pages", s.cfg.ID, len(allDVDs))
-	for i, dvdURL := range allDVDs {
-		if ctx.Err() != nil {
-			return
-		}
-		if i > 0 && opts.Delay > 0 {
-			select {
-			case <-time.After(opts.Delay):
-			case <-ctx.Done():
-				return
-			}
+	scraper.Paginate(ctx, opts, s.cfg.ID, out, func(ctx context.Context, page int) (scraper.PageResult, error) {
+		idx := page - 1
+		if idx >= len(allDVDs) {
+			return scraper.PageResult{}, nil
 		}
 
-		body, err := s.fetchPage(ctx, dvdURL)
+		body, err := s.fetchPage(ctx, allDVDs[idx])
 		if err != nil {
-			select {
-			case out <- scraper.Error(fmt.Errorf("dvd %s: %w", dvdURL, err)):
-			case <-ctx.Done():
-			}
-			return
+			return scraper.PageResult{}, fmt.Errorf("dvd %s: %w", allDVDs[idx], err)
 		}
 
-		scenes := parseListingPage(body)
-		if i == 0 {
-			select {
-			case out <- scraper.Progress(len(scenes) * len(allDVDs)):
-			case <-ctx.Done():
-				return
-			}
+		items := parseListingPage(body)
+
+		total := 0
+		if page == 1 {
+			total = len(items) * len(allDVDs)
 		}
 
-		for _, item := range scenes {
-			if opts.KnownIDs[item.id] {
-				scraper.Debugf(1, "%s: hit known ID %s, stopping early", s.cfg.ID, item.id)
-				select {
-				case out <- scraper.StoppedEarly():
-				case <-ctx.Done():
-				}
-				return
-			}
-			select {
-			case out <- scraper.Scene(item.toScene(s.cfg.ID, s.cfg.SiteBase, s.cfg.Studio, now)):
-			case <-ctx.Done():
-				return
-			}
+		scenes := make([]models.Scene, len(items))
+		for i, item := range items {
+			scenes[i] = item.toScene(s.cfg.ID, s.cfg.SiteBase, s.cfg.Studio, now)
 		}
-	}
+
+		return scraper.PageResult{
+			Scenes: scenes,
+			Total:  total,
+			Done:   idx >= len(allDVDs)-1,
+		}, nil
+	})
 }
 
 func (item sceneItem) toScene(siteID, siteBase, studio string, now time.Time) models.Scene {

@@ -178,89 +178,43 @@ func (s *Scraper) listingURL(page int) string {
 	return fmt.Sprintf("%s/videos?page=%d", s.cfg.SiteBase, page)
 }
 
-func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOpts, out chan<- scraper.SceneResult) {
+func (s *Scraper) run(ctx context.Context, _ string, opts scraper.ListOpts, out chan<- scraper.SceneResult) {
 	defer close(out)
 	scraper.Debugf(1, "%s: scraping full catalog via __NEXT_DATA__", s.cfg.ID)
 
 	now := time.Now().UTC()
-	sentTotal := false
-	totalPages := 0
-
-	for page := 1; ; page++ {
-		if ctx.Err() != nil {
-			return
-		}
-		if page > 1 && opts.Delay > 0 {
-			select {
-			case <-time.After(opts.Delay):
-			case <-ctx.Done():
-				return
-			}
-		}
-
-		pageURL := s.listingURL(page)
-		scraper.Debugf(1, "%s: fetching page %d", s.cfg.ID, page)
-
-		body, err := s.fetchPage(ctx, pageURL)
+	var totalPages int
+	scraper.Paginate(ctx, opts, s.cfg.ID, out, func(ctx context.Context, page int) (scraper.PageResult, error) {
+		body, err := s.fetchPage(ctx, s.listingURL(page))
 		if err != nil {
-			select {
-			case out <- scraper.Error(fmt.Errorf("page %d: %w", page, err)):
-			case <-ctx.Done():
-			}
-			return
+			return scraper.PageResult{}, err
 		}
 
 		contents, err := parseListing(body)
 		if err != nil {
-			select {
-			case out <- scraper.Error(fmt.Errorf("page %d: %w", page, err)):
-			case <-ctx.Done():
-			}
-			return
+			return scraper.PageResult{}, err
 		}
 		if len(contents.Data) == 0 {
-			return
+			return scraper.PageResult{}, nil
 		}
 
-		if !sentTotal {
-			total := int(contents.Total)
+		total := 0
+		if page == 1 {
+			total = int(contents.Total)
 			totalPages = int(contents.TotalPages)
-			scraper.Debugf(1, "%s: %d total scenes across %d pages",
-				s.cfg.ID, total, totalPages)
-			if total > 0 {
-				select {
-				case out <- scraper.Progress(total):
-				case <-ctx.Done():
-					return
-				}
-			}
-			sentTotal = true
 		}
 
-		for _, entry := range contents.Data {
-			id := strconv.Itoa(entry.ID)
-			if opts.KnownIDs[id] {
-				scraper.Debugf(1, "%s: hit known ID %s, stopping early", s.cfg.ID, id)
-				select {
-				case out <- scraper.StoppedEarly():
-				case <-ctx.Done():
-				}
-				return
-			}
-			select {
-			case out <- scraper.Scene(s.toScene(entry, now)):
-			case <-ctx.Done():
-				return
-			}
+		scenes := make([]models.Scene, len(contents.Data))
+		for i, entry := range contents.Data {
+			scenes[i] = s.toScene(entry, now)
 		}
 
 		// Stop when total_pages tells us we're done. We still validate by
 		// checking empty data on the next page (some sites mis-report
 		// total_pages on the first page when caches are stale).
-		if totalPages > 0 && page >= totalPages {
-			return
-		}
-	}
+		done := totalPages > 0 && page >= totalPages
+		return scraper.PageResult{Scenes: scenes, Total: total, Done: done}, nil
+	})
 }
 
 // publishDateLayout matches "2026/05/24 00:00:00" as emitted in every Ghost

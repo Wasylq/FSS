@@ -83,65 +83,21 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 
 	scraper.Debugf(1, "bang: scraping %s", modeLabel(mode))
 
-	for page := 1; ; page++ {
-		if ctx.Err() != nil {
-			return
-		}
-		if page > 1 && opts.Delay > 0 {
-			select {
-			case <-time.After(opts.Delay):
-			case <-ctx.Done():
-				return
-			}
-		}
-
+	now := time.Now().UTC()
+	scraper.Paginate(ctx, opts, "bang", out, func(ctx context.Context, page int) (scraper.PageResult, error) {
 		pageURL := buildPageURL(studioURL, mode, page)
-		scraper.Debugf(1, "bang: fetching page %d", page)
 
 		items, total, hasNext, err := s.fetchPage(ctx, pageURL)
 		if err != nil {
-			select {
-			case out <- scraper.Error(fmt.Errorf("page %d: %w", page, err)):
-			case <-ctx.Done():
-			}
-			return
+			return scraper.PageResult{}, err
 		}
 
-		if len(items) == 0 {
-			return
+		scenes := make([]models.Scene, len(items))
+		for i, item := range items {
+			scenes[i] = toScene(studioURL, item, now)
 		}
-
-		if page == 1 && total > 0 {
-			scraper.Debugf(1, "bang: %d total scenes", total)
-			select {
-			case out <- scraper.Progress(total):
-			case <-ctx.Done():
-				return
-			}
-		}
-
-		now := time.Now().UTC()
-		for _, item := range items {
-			if opts.KnownIDs[item.id] {
-				scraper.Debugf(1, "bang: hit known ID, stopping early")
-				select {
-				case out <- scraper.StoppedEarly():
-				case <-ctx.Done():
-				}
-				return
-			}
-			scene := toScene(studioURL, item, now)
-			select {
-			case out <- scraper.Scene(scene):
-			case <-ctx.Done():
-				return
-			}
-		}
-
-		if !hasNext {
-			return
-		}
-	}
+		return scraper.PageResult{Scenes: scenes, Total: total, Done: !hasNext}, nil
+	})
 }
 
 func detectMode(studioURL string) (urlMode, error) {

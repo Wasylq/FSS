@@ -70,69 +70,25 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 func (s *Scraper) paginate(ctx context.Context, baseURL, studioURL string, opts scraper.ListOpts, out chan<- scraper.SceneResult) {
 	now := time.Now().UTC()
 
-	for page := 1; ; page++ {
-		if ctx.Err() != nil {
-			return
-		}
-		if page > 1 && opts.Delay > 0 {
-			select {
-			case <-time.After(opts.Delay):
-			case <-ctx.Done():
-				return
-			}
-		}
-
-		scraper.Debugf(1, "pornplus: fetching page %d", page)
-
+	scraper.Paginate(ctx, opts, "pornplus", out, func(ctx context.Context, page int) (scraper.PageResult, error) {
 		pageURL := fmt.Sprintf("%s%spage=%d&per_page=%d",
 			baseURL, querySep(baseURL), page, pageSize)
 
 		result, err := s.fetch(ctx, pageURL)
 		if err != nil {
-			select {
-			case out <- scraper.Error(fmt.Errorf("page %d: %w", page, err)):
-			case <-ctx.Done():
-			}
-			return
+			return scraper.PageResult{}, err
 		}
 
-		if len(result.Items) == 0 {
-			return
+		scenes := make([]models.Scene, len(result.Items))
+		for i, item := range result.Items {
+			scenes[i] = itemToScene(item, studioURL, now)
 		}
-
-		if page == 1 && result.Pagination.TotalItems > 0 {
-			scraper.Debugf(1, "pornplus: %d total scenes", result.Pagination.TotalItems)
-			select {
-			case out <- scraper.Progress(result.Pagination.TotalItems):
-			case <-ctx.Done():
-				return
-			}
-		}
-
-		for _, item := range result.Items {
-			id := strconv.Itoa(item.ID)
-
-			if opts.KnownIDs[id] {
-				scraper.Debugf(1, "pornplus: hit known ID, stopping early")
-				select {
-				case out <- scraper.StoppedEarly():
-				case <-ctx.Done():
-				}
-				return
-			}
-
-			scene := itemToScene(item, studioURL, now)
-			select {
-			case out <- scraper.Scene(scene):
-			case <-ctx.Done():
-				return
-			}
-		}
-
-		if result.Pagination.NextPage == nil {
-			return
-		}
-	}
+		return scraper.PageResult{
+			Scenes: scenes,
+			Total:  result.Pagination.TotalItems,
+			Done:   result.Pagination.NextPage == nil,
+		}, nil
+	})
 }
 
 func querySep(u string) string {
