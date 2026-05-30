@@ -13,6 +13,7 @@ import (
 
 	"github.com/Wasylq/FSS/internal/httpx"
 	"github.com/Wasylq/FSS/models"
+	"github.com/Wasylq/FSS/parseutil"
 	"github.com/Wasylq/FSS/scraper"
 )
 
@@ -63,7 +64,6 @@ var (
 
 	detailDescRe = regexp.MustCompile(`(?s)<h4>([^<]+)</h4>`)
 	detailTagsRe = regexp.MustCompile(`<meta\s+name="keywords"\s+content="([^"]*)"`)
-	ogImageRe    = regexp.MustCompile(`<meta\s+property="og:image"\s+content="([^"]*)"`)
 	baseURLRe    = regexp.MustCompile(`^(https?://[^/]+)`)
 )
 
@@ -306,8 +306,9 @@ func (s *Scraper) processEntry(ctx context.Context, base, studioURL string, entr
 					}
 				}
 			}
-			if m := ogImageRe.FindSubmatch(body); m != nil {
-				scene.Thumbnail = html.UnescapeString(string(m[1]))
+			og := parseutil.OpenGraph(body)
+			if v := og["og:image"]; v != "" {
+				scene.Thumbnail = html.UnescapeString(v)
 			}
 		}
 	}

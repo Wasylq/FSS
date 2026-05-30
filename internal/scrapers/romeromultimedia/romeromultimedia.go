@@ -45,6 +45,7 @@ import (
 
 	"github.com/Wasylq/FSS/internal/httpx"
 	"github.com/Wasylq/FSS/models"
+	"github.com/Wasylq/FSS/parseutil"
 	"github.com/Wasylq/FSS/scraper"
 )
 
@@ -257,19 +258,8 @@ func (s *Scraper) fetchPage(ctx context.Context, u string) ([]byte, http.Header,
 // Returns zero time on parse failure so the field is just empty rather
 // than corrupting the scene.
 func parseWPDate(s string) time.Time {
-	s = strings.TrimSpace(s)
-	if s == "" {
-		return time.Time{}
-	}
-	for _, layout := range []string{
-		"2006-01-02T15:04:05",
-		time.RFC3339,
-	} {
-		if t, err := time.Parse(layout, s); err == nil {
-			return t.UTC()
-		}
-	}
-	return time.Time{}
+	t, _ := parseutil.TryParseDate(s, "2006-01-02T15:04:05", time.RFC3339)
+	return t
 }
 
 var (

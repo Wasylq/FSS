@@ -13,6 +13,7 @@ import (
 
 	"github.com/Wasylq/FSS/internal/httpx"
 	"github.com/Wasylq/FSS/models"
+	"github.com/Wasylq/FSS/parseutil"
 	"github.com/Wasylq/FSS/scraper"
 )
 
@@ -451,7 +452,6 @@ func bestSrcset(srcset string) string {
 var (
 	metaDescRe     = regexp.MustCompile(`<meta\s+name="description"\s+content="([^"]*)"`)
 	metaKeywordsRe = regexp.MustCompile(`<meta\s+name="keywords"\s+content="([^"]*)"`)
-	ogImageRe      = regexp.MustCompile(`<meta\s+property="og:image"\s+content="([^"]*)"`)
 )
 
 func (s *Scraper) fetchDetail(ctx context.Context, studioURL string, entry listEntry) (models.Scene, error) {
@@ -496,8 +496,9 @@ func (s *Scraper) fetchDetail(ctx context.Context, studioURL string, entry listE
 		}
 	}
 
-	if m := ogImageRe.FindSubmatch(body); m != nil {
-		scene.Thumbnail = html.UnescapeString(string(m[1]))
+	og := parseutil.OpenGraph(body)
+	if v := og["og:image"]; v != "" {
+		scene.Thumbnail = html.UnescapeString(v)
 	}
 
 	return scene, nil

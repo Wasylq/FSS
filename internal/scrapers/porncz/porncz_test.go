@@ -72,30 +72,30 @@ func TestParseDetailPage(t *testing.T) {
 </script>
 </head></html>`)
 
-	ld, ok := parseDetailPage(body)
-	if !ok {
+	vo := parseutil.ExtractVideoObject(body)
+	if vo == nil {
 		t.Fatal("expected VideoObject")
 	}
-	if ld.Name != "Sexy blonde cant wait for his hard cock" {
-		t.Errorf("name = %q", ld.Name)
+	if vo.Name != "Sexy blonde cant wait for his hard cock" {
+		t.Errorf("name = %q", vo.Name)
 	}
-	if ld.Desc != "This cock raising petite blonde with nice tits was ready." {
-		t.Errorf("desc = %q", ld.Desc)
+	if vo.Description != "This cock raising petite blonde with nice tits was ready." {
+		t.Errorf("desc = %q", vo.Description)
 	}
-	if ld.Thumb != "https://img2.porncz.com/en/media/abc-video_detail.webp" {
-		t.Errorf("thumb = %q", ld.Thumb)
+	if vo.ThumbnailURL != "https://img2.porncz.com/en/media/abc-video_detail.webp" {
+		t.Errorf("thumb = %q", vo.ThumbnailURL)
 	}
-	if ld.Upload != "2026-05-18T00:00:00+01:00" {
-		t.Errorf("upload = %q", ld.Upload)
+	if vo.UploadDate != "2026-05-18T00:00:00+01:00" {
+		t.Errorf("upload = %q", vo.UploadDate)
 	}
-	if ld.Duration != "PT18M51S" {
-		t.Errorf("duration = %q", ld.Duration)
+	if vo.Duration != "PT18M51S" {
+		t.Errorf("duration = %q", vo.Duration)
 	}
-	if len(ld.Actors) != 2 || ld.Actors[0].Name != "Stanley Johnson" || ld.Actors[1].Name != "Jessie Ames" {
-		t.Errorf("actors = %v", ld.Actors)
+	if len(vo.Actors) != 2 || vo.Actors[0] != "Stanley Johnson" || vo.Actors[1] != "Jessie Ames" {
+		t.Errorf("actors = %v", vo.Actors)
 	}
-	if ld.Series == nil || ld.Series.Name != "Teen from bohemia" {
-		t.Errorf("series = %v", ld.Series)
+	if vo.PartOfSeries != "Teen from bohemia" {
+		t.Errorf("series = %q", vo.PartOfSeries)
 	}
 }
 
@@ -106,8 +106,8 @@ func TestParseDetailPageNoVideoObject(t *testing.T) {
 </script>
 </head></html>`)
 
-	_, ok := parseDetailPage(body)
-	if ok {
+	vo := parseutil.ExtractVideoObject(body)
+	if vo != nil {
 		t.Error("expected no VideoObject")
 	}
 }

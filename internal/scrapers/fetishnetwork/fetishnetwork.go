@@ -13,6 +13,7 @@ import (
 
 	"github.com/Wasylq/FSS/internal/httpx"
 	"github.com/Wasylq/FSS/models"
+	"github.com/Wasylq/FSS/parseutil"
 	"github.com/Wasylq/FSS/scraper"
 )
 
@@ -165,15 +166,8 @@ func parseListingPage(body []byte) []sceneItem {
 }
 
 func parseDate(s string) time.Time {
-	for _, layout := range []string{
-		"January 2, 2006",
-		"January 2 2006",
-	} {
-		if t, err := time.Parse(layout, s); err == nil {
-			return t.UTC()
-		}
-	}
-	return time.Time{}
+	t, _ := parseutil.TryParseDate(strings.TrimSpace(s), "January 2, 2006", "January 2 2006")
+	return t
 }
 
 func estimateTotal(body []byte, perPage int) int {

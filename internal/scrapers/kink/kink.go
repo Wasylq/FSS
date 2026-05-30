@@ -14,6 +14,7 @@ import (
 
 	"github.com/Wasylq/FSS/internal/httpx"
 	"github.com/Wasylq/FSS/models"
+	"github.com/Wasylq/FSS/parseutil"
 	"github.com/Wasylq/FSS/scraper"
 )
 
@@ -403,21 +404,6 @@ func (s *Scraper) fetchListing(ctx context.Context, pageURL, listBase string) ([
 	return entries, totalPages, nil
 }
 
-type jsonLD struct {
-	Name        string    `json:"name"`
-	Description string    `json:"description"`
-	UploadDate  string    `json:"uploadDate"`
-	Thumbnail   string    `json:"thumbnailUrl"`
-	ContentURL  string    `json:"contentUrl"`
-	Duration    string    `json:"duration"`
-	Actors      []ldActor `json:"actor"`
-	Director    *ldActor  `json:"director"`
-}
-
-type ldActor struct {
-	Name string `json:"name"`
-}
-
 type dataSetup struct {
 	Duration    int             `json:"duration"`
 	ChannelName string          `json:"channelName"`
@@ -430,10 +416,7 @@ type trackingData struct {
 	ModelNames []string `json:"modelNames"`
 }
 
-var (
-	jsonLDRe    = regexp.MustCompile(`<script type="application/ld\+json">\s*(\{[^}]*"@type"\s*:\s*"VideoObject"[^<]*)</script>`)
-	dataSetupRe = regexp.MustCompile(`data-setup="([^"]+)"`)
-)
+var dataSetupRe = regexp.MustCompile(`data-setup="([^"]+)"`)
 
 func (s *Scraper) fetchDetail(ctx context.Context, entry listEntry) (models.Scene, error) {
 	body, err := s.fetchHTML(ctx, entry.url)
@@ -461,23 +444,18 @@ func (s *Scraper) fetchDetail(ctx context.Context, entry listEntry) (models.Scen
 		}
 	}
 
-	if m := jsonLDRe.FindSubmatch(body); m != nil {
-		var ld jsonLD
-		if err := json.Unmarshal(m[1], &ld); err == nil {
-			if ld.Description != "" {
-				scene.Description = ld.Description
-			}
-			if ld.Thumbnail != "" {
-				scene.Thumbnail = ld.Thumbnail
-			}
-			if ld.ContentURL != "" && scene.Preview == "" {
-				scene.Preview = ld.ContentURL
-			}
-			if len(scene.Performers) == 0 {
-				for _, a := range ld.Actors {
-					scene.Performers = append(scene.Performers, a.Name)
-				}
-			}
+	if vo := parseutil.ExtractVideoObject(body); vo != nil {
+		if vo.Description != "" {
+			scene.Description = vo.Description
+		}
+		if vo.ThumbnailURL != "" {
+			scene.Thumbnail = vo.ThumbnailURL
+		}
+		if vo.ContentURL != "" && scene.Preview == "" {
+			scene.Preview = vo.ContentURL
+		}
+		if len(scene.Performers) == 0 {
+			scene.Performers = vo.Actors
 		}
 	}
 

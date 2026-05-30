@@ -13,6 +13,7 @@ import (
 
 	"github.com/Wasylq/FSS/internal/httpx"
 	"github.com/Wasylq/FSS/models"
+	"github.com/Wasylq/FSS/parseutil"
 	"github.com/Wasylq/FSS/scraper"
 )
 
@@ -277,10 +278,7 @@ func parseDetailPage(body []byte) detailData {
 	page := string(body)
 
 	if m := releaseDateRe.FindStringSubmatch(page); m != nil {
-		raw := strings.TrimSpace(m[1])
-		if t, err := time.Parse("January 2, 2006", raw); err == nil {
-			d.date = t.UTC()
-		} else if t, err := time.Parse("Jan 2, 2006", raw); err == nil {
+		if t, err := parseutil.TryParseDate(strings.TrimSpace(m[1]), "January 2, 2006", "Jan 2, 2006"); err == nil {
 			d.date = t.UTC()
 		}
 	}

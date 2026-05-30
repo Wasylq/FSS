@@ -11,6 +11,7 @@ import (
 
 	"github.com/Wasylq/FSS/internal/httpx"
 	"github.com/Wasylq/FSS/models"
+	"github.com/Wasylq/FSS/parseutil"
 	"github.com/Wasylq/FSS/scraper"
 )
 
@@ -227,12 +228,6 @@ func slugify(s string) string {
 }
 
 func parseDate(s string) time.Time {
-	t, err := time.Parse(time.RFC3339, s)
-	if err != nil {
-		t, err = time.Parse("2006-01-02T15:04:05Z", s)
-		if err != nil {
-			return time.Time{}
-		}
-	}
+	t, _ := parseutil.TryParseDate(s, time.RFC3339, "2006-01-02T15:04:05Z")
 	return t.UTC()
 }

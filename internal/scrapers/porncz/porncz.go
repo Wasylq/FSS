@@ -2,7 +2,6 @@ package porncz
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"html"
 	"net/http"
@@ -288,38 +287,6 @@ func parseTotalPages(body []byte) int {
 	return max
 }
 
-type jsonLD struct {
-	Type     string     `json:"@type"`
-	Name     string     `json:"name"`
-	Desc     string     `json:"description"`
-	Thumb    string     `json:"thumbnailUrl"`
-	Upload   string     `json:"uploadDate"`
-	Duration string     `json:"duration"`
-	Actors   []jsonRole `json:"actor"`
-	Series   *struct {
-		Name string `json:"name"`
-	} `json:"partOfSeries"`
-}
-
-type jsonRole struct {
-	Name string `json:"name"`
-}
-
-var jsonLDRe = regexp.MustCompile(`(?s)<script type="application/ld\+json">(.*?)</script>`)
-
-func parseDetailPage(body []byte) (jsonLD, bool) {
-	for _, m := range jsonLDRe.FindAllSubmatch(body, -1) {
-		var ld jsonLD
-		if err := json.Unmarshal(m[1], &ld); err != nil {
-			continue
-		}
-		if ld.Type == "VideoObject" {
-			return ld, true
-		}
-	}
-	return jsonLD{}, false
-}
-
 func (s *Scraper) fetchDetail(ctx context.Context, item listItem, studioURL string) (models.Scene, error) {
 	sceneURL := s.base + "/en/" + item.slug
 	body, err := s.fetchPage(ctx, sceneURL)
@@ -327,39 +294,34 @@ func (s *Scraper) fetchDetail(ctx context.Context, item listItem, studioURL stri
 		return models.Scene{}, fmt.Errorf("detail %s: %w", item.slug, err)
 	}
 
-	ld, ok := parseDetailPage(body)
-	if !ok {
+	vo := parseutil.ExtractVideoObject(body)
+	if vo == nil {
 		return models.Scene{}, fmt.Errorf("detail %s: no VideoObject JSON-LD", item.slug)
 	}
 
-	title := strings.TrimSpace(ld.Name)
+	title := strings.TrimSpace(vo.Name)
 	if title == "" {
 		title = item.title
 	}
 
 	var date time.Time
-	if ld.Upload != "" {
-		if t, err := time.Parse(time.RFC3339, ld.Upload); err == nil {
+	if vo.UploadDate != "" {
+		if t, err := time.Parse(time.RFC3339, vo.UploadDate); err == nil {
 			date = t.UTC()
-		} else if t, err := time.Parse("2006-01-02", ld.Upload[:min(len(ld.Upload), 10)]); err == nil {
+		} else if t, err := time.Parse("2006-01-02", vo.UploadDate[:min(len(vo.UploadDate), 10)]); err == nil {
 			date = t.UTC()
 		}
 	}
 
 	var performers []string
-	for _, a := range ld.Actors {
-		name := strings.TrimSpace(a.Name)
+	for _, name := range vo.Actors {
+		name = strings.TrimSpace(name)
 		if name != "" {
 			performers = append(performers, name)
 		}
 	}
 
-	var series string
-	if ld.Series != nil {
-		series = strings.TrimSpace(ld.Series.Name)
-	}
-
-	thumb := ld.Thumb
+	thumb := vo.ThumbnailURL
 	if thumb == "" {
 		thumb = item.thumb
 	}
@@ -372,12 +334,12 @@ func (s *Scraper) fetchDetail(ctx context.Context, item listItem, studioURL stri
 		Title:       title,
 		URL:         sceneURL,
 		Date:        date,
-		Description: strings.TrimSpace(ld.Desc),
+		Description: strings.TrimSpace(vo.Description),
 		Thumbnail:   thumb,
 		Performers:  performers,
 		Studio:      studioName,
-		Series:      series,
-		Duration:    parseutil.ParseDurationISO(ld.Duration),
+		Series:      strings.TrimSpace(vo.PartOfSeries),
+		Duration:    parseutil.ParseDurationISO(vo.Duration),
 		ScrapedAt:   now,
 	}, nil
 }

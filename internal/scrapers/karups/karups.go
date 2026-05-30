@@ -122,12 +122,8 @@ func parseListingPage(body []byte) []listEntry {
 }
 
 func parseDate(s string) time.Time {
-	s = parseutil.StripOrdinalSuffix(strings.TrimSpace(s))
-	t, err := time.Parse("January 2, 2006", s)
-	if err != nil {
-		t, _ = time.Parse("Jan 2, 2006", s)
-	}
-	return t.UTC()
+	t, _ := parseutil.TryParseDate(parseutil.StripOrdinalSuffix(strings.TrimSpace(s)), "January 2, 2006", "Jan 2, 2006")
+	return t
 }
 
 func estimateTotal(body []byte, perPage int) int {

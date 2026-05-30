@@ -301,7 +301,6 @@ func parseEntries(body []byte, siteBase string) []listEntry {
 }
 
 var (
-	ogDescRe       = regexp.MustCompile(`og:description"\s+content="([^"]+)"`)
 	categoryLinkRe = regexp.MustCompile(`categories/\w+_1_d\.html">([^<]+)</a>`)
 )
 
@@ -341,8 +340,9 @@ func (s *Scraper) fetchDetail(ctx context.Context, studioURL string, entry listE
 		return scene, nil
 	}
 
-	if m := ogDescRe.FindSubmatch(body); m != nil {
-		scene.Description = html.UnescapeString(string(m[1]))
+	og := parseutil.OpenGraph(body)
+	if v := og["og:description"]; v != "" {
+		scene.Description = html.UnescapeString(v)
 	}
 
 	for _, cm := range categoryLinkRe.FindAllSubmatch(body, -1) {

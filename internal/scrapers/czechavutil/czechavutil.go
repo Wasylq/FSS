@@ -2,7 +2,6 @@ package czechavutil
 
 import (
 	"context"
-	"encoding/json"
 	"encoding/xml"
 	"fmt"
 	"html"
@@ -14,6 +13,7 @@ import (
 
 	"github.com/Wasylq/FSS/internal/httpx"
 	"github.com/Wasylq/FSS/models"
+	"github.com/Wasylq/FSS/parseutil"
 	"github.com/Wasylq/FSS/scraper"
 )
 
@@ -113,49 +113,21 @@ type DetailData struct {
 	Tags       []string
 }
 
-type jsonLD struct {
-	Type     string  `json:"@type"`
-	Actor    jsonAny `json:"actor"`
-	Keywords string  `json:"keywords"`
-}
-
-type jsonAny []byte
-
-func (j *jsonAny) UnmarshalJSON(data []byte) error {
-	*j = data
-	return nil
-}
-
-var (
-	jsonLDRe    = regexp.MustCompile(`(?s)<script type="application/ld\+json">(.*?)</script>`)
-	performerRe = regexp.MustCompile(`[?&]adult-performer[^"]*"[^>]*class="[^"]*text-link[^"]*"[^>]*>([^<]+)</a>`)
-)
+var performerRe = regexp.MustCompile(`[?&]adult-performer[^"]*"[^>]*class="[^"]*text-link[^"]*"[^>]*>([^<]+)</a>`)
 
 func ParseDetailPage(body []byte) DetailData {
 	var d DetailData
 
-	for _, m := range jsonLDRe.FindAllSubmatch(body, -1) {
-		var ld jsonLD
-		if err := json.Unmarshal(m[1], &ld); err != nil {
-			continue
-		}
-		if ld.Type != "VideoObject" {
-			continue
-		}
-
-		if len(ld.Actor) > 0 {
-			d.Performers = parseActors(ld.Actor)
-		}
-
-		if ld.Keywords != "" {
-			for _, kw := range strings.Split(ld.Keywords, ",") {
+	if vo := parseutil.ExtractVideoObject(body); vo != nil {
+		d.Performers = vo.Actors
+		if vo.Keywords != "" {
+			for _, kw := range strings.Split(vo.Keywords, ",") {
 				tag := strings.TrimSpace(kw)
 				if tag != "" {
 					d.Tags = append(d.Tags, tag)
 				}
 			}
 		}
-		break
 	}
 
 	if len(d.Performers) == 0 {
@@ -168,47 +140,6 @@ func ParseDetailPage(body []byte) DetailData {
 	}
 
 	return d
-}
-
-func parseActors(raw []byte) []string {
-	raw = []byte(strings.TrimSpace(string(raw)))
-	if len(raw) == 0 {
-		return nil
-	}
-
-	if raw[0] == '[' {
-		var arr []any
-		if err := json.Unmarshal(raw, &arr); err != nil {
-			return nil
-		}
-		var names []string
-		for _, v := range arr {
-			switch val := v.(type) {
-			case string:
-				if name := strings.TrimSpace(val); name != "" {
-					names = appendUnique(names, name)
-				}
-			case map[string]any:
-				if name, ok := val["name"].(string); ok {
-					if n := strings.TrimSpace(name); n != "" {
-						names = appendUnique(names, n)
-					}
-				}
-			}
-		}
-		return names
-	}
-
-	if raw[0] == '"' {
-		var s string
-		if err := json.Unmarshal(raw, &s); err == nil {
-			if name := strings.TrimSpace(s); name != "" {
-				return []string{name}
-			}
-		}
-	}
-
-	return nil
 }
 
 func appendUnique(slice []string, val string) []string {

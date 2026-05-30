@@ -13,6 +13,7 @@ import (
 
 	"github.com/Wasylq/FSS/internal/httpx"
 	"github.com/Wasylq/FSS/models"
+	"github.com/Wasylq/FSS/parseutil"
 	"github.com/Wasylq/FSS/scraper"
 )
 
@@ -266,7 +267,7 @@ func (s *siteScraper) parseListingCards(page string) []workItem {
 		}
 
 		if dm := cardDateRe.FindStringSubmatch(block); dm != nil {
-			item.date, _ = parseDate(strings.TrimSpace(dm[1]))
+			item.date = parseDate(strings.TrimSpace(dm[1]))
 		}
 
 		if tm := cardTimeRe.FindStringSubmatch(block); tm != nil {
@@ -347,7 +348,7 @@ func (s *siteScraper) fetchDetail(ctx context.Context, item workItem, studioURL 
 
 	if item.date.IsZero() {
 		if m := detailDateRe.FindStringSubmatch(body); m != nil {
-			item.date, _ = parseDate(strings.TrimSpace(m[1]))
+			item.date = parseDate(strings.TrimSpace(m[1]))
 		}
 	}
 
@@ -445,17 +446,7 @@ func (s *siteScraper) resolveURL(u string) string {
 	return s.siteBase() + "/" + u
 }
 
-func parseDate(s string) (time.Time, error) {
-	s = strings.TrimSpace(s)
-	for _, layout := range []string{
-		"January 2, 2006",
-		"Jan 2, 2006",
-		"January 02, 2006",
-		"Jan 02, 2006",
-	} {
-		if t, err := time.Parse(layout, s); err == nil {
-			return t, nil
-		}
-	}
-	return time.Time{}, fmt.Errorf("unparseable date: %q", s)
+func parseDate(s string) time.Time {
+	t, _ := parseutil.TryParseDate(strings.TrimSpace(s), "January 2, 2006", "Jan 2, 2006", "January 02, 2006", "Jan 02, 2006")
+	return t
 }

@@ -14,6 +14,7 @@ import (
 
 	"github.com/Wasylq/FSS/internal/httpx"
 	"github.com/Wasylq/FSS/models"
+	"github.com/Wasylq/FSS/parseutil"
 	"github.com/Wasylq/FSS/scraper"
 )
 
@@ -478,33 +479,13 @@ func normalizeName(s string) string {
 }
 
 func parseDate(s string) time.Time {
-	s = strings.TrimSpace(s)
-	for _, layout := range []string{
-		"January 2, 2006",
-		"January 2 2006",
-		"Jan 2, 2006",
-		"Jan 2 2006",
-	} {
-		if t, err := time.Parse(layout, s); err == nil {
-			return t.UTC()
-		}
-	}
-	return time.Time{}
+	t, _ := parseutil.TryParseDate(strings.TrimSpace(s), "January 2, 2006", "January 2 2006", "Jan 2, 2006", "Jan 2 2006")
+	return t
 }
 
 func parseMonthYear(s string) time.Time {
-	s = strings.TrimSpace(s)
-	for _, layout := range []string{
-		"January, 2006",
-		"January 2006",
-		"Jan, 2006",
-		"Jan 2006",
-	} {
-		if t, err := time.Parse(layout, s); err == nil {
-			return t.UTC()
-		}
-	}
-	return time.Time{}
+	t, _ := parseutil.TryParseDate(strings.TrimSpace(s), "January, 2006", "January 2006", "Jan, 2006", "Jan 2006")
+	return t
 }
 
 func (s *Scraper) fetchPage(ctx context.Context, url string) ([]byte, error) {

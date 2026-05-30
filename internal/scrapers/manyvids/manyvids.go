@@ -288,14 +288,7 @@ func creatorID(studioURL string) (string, error) {
 
 // parseDate parses ManyVids API timestamps (RFC3339 with optional milliseconds).
 func parseDate(s string) time.Time {
-	if s == "" {
-		return time.Time{}
-	}
-	t, err := time.Parse(time.RFC3339Nano, s)
-	if err == nil {
-		return t.UTC()
-	}
-	t, _ = time.Parse(time.RFC3339, s)
+	t, _ := parseutil.TryParseDate(s, time.RFC3339Nano, time.RFC3339)
 	return t.UTC()
 }
 

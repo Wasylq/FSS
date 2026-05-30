@@ -2,7 +2,6 @@ package wownetworkutil
 
 import (
 	"context"
-	"encoding/json"
 	"encoding/xml"
 	"fmt"
 	"net/http"
@@ -179,16 +178,6 @@ func (s *Scraper) fetchSitemap(ctx context.Context, sitemapURL string) ([]string
 	return urls, nil
 }
 
-type videoObject struct {
-	Name         string `json:"name"`
-	Description  string `json:"description"`
-	ThumbnailURL string `json:"thumbnailUrl"`
-	Duration     string `json:"duration"`
-	UploadDate   string `json:"uploadDate"`
-}
-
-var jsonLDRe = regexp.MustCompile(`(?s)<script type="application/ld\+json">\s*(\{.+?\})\s*</script>`)
-
 func (s *Scraper) fetchDetail(ctx context.Context, pageURL, studioURL string, listingPerformers map[string][]string) (models.Scene, error) {
 	resp, err := httpx.Do(ctx, s.client, httpx.Request{
 		URL:     pageURL,
@@ -204,14 +193,9 @@ func (s *Scraper) fetchDetail(ctx context.Context, pageURL, studioURL string, li
 		return models.Scene{}, err
 	}
 
-	m := jsonLDRe.FindSubmatch(body)
-	if m == nil {
+	vo := parseutil.ExtractVideoObject(body)
+	if vo == nil {
 		return models.Scene{}, fmt.Errorf("no JSON-LD found")
-	}
-
-	var vo videoObject
-	if err := json.Unmarshal(m[1], &vo); err != nil {
-		return models.Scene{}, fmt.Errorf("parsing JSON-LD: %w", err)
 	}
 
 	slug := extractSlug(pageURL)

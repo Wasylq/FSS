@@ -2,7 +2,6 @@ package pornworld
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"html"
 	"net/http"
@@ -245,16 +244,7 @@ func parseListing(body []byte) []listEntry {
 	return entries
 }
 
-type jsonLD struct {
-	Type        string `json:"@type"`
-	Name        string `json:"name"`
-	Description string `json:"description"`
-}
-
-var (
-	jsonLDRe  = regexp.MustCompile(`(?s)<script type="application/ld\+json">\s*(\{.*?\})\s*</script>`)
-	detailTag = regexp.MustCompile(`<a href="/videos\?tags=[^"]*" class="link-secondary">([^<]+)</a>`)
-)
+var detailTag = regexp.MustCompile(`<a href="/videos\?tags=[^"]*" class="link-secondary">([^<]+)</a>`)
 
 func (s *Scraper) fetchDetail(ctx context.Context, entry listEntry, studioURL string) (models.Scene, error) {
 	detailURL := s.base + entry.url
@@ -281,12 +271,9 @@ func (s *Scraper) fetchDetail(ctx context.Context, entry listEntry, studioURL st
 		scene.Date = entry.date
 	}
 
-	if m := jsonLDRe.FindSubmatch(body); m != nil {
-		var ld jsonLD
-		if err := json.Unmarshal(m[1], &ld); err == nil && ld.Type == "VideoObject" {
-			if ld.Description != "" {
-				scene.Description = html.UnescapeString(ld.Description)
-			}
+	if vo := parseutil.ExtractVideoObject(body); vo != nil {
+		if vo.Description != "" {
+			scene.Description = html.UnescapeString(vo.Description)
 		}
 	}
 

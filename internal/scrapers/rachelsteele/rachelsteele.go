@@ -14,6 +14,7 @@ import (
 
 	"github.com/Wasylq/FSS/internal/httpx"
 	"github.com/Wasylq/FSS/models"
+	"github.com/Wasylq/FSS/parseutil"
 	"github.com/Wasylq/FSS/scraper"
 )
 
@@ -309,11 +310,7 @@ type sceneDetail struct {
 	thumbnail   string
 }
 
-var (
-	ogDescRe   = regexp.MustCompile(`og:description["\s]+content="([^"]+)"`)
-	ogImageRe  = regexp.MustCompile(`og:image["\s]+content="([^"]+)"`)
-	keywordsRe = regexp.MustCompile(`keywords\\":\\"([^\\]+)\\`)
-)
+var keywordsRe = regexp.MustCompile(`keywords\\":\\"([^\\]+)\\`)
 
 func (s *Scraper) fetchDetail(ctx context.Context, pageURL string) (sceneDetail, error) {
 	resp, err := httpx.Do(ctx, s.client, httpx.Request{
@@ -332,13 +329,12 @@ func (s *Scraper) fetchDetail(ctx context.Context, pageURL string) (sceneDetail,
 
 	var d sceneDetail
 
-	if m := ogDescRe.FindSubmatch(body); m != nil {
-		d.description = html.UnescapeString(string(m[1]))
+	og := parseutil.OpenGraph(body)
+	if v := og["og:description"]; v != "" {
+		d.description = html.UnescapeString(v)
 	}
-
-	if m := ogImageRe.FindSubmatch(body); m != nil {
-		img := html.UnescapeString(string(m[1]))
-		d.thumbnail = img
+	if v := og["og:image"]; v != "" {
+		d.thumbnail = html.UnescapeString(v)
 	}
 
 	if m := keywordsRe.FindSubmatch(body); m != nil {
@@ -400,16 +396,7 @@ func splitKeywords(keywords string) (performers, tags []string) {
 }
 
 func parseDate(s string) time.Time {
-	if s == "" {
-		return time.Time{}
-	}
-	t, err := time.Parse(time.RFC3339Nano, s)
-	if err != nil {
-		t, err = time.Parse("2006-01-02T15:04:05.000000Z", s)
-		if err != nil {
-			return time.Time{}
-		}
-	}
+	t, _ := parseutil.TryParseDate(s, time.RFC3339Nano, "2006-01-02T15:04:05.000000Z")
 	return t.UTC()
 }
 

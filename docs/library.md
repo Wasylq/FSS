@@ -17,7 +17,7 @@ go get github.com/Wasylq/FSS@latest # Or use tag for stable release
 | `models` | `github.com/Wasylq/FSS/models` | `Scene`, `PriceSnapshot` — the core data model |
 | `match` | `github.com/Wasylq/FSS/match` | Filename→title matching, cross-site merging, JSON loading |
 | `output` | `github.com/Wasylq/FSS/output` | `WriteJSON`, `WriteCSV`, `Slugify` — write FSS output files |
-| `parseutil` | `github.com/Wasylq/FSS/parseutil` | `ParseDurationColon`, `ParseDurationISO`, `StripOrdinalSuffix`, `OpenGraph` — shared parsing helpers |
+| `parseutil` | `github.com/Wasylq/FSS/parseutil` | `ParseDurationColon`, `ParseDurationISO`, `StripOrdinalSuffix`, `OpenGraph`, `TryParseDate`, `ExtractVideoObject`, `ExtractVideoObjects` — shared parsing helpers |
 | `stash` | `github.com/Wasylq/FSS/stash` | GraphQL client for Stash |
 | `nfo` | `github.com/Wasylq/FSS/nfo` | Kodi-style NFO XML generation |
 | `identify` | `github.com/Wasylq/FSS/identify` | Video directory scan + match + NFO write |

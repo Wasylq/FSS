@@ -123,19 +123,18 @@ func TestToScene(t *testing.T) {
 
 func TestParseMonthDay(t *testing.T) {
 	cases := []struct {
-		month, day, year string
-		want             time.Time
-		ok               bool
+		input string
+		want  time.Time
 	}{
-		{"FEBRUARY", "15", "2025", time.Date(2025, 2, 15, 0, 0, 0, 0, time.UTC), true},
-		{"may", "1", "2026", time.Date(2026, 5, 1, 0, 0, 0, 0, time.UTC), true},
-		{"Jan", "30", "2024", time.Date(2024, 1, 30, 0, 0, 0, 0, time.UTC), true},
-		{"BOGUS", "5", "2024", time.Time{}, false},
+		{"FEBRUARY 15, 2025", time.Date(2025, 2, 15, 0, 0, 0, 0, time.UTC)},
+		{"may 1, 2026", time.Date(2026, 5, 1, 0, 0, 0, 0, time.UTC)},
+		{"Jan 30, 2024", time.Date(2024, 1, 30, 0, 0, 0, 0, time.UTC)},
+		{"BOGUS 5, 2024", time.Time{}},
 	}
 	for _, c := range cases {
-		got, ok := parseMonthDay(c.month, c.day, c.year)
-		if ok != c.ok || !got.Equal(c.want) {
-			t.Errorf("parseMonthDay(%q,%q,%q) = %v ok=%v; want %v ok=%v", c.month, c.day, c.year, got, ok, c.want, c.ok)
+		got := parseMonthDay(c.input)
+		if !got.Equal(c.want) {
+			t.Errorf("parseMonthDay(%q) = %v; want %v", c.input, got, c.want)
 		}
 	}
 }

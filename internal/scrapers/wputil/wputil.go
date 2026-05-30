@@ -14,6 +14,7 @@ import (
 
 	"github.com/Wasylq/FSS/internal/httpx"
 	"github.com/Wasylq/FSS/models"
+	"github.com/Wasylq/FSS/parseutil"
 	"github.com/Wasylq/FSS/scraper"
 )
 
@@ -102,8 +103,6 @@ func FetchPage(ctx context.Context, client *http.Client, pageURL string, headers
 var (
 	titleRe          = regexp.MustCompile(`<title>([^<]+)</title>`)
 	publishedRe      = regexp.MustCompile(`article:published_time"\s+content="([^"]+)"`)
-	ogDescRe         = regexp.MustCompile(`og:description"\s+content="([^"]*)"`)
-	ogImageRe        = regexp.MustCompile(`og:image"\s+content="([^"]+)"`)
 	shortlinkRe      = regexp.MustCompile(`rel='shortlink'\s+href='[^?]*\?p=(\d+)'`)
 	articleTagRe     = regexp.MustCompile(`article:tag"\s+content="([^"]*)"`)
 	articleSectionRe = regexp.MustCompile(`"articleSection"\s*:\s*"([^"]*)"`)
@@ -132,12 +131,12 @@ func ParseMeta(body []byte, titleSuffix string) Meta {
 		}
 	}
 
-	if match := ogDescRe.FindSubmatch(body); match != nil {
-		m.Description = html.UnescapeString(string(match[1]))
+	og := parseutil.OpenGraph(body)
+	if v := og["og:description"]; v != "" {
+		m.Description = html.UnescapeString(v)
 	}
-
-	if match := ogImageRe.FindSubmatch(body); match != nil {
-		m.Thumbnail = string(match[1])
+	if v := og["og:image"]; v != "" {
+		m.Thumbnail = v
 	}
 
 	if match := shortlinkRe.FindSubmatch(body); match != nil {

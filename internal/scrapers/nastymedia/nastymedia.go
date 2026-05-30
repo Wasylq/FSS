@@ -35,6 +35,7 @@ import (
 
 	"github.com/Wasylq/FSS/internal/httpx"
 	"github.com/Wasylq/FSS/models"
+	"github.com/Wasylq/FSS/parseutil"
 	"github.com/Wasylq/FSS/scraper"
 )
 
@@ -161,7 +162,7 @@ func parseCards(body []byte, baseURL string) []cardScene {
 		// Try to parse a date out of the header line.
 		if sc.header != "" {
 			if dm := dateRe.FindStringSubmatch(sc.header); dm != nil {
-				if d, ok := parseMonthDay(dm[1], dm[2], dm[3]); ok {
+				if d := parseMonthDay(dm[1] + " " + dm[2] + ", " + dm[3]); !d.IsZero() {
 					sc.rawDate = sc.header
 					sc.date = d
 					sc.dateOK = true
@@ -174,24 +175,9 @@ func parseCards(body []byte, baseURL string) []cardScene {
 	return out
 }
 
-// parseMonthDay parses month-name + day-of-month + year.
-func parseMonthDay(month, day, year string) (time.Time, bool) {
-	// Build a canonical "January 2, 2006" string from the captured
-	// month name. Month names are ASCII English so a manual first-byte
-	// uppercase is enough — avoids the deprecated strings.Title and
-	// the heavyweight golang.org/x/text/cases dependency.
-	m := strings.ToLower(strings.TrimSpace(month))
-	if m == "" {
-		return time.Time{}, false
-	}
-	m = strings.ToUpper(m[:1]) + m[1:]
-	s := m + " " + strings.TrimSpace(day) + ", " + strings.TrimSpace(year)
-	for _, layout := range []string{"January 2, 2006", "Jan 2, 2006"} {
-		if t, err := time.Parse(layout, s); err == nil {
-			return t.UTC(), true
-		}
-	}
-	return time.Time{}, false
+func parseMonthDay(s string) time.Time {
+	t, _ := parseutil.TryParseDate(strings.TrimSpace(s), "January 2, 2006", "Jan 2, 2006")
+	return t
 }
 
 func absoluteURL(rel, base string) string {

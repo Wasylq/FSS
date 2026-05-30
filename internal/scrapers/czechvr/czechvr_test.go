@@ -71,27 +71,24 @@ func TestParseDate(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := parseDate(tt.input)
-			if err != nil {
-				t.Fatalf("unexpected error: %v", err)
-			}
+			got := parseDate(tt.input)
 			if !got.Equal(tt.want) {
 				t.Errorf("got %v, want %v", got, tt.want)
 			}
 		})
 	}
 
-	t.Run("invalid date returns error", func(t *testing.T) {
-		_, err := parseDate("not-a-date")
-		if err == nil {
-			t.Fatal("expected error for invalid date")
+	t.Run("invalid date returns zero", func(t *testing.T) {
+		got := parseDate("not-a-date")
+		if !got.IsZero() {
+			t.Fatalf("expected zero time for invalid date, got %v", got)
 		}
 	})
 
-	t.Run("empty string returns error", func(t *testing.T) {
-		_, err := parseDate("")
-		if err == nil {
-			t.Fatal("expected error for empty string")
+	t.Run("empty string returns zero", func(t *testing.T) {
+		got := parseDate("")
+		if !got.IsZero() {
+			t.Fatalf("expected zero time for empty string, got %v", got)
 		}
 	})
 }

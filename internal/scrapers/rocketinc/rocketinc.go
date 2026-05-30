@@ -14,6 +14,7 @@ import (
 
 	"github.com/Wasylq/FSS/internal/httpx"
 	"github.com/Wasylq/FSS/models"
+	"github.com/Wasylq/FSS/parseutil"
 	"github.com/Wasylq/FSS/scraper"
 )
 
@@ -225,10 +226,8 @@ func hasNextPage(body []byte) bool {
 // ---- detail page parsing ----
 
 var (
-	h1Re      = regexp.MustCompile(`<h1[^>]*>([^<]+)</h1>`)
-	ogImageRe = regexp.MustCompile(`property="og:image"\s+content="([^"]+)"`)
-	descRe    = regexp.MustCompile(`(?s)class="[^"]*work-introduction[^"]*"[^>]*>.*?<p>(.*?)</p>`)
-	ogDescRe  = regexp.MustCompile(`property="og:description"\s+content="([^"]+)"`)
+	h1Re   = regexp.MustCompile(`<h1[^>]*>([^<]+)</h1>`)
+	descRe = regexp.MustCompile(`(?s)class="[^"]*work-introduction[^"]*"[^>]*>.*?<p>(.*?)</p>`)
 
 	actressFieldRe    = regexp.MustCompile(`(?s)女優名\s*</th>\s*<td[^>]*>(.*?)</td>`)
 	directorFieldRe   = regexp.MustCompile(`(?s)監督名\s*</th>\s*<td[^>]*>(.*?)</td>`)
@@ -271,14 +270,15 @@ func parseDetail(body []byte, studioURL, slug, detailURL string) models.Scene {
 		scene.Title = html.UnescapeString(strings.TrimSpace(string(m[1])))
 	}
 
-	if m := ogImageRe.FindSubmatch(body); m != nil {
-		scene.Thumbnail = string(m[1])
+	og := parseutil.OpenGraph(body)
+	if v := og["og:image"]; v != "" {
+		scene.Thumbnail = v
 	}
 
 	if m := descRe.FindSubmatch(body); m != nil {
 		scene.Description = html.UnescapeString(strings.TrimSpace(string(m[1])))
-	} else if m := ogDescRe.FindSubmatch(body); m != nil {
-		scene.Description = html.UnescapeString(strings.TrimSpace(string(m[1])))
+	} else if v := og["og:description"]; v != "" {
+		scene.Description = html.UnescapeString(strings.TrimSpace(v))
 	}
 
 	scene.Performers = extractLinkTexts(actressFieldRe, body)

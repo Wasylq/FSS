@@ -2,7 +2,6 @@ package crunchboy
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"html"
 	"net/http"
@@ -13,6 +12,7 @@ import (
 
 	"github.com/Wasylq/FSS/internal/httpx"
 	"github.com/Wasylq/FSS/models"
+	"github.com/Wasylq/FSS/parseutil"
 	"github.com/Wasylq/FSS/scraper"
 )
 
@@ -54,28 +54,6 @@ func (s *Scraper) ListScenes(ctx context.Context, studioURL string, opts scraper
 	out := make(chan scraper.SceneResult)
 	go s.run(ctx, studioURL, opts, out)
 	return out, nil
-}
-
-type itemList struct {
-	Type     string     `json:"@type"`
-	Elements []listItem `json:"itemListElement"`
-}
-
-type listItem struct {
-	Item videoObject `json:"item"`
-}
-
-type videoObject struct {
-	URL           string  `json:"url"`
-	Name          string  `json:"name"`
-	Description   string  `json:"description"`
-	ThumbnailURL  string  `json:"thumbnailUrl"`
-	DatePublished string  `json:"datePublished"`
-	Actors        []actor `json:"actor"`
-}
-
-type actor struct {
-	Name string `json:"name"`
 }
 
 func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOpts, out chan<- scraper.SceneResult) {
@@ -142,7 +120,6 @@ func (p *parsedItem) toScene(studioURL string, now time.Time) models.Scene {
 }
 
 var (
-	jsonLDRe   = regexp.MustCompile(`(?s)<script type="application/ld\+json">(.*?)</script>`)
 	detailIDRe = regexp.MustCompile(`/en/videos/detail/(\d+)-`)
 	durationRe = regexp.MustCompile(`(\d+)\s*min`)
 	studioRe   = regexp.MustCompile(`text-uppercase">([^<]+)`)
@@ -158,36 +135,25 @@ func parseListing(body []byte) ([]parsedItem, int) {
 	}
 
 	var items []parsedItem
-	for _, m := range jsonLDRe.FindAllSubmatch(body, -1) {
-		var il itemList
-		if json.Unmarshal(m[1], &il) != nil || il.Type != "ItemList" {
+	for _, v := range parseutil.ExtractVideoObjects(body) {
+		idMatch := detailIDRe.FindStringSubmatch(v.URL)
+		if idMatch == nil {
 			continue
 		}
-		for _, elem := range il.Elements {
-			v := elem.Item
-			idMatch := detailIDRe.FindStringSubmatch(v.URL)
-			if idMatch == nil {
-				continue
-			}
-			p := parsedItem{
-				id:          idMatch[1],
-				url:         v.URL,
-				title:       html.UnescapeString(v.Name),
-				description: html.UnescapeString(v.Description),
-				thumbnail:   v.ThumbnailURL,
-			}
-			if v.DatePublished != "" {
-				if t, err := time.Parse("2006-01-02", v.DatePublished); err == nil {
-					p.date = t.UTC()
-				}
-			}
-			for _, a := range v.Actors {
-				if name := strings.TrimSpace(a.Name); name != "" {
-					p.performers = append(p.performers, name)
-				}
-			}
-			items = append(items, p)
+		p := parsedItem{
+			id:          idMatch[1],
+			url:         v.URL,
+			title:       html.UnescapeString(v.Name),
+			description: html.UnescapeString(v.Description),
+			thumbnail:   v.ThumbnailURL,
+			performers:  v.Actors,
 		}
+		if v.DatePublished != "" {
+			if t, err := time.Parse("2006-01-02", v.DatePublished); err == nil {
+				p.date = t.UTC()
+			}
+		}
+		items = append(items, p)
 	}
 
 	enrichFromHTML(body, items)

@@ -226,12 +226,6 @@ func profileParams(studioURL string) (int, string, error) {
 
 // parseDate parses ISO 8601 timestamps with timezone offset.
 func parseDate(s string) time.Time {
-	if s == "" {
-		return time.Time{}
-	}
-	t, err := time.Parse(time.RFC3339, s)
-	if err != nil {
-		t, _ = time.Parse("2006-01-02T15:04:05-07:00", s)
-	}
+	t, _ := parseutil.TryParseDate(s, time.RFC3339, "2006-01-02T15:04:05-07:00")
 	return t.UTC()
 }
