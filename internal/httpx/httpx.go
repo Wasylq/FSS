@@ -10,8 +10,10 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"math/rand/v2"
 	"net/http"
 	"strings"
+	"sync/atomic"
 	"time"
 
 	"github.com/Wasylq/FSS/scraper"
@@ -83,19 +85,46 @@ const MaxPageBytes = 10 * 1024 * 1024
 // ReadBody reads an HTTP response body up to MaxPageBytes. Use this instead of
 // io.ReadAll(resp.Body) in scrapers to bound memory usage.
 func ReadBody(body io.ReadCloser) ([]byte, error) {
-	data, err := io.ReadAll(io.LimitReader(body, MaxPageBytes+1))
+	return ReadBodyN(body, MaxPageBytes)
+}
+
+// ReadBodyN reads an HTTP response body up to maxBytes.
+func ReadBodyN(body io.ReadCloser, maxBytes int64) ([]byte, error) {
+	data, err := io.ReadAll(io.LimitReader(body, maxBytes+1))
 	if err != nil {
 		return nil, err
 	}
-	if len(data) > MaxPageBytes {
-		return nil, fmt.Errorf("response body exceeds %d bytes", MaxPageBytes)
+	if int64(len(data)) > maxBytes {
+		return nil, fmt.Errorf("response body exceeds %d bytes", maxBytes)
 	}
 	return data, nil
 }
 
 // DecodeJSON JSON-decodes from r into v, reading at most MaxPageBytes.
 func DecodeJSON(r io.Reader, v any) error {
-	return json.NewDecoder(io.LimitReader(r, MaxPageBytes)).Decode(v)
+	return DecodeJSONN(r, v, MaxPageBytes)
+}
+
+// DecodeJSONN JSON-decodes from r into v, reading at most maxBytes.
+func DecodeJSONN(r io.Reader, v any, maxBytes int64) error {
+	return json.NewDecoder(io.LimitReader(r, maxBytes)).Decode(v)
+}
+
+type reqIDKey struct{}
+
+var reqIDCounter atomic.Uint64
+
+// WithRequestID attaches an auto-incrementing request ID to the context.
+// The ID appears in level-2 debug logs for correlation.
+func WithRequestID(ctx context.Context) context.Context {
+	id := reqIDCounter.Add(1)
+	return context.WithValue(ctx, reqIDKey{}, id)
+}
+
+// RequestID returns the request ID from the context, or 0 if none is set.
+func RequestID(ctx context.Context) uint64 {
+	id, _ := ctx.Value(reqIDKey{}).(uint64)
+	return id
 }
 
 // sharedTransport is reused across all scrapers so TCP/TLS connections are
@@ -123,6 +152,7 @@ type Request struct {
 	Body        []byte
 	Headers     map[string]string
 	MaxAttempts int
+	MaxBytes    int64 // per-call body limit; 0 uses MaxPageBytes
 }
 
 // StatusError is returned when the server replies with a non-2xx status that
@@ -153,6 +183,12 @@ func DoWithStatus(ctx context.Context, client *http.Client, r Request) (*http.Re
 	return doInner(ctx, client, r, false)
 }
 
+// jitter applies ±25% randomness to a duration to prevent retry lockstep.
+func jitter(d time.Duration) time.Duration {
+	factor := 0.75 + rand.Float64()*0.5 // [0.75, 1.25)
+	return time.Duration(float64(d) * factor)
+}
+
 // doInner is the shared retry + send loop. `classifyStatus` toggles the
 // status-code policy: true → 4xx fail-fast with *StatusError + retry 429/5xx
 // (Do's contract); false → return any HTTP response as-is and retry only
@@ -178,7 +214,7 @@ func doInner(ctx context.Context, client *http.Client, r Request, classifyStatus
 	for attempt := 0; attempt < maxAttempts; attempt++ {
 		if attempt > 0 {
 			select {
-			case <-time.After(time.Duration(attempt) * 2 * time.Second):
+			case <-time.After(jitter(time.Duration(attempt) * 2 * time.Second)):
 			case <-ctx.Done():
 				attemptErrs = append(attemptErrs, ctx.Err())
 				return nil, errors.Join(attemptErrs...)
@@ -197,7 +233,12 @@ func doInner(ctx context.Context, client *http.Client, r Request, classifyStatus
 			req.Header.Set(k, v)
 		}
 
-		scraper.Debugf(2, "%s %s", method, r.URL)
+		rid := RequestID(ctx)
+		if rid > 0 {
+			scraper.Debugf(2, "[r%d] %s %s", rid, method, r.URL)
+		} else {
+			scraper.Debugf(2, "%s %s", method, r.URL)
+		}
 
 		resp, err := client.Do(req)
 		if err != nil {
@@ -206,7 +247,11 @@ func doInner(ctx context.Context, client *http.Client, r Request, classifyStatus
 			continue
 		}
 
-		scraper.Debugf(2, "  %d %s (content-length: %d)", resp.StatusCode, resp.Status, resp.ContentLength)
+		if rid > 0 {
+			scraper.Debugf(2, "  [r%d] %d %s (content-length: %d)", rid, resp.StatusCode, resp.Status, resp.ContentLength)
+		} else {
+			scraper.Debugf(2, "  %d %s (content-length: %d)", resp.StatusCode, resp.Status, resp.ContentLength)
+		}
 
 		if !classifyStatus {
 			return resp, nil
