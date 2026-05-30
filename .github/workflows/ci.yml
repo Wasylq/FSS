@@ -36,6 +36,13 @@ jobs:
       - name: Test with coverage
         run: gotestsum --junitfile junit.xml -- -race -count=1 -coverprofile=coverage.out -covermode=atomic ./... 2>&1 | tee test-output.txt
 
+      - name: Fuzz tests (seed corpus)
+        run: |
+          go test ./match/... -run "^$" -fuzz FuzzNormalize -fuzztime 10s
+          go test ./parseutil/... -run "^$" -fuzz FuzzParseDurationColon -fuzztime 10s
+          go test ./parseutil/... -run "^$" -fuzz FuzzParseDurationISO -fuzztime 10s
+          go test ./output/... -run "^$" -fuzz FuzzSlugify -fuzztime 10s
+
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v6
         with:
