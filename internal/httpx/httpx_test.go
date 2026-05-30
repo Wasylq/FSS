@@ -12,6 +12,8 @@ import (
 	"time"
 )
 
+func noopSleep(_ context.Context, _ time.Duration) error { return nil }
+
 func TestDo_succeedsFirstTry(t *testing.T) {
 	t.Parallel()
 	var calls int32
@@ -49,7 +51,7 @@ func TestDo_retriesOn5xxThenSucceeds(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	resp, err := Do(context.Background(), ts.Client(), Request{URL: ts.URL})
+	resp, err := Do(context.Background(), ts.Client(), Request{URL: ts.URL, BackoffSleep: noopSleep})
 	if err != nil {
 		t.Fatalf("Do: %v", err)
 	}
@@ -98,13 +100,15 @@ func TestDo_joinsErrorsViaCtxCancel(t *testing.T) {
 	defer ts.Close()
 
 	ctx, cancel := context.WithCancel(context.Background())
-	go func() {
-		// Cancel after the first attempt + tiny window into the backoff.
-		time.Sleep(100 * time.Millisecond)
-		cancel()
-	}()
 
-	_, err := Do(ctx, ts.Client(), Request{URL: ts.URL, MaxAttempts: 3})
+	_, err := Do(ctx, ts.Client(), Request{
+		URL:         ts.URL,
+		MaxAttempts: 3,
+		BackoffSleep: func(_ context.Context, _ time.Duration) error {
+			cancel()
+			return context.Canceled
+		},
+	})
 	if err == nil {
 		t.Fatal("expected error")
 	}
@@ -188,7 +192,7 @@ func TestDo_retriesOn429ThenSucceeds(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	resp, err := Do(context.Background(), ts.Client(), Request{URL: ts.URL})
+	resp, err := Do(context.Background(), ts.Client(), Request{URL: ts.URL, BackoffSleep: noopSleep})
 	if err != nil {
 		t.Fatalf("Do: %v", err)
 	}
@@ -212,7 +216,7 @@ func TestDo_exhaustsAllRetries(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	_, err := Do(context.Background(), ts.Client(), Request{URL: ts.URL, MaxAttempts: 2})
+	_, err := Do(context.Background(), ts.Client(), Request{URL: ts.URL, MaxAttempts: 2, BackoffSleep: noopSleep})
 	if err == nil {
 		t.Fatal("expected error after exhausting retries")
 	}
@@ -305,7 +309,7 @@ func TestDoWithStatus_retriesNetworkErrorThenSucceeds(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	resp, err := DoWithStatus(context.Background(), ts.Client(), Request{URL: ts.URL, MaxAttempts: 2})
+	resp, err := DoWithStatus(context.Background(), ts.Client(), Request{URL: ts.URL, MaxAttempts: 2, BackoffSleep: noopSleep})
 	if err != nil {
 		t.Fatalf("DoWithStatus should have retried network error and succeeded: %v", err)
 	}

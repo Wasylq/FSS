@@ -147,12 +147,13 @@ func NewClient(timeout time.Duration) *http.Client {
 // Request describes a single HTTP call. Method defaults to GET (or POST if
 // Body is non-nil). MaxAttempts defaults to 3.
 type Request struct {
-	Method      string
-	URL         string
-	Body        []byte
-	Headers     map[string]string
-	MaxAttempts int
-	MaxBytes    int64 // per-call body limit; 0 uses MaxPageBytes
+	Method       string
+	URL          string
+	Body         []byte
+	Headers      map[string]string
+	MaxAttempts  int
+	MaxBytes     int64                                            // per-call body limit; 0 uses MaxPageBytes
+	BackoffSleep func(ctx context.Context, d time.Duration) error // nil uses default (real sleep with ctx)
 }
 
 // StatusError is returned when the server replies with a non-2xx status that
@@ -189,6 +190,15 @@ func jitter(d time.Duration) time.Duration {
 	return time.Duration(float64(d) * factor)
 }
 
+func defaultBackoffSleep(ctx context.Context, d time.Duration) error {
+	select {
+	case <-time.After(d):
+		return nil
+	case <-ctx.Done():
+		return ctx.Err()
+	}
+}
+
 // doInner is the shared retry + send loop. `classifyStatus` toggles the
 // status-code policy: true → 4xx fail-fast with *StatusError + retry 429/5xx
 // (Do's contract); false → return any HTTP response as-is and retry only
@@ -206,6 +216,10 @@ func doInner(ctx context.Context, client *http.Client, r Request, classifyStatus
 	if maxAttempts <= 0 {
 		maxAttempts = 3
 	}
+	sleep := r.BackoffSleep
+	if sleep == nil {
+		sleep = defaultBackoffSleep
+	}
 
 	// Collect every retry attempt's error so a flaky-network failure mode
 	// shows the full chronology, not just the last error. Joined via
@@ -213,10 +227,8 @@ func doInner(ctx context.Context, client *http.Client, r Request, classifyStatus
 	var attemptErrs []error
 	for attempt := 0; attempt < maxAttempts; attempt++ {
 		if attempt > 0 {
-			select {
-			case <-time.After(jitter(time.Duration(attempt) * 2 * time.Second)):
-			case <-ctx.Done():
-				attemptErrs = append(attemptErrs, ctx.Err())
+			if err := sleep(ctx, jitter(time.Duration(attempt)*2*time.Second)); err != nil {
+				attemptErrs = append(attemptErrs, err)
 				return nil, errors.Join(attemptErrs...)
 			}
 		}
