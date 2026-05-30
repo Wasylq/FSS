@@ -86,17 +86,63 @@ type changelogFieldDiff struct {
 	Added []string `json:"added,omitempty"`
 }
 
-func runStashImport(cmd *cobra.Command, _ []string) error {
-	ctx, stop := signal.NotifyContext(cmd.Context(), os.Interrupt, syscall.SIGTERM)
-	defer stop()
+type importOpts struct {
+	apply             bool
+	setCover          bool
+	coverAllowPrivate bool
+	includeStashbox   bool
+	organized         bool
+	resolutionTags    bool
+	tagName           string
+	stashboxTag       string
+	allowedFields     map[string]bool
+	fieldsList        []string
+	performer         string
+	studio            string
+	pathFilter        string
+	top               int
+}
 
-	client := stash.NewClient(stashURL(cmd), stashAPIKey(cmd))
-	if err := client.Ping(ctx); err != nil {
-		return fmt.Errorf("connecting to stash: %w", err)
+func resolveImportOpts(cmd *cobra.Command) (importOpts, error) {
+	var o importOpts
+	o.apply, _ = cmd.Flags().GetBool("apply")
+	o.setCover, _ = cmd.Flags().GetBool("cover")
+	o.coverAllowPrivate, _ = cmd.Flags().GetBool("cover-allow-private")
+	o.includeStashbox, _ = cmd.Flags().GetBool("include-stashbox")
+	o.organized, _ = cmd.Flags().GetBool("organized")
+
+	o.resolutionTags, _ = cmd.Flags().GetBool("resolution-tags")
+	if !cmd.Flags().Changed("resolution-tags") {
+		o.resolutionTags = cfg.Stash.ResolutionTags
 	}
-	fmt.Println("Connected to Stash")
 
-	// --- load FSS scenes ---
+	o.tagName, _ = cmd.Flags().GetString("tag")
+	if o.tagName == "" {
+		o.tagName = cfg.Stash.Tag
+	}
+
+	o.stashboxTag, _ = cmd.Flags().GetString("stashbox-tag")
+	if o.stashboxTag == "" {
+		o.stashboxTag = cfg.Stash.StashboxTag
+	}
+
+	o.fieldsList, _ = cmd.Flags().GetStringSlice("fields")
+	var err error
+	o.allowedFields, err = parseFieldsFlag(o.fieldsList)
+	if err != nil {
+		return o, err
+	}
+
+	o.setCover = resolveCoverEnabled(o.setCover, o.allowedFields)
+
+	o.performer, _ = cmd.Flags().GetString("performer")
+	o.studio, _ = cmd.Flags().GetString("studio")
+	o.pathFilter, _ = cmd.Flags().GetString("filter")
+	o.top, _ = cmd.Flags().GetInt("top")
+	return o, nil
+}
+
+func loadFSSIndex(cmd *cobra.Command) (*match.SceneIndex, string, error) {
 	jsonFiles, _ := cmd.Flags().GetStringSlice("json")
 	dir, _ := cmd.Flags().GetString("dir")
 	if dir == "" {
@@ -114,95 +160,198 @@ func runStashImport(cmd *cobra.Command, _ []string) error {
 		fssScenes, err = match.LoadJSONDir(dir)
 	}
 	if err != nil {
-		return fmt.Errorf("loading FSS data: %w", err)
+		return nil, dir, fmt.Errorf("loading FSS data: %w", err)
 	}
 	fmt.Println()
 	if len(fssScenes) == 0 {
-		return fmt.Errorf("no FSS scenes found in %s", dir)
+		return nil, dir, fmt.Errorf("no FSS scenes found in %s", dir)
 	}
 	fmt.Printf("Loaded %d FSS scenes\n", len(fssScenes))
 
-	idx := match.BuildIndex(fssScenes)
+	return match.BuildIndex(fssScenes), dir, nil
+}
 
-	// --- resolve flags ---
-	apply, _ := cmd.Flags().GetBool("apply")
-	setCover, _ := cmd.Flags().GetBool("cover")
-	coverAllowPrivate, _ := cmd.Flags().GetBool("cover-allow-private")
-	includeStashbox, _ := cmd.Flags().GetBool("include-stashbox")
-	organized, _ := cmd.Flags().GetBool("organized")
-
-	resolutionTags, _ := cmd.Flags().GetBool("resolution-tags")
-	if !cmd.Flags().Changed("resolution-tags") {
-		resolutionTags = cfg.Stash.ResolutionTags
-	}
-
-	tagName, _ := cmd.Flags().GetString("tag")
-	if tagName == "" {
-		tagName = cfg.Stash.Tag
-	}
-
-	stashboxTag, _ := cmd.Flags().GetString("stashbox-tag")
-	if stashboxTag == "" {
-		stashboxTag = cfg.Stash.StashboxTag
-	}
-
-	fieldsList, _ := cmd.Flags().GetStringSlice("fields")
-	allowedFields, err := parseFieldsFlag(fieldsList)
-	if err != nil {
-		return err
-	}
-
-	// Listing "cover" in --fields explicitly opts in to cover updates, so
-	// don't also require --cover. The reverse (--cover with --fields not
-	// listing "cover") still skips cover, since the fields filter is a hard
-	// allowlist.
-	setCover = resolveCoverEnabled(setCover, allowedFields)
-
-	performer, _ := cmd.Flags().GetString("performer")
-	studio, _ := cmd.Flags().GetString("studio")
-	pathFilter, _ := cmd.Flags().GetString("filter")
-	top, _ := cmd.Flags().GetInt("top")
-
-	// --- query stash scenes ---
+func queryStashScenes(ctx context.Context, client *stash.Client, o importOpts) ([]stash.StashScene, error) {
 	zero := 0
 	filter := stash.FindScenesFilter{
-		PerformerName: performer,
-		StudioName:    studio,
-		PathFilter:    pathFilter,
+		PerformerName: o.performer,
+		StudioName:    o.studio,
+		PathFilter:    o.pathFilter,
 	}
-	if !includeStashbox {
+	if !o.includeStashbox {
 		filter.StashIDCount = &zero
 	}
 
 	fmt.Print("Querying Stash scenes...")
-	var stashScenes []stash.StashScene
-	if top > 0 {
-		stashScenes, _, err = client.FindScenes(ctx, filter, 1, top)
+	var scenes []stash.StashScene
+	var err error
+	if o.top > 0 {
+		scenes, _, err = client.FindScenes(ctx, filter, 1, o.top)
 	} else {
-		stashScenes, err = client.FindAllScenes(ctx, filter, func(fetched, total int) {
+		scenes, err = client.FindAllScenes(ctx, filter, func(fetched, total int) {
 			fmt.Printf("\rQuerying Stash scenes... %d / %d", fetched, total)
 		})
 	}
 	fmt.Println()
 	if err != nil {
-		return fmt.Errorf("querying stash scenes: %w", err)
+		return nil, fmt.Errorf("querying stash scenes: %w", err)
 	}
-	fmt.Printf("Found %d Stash scenes to process\n", len(stashScenes))
+	fmt.Printf("Found %d Stash scenes to process\n", len(scenes))
+	return scenes, nil
+}
 
-	if !apply {
+func diffScene(ss stash.StashScene, merged match.MergedScene, o importOpts) (map[string]changelogFieldDiff, []string, []string) {
+	allTags := merged.Tags
+	allTags = append(allTags, merged.Categories...)
+	allTags = append(allTags, o.tagName)
+	if len(ss.StashIDs) > 0 {
+		allTags = append(allTags, o.stashboxTag)
+	}
+	if o.resolutionTags {
+		allTags = append(allTags, match.ResolutionTags(merged.Width)...)
+	}
+
+	mergedURLs := match.MergeStrings(ss.URLs, merged.URLs)
+
+	changes := buildChanges(ss, merged, mergedURLs, allTags, o.setCover)
+	if o.allowedFields != nil {
+		for field := range changes {
+			if !o.allowedFields[field] {
+				delete(changes, field)
+			}
+		}
+	}
+	return changes, allTags, mergedURLs
+}
+
+func applyScene(ctx context.Context, client *stash.Client, ss stash.StashScene, merged match.MergedScene,
+	allTags []string, mergedURLs []string, importTagID string, o importOpts,
+) ([]importFailure, error) {
+	filename := filepath.Base(ss.Files[0].Path)
+	input := stash.SceneUpdateInput{ID: ss.ID}
+	var sceneFailures []importFailure
+	hasStashbox := len(ss.StashIDs) > 0
+
+	if fieldAllowed(o.allowedFields, "title") {
+		input.Title = strPtr(merged.Title)
+	}
+	if fieldAllowed(o.allowedFields, "details") && merged.Description != "" {
+		input.Details = strPtr(merged.Description)
+	}
+	if fieldAllowed(o.allowedFields, "date") && !merged.Date.IsZero() {
+		d := merged.Date.Format("2006-01-02")
+		input.Date = &d
+	}
+	if fieldAllowed(o.allowedFields, "urls") {
+		input.URLs = mergedURLs
+	}
+	if fieldAllowed(o.allowedFields, "tags") {
+		tagIDs := extractTagIDs(ss.Tags)
+		tagIDs = append(tagIDs, importTagID)
+		if hasStashbox {
+			sbTagID, tagErr := client.EnsureTag(ctx, o.stashboxTag)
+			if tagErr != nil {
+				sceneFailures = append(sceneFailures, importFailure{
+					SceneID: ss.ID, Filename: filename, Op: "tag (stashbox)", Name: o.stashboxTag, Err: tagErr,
+				})
+			} else {
+				tagIDs = append(tagIDs, sbTagID)
+			}
+		}
+		for _, t := range allTags {
+			tid, tagErr := client.EnsureTag(ctx, t)
+			if tagErr != nil {
+				sceneFailures = append(sceneFailures, importFailure{
+					SceneID: ss.ID, Filename: filename, Op: "tag", Name: t, Err: tagErr,
+				})
+				continue
+			}
+			tagIDs = append(tagIDs, tid)
+		}
+		input.TagIDs = dedup(tagIDs)
+	}
+	if fieldAllowed(o.allowedFields, "performers") {
+		perfIDs := extractPerfIDs(ss.Performers)
+		for _, p := range merged.Performers {
+			pid, perfErr := client.EnsurePerformer(ctx, p)
+			if perfErr != nil {
+				sceneFailures = append(sceneFailures, importFailure{
+					SceneID: ss.ID, Filename: filename, Op: "performer", Name: p, Err: perfErr,
+				})
+				continue
+			}
+			perfIDs = append(perfIDs, pid)
+		}
+		input.PerformerIDs = dedup(perfIDs)
+	}
+	if fieldAllowed(o.allowedFields, "studio") && merged.Studio != "" {
+		sid, studioErr := client.EnsureStudio(ctx, merged.Studio)
+		if studioErr != nil {
+			sceneFailures = append(sceneFailures, importFailure{
+				SceneID: ss.ID, Filename: filename, Op: "studio", Name: merged.Studio, Err: studioErr,
+			})
+		} else {
+			input.StudioID = &sid
+		}
+	}
+	if o.organized && fieldAllowed(o.allowedFields, "organized") {
+		input.Organized = &o.organized
+	}
+	if fieldAllowed(o.allowedFields, "cover") && o.setCover && merged.Thumbnail != "" {
+		coverData, coverErr := client.DownloadCoverImage(ctx, merged.Thumbnail, o.coverAllowPrivate)
+		if coverErr != nil {
+			sceneFailures = append(sceneFailures, importFailure{
+				SceneID: ss.ID, Filename: filename, Op: "cover", Name: merged.Thumbnail, Err: coverErr,
+			})
+		} else {
+			input.CoverImage = &coverData
+		}
+	}
+
+	if err := client.UpdateScene(ctx, input); err != nil {
+		return nil, err
+	}
+	return sceneFailures, nil
+}
+
+func runStashImport(cmd *cobra.Command, _ []string) error {
+	ctx, stop := signal.NotifyContext(cmd.Context(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
+
+	client := stash.NewClient(stashURL(cmd), stashAPIKey(cmd))
+	if err := client.Ping(ctx); err != nil {
+		return fmt.Errorf("connecting to stash: %w", err)
+	}
+	fmt.Println("Connected to Stash")
+
+	idx, dir, err := loadFSSIndex(cmd)
+	if err != nil {
+		return err
+	}
+
+	o, err := resolveImportOpts(cmd)
+	if err != nil {
+		return err
+	}
+
+	stashScenes, err := queryStashScenes(ctx, client, o)
+	if err != nil {
+		return err
+	}
+
+	if !o.apply {
 		fmt.Print("\n--- DRY RUN (pass --apply to write changes) ---\n")
-		if allowedFields != nil {
-			fmt.Printf("Fields: %s\n", strings.Join(fieldsList, ", "))
+		if o.allowedFields != nil {
+			fmt.Printf("Fields: %s\n", strings.Join(o.fieldsList, ", "))
 		}
 		fmt.Println()
 	}
 
-	// --- ensure import tag ---
 	var importTagID string
-	if apply && fieldAllowed(allowedFields, "tags") {
-		importTagID, err = client.EnsureTag(ctx, tagName)
+	if o.apply && fieldAllowed(o.allowedFields, "tags") {
+		importTagID, err = client.EnsureTag(ctx, o.tagName)
 		if err != nil {
-			return fmt.Errorf("ensuring import tag %q: %w", tagName, err)
+			return fmt.Errorf("ensuring import tag %q: %w", o.tagName, err)
 		}
 	}
 
@@ -210,6 +359,7 @@ func runStashImport(cmd *cobra.Command, _ []string) error {
 	var failures []importFailure
 	lookup := newEntityLookup(ctx, client)
 	stats := importStats{total: len(stashScenes)}
+	stashBase := stashURL(cmd)
 
 	for _, ss := range stashScenes {
 		if ctx.Err() != nil {
@@ -241,9 +391,6 @@ func runStashImport(cmd *cobra.Command, _ []string) error {
 			continue
 		}
 
-		hasStashbox := len(ss.StashIDs) > 0
-
-		// Parse existing stash date for earliest-date logic.
 		var existingDate time.Time
 		if ss.Date != "" {
 			existingDate, _ = time.Parse("2006-01-02", ss.Date)
@@ -251,34 +398,10 @@ func runStashImport(cmd *cobra.Command, _ []string) error {
 
 		merged := match.MergeScenes(result.Scenes, existingDate)
 		sites := strings.Join(merged.Sites, " + ")
-		stashBase := stashURL(cmd)
 		fmt.Printf("  %-10s %-50s  →  %q (%s)\n", result.Confidence, truncate(filename, 50), merged.Title, sites)
 		fmt.Printf("           %s/scenes/%s\n", stashBase, ss.ID)
 
-		// Collect all tag names to add.
-		allTags := merged.Tags
-		allTags = append(allTags, merged.Categories...)
-		allTags = append(allTags, tagName)
-		if hasStashbox {
-			allTags = append(allTags, stashboxTag)
-		}
-		if resolutionTags {
-			allTags = append(allTags, match.ResolutionTags(merged.Width)...)
-		}
-
-		// Merge URLs with existing.
-		existingURLs := ss.URLs
-		mergedURLs := match.MergeStrings(existingURLs, merged.URLs)
-
-		// Check if there's anything to change.
-		changes := buildChanges(ss, merged, mergedURLs, allTags, setCover)
-		if allowedFields != nil {
-			for field := range changes {
-				if !allowedFields[field] {
-					delete(changes, field)
-				}
-			}
-		}
+		changes, allTags, mergedURLs := diffScene(ss, merged, o)
 		if len(changes) == 0 {
 			stats.upToDate++
 			continue
@@ -286,7 +409,7 @@ func runStashImport(cmd *cobra.Command, _ []string) error {
 
 		stats.matched++
 
-		if !apply {
+		if !o.apply {
 			for field, diff := range changes {
 				if len(diff.Added) > 0 {
 					fmt.Printf("    %s: +%v\n", field, diff.Added)
@@ -294,112 +417,29 @@ func runStashImport(cmd *cobra.Command, _ []string) error {
 					fmt.Printf("    %s: %v → %v\n", field, diff.From, diff.To)
 				}
 			}
-			// Probe Stash for any entities this scene would add but that don't
-			// yet exist. Cached across scenes so the same tag isn't queried twice.
-			if fieldAllowed(allowedFields, "tags") {
+			if fieldAllowed(o.allowedFields, "tags") {
 				for _, t := range allTags {
 					lookup.checkTag(t)
 				}
 			}
-			if fieldAllowed(allowedFields, "performers") {
+			if fieldAllowed(o.allowedFields, "performers") {
 				for _, p := range merged.Performers {
 					lookup.checkPerformer(p)
 				}
 			}
-			if fieldAllowed(allowedFields, "studio") && merged.Studio != "" {
+			if fieldAllowed(o.allowedFields, "studio") && merged.Studio != "" {
 				lookup.checkStudio(merged.Studio)
 			}
 			fmt.Println()
 			continue
 		}
 
-		// --- apply mode ---
-		input := stash.SceneUpdateInput{ID: ss.ID}
-		var sceneFailures []importFailure
-
-		if fieldAllowed(allowedFields, "title") {
-			input.Title = strPtr(merged.Title)
-		}
-		if fieldAllowed(allowedFields, "details") && merged.Description != "" {
-			input.Details = strPtr(merged.Description)
-		}
-		if fieldAllowed(allowedFields, "date") && !merged.Date.IsZero() {
-			d := merged.Date.Format("2006-01-02")
-			input.Date = &d
-		}
-		if fieldAllowed(allowedFields, "urls") {
-			input.URLs = mergedURLs
-		}
-		if fieldAllowed(allowedFields, "tags") {
-			tagIDs := extractTagIDs(ss.Tags)
-			tagIDs = append(tagIDs, importTagID)
-			if hasStashbox {
-				sbTagID, tagErr := client.EnsureTag(ctx, stashboxTag)
-				if tagErr != nil {
-					sceneFailures = append(sceneFailures, importFailure{
-						SceneID: ss.ID, Filename: filename, Op: "tag (stashbox)", Name: stashboxTag, Err: tagErr,
-					})
-				} else {
-					tagIDs = append(tagIDs, sbTagID)
-				}
-			}
-			for _, t := range allTags {
-				tid, tagErr := client.EnsureTag(ctx, t)
-				if tagErr != nil {
-					sceneFailures = append(sceneFailures, importFailure{
-						SceneID: ss.ID, Filename: filename, Op: "tag", Name: t, Err: tagErr,
-					})
-					continue
-				}
-				tagIDs = append(tagIDs, tid)
-			}
-			input.TagIDs = dedup(tagIDs)
-		}
-		if fieldAllowed(allowedFields, "performers") {
-			perfIDs := extractPerfIDs(ss.Performers)
-			for _, p := range merged.Performers {
-				pid, perfErr := client.EnsurePerformer(ctx, p)
-				if perfErr != nil {
-					sceneFailures = append(sceneFailures, importFailure{
-						SceneID: ss.ID, Filename: filename, Op: "performer", Name: p, Err: perfErr,
-					})
-					continue
-				}
-				perfIDs = append(perfIDs, pid)
-			}
-			input.PerformerIDs = dedup(perfIDs)
-		}
-		if fieldAllowed(allowedFields, "studio") && merged.Studio != "" {
-			sid, studioErr := client.EnsureStudio(ctx, merged.Studio)
-			if studioErr != nil {
-				sceneFailures = append(sceneFailures, importFailure{
-					SceneID: ss.ID, Filename: filename, Op: "studio", Name: merged.Studio, Err: studioErr,
-				})
-			} else {
-				input.StudioID = &sid
-			}
-		}
-		if organized && fieldAllowed(allowedFields, "organized") {
-			input.Organized = &organized
-		}
-		if fieldAllowed(allowedFields, "cover") && setCover && merged.Thumbnail != "" {
-			coverData, coverErr := client.DownloadCoverImage(ctx, merged.Thumbnail, coverAllowPrivate)
-			if coverErr != nil {
-				sceneFailures = append(sceneFailures, importFailure{
-					SceneID: ss.ID, Filename: filename, Op: "cover", Name: merged.Thumbnail, Err: coverErr,
-				})
-			} else {
-				input.CoverImage = &coverData
-			}
-		}
-
-		if err := client.UpdateScene(ctx, input); err != nil {
+		sceneFailures, updateErr := applyScene(ctx, client, ss, merged, allTags, mergedURLs, importTagID, o)
+		if updateErr != nil {
 			stats.failed++
 			failures = append(failures, importFailure{
-				SceneID: ss.ID, Filename: filename, Op: "update", Err: err,
+				SceneID: ss.ID, Filename: filename, Op: "update", Err: updateErr,
 			})
-			// Drop any sceneFailures collected before the failed update — the
-			// scene wasn't written, so per-field ensure failures don't matter.
 			continue
 		}
 
@@ -408,8 +448,7 @@ func runStashImport(cmd *cobra.Command, _ []string) error {
 			failures = append(failures, sceneFailures...)
 		}
 
-		// Changelog for stashbox overrides.
-		if hasStashbox {
+		if len(ss.StashIDs) > 0 {
 			changelog = append(changelog, changelogEntry{
 				StashSceneID: ss.ID,
 				Timestamp:    time.Now().UTC(),
@@ -422,22 +461,20 @@ func runStashImport(cmd *cobra.Command, _ []string) error {
 		stats.updated++
 	}
 
-	// Write stashbox changelog if we modified any scenes with StashDB data.
 	if len(changelog) > 0 {
 		if err := appendChangelog(dir, changelog); err != nil {
 			fmt.Fprintf(os.Stderr, "warning: could not write stashbox changelog: %v\n", err)
 		}
 	}
 
-	if apply {
+	if o.apply {
 		printFailureSummary(failures)
 	} else {
 		printWouldCreateSummary(lookup)
 	}
 
-	// Summary.
 	fmt.Println()
-	if apply {
+	if o.apply {
 		fmt.Printf("Done: %d matched, %d updated, %d partial, %d failed, %d already up-to-date, %d skipped, %d ambiguous\n",
 			stats.matched, stats.updated, stats.partial, stats.failed, stats.upToDate, stats.skipped, stats.ambiguous)
 	} else {
