@@ -73,7 +73,7 @@ func newSiteScraper(cfg teamskeetutil.SiteConfig) *siteScraper {
 	return &siteScraper{
 		config:  cfg,
 		matchRe: re,
-		inner:   teamskeetutil.NewScraper(cfg),
+		inner:   teamskeetutil.New(cfg),
 	}
 }
 

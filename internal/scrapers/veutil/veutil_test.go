@@ -15,7 +15,7 @@ import (
 
 func testScraper(siteBase string) *Scraper {
 	return &Scraper{
-		Cfg: SiteConfig{
+		cfg: SiteConfig{
 			ID:             "mypervmom",
 			Studio:         "PervMom",
 			SiteBase:       siteBase,
@@ -143,7 +143,7 @@ func TestListScenes(t *testing.T) {
 	defer ts.Close()
 
 	s := &Scraper{
-		Cfg: SiteConfig{
+		cfg: SiteConfig{
 			ID: "mypervmom", Studio: "PervMom", SiteBase: ts.URL,
 			MainCategoryID: 1, MatchRe: regexp.MustCompile(`.*`),
 		},
@@ -173,7 +173,7 @@ func TestListScenesKnownIDs(t *testing.T) {
 	defer ts.Close()
 
 	s := &Scraper{
-		Cfg: SiteConfig{
+		cfg: SiteConfig{
 			ID: "mypervmom", Studio: "PervMom", SiteBase: ts.URL,
 			MainCategoryID: 1, MatchRe: regexp.MustCompile(`.*`),
 		},

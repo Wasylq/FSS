@@ -31,14 +31,14 @@ type SiteConfig struct {
 
 type Scraper struct {
 	client    *http.Client
-	Config    SiteConfig
+	cfg       SiteConfig
 	esBaseURL string // override for testing; defaults to esBase
 }
 
-func NewScraper(cfg SiteConfig) *Scraper {
+func New(cfg SiteConfig) *Scraper {
 	return &Scraper{
 		client: httpx.NewClient(30 * time.Second),
-		Config: cfg,
+		cfg:    cfg,
 	}
 }
 
@@ -62,7 +62,7 @@ func (s *Scraper) Run(ctx context.Context, studioURL string, opts scraper.ListOp
 				return
 			}
 		}
-		scraper.Debugf(1, "%s: fetching page %d", s.Config.SiteID, page)
+		scraper.Debugf(1, "%s: fetching page %d", s.cfg.SiteID, page)
 
 		if searchAfter != nil {
 			baseQuery["search_after"] = searchAfter
@@ -93,7 +93,7 @@ func (s *Scraper) Run(ctx context.Context, studioURL string, opts scraper.ListOp
 			id := strconv.Itoa(hit.Source.ItemID)
 
 			if opts.KnownIDs[id] {
-				scraper.Debugf(1, "%s: hit known ID, stopping early", s.Config.SiteID)
+				scraper.Debugf(1, "%s: hit known ID, stopping early", s.cfg.SiteID)
 				select {
 				case out <- scraper.StoppedEarly():
 				case <-ctx.Done():
@@ -101,7 +101,7 @@ func (s *Scraper) Run(ctx context.Context, studioURL string, opts scraper.ListOp
 				return
 			}
 
-			scene := hitToScene(hit.Source, studioURL, s.Config, now)
+			scene := hitToScene(hit.Source, studioURL, s.cfg, now)
 			select {
 			case out <- scraper.Scene(scene):
 			case <-ctx.Done():
@@ -177,7 +177,7 @@ func (s *Scraper) search(ctx context.Context, query map[string]any) (*esResponse
 	if base == "" {
 		base = esBase
 	}
-	url := base + "/" + s.Config.Index + "/_search"
+	url := base + "/" + s.cfg.Index + "/_search"
 	return s.searchWithURL(ctx, url, query)
 }
 
@@ -194,7 +194,7 @@ func (s *Scraper) searchWithURL(ctx context.Context, url string, query map[strin
 		Headers: func() map[string]string {
 			h := httpx.BrowserHeaders(httpx.UserAgentFirefox)
 			h["Content-Type"] = "application/json"
-			h["Origin"] = s.Config.SiteBase
+			h["Origin"] = s.cfg.SiteBase
 			return h
 		}(),
 	})

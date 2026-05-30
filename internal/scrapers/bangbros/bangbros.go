@@ -24,7 +24,7 @@ type Scraper struct {
 }
 
 func New() *Scraper {
-	return &Scraper{aylo: ayloutil.NewScraper(config)}
+	return &Scraper{aylo: ayloutil.New(config)}
 }
 
 func init() {

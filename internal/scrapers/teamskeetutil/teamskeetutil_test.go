@@ -224,7 +224,7 @@ func TestRunUsesSearchAfter(t *testing.T) {
 
 	s := &Scraper{
 		client:    ts.Client(),
-		Config:    SiteConfig{Index: "test", SiteBase: ts.URL, Domain: "test.com", SiteID: "test"},
+		cfg:       SiteConfig{Index: "test", SiteBase: ts.URL, Domain: "test.com", SiteID: "test"},
 		esBaseURL: ts.URL,
 	}
 
@@ -273,7 +273,7 @@ func TestSearchParsesResponse(t *testing.T) {
 
 	s := &Scraper{
 		client: ts.Client(),
-		Config: SiteConfig{Index: "test", SiteBase: ts.URL},
+		cfg:    SiteConfig{Index: "test", SiteBase: ts.URL},
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)

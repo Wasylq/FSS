@@ -333,7 +333,7 @@ func TestListScenes(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	s := &Scraper{Cfg: testCfg, Client: ts.Client()}
+	s := &Scraper{cfg: testCfg, Client: ts.Client()}
 	ch, err := s.ListScenes(context.Background(), ts.URL+"/works/list/series/100", scraper.ListOpts{})
 	if err != nil {
 		t.Fatalf("ListScenes error: %v", err)
@@ -380,7 +380,7 @@ func TestListScenesKnownIDs(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	s := &Scraper{Cfg: testCfg, Client: ts.Client()}
+	s := &Scraper{cfg: testCfg, Client: ts.Client()}
 	ch, err := s.ListScenes(context.Background(), ts.URL+"/actress/detail/100", scraper.ListOpts{
 		KnownIDs: map[string]bool{"MIAD469": true},
 	})
@@ -429,7 +429,7 @@ func TestListScenesPagination(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	s := &Scraper{Cfg: testCfg, Client: ts.Client()}
+	s := &Scraper{cfg: testCfg, Client: ts.Client()}
 	ch, err := s.ListScenes(context.Background(), ts.URL+"/actress/detail/100", scraper.ListOpts{})
 	if err != nil {
 		t.Fatalf("ListScenes error: %v", err)

@@ -222,7 +222,7 @@ func TestListScenesRSI(t *testing.T) {
 	s := &Scraper{
 		client: ts.Client(),
 		base:   ts.URL,
-		Config: SiteConfig{SiteID: "test-rsi", Domain: "test.com", StudioName: "Test RSI", Type: TypeRSI},
+		cfg:    SiteConfig{SiteID: "test-rsi", Domain: "test.com", StudioName: "Test RSI", Type: TypeRSI},
 	}
 	ch, err := s.ListScenes(context.Background(), ts.URL, scraper.ListOpts{})
 	if err != nil {
@@ -252,7 +252,7 @@ func TestKnownIDsStopEarly(t *testing.T) {
 	s := &Scraper{
 		client: ts.Client(),
 		base:   ts.URL,
-		Config: SiteConfig{SiteID: "test-rsi", Domain: "test.com", StudioName: "Test RSI", Type: TypeRSI},
+		cfg:    SiteConfig{SiteID: "test-rsi", Domain: "test.com", StudioName: "Test RSI", Type: TypeRSI},
 	}
 	ch, err := s.ListScenes(context.Background(), ts.URL, scraper.ListOpts{
 		KnownIDs: map[string]bool{"12564": true},
@@ -278,7 +278,7 @@ func TestKnownIDsStopEarly(t *testing.T) {
 }
 
 func TestMatchesURL(t *testing.T) {
-	s := NewScraper(SiteConfig{
+	s := New(SiteConfig{
 		SiteID: "realspankingsinstitute", Domain: "www.realspankingsinstitute.com",
 		StudioName: "Real Spankings Institute", Type: TypeRSI,
 	})

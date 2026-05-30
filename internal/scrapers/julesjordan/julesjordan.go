@@ -15,6 +15,6 @@ var sites = []julesjordanutil.SiteConfig{
 
 func init() {
 	for _, cfg := range sites {
-		scraper.Register(julesjordanutil.NewScraper(cfg))
+		scraper.Register(julesjordanutil.New(cfg))
 	}
 }

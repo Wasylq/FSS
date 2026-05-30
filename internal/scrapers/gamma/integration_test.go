@@ -35,7 +35,7 @@ func newTestScraper(cfg siteConfig) *siteScraper {
 	}
 
 	return &siteScraper{
-		gamma:   gammautil.NewScraper(gammaCfg),
+		gamma:   gammautil.New(gammaCfg),
 		config:  cfg,
 		matchRe: re,
 	}

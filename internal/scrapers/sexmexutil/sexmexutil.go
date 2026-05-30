@@ -24,20 +24,20 @@ type SiteConfig struct {
 }
 
 type Scraper struct {
-	Cfg    SiteConfig
+	cfg    SiteConfig
 	Client *http.Client
 }
 
 func New(cfg SiteConfig) *Scraper {
 	return &Scraper{
-		Cfg:    cfg,
+		cfg:    cfg,
 		Client: httpx.NewClient(30 * time.Second),
 	}
 }
 
-func (s *Scraper) ID() string               { return s.Cfg.ID }
-func (s *Scraper) Patterns() []string       { return s.Cfg.Patterns }
-func (s *Scraper) MatchesURL(u string) bool { return s.Cfg.MatchRe.MatchString(u) }
+func (s *Scraper) ID() string               { return s.cfg.ID }
+func (s *Scraper) Patterns() []string       { return s.cfg.Patterns }
+func (s *Scraper) MatchesURL(u string) bool { return s.cfg.MatchRe.MatchString(u) }
 
 func (s *Scraper) ListScenes(ctx context.Context, studioURL string, opts scraper.ListOpts) (<-chan scraper.SceneResult, error) {
 	out := make(chan scraper.SceneResult)
@@ -78,8 +78,8 @@ func pageURL(siteBase, slug string, page int) string {
 func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOpts, out chan<- scraper.SceneResult) {
 	defer close(out)
 
-	slug := resolveListingSlug(studioURL, s.Cfg.SiteBase)
-	scraper.Debugf(1, "%s: listing slug: %s", s.Cfg.ID, slug)
+	slug := resolveListingSlug(studioURL, s.cfg.SiteBase)
+	scraper.Debugf(1, "%s: listing slug: %s", s.cfg.ID, slug)
 
 	for page := 1; ; page++ {
 		if ctx.Err() != nil {
@@ -93,8 +93,8 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 			}
 		}
 
-		scraper.Debugf(1, "%s: fetching page %d", s.Cfg.ID, page)
-		u := pageURL(s.Cfg.SiteBase, slug, page)
+		scraper.Debugf(1, "%s: fetching page %d", s.cfg.ID, page)
+		u := pageURL(s.cfg.SiteBase, slug, page)
 		body, err := s.fetchPage(ctx, u)
 		if err != nil {
 			select {
@@ -112,7 +112,7 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 		if page == 1 {
 			maxPage := extractMaxPage(body)
 			if maxPage > 0 {
-				scraper.Debugf(1, "%s: %d total scenes (estimated)", s.Cfg.ID, maxPage*len(cards))
+				scraper.Debugf(1, "%s: %d total scenes (estimated)", s.cfg.ID, maxPage*len(cards))
 				select {
 				case out <- scraper.Progress(maxPage * len(cards)):
 				case <-ctx.Done():
@@ -126,7 +126,7 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 		for _, c := range cards {
 			scene := s.cardToScene(studioURL, c, now)
 			if opts.KnownIDs[scene.ID] {
-				scraper.Debugf(1, "%s: hit known ID %s, stopping early", s.Cfg.ID, scene.ID)
+				scraper.Debugf(1, "%s: hit known ID %s, stopping early", s.cfg.ID, scene.ID)
 				stoppedEarly = true
 				break
 			}
@@ -266,7 +266,7 @@ func (s *Scraper) cardToScene(studioURL string, c card, now time.Time) models.Sc
 
 	return models.Scene{
 		ID:          c.id,
-		SiteID:      s.Cfg.ID,
+		SiteID:      s.cfg.ID,
 		StudioURL:   studioURL,
 		Title:       title,
 		URL:         c.url,
@@ -274,7 +274,7 @@ func (s *Scraper) cardToScene(studioURL string, c card, now time.Time) models.Sc
 		Description: c.description,
 		Performers:  c.performers,
 		Date:        c.date,
-		Studio:      s.Cfg.Studio,
+		Studio:      s.cfg.Studio,
 		ScrapedAt:   now,
 	}
 }

@@ -82,7 +82,7 @@ func newTestScraper(ts *httptest.Server) *Scraper {
 	return &Scraper{
 		client: ts.Client(),
 		base:   ts.URL,
-		Config: SiteConfig{SiteID: "testsite", Domain: "test.com", StudioName: "Test Studio"},
+		cfg:    SiteConfig{SiteID: "testsite", Domain: "test.com", StudioName: "Test Studio"},
 	}
 }
 
@@ -229,7 +229,7 @@ func TestGalleryFiltering(t *testing.T) {
 }
 
 func TestMatchesURL(t *testing.T) {
-	s := NewScraper(SiteConfig{SiteID: "metart", Domain: "metart.com", StudioName: "MetArt"})
+	s := New(SiteConfig{SiteID: "metart", Domain: "metart.com", StudioName: "MetArt"})
 
 	tests := []struct {
 		url  string

@@ -52,7 +52,7 @@ func TestFetchPage(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	s := &Scraper{Client: ts.Client(), Config: SiteConfig{SiteID: "test", SiteBase: ts.URL}}
+	s := &Scraper{Client: ts.Client(), cfg: SiteConfig{SiteID: "test", SiteBase: ts.URL}}
 	videos, total, err := s.FetchPage(context.Background(), 1, "")
 	if err != nil {
 		t.Fatalf("FetchPage error: %v", err)
@@ -86,7 +86,7 @@ func TestFetchPageChannelFilter(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	s := &Scraper{Client: ts.Client(), Config: SiteConfig{SiteID: "test", SiteBase: ts.URL}}
+	s := &Scraper{Client: ts.Client(), cfg: SiteConfig{SiteID: "test", SiteBase: ts.URL}}
 	_, _, _ = s.FetchPage(context.Background(), 1, "Teen Girls")
 	if gotChannel != "Teen Girls" {
 		t.Errorf("expected channel 'Teen Girls', got %q", gotChannel)
@@ -100,7 +100,7 @@ func TestFetchPageNullResult(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	s := &Scraper{Client: ts.Client(), Config: SiteConfig{SiteID: "test", SiteBase: ts.URL}}
+	s := &Scraper{Client: ts.Client(), cfg: SiteConfig{SiteID: "test", SiteBase: ts.URL}}
 	videos, total, err := s.FetchPage(context.Background(), 1, "")
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
@@ -227,7 +227,7 @@ func TestRunPagination(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	s := &Scraper{Client: ts.Client(), Config: SiteConfig{SiteID: "test", SiteBase: ts.URL}}
+	s := &Scraper{Client: ts.Client(), cfg: SiteConfig{SiteID: "test", SiteBase: ts.URL}}
 
 	out := make(chan scraper.SceneResult)
 	go s.Run(context.Background(), ts.URL, scraper.ListOpts{}, out)
@@ -260,7 +260,7 @@ func TestRunKnownIDs(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	s := &Scraper{Client: ts.Client(), Config: SiteConfig{SiteID: "test", SiteBase: ts.URL}}
+	s := &Scraper{Client: ts.Client(), cfg: SiteConfig{SiteID: "test", SiteBase: ts.URL}}
 
 	out := make(chan scraper.SceneResult)
 	go s.Run(context.Background(), ts.URL, scraper.ListOpts{

@@ -576,7 +576,7 @@ func (s *testServer) close() { s.ts.Close() }
 func newScraper(ts *testServer) *Scraper {
 	return &Scraper{
 		Client: ts.ts.Client(),
-		Config: SiteConfig{
+		cfg: SiteConfig{
 			SiteID:     "testsite",
 			SiteBase:   ts.ts.URL,
 			StudioName: "Test Studio",
@@ -587,13 +587,13 @@ func newScraper(ts *testServer) *Scraper {
 
 // ---- Constructor ----
 
-func TestNewScraper(t *testing.T) {
-	s := NewScraper(SiteConfig{SiteID: "x", SiteBase: "https://x.com", StudioName: "X"})
+func TestNew(t *testing.T) {
+	s := New(SiteConfig{SiteID: "x", SiteBase: "https://x.com", StudioName: "X"})
 	if s.APIHost != DefaultAPIHost {
 		t.Errorf("default APIHost = %q, want %q", s.APIHost, DefaultAPIHost)
 	}
 
-	s2 := NewScraper(SiteConfig{SiteID: "x", SiteBase: "https://x.com", StudioName: "X", APIHost: "https://custom.api"})
+	s2 := New(SiteConfig{SiteID: "x", SiteBase: "https://x.com", StudioName: "X", APIHost: "https://custom.api"})
 	if s2.APIHost != "https://custom.api" {
 		t.Errorf("custom APIHost = %q", s2.APIHost)
 	}
@@ -623,7 +623,7 @@ func TestFetchTokenMissing(t *testing.T) {
 
 	s := &Scraper{
 		Client:  ts.Client(),
-		Config:  SiteConfig{SiteBase: ts.URL},
+		cfg:     SiteConfig{SiteBase: ts.URL},
 		APIHost: ts.URL,
 	}
 	_, err := s.FetchToken(context.Background())

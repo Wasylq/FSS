@@ -34,18 +34,18 @@ type SiteConfig struct {
 
 type Scraper struct {
 	Client  *http.Client
-	Config  SiteConfig
+	cfg     SiteConfig
 	APIHost string
 }
 
-func NewScraper(cfg SiteConfig) *Scraper {
+func New(cfg SiteConfig) *Scraper {
 	host := DefaultAPIHost
 	if cfg.APIHost != "" {
 		host = cfg.APIHost
 	}
 	return &Scraper{
 		Client:  httpx.NewClient(30 * time.Second),
-		Config:  cfg,
+		cfg:     cfg,
 		APIHost: host,
 	}
 }
@@ -112,7 +112,7 @@ func ParseFilter(rawURL string) Filter {
 
 func (s *Scraper) FetchToken(ctx context.Context) (string, error) {
 	resp, err := httpx.Do(ctx, s.Client, httpx.Request{
-		URL:     s.Config.SiteBase,
+		URL:     s.cfg.SiteBase,
 		Headers: httpx.BrowserHeaders(httpx.UserAgentFirefox),
 	})
 	if err != nil {
@@ -219,7 +219,7 @@ func (s *Scraper) fetchSeries(ctx context.Context, token string, seriesID int) (
 		if err := ctx.Err(); err != nil {
 			return nil, 0, err
 		}
-		scraper.Debugf(1, "%s: fetching page %d", s.Config.SiteID, offset)
+		scraper.Debugf(1, "%s: fetching page %d", s.cfg.SiteID, offset)
 		params := url.Values{}
 		params.Set("type", "serie")
 		params.Set("limit", strconv.Itoa(HitsPerPage))
@@ -338,7 +338,7 @@ func (s *Scraper) Run(ctx context.Context, studioURL string, opts scraper.ListOp
 				return
 			}
 		}
-		scraper.Debugf(1, "%s: fetching page %d", s.Config.SiteID, page)
+		scraper.Debugf(1, "%s: fetching page %d", s.cfg.SiteID, page)
 
 		releases, total, err := s.FetchPage(ctx, token, filter, page)
 		if err != nil {
@@ -354,7 +354,7 @@ func (s *Scraper) Run(ctx context.Context, studioURL string, opts scraper.ListOp
 		}
 
 		if page == 0 && total > 0 {
-			scraper.Debugf(1, "%s: %d total scenes", s.Config.SiteID, total)
+			scraper.Debugf(1, "%s: %d total scenes", s.cfg.SiteID, total)
 			select {
 			case out <- scraper.Progress(total):
 			case <-ctx.Done():
@@ -366,7 +366,7 @@ func (s *Scraper) Run(ctx context.Context, studioURL string, opts scraper.ListOp
 		for _, rel := range releases {
 			id := strconv.Itoa(rel.ID)
 			if opts.KnownIDs[id] {
-				scraper.Debugf(1, "%s: hit known ID, stopping early", s.Config.SiteID)
+				scraper.Debugf(1, "%s: hit known ID, stopping early", s.cfg.SiteID)
 				select {
 				case out <- scraper.StoppedEarly():
 				case <-ctx.Done():
@@ -374,7 +374,7 @@ func (s *Scraper) Run(ctx context.Context, studioURL string, opts scraper.ListOp
 				return
 			}
 
-			scene := ToScene(s.Config, studioURL, rel, now)
+			scene := ToScene(s.cfg, studioURL, rel, now)
 			select {
 			case out <- scraper.Scene(scene):
 			case <-ctx.Done():
@@ -399,7 +399,7 @@ func (s *Scraper) runSeries(ctx context.Context, studioURL string, opts scraper.
 	}
 
 	if total > 0 {
-		scraper.Debugf(1, "%s: %d total scenes", s.Config.SiteID, total)
+		scraper.Debugf(1, "%s: %d total scenes", s.cfg.SiteID, total)
 		select {
 		case out <- scraper.Progress(total):
 		case <-ctx.Done():
@@ -411,7 +411,7 @@ func (s *Scraper) runSeries(ctx context.Context, studioURL string, opts scraper.
 	for _, rel := range releases {
 		id := strconv.Itoa(rel.ID)
 		if opts.KnownIDs[id] {
-			scraper.Debugf(1, "%s: hit known ID, stopping early", s.Config.SiteID)
+			scraper.Debugf(1, "%s: hit known ID, stopping early", s.cfg.SiteID)
 			select {
 			case out <- scraper.StoppedEarly():
 			case <-ctx.Done():
@@ -419,7 +419,7 @@ func (s *Scraper) runSeries(ctx context.Context, studioURL string, opts scraper.
 			return
 		}
 
-		scene := ToScene(s.Config, studioURL, rel, now)
+		scene := ToScene(s.cfg, studioURL, rel, now)
 		select {
 		case out <- scraper.Scene(scene):
 		case <-ctx.Done():

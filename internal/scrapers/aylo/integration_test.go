@@ -28,7 +28,7 @@ func newTestScraper(cfg siteConfig) *siteScraper {
 	}
 
 	return &siteScraper{
-		aylo:    ayloutil.NewScraper(ayloCfg),
+		aylo:    ayloutil.New(ayloCfg),
 		config:  cfg,
 		matchRe: re,
 	}

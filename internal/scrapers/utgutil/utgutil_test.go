@@ -261,7 +261,7 @@ func collect(t *testing.T, ch <-chan scraper.SceneResult) []scraper.SceneResult 
 func testScraper(ts *httptest.Server) *Scraper {
 	return &Scraper{
 		client:       ts.Client(),
-		config:       testCfg,
+		cfg:          testCfg,
 		baseOverride: ts.URL,
 	}
 }
@@ -512,7 +512,7 @@ func TestRunLegacyPages(t *testing.T) {
 
 	s := &Scraper{
 		client:       ts.Client(),
-		config:       SiteConfig{SiteID: "testlegacy", Domain: "test.com", StudioName: "Test", Legacy: true},
+		cfg:          SiteConfig{SiteID: "testlegacy", Domain: "test.com", StudioName: "Test", Legacy: true},
 		baseOverride: ts.URL,
 	}
 
@@ -555,7 +555,7 @@ func TestRunLegacyYears(t *testing.T) {
 
 	s := &Scraper{
 		client:       ts.Client(),
-		config:       SiteConfig{SiteID: "testyears", Domain: "test.com", StudioName: "Test", Legacy: true, YearBased: true},
+		cfg:          SiteConfig{SiteID: "testyears", Domain: "test.com", StudioName: "Test", Legacy: true, YearBased: true},
 		baseOverride: ts.URL,
 	}
 

@@ -13,7 +13,7 @@ func TestLiveScrapeAll(t *testing.T) {
 	for _, cfg := range sites {
 		t.Run(cfg.SiteID, func(t *testing.T) {
 			t.Parallel()
-			s := realspankingsutil.NewScraper(cfg)
+			s := realspankingsutil.New(cfg)
 			testutil.RunLiveScrape(t, s, "https://"+cfg.Domain, 2)
 		})
 	}

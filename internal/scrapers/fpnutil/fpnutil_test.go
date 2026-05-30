@@ -230,7 +230,7 @@ func TestFetchDetail(t *testing.T) {
 
 	s := &Scraper{
 		Client: ts.Client(),
-		Config: SiteConfig{SiteID: "test", SiteBase: ts.URL, StudioName: "Test Studio"},
+		cfg:    SiteConfig{SiteID: "test", SiteBase: ts.URL, StudioName: "Test Studio"},
 	}
 
 	ls := listingScene{
@@ -279,7 +279,7 @@ func TestFetchDetailFallbackPerformers(t *testing.T) {
 
 	s := &Scraper{
 		Client: ts.Client(),
-		Config: SiteConfig{SiteID: "test", SiteBase: ts.URL, StudioName: "Test"},
+		cfg:    SiteConfig{SiteID: "test", SiteBase: ts.URL, StudioName: "Test"},
 	}
 
 	ls := listingScene{
@@ -322,7 +322,7 @@ func TestRunPagination(t *testing.T) {
 
 	s := &Scraper{
 		Client: ts.Client(),
-		Config: SiteConfig{SiteID: "test", SiteBase: ts.URL, StudioName: "Test"},
+		cfg:    SiteConfig{SiteID: "test", SiteBase: ts.URL, StudioName: "Test"},
 	}
 
 	out := make(chan scraper.SceneResult)
@@ -357,7 +357,7 @@ func TestRunKnownIDs(t *testing.T) {
 
 	s := &Scraper{
 		Client: ts.Client(),
-		Config: SiteConfig{SiteID: "test", SiteBase: ts.URL, StudioName: "Test"},
+		cfg:    SiteConfig{SiteID: "test", SiteBase: ts.URL, StudioName: "Test"},
 	}
 
 	out := make(chan scraper.SceneResult)

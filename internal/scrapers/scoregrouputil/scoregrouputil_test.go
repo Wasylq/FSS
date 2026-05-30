@@ -109,7 +109,7 @@ func TestFetchDetail(t *testing.T) {
 
 	s := &Scraper{
 		Client: ts.Client(),
-		Config: SiteConfig{SiteID: "test", SiteBase: ts.URL, StudioName: "Test Studio", VideosPath: "/videos/"},
+		cfg:    SiteConfig{SiteID: "test", SiteBase: ts.URL, StudioName: "Test Studio", VideosPath: "/videos/"},
 	}
 
 	scene, err := s.fetchDetail(context.Background(), listingScene{
@@ -164,7 +164,7 @@ func TestRun(t *testing.T) {
 
 	s := &Scraper{
 		Client: ts.Client(),
-		Config: SiteConfig{SiteID: "test", SiteBase: ts.URL, StudioName: "Test", VideosPath: "/videos/"},
+		cfg:    SiteConfig{SiteID: "test", SiteBase: ts.URL, StudioName: "Test", VideosPath: "/videos/"},
 	}
 
 	out := make(chan scraper.SceneResult)
@@ -191,7 +191,7 @@ func TestKnownIDsStopsEarly(t *testing.T) {
 
 	s := &Scraper{
 		Client: ts.Client(),
-		Config: SiteConfig{SiteID: "test", SiteBase: ts.URL, StudioName: "Test", VideosPath: "/videos/"},
+		cfg:    SiteConfig{SiteID: "test", SiteBase: ts.URL, StudioName: "Test", VideosPath: "/videos/"},
 	}
 
 	out := make(chan scraper.SceneResult)
@@ -228,7 +228,7 @@ func TestModelURL(t *testing.T) {
 
 	s := &Scraper{
 		Client: ts.Client(),
-		Config: SiteConfig{SiteID: "test", SiteBase: ts.URL, StudioName: "Test", VideosPath: "/videos/", ModelsPath: "/models/"},
+		cfg:    SiteConfig{SiteID: "test", SiteBase: ts.URL, StudioName: "Test", VideosPath: "/videos/", ModelsPath: "/models/"},
 	}
 
 	modelURL := tsURL + "/models/Performer-A/123/"

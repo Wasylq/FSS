@@ -24,7 +24,7 @@ type SiteConfig struct {
 }
 
 type Scraper struct {
-	config  SiteConfig
+	cfg     SiteConfig
 	client  *http.Client
 	matchRe *regexp.Regexp
 }
@@ -32,19 +32,19 @@ type Scraper struct {
 func New(cfg SiteConfig) *Scraper {
 	re := regexp.MustCompile(`^https?://(?:www\.)?` + regexp.QuoteMeta(cfg.Domain) + `(?:/|$)`)
 	return &Scraper{
-		config:  cfg,
+		cfg:     cfg,
 		client:  httpx.NewClient(30 * time.Second),
 		matchRe: re,
 	}
 }
 
-func (s *Scraper) ID() string { return s.config.SiteID }
+func (s *Scraper) ID() string { return s.cfg.SiteID }
 
 func (s *Scraper) Patterns() []string {
 	return []string{
-		s.config.Domain,
-		s.config.Domain + "/?page={page}",
-		s.config.Domain + "/models/{slug}",
+		s.cfg.Domain,
+		s.cfg.Domain + "/?page={page}",
+		s.cfg.Domain + "/models/{slug}",
 	}
 }
 
@@ -87,7 +87,7 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 				return
 			}
 		}
-		scraper.Debugf(1, "%s: fetching page %d", s.config.SiteID, page)
+		scraper.Debugf(1, "%s: fetching page %d", s.cfg.SiteID, page)
 
 		var pageURL string
 		if isModel {
@@ -118,7 +118,7 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 		}
 
 		if !totalSent {
-			scraper.Debugf(1, "%s: %d total scenes", s.config.SiteID, 0)
+			scraper.Debugf(1, "%s: %d total scenes", s.cfg.SiteID, 0)
 			select {
 			case out <- scraper.Progress(0):
 			case <-ctx.Done():
@@ -130,7 +130,7 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 		for _, rel := range releases {
 			scene := s.toScene(rel, studioURL)
 			if opts.KnownIDs[scene.ID] {
-				scraper.Debugf(1, "%s: hit known ID, stopping early", s.config.SiteID)
+				scraper.Debugf(1, "%s: hit known ID, stopping early", s.cfg.SiteID)
 				select {
 				case out <- scraper.StoppedEarly():
 				case <-ctx.Done():
@@ -249,11 +249,11 @@ func (s *Scraper) toScene(rel map[string]any, studioURL string) models.Scene {
 		thumb = poster
 	}
 
-	sceneURL := fmt.Sprintf("https://%s/video/%s", s.config.Domain, slug)
+	sceneURL := fmt.Sprintf("https://%s/video/%s", s.cfg.Domain, slug)
 
 	return models.Scene{
 		ID:          id,
-		SiteID:      s.config.SiteID,
+		SiteID:      s.cfg.SiteID,
 		StudioURL:   studioURL,
 		Title:       title,
 		URL:         sceneURL,
@@ -261,7 +261,7 @@ func (s *Scraper) toScene(rel map[string]any, studioURL string) models.Scene {
 		Description: description,
 		Thumbnail:   thumb,
 		Performers:  performers,
-		Studio:      s.config.StudioName,
+		Studio:      s.cfg.StudioName,
 		Tags:        tags,
 		ScrapedAt:   time.Now().UTC(),
 	}

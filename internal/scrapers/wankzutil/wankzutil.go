@@ -22,13 +22,13 @@ type SiteConfig struct {
 
 type Scraper struct {
 	Client *http.Client
-	Config SiteConfig
+	cfg    SiteConfig
 }
 
-func NewScraper(cfg SiteConfig) *Scraper {
+func New(cfg SiteConfig) *Scraper {
 	return &Scraper{
 		Client: httpx.NewClient(30 * time.Second),
-		Config: cfg,
+		cfg:    cfg,
 	}
 }
 
@@ -58,7 +58,7 @@ func (s *Scraper) Run(ctx context.Context, studioURL string, opts scraper.ListOp
 
 	channel := ParseChannel(studioURL)
 	if channel != "" {
-		scraper.Debugf(1, "%s: detected channel filter: %s", s.Config.SiteID, channel)
+		scraper.Debugf(1, "%s: detected channel filter: %s", s.cfg.SiteID, channel)
 	}
 	now := time.Now().UTC()
 
@@ -66,7 +66,7 @@ func (s *Scraper) Run(ctx context.Context, studioURL string, opts scraper.ListOp
 		if ctx.Err() != nil {
 			return
 		}
-		scraper.Debugf(1, "%s: fetching page %d", s.Config.SiteID, page)
+		scraper.Debugf(1, "%s: fetching page %d", s.cfg.SiteID, page)
 		videos, total, err := s.FetchPage(ctx, page, channel)
 		if err != nil {
 			select {
@@ -77,7 +77,7 @@ func (s *Scraper) Run(ctx context.Context, studioURL string, opts scraper.ListOp
 		}
 
 		if page == 1 {
-			scraper.Debugf(1, "%s: %d total scenes", s.Config.SiteID, total)
+			scraper.Debugf(1, "%s: %d total scenes", s.cfg.SiteID, total)
 			select {
 			case out <- scraper.Progress(total):
 			case <-ctx.Done():
@@ -90,9 +90,9 @@ func (s *Scraper) Run(ctx context.Context, studioURL string, opts scraper.ListOp
 		}
 
 		for _, v := range videos {
-			scene := ToScene(s.Config, studioURL, v, now)
+			scene := ToScene(s.cfg, studioURL, v, now)
 			if opts.KnownIDs != nil && opts.KnownIDs[scene.ID] {
-				scraper.Debugf(1, "%s: hit known ID %s, stopping early", s.Config.SiteID, scene.ID)
+				scraper.Debugf(1, "%s: hit known ID %s, stopping early", s.cfg.SiteID, scene.ID)
 				select {
 				case out <- scraper.StoppedEarly():
 				case <-ctx.Done():
@@ -120,7 +120,7 @@ func (s *Scraper) Run(ctx context.Context, studioURL string, opts scraper.ListOp
 
 func (s *Scraper) FetchPage(ctx context.Context, page int, channel string) ([]Video, int, error) {
 	u := fmt.Sprintf("%s/api/videos/find.json?page=%d&limit=%d&order=date",
-		s.Config.SiteBase, page, PageSize)
+		s.cfg.SiteBase, page, PageSize)
 	if channel != "" {
 		u += "&channel=" + url.QueryEscape(channel)
 	}

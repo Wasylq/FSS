@@ -26,7 +26,7 @@ type SiteConfig struct {
 }
 
 type Scraper struct {
-	config  SiteConfig
+	cfg     SiteConfig
 	client  *http.Client
 	matchRe *regexp.Regexp
 }
@@ -38,19 +38,19 @@ func New(cfg SiteConfig) *Scraper {
 	}
 	re := regexp.MustCompile(`^https?://(?:www\.)?(?:` + strings.Join(domains, "|") + `)(?:/|$)`)
 	return &Scraper{
-		config:  cfg,
+		cfg:     cfg,
 		client:  httpx.NewClient(30 * time.Second),
 		matchRe: re,
 	}
 }
 
-func (s *Scraper) ID() string { return s.config.SiteID }
+func (s *Scraper) ID() string { return s.cfg.SiteID }
 
 func (s *Scraper) Patterns() []string {
 	return []string{
-		s.config.Domain,
-		s.config.Domain + "/tour/whats-new",
-		s.config.Domain + "/tour/trailer/{section}/{slug}",
+		s.cfg.Domain,
+		s.cfg.Domain + "/tour/whats-new",
+		s.cfg.Domain + "/tour/trailer/{section}/{slug}",
 	}
 }
 
@@ -82,7 +82,7 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 
 	base := strings.TrimRight(studioURL, "/")
 
-	scraper.Debugf(1, "%s: fetching sitemap", s.config.SiteID)
+	scraper.Debugf(1, "%s: fetching sitemap", s.cfg.SiteID)
 	urls, err := s.fetchSitemap(ctx, base+"/sitemap.xml")
 	if err != nil {
 		select {
@@ -102,7 +102,7 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 	if len(trailerURLs) == 0 {
 		return
 	}
-	scraper.Debugf(1, "%s: %d total scenes from sitemap", s.config.SiteID, len(trailerURLs))
+	scraper.Debugf(1, "%s: %d total scenes from sitemap", s.cfg.SiteID, len(trailerURLs))
 
 	select {
 	case out <- scraper.Progress(len(trailerURLs)):
@@ -127,7 +127,7 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 
 		slug := extractSlug(u)
 		if opts.KnownIDs[slug] {
-			scraper.Debugf(1, "%s: hit known ID, stopping early", s.config.SiteID)
+			scraper.Debugf(1, "%s: hit known ID, stopping early", s.cfg.SiteID)
 			select {
 			case out <- scraper.StoppedEarly():
 			case <-ctx.Done():
@@ -228,7 +228,7 @@ func (s *Scraper) fetchDetail(ctx context.Context, pageURL, studioURL string, li
 
 	return models.Scene{
 		ID:         slug,
-		SiteID:     s.config.SiteID,
+		SiteID:     s.cfg.SiteID,
 		StudioURL:  studioURL,
 		Title:      vo.Name,
 		URL:        pageURL,
@@ -236,7 +236,7 @@ func (s *Scraper) fetchDetail(ctx context.Context, pageURL, studioURL string, li
 		Duration:   parseutil.ParseDurationISO(vo.Duration),
 		Thumbnail:  vo.ThumbnailURL,
 		Performers: performers,
-		Studio:     s.config.StudioName,
+		Studio:     s.cfg.StudioName,
 		ScrapedAt:  time.Now().UTC(),
 	}, nil
 }

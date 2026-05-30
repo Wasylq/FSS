@@ -27,22 +27,22 @@ type Scraper struct {
 	client  *http.Client
 	base    string
 	matchRe *regexp.Regexp
-	Config  SiteConfig
+	cfg     SiteConfig
 }
 
-func NewScraper(cfg SiteConfig) *Scraper {
+func New(cfg SiteConfig) *Scraper {
 	return &Scraper{
 		client:  httpx.NewClient(30 * time.Second),
 		base:    "https://www." + cfg.Domain,
 		matchRe: regexp.MustCompile(`^https?://(?:www\.)?` + regexp.QuoteMeta(cfg.Domain) + `(?:/|$)`),
-		Config:  cfg,
+		cfg:     cfg,
 	}
 }
 
-func (s *Scraper) ID() string { return s.Config.SiteID }
+func (s *Scraper) ID() string { return s.cfg.SiteID }
 
 func (s *Scraper) Patterns() []string {
-	return []string{s.Config.Domain}
+	return []string{s.cfg.Domain}
 }
 
 func (s *Scraper) MatchesURL(u string) bool {
@@ -99,7 +99,7 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 				return
 			}
 		}
-		scraper.Debugf(1, "%s: fetching page %d", s.Config.SiteID, page)
+		scraper.Debugf(1, "%s: fetching page %d", s.cfg.SiteID, page)
 
 		resp, err := s.fetchPage(ctx, page)
 		if err != nil {
@@ -129,7 +129,7 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 				continue
 			}
 			if opts.KnownIDs[g.UUID] {
-				scraper.Debugf(1, "%s: hit known ID, stopping early", s.Config.SiteID)
+				scraper.Debugf(1, "%s: hit known ID, stopping early", s.cfg.SiteID)
 				select {
 				case out <- scraper.StoppedEarly():
 				case <-ctx.Done():
@@ -137,7 +137,7 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 				return
 			}
 			select {
-			case out <- scraper.Scene(toScene(s.Config, studioURL, s.base, g, now)):
+			case out <- scraper.Scene(toScene(s.cfg, studioURL, s.base, g, now)):
 			case <-ctx.Done():
 				return
 			}

@@ -110,7 +110,7 @@ func init() {
 		}
 
 		s := &siteScraper{
-			aylo:     ayloutil.NewScraper(ayloCfg),
+			aylo:     ayloutil.New(ayloCfg),
 			config:   cfg,
 			matchRe:  re,
 			patterns: patterns,

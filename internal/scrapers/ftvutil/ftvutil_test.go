@@ -257,14 +257,14 @@ func TestParseDetailPage_Empty(t *testing.T) {
 	}
 }
 
-func TestNewScraper(t *testing.T) {
+func TestNew(t *testing.T) {
 	cfg := SiteConfig{
 		SiteID:    "ftvgirls",
 		Domain:    "ftvgirls.com",
 		Studio:    "FTV Girls",
 		TitleSite: "FTVGirls.com",
 	}
-	s := NewScraper(cfg)
+	s := New(cfg)
 	if s.ID() != "ftvgirls" {
 		t.Errorf("ID() = %q, want ftvgirls", s.ID())
 	}
@@ -277,7 +277,7 @@ func TestNewScraper(t *testing.T) {
 }
 
 func TestMatchesURL_ftvutil(t *testing.T) {
-	s := NewScraper(SiteConfig{
+	s := New(SiteConfig{
 		SiteID: "ftvgirls",
 		Domain: "ftvgirls.com",
 	})
@@ -301,7 +301,7 @@ func TestMatchesURL_ftvutil(t *testing.T) {
 }
 
 func TestPatterns_ftvutil(t *testing.T) {
-	s := NewScraper(SiteConfig{
+	s := New(SiteConfig{
 		SiteID: "ftvgirls",
 		Domain: "ftvgirls.com",
 	})

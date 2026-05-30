@@ -265,7 +265,7 @@ func init() {
 		}
 
 		s := &siteScraper{
-			gamma:   gammautil.NewScraper(gammaCfg),
+			gamma:   gammautil.New(gammaCfg),
 			config:  cfg,
 			matchRe: re,
 		}

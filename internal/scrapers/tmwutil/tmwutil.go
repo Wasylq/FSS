@@ -27,12 +27,12 @@ type SiteConfig struct {
 type Scraper struct {
 	client *http.Client
 	base   string
-	Config SiteConfig
+	cfg    SiteConfig
 }
 
 const hubBase = "https://teenmegaworld.net"
 
-func NewScraper(cfg SiteConfig) *Scraper {
+func New(cfg SiteConfig) *Scraper {
 	base := "https://" + cfg.Domain
 	if cfg.Hub {
 		base = hubBase
@@ -40,24 +40,24 @@ func NewScraper(cfg SiteConfig) *Scraper {
 	return &Scraper{
 		client: httpx.NewClient(30 * time.Second),
 		base:   base,
-		Config: cfg,
+		cfg:    cfg,
 	}
 }
 
-func (s *Scraper) ID() string { return s.Config.SiteID }
+func (s *Scraper) ID() string { return s.cfg.SiteID }
 
 func (s *Scraper) Patterns() []string {
 	return []string{
-		s.Config.Domain + "/categories/movies",
-		s.Config.Domain + "/trailers/",
-		"teenmegaworld.net/categories/" + s.Config.Slug,
+		s.cfg.Domain + "/categories/movies",
+		s.cfg.Domain + "/trailers/",
+		"teenmegaworld.net/categories/" + s.cfg.Slug,
 	}
 }
 
 func (s *Scraper) MatchesURL(u string) bool {
 	lower := strings.ToLower(u)
-	domain := strings.ToLower(s.Config.Domain)
-	slug := strings.ToLower(s.Config.Slug)
+	domain := strings.ToLower(s.cfg.Domain)
+	slug := strings.ToLower(s.cfg.Slug)
 	if strings.Contains(lower, "://"+domain) || strings.Contains(lower, "://www."+domain) {
 		return true
 	}
@@ -86,7 +86,7 @@ func (s *Scraper) run(ctx context.Context, opts scraper.ListOpts, out chan<- scr
 	work := make(chan detailWork)
 	var wg sync.WaitGroup
 
-	scraper.Debugf(1, "%s: fetching detail pages with %d workers", s.Config.SiteID, workers)
+	scraper.Debugf(1, "%s: fetching detail pages with %d workers", s.cfg.SiteID, workers)
 	for i := 0; i < workers; i++ {
 		wg.Add(1)
 		go func() {
@@ -120,10 +120,10 @@ func (s *Scraper) run(ctx context.Context, opts scraper.ListOpts, out chan<- scr
 				return
 			}
 
-			scraper.Debugf(1, "%s: fetching page %d", s.Config.SiteID, page)
+			scraper.Debugf(1, "%s: fetching page %d", s.cfg.SiteID, page)
 			var url string
-			if s.Config.Hub {
-				url = fmt.Sprintf("%s/categories/%s_%d_d.html", s.base, s.Config.Slug, page)
+			if s.cfg.Hub {
+				url = fmt.Sprintf("%s/categories/%s_%d_d.html", s.base, s.cfg.Slug, page)
 			} else {
 				url = fmt.Sprintf("%s/categories/movies_%d_d.html", s.base, page)
 			}
@@ -146,7 +146,7 @@ func (s *Scraper) run(ctx context.Context, opts scraper.ListOpts, out chan<- scr
 				if total == 0 {
 					total = len(items)
 				}
-				scraper.Debugf(1, "%s: %d total scenes", s.Config.SiteID, total)
+				scraper.Debugf(1, "%s: %d total scenes", s.cfg.SiteID, total)
 				select {
 				case out <- scraper.Progress(total):
 				case <-ctx.Done():
@@ -156,7 +156,7 @@ func (s *Scraper) run(ctx context.Context, opts scraper.ListOpts, out chan<- scr
 
 			for _, item := range items {
 				if opts.KnownIDs[item.id] {
-					scraper.Debugf(1, "%s: hit known ID %s, stopping early", s.Config.SiteID, item.id)
+					scraper.Debugf(1, "%s: hit known ID %s, stopping early", s.cfg.SiteID, item.id)
 					select {
 					case out <- scraper.StoppedEarly():
 					case <-ctx.Done():
@@ -290,12 +290,12 @@ func (s *Scraper) fetchDetail(ctx context.Context, item listingItem, delay time.
 
 	scene := models.Scene{
 		ID:         item.id,
-		SiteID:     s.Config.SiteID,
+		SiteID:     s.cfg.SiteID,
 		StudioURL:  s.base + "/categories/movies.html",
 		Title:      item.title,
 		URL:        item.url,
 		Thumbnail:  item.thumb,
-		Studio:     s.Config.StudioName,
+		Studio:     s.cfg.StudioName,
 		Date:       item.date,
 		Performers: item.performers,
 		ScrapedAt:  time.Now().UTC(),

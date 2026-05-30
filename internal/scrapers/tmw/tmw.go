@@ -45,6 +45,6 @@ var sites = []tmwutil.SiteConfig{
 
 func init() {
 	for _, cfg := range sites {
-		scraper.Register(tmwutil.NewScraper(cfg))
+		scraper.Register(tmwutil.New(cfg))
 	}
 }

@@ -16,7 +16,7 @@ func TestLiveScrapeAll(t *testing.T) {
 			time.Sleep(500 * time.Millisecond)
 		}
 		t.Run(cfg.SiteID, func(t *testing.T) {
-			s := tmwutil.NewScraper(cfg)
+			s := tmwutil.New(cfg)
 			var url string
 			if cfg.Hub {
 				url = "https://teenmegaworld.net/categories/" + cfg.Slug + "_1_d.html"

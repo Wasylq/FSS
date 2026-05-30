@@ -24,29 +24,29 @@ type SiteConfig struct {
 }
 
 type Scraper struct {
-	Cfg     SiteConfig
+	cfg     SiteConfig
 	Client  *http.Client
 	Base    string
 	matchRe *regexp.Regexp
 }
 
-func NewScraper(cfg SiteConfig) *Scraper {
+func New(cfg SiteConfig) *Scraper {
 	return &Scraper{
-		Cfg:     cfg,
+		cfg:     cfg,
 		Client:  httpx.NewClient(30 * time.Second),
 		Base:    "https://" + cfg.Domain,
 		matchRe: regexp.MustCompile(`^https?://(?:www\.)?` + regexp.QuoteMeta(cfg.Domain) + `(?:/|$)`),
 	}
 }
 
-func (s *Scraper) ID() string { return s.Cfg.SiteID }
+func (s *Scraper) ID() string { return s.cfg.SiteID }
 func (s *Scraper) MatchesURL(u string) bool {
 	return s.matchRe.MatchString(u)
 }
 func (s *Scraper) Patterns() []string {
 	return []string{
-		s.Cfg.Domain,
-		s.Cfg.Domain + "/video/{slug}",
+		s.cfg.Domain,
+		s.cfg.Domain + "/video/{slug}",
 	}
 }
 
@@ -253,7 +253,7 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 
 	var entries []sceneEntry
 	for _, u := range urls {
-		slug := ExtractSlug(u.Loc, s.Cfg.Domain)
+		slug := ExtractSlug(u.Loc, s.cfg.Domain)
 		if slug == "" || u.Video.Title == "" {
 			continue
 		}
@@ -305,7 +305,7 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 	cancelled := false
 	for _, entry := range entries {
 		if opts.KnownIDs[entry.slug] {
-			scraper.Debugf(1, "%s: hit known ID, stopping early", s.Cfg.SiteID)
+			scraper.Debugf(1, "%s: hit known ID, stopping early", s.cfg.SiteID)
 			select {
 			case out <- scraper.StoppedEarly():
 			case <-ctx.Done():
@@ -350,7 +350,7 @@ func (s *Scraper) fetchScene(ctx context.Context, slug string, u sitemapURL, stu
 	now := time.Now().UTC()
 	return models.Scene{
 		ID:          slug,
-		SiteID:      s.Cfg.SiteID,
+		SiteID:      s.cfg.SiteID,
 		StudioURL:   studioURL,
 		URL:         sceneURL,
 		Title:       strings.TrimSpace(u.Video.Title),
@@ -360,7 +360,7 @@ func (s *Scraper) fetchScene(ctx context.Context, slug string, u sitemapURL, stu
 		Date:        date,
 		Performers:  detail.Performers,
 		Tags:        detail.Tags,
-		Studio:      s.Cfg.Studio,
+		Studio:      s.cfg.Studio,
 		ScrapedAt:   now,
 	}, nil
 }

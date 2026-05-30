@@ -13,7 +13,7 @@ func TestLiveScrapeAll(t *testing.T) {
 	for _, cfg := range sites {
 		t.Run(cfg.SiteID, func(t *testing.T) {
 			t.Parallel()
-			s := julesjordanutil.NewScraper(cfg)
+			s := julesjordanutil.New(cfg)
 			testutil.RunLiveScrape(t, s, "https://www."+cfg.Domain+"/trial/categories/movies.html", 2)
 		})
 	}

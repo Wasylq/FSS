@@ -41,21 +41,21 @@ type SiteConfig struct {
 type Scraper struct {
 	client *http.Client
 	base   string
-	Config SiteConfig
+	cfg    SiteConfig
 }
 
-func NewScraper(cfg SiteConfig) *Scraper {
+func New(cfg SiteConfig) *Scraper {
 	return &Scraper{
 		client: httpx.NewClient(30 * time.Second),
 		base:   "https://www." + cfg.Domain + "/trial",
-		Config: cfg,
+		cfg:    cfg,
 	}
 }
 
-func (s *Scraper) ID() string { return s.Config.SiteID }
+func (s *Scraper) ID() string { return s.cfg.SiteID }
 
 func (s *Scraper) Patterns() []string {
-	d := s.Config.Domain
+	d := s.cfg.Domain
 	return []string{
 		d + "/trial/",
 		d + "/trial/categories/movies.html",
@@ -65,7 +65,7 @@ func (s *Scraper) Patterns() []string {
 }
 
 func (s *Scraper) MatchesURL(u string) bool {
-	d := s.Config.Domain
+	d := s.cfg.Domain
 	return strings.Contains(u, "://"+d) || strings.Contains(u, "://www."+d)
 }
 
@@ -104,7 +104,7 @@ type detailData struct {
 func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOpts, out chan<- scraper.SceneResult) {
 	defer close(out)
 
-	scraper.WarnDelayBelow(s.Config.SiteID, opts.Delay, RecommendedDelay)
+	scraper.WarnDelayBelow(s.cfg.SiteID, opts.Delay, RecommendedDelay)
 	delay := opts.Delay
 
 	workers := opts.Workers
@@ -114,7 +114,7 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 
 	work := make(chan workItem)
 	var wg sync.WaitGroup
-	scraper.Debugf(1, "%s: fetching detail pages with %d workers", s.Config.SiteID, workers)
+	scraper.Debugf(1, "%s: fetching detail pages with %d workers", s.cfg.SiteID, workers)
 	for i := 0; i < workers; i++ {
 		wg.Add(1)
 		go func() {
@@ -142,10 +142,10 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 		defer close(work)
 		switch {
 		case strings.Contains(studioURL, "/models/"):
-			scraper.Debugf(1, "%s: detected model page", s.Config.SiteID)
+			scraper.Debugf(1, "%s: detected model page", s.cfg.SiteID)
 			s.enqueueModelPage(ctx, studioURL, opts, out, work)
 		case strings.Contains(studioURL, "/dvds/"):
-			scraper.Debugf(1, "%s: detected DVD listing", s.Config.SiteID)
+			scraper.Debugf(1, "%s: detected DVD listing", s.cfg.SiteID)
 			s.enqueueDVDPages(ctx, delay, opts, out, work)
 		default:
 			s.enqueueListingPages(ctx, delay, opts, out, work)
@@ -170,7 +170,7 @@ func (s *Scraper) enqueueListingPages(ctx context.Context, delay time.Duration, 
 			}
 		}
 
-		scraper.Debugf(1, "%s: fetching page %d", s.Config.SiteID, page)
+		scraper.Debugf(1, "%s: fetching page %d", s.cfg.SiteID, page)
 		pageURL := fmt.Sprintf("%s/categories/movies_%d_d.html", s.base, page)
 		body, err := s.fetchPage(ctx, pageURL)
 		if err != nil {
@@ -189,7 +189,7 @@ func (s *Scraper) enqueueListingPages(ctx context.Context, delay time.Duration, 
 		if page == 1 {
 			maxPage := s.extractMaxPage(body)
 			if maxPage > 0 {
-				scraper.Debugf(1, "%s: %d total scenes (estimated)", s.Config.SiteID, maxPage*len(items))
+				scraper.Debugf(1, "%s: %d total scenes (estimated)", s.cfg.SiteID, maxPage*len(items))
 				select {
 				case out <- scraper.Progress(maxPage * len(items)):
 				case <-ctx.Done():
@@ -200,7 +200,7 @@ func (s *Scraper) enqueueListingPages(ctx context.Context, delay time.Duration, 
 
 		for _, item := range items {
 			if opts.KnownIDs[item.slug] {
-				scraper.Debugf(1, "%s: hit known ID %s, stopping early", s.Config.SiteID, item.slug)
+				scraper.Debugf(1, "%s: hit known ID %s, stopping early", s.cfg.SiteID, item.slug)
 				select {
 				case out <- scraper.StoppedEarly():
 				case <-ctx.Done():
@@ -232,7 +232,7 @@ func (s *Scraper) enqueueModelPage(ctx context.Context, studioURL string, opts s
 	if len(items) == 0 {
 		return
 	}
-	scraper.Debugf(1, "%s: found %d scenes on model page", s.Config.SiteID, len(items))
+	scraper.Debugf(1, "%s: found %d scenes on model page", s.cfg.SiteID, len(items))
 
 	select {
 	case out <- scraper.Progress(len(items)):
@@ -242,7 +242,7 @@ func (s *Scraper) enqueueModelPage(ctx context.Context, studioURL string, opts s
 
 	for _, item := range items {
 		if opts.KnownIDs[item.slug] {
-			scraper.Debugf(1, "%s: hit known ID %s, stopping early", s.Config.SiteID, item.slug)
+			scraper.Debugf(1, "%s: hit known ID %s, stopping early", s.cfg.SiteID, item.slug)
 			select {
 			case out <- scraper.StoppedEarly():
 			case <-ctx.Done():
@@ -263,7 +263,7 @@ func (s *Scraper) enqueueDVDPages(ctx context.Context, delay time.Duration, opts
 	seen := map[string]bool{}
 
 	for page := 1; ; page++ {
-		scraper.Debugf(1, "%s: fetching DVD page %d", s.Config.SiteID, page)
+		scraper.Debugf(1, "%s: fetching DVD page %d", s.cfg.SiteID, page)
 		if ctx.Err() != nil {
 			return
 		}
@@ -340,7 +340,7 @@ func (s *Scraper) enqueueDVDPages(ctx context.Context, delay time.Duration, opts
 				seen[slug] = true
 
 				if opts.KnownIDs[slug] {
-					scraper.Debugf(1, "%s: hit known ID %s, stopping early", s.Config.SiteID, slug)
+					scraper.Debugf(1, "%s: hit known ID %s, stopping early", s.cfg.SiteID, slug)
 					select {
 					case out <- scraper.StoppedEarly():
 					case <-ctx.Done():
@@ -370,7 +370,7 @@ var (
 // --- template dispatch ---
 
 func (s *Scraper) parseListingCards(body []byte) []workItem {
-	switch s.Config.Template {
+	switch s.cfg.Template {
 	case TemplateClassic:
 		return parseListingClassic(body, s.base)
 	case TemplateModern:
@@ -381,7 +381,7 @@ func (s *Scraper) parseListingCards(body []byte) []workItem {
 }
 
 func (s *Scraper) parseDetail(body []byte) detailData {
-	switch s.Config.Template {
+	switch s.cfg.Template {
 	case TemplateClassic:
 		return parseDetailClassic(body)
 	case TemplateModern:
@@ -392,7 +392,7 @@ func (s *Scraper) parseDetail(body []byte) detailData {
 }
 
 func (s *Scraper) extractMaxPage(body []byte) int {
-	switch s.Config.Template {
+	switch s.cfg.Template {
 	case TemplateClassic:
 		return extractMaxPageClassic(body)
 	case TemplateModern:
@@ -403,7 +403,7 @@ func (s *Scraper) extractMaxPage(body []byte) int {
 }
 
 func (s *Scraper) parseDVDListing(body []byte) []dvdEntry {
-	switch s.Config.Template {
+	switch s.cfg.Template {
 	case TemplateClassic, TemplateModern:
 		return parseDVDListingGeneric(body)
 	default:
@@ -424,14 +424,14 @@ func (s *Scraper) fetchDetail(ctx context.Context, item workItem, studioURL stri
 
 	scene := models.Scene{
 		ID:         item.slug,
-		SiteID:     s.Config.SiteID,
+		SiteID:     s.cfg.SiteID,
 		StudioURL:  studioURL,
 		URL:        item.url,
 		Title:      item.title,
 		Date:       item.date,
 		Performers: item.performers,
 		Thumbnail:  item.thumb,
-		Studio:     s.Config.StudioName,
+		Studio:     s.cfg.StudioName,
 		Series:     item.series,
 		ScrapedAt:  time.Now().UTC(),
 	}

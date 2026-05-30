@@ -250,7 +250,7 @@ func TestListScenes(t *testing.T) {
 	defer ts.Close()
 
 	s := &Scraper{
-		Cfg:    SiteConfig{SiteID: "test", Domain: domain, Studio: "Test"},
+		cfg:    SiteConfig{SiteID: "test", Domain: domain, Studio: "Test"},
 		Client: ts.Client(),
 		Base:   ts.URL,
 	}
@@ -288,7 +288,7 @@ func TestKnownIDsStopsEarly(t *testing.T) {
 	defer ts.Close()
 
 	s := &Scraper{
-		Cfg:    SiteConfig{SiteID: "test", Domain: domain, Studio: "Test"},
+		cfg:    SiteConfig{SiteID: "test", Domain: domain, Studio: "Test"},
 		Client: ts.Client(),
 		Base:   ts.URL,
 	}
@@ -310,11 +310,11 @@ func TestKnownIDsStopsEarly(t *testing.T) {
 }
 
 func TestScraperInterface(t *testing.T) {
-	var _ scraper.StudioScraper = NewScraper(SiteConfig{SiteID: "test", Domain: "test.com", Studio: "Test"})
+	var _ scraper.StudioScraper = New(SiteConfig{SiteID: "test", Domain: "test.com", Studio: "Test"})
 }
 
 func TestMatchesURL(t *testing.T) {
-	s := NewScraper(SiteConfig{SiteID: "czechcasting", Domain: "czechcasting.com", Studio: "Czech Casting"})
+	s := New(SiteConfig{SiteID: "czechcasting", Domain: "czechcasting.com", Studio: "Czech Casting"})
 	cases := []struct {
 		url  string
 		want bool
@@ -336,7 +336,7 @@ func TestSceneDate(t *testing.T) {
 	defer ts.Close()
 
 	s := &Scraper{
-		Cfg:    SiteConfig{SiteID: "test", Domain: domain, Studio: "Test"},
+		cfg:    SiteConfig{SiteID: "test", Domain: domain, Studio: "Test"},
 		Client: ts.Client(),
 		Base:   ts.URL,
 	}

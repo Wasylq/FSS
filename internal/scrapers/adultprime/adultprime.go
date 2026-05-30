@@ -107,6 +107,6 @@ var sites = []adultprimeutil.SiteConfig{
 
 func init() {
 	for _, cfg := range sites {
-		scraper.Register(adultprimeutil.NewScraper(cfg))
+		scraper.Register(adultprimeutil.New(cfg))
 	}
 }

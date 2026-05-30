@@ -16,7 +16,7 @@ var ayloConfig = ayloutil.SiteConfig{
 }
 
 func init() {
-	scraper.Register(&spicevidsScraper{aylo: ayloutil.NewScraper(ayloConfig)})
+	scraper.Register(&spicevidsScraper{aylo: ayloutil.New(ayloConfig)})
 }
 
 type spicevidsScraper struct {

@@ -49,7 +49,7 @@ func newSiteScraper(cfg fpnutil.SiteConfig) *siteScraper {
 	return &siteScraper{
 		config:  cfg,
 		matchRe: re,
-		inner:   fpnutil.NewScraper(cfg),
+		inner:   fpnutil.New(cfg),
 	}
 }
 

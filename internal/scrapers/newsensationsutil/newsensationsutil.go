@@ -32,7 +32,7 @@ type SiteConfig struct {
 }
 
 type Scraper struct {
-	config  SiteConfig
+	cfg     SiteConfig
 	client  *http.Client
 	matchRe *regexp.Regexp
 	modelRe *regexp.Regexp
@@ -48,22 +48,22 @@ func New(cfg SiteConfig) *Scraper {
 	modelRe := regexp.MustCompile(`/` + regexp.QuoteMeta(cfg.TourPrefix) + `/models/`)
 
 	return &Scraper{
-		config:  cfg,
+		cfg:     cfg,
 		client:  httpx.NewClient(30 * time.Second),
 		matchRe: re,
 		modelRe: modelRe,
 	}
 }
 
-func (s *Scraper) ID() string { return s.config.SiteID }
+func (s *Scraper) ID() string { return s.cfg.SiteID }
 
 func (s *Scraper) Patterns() []string {
-	tp := s.config.TourPrefix
+	tp := s.cfg.TourPrefix
 	return []string{
-		s.config.Domain,
-		s.config.Domain + "/" + tp + "/categories/movies_{page}_d.html",
-		s.config.Domain + "/" + tp + "/models/{name}.html",
-		s.config.Domain + "/" + tp + "/categories/{category}_{page}_d.html",
+		s.cfg.Domain,
+		s.cfg.Domain + "/" + tp + "/categories/movies_{page}_d.html",
+		s.cfg.Domain + "/" + tp + "/models/{name}.html",
+		s.cfg.Domain + "/" + tp + "/categories/{category}_{page}_d.html",
 	}
 }
 
@@ -87,7 +87,7 @@ type workItem struct {
 func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOpts, out chan<- scraper.SceneResult) {
 	defer close(out)
 
-	scraper.WarnDelayBelow(s.config.SiteID, opts.Delay, RecommendedDelay)
+	scraper.WarnDelayBelow(s.cfg.SiteID, opts.Delay, RecommendedDelay)
 	delay := opts.Delay
 
 	workers := opts.Workers
@@ -97,7 +97,7 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 
 	work := make(chan workItem)
 	var wg sync.WaitGroup
-	scraper.Debugf(1, "%s: fetching detail pages with %d workers", s.config.SiteID, workers)
+	scraper.Debugf(1, "%s: fetching detail pages with %d workers", s.cfg.SiteID, workers)
 	for i := 0; i < workers; i++ {
 		wg.Add(1)
 		go func() {
@@ -131,13 +131,13 @@ func (s *Scraper) produceListing(ctx context.Context, studioURL string, opts scr
 	delay := opts.Delay
 
 	if s.modelRe.MatchString(studioURL) {
-		scraper.Debugf(1, "%s: detected model page", s.config.SiteID)
+		scraper.Debugf(1, "%s: detected model page", s.cfg.SiteID)
 		s.scrapeListingPage(ctx, studioURL, opts, out, work)
 		return
 	}
 
 	if m := catRe.FindStringSubmatch(studioURL); m != nil {
-		scraper.Debugf(1, "%s: detected category filter: %s", s.config.SiteID, m[1])
+		scraper.Debugf(1, "%s: detected category filter: %s", s.cfg.SiteID, m[1])
 		s.paginateCategory(ctx, m[1], m[3], opts, out, work, delay)
 		return
 	}
@@ -159,10 +159,10 @@ func (s *Scraper) paginateCategory(ctx context.Context, category, sort string, o
 				return
 			}
 		}
-		scraper.Debugf(1, "%s: fetching page %d", s.config.SiteID, page)
+		scraper.Debugf(1, "%s: fetching page %d", s.cfg.SiteID, page)
 
-		scraper.Debugf(1, "%s: fetching page %d", s.config.SiteID, page)
-		pageURL := fmt.Sprintf("%s/%s/categories/%s_%d_%s.html", s.config.SiteBase, s.config.TourPrefix, category, page, sort)
+		scraper.Debugf(1, "%s: fetching page %d", s.cfg.SiteID, page)
+		pageURL := fmt.Sprintf("%s/%s/categories/%s_%d_%s.html", s.cfg.SiteBase, s.cfg.TourPrefix, category, page, sort)
 		items, err := s.parseListingPage(ctx, pageURL)
 		if err != nil {
 			select {
@@ -177,7 +177,7 @@ func (s *Scraper) paginateCategory(ctx context.Context, category, sort string, o
 		}
 
 		if !totalSent {
-			scraper.Debugf(1, "%s: %d total scenes", s.config.SiteID, 0)
+			scraper.Debugf(1, "%s: %d total scenes", s.cfg.SiteID, 0)
 			select {
 			case out <- scraper.Progress(0):
 			case <-ctx.Done():
@@ -188,7 +188,7 @@ func (s *Scraper) paginateCategory(ctx context.Context, category, sort string, o
 
 		for _, item := range items {
 			if opts.KnownIDs[item.id] {
-				scraper.Debugf(1, "%s: hit known ID, stopping early", s.config.SiteID)
+				scraper.Debugf(1, "%s: hit known ID, stopping early", s.cfg.SiteID)
 				select {
 				case out <- scraper.StoppedEarly():
 				case <-ctx.Done():
@@ -224,7 +224,7 @@ func (s *Scraper) scrapeListingPage(ctx context.Context, pageURL string, opts sc
 
 	for _, item := range items {
 		if opts.KnownIDs[item.id] {
-			scraper.Debugf(1, "%s: hit known ID, stopping early", s.config.SiteID)
+			scraper.Debugf(1, "%s: hit known ID, stopping early", s.cfg.SiteID)
 			select {
 			case out <- scraper.StoppedEarly():
 			case <-ctx.Done():
@@ -383,7 +383,7 @@ func (s *Scraper) fetchDetail(ctx context.Context, item workItem, studioURL stri
 	now := time.Now().UTC()
 	return models.Scene{
 		ID:          item.id,
-		SiteID:      s.config.SiteID,
+		SiteID:      s.cfg.SiteID,
 		StudioURL:   studioURL,
 		Title:       item.title,
 		URL:         item.url,
@@ -392,7 +392,7 @@ func (s *Scraper) fetchDetail(ctx context.Context, item workItem, studioURL stri
 		Thumbnail:   item.thumb,
 		Preview:     item.preview,
 		Performers:  item.performers,
-		Studio:      s.config.StudioName,
+		Studio:      s.cfg.StudioName,
 		Tags:        tags,
 		Series:      series,
 		Duration:    duration,
@@ -410,11 +410,11 @@ func (s *Scraper) extractTagsAndSeries(page string) ([]string, string) {
 		"4K": true, "Updates": true, "Movies": true, "Photos": true,
 		"Interactive Toys": true,
 	}
-	skip[s.config.StudioName] = true
-	skip[s.config.Domain] = true
-	domainUpper := strings.ToUpper(s.config.Domain[:1]) + s.config.Domain[1:]
+	skip[s.cfg.StudioName] = true
+	skip[s.cfg.Domain] = true
+	domainUpper := strings.ToUpper(s.cfg.Domain[:1]) + s.cfg.Domain[1:]
 	skip[domainUpper] = true
-	if s.config.Domain != "newsensations.com" {
+	if s.cfg.Domain != "newsensations.com" {
 		skip["New Sensations"] = true
 		skip["NewSensations.com"] = true
 	}
@@ -451,5 +451,5 @@ func (s *Scraper) absoluteURL(href string) string {
 	if strings.HasPrefix(href, "http") {
 		return href
 	}
-	return s.config.SiteBase + "/" + strings.TrimPrefix(href, "/")
+	return s.cfg.SiteBase + "/" + strings.TrimPrefix(href, "/")
 }

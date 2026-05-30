@@ -286,7 +286,7 @@ func TestListScenes(t *testing.T) {
 	defer ts.Close()
 
 	s := &Scraper{
-		Config: SiteConfig{SiteID: "test", SiteBase: ts.URL, StudioName: "Test"},
+		cfg:    SiteConfig{SiteID: "test", SiteBase: ts.URL, StudioName: "Test"},
 		Client: ts.Client(),
 	}
 	ch, err := s.ListScenes(context.Background(), ts.URL+"/videos", scraper.ListOpts{})
@@ -334,7 +334,7 @@ func TestListScenesPagination(t *testing.T) {
 	defer ts.Close()
 
 	s := &Scraper{
-		Config: SiteConfig{SiteID: "test", SiteBase: ts.URL, StudioName: "Test"},
+		cfg:    SiteConfig{SiteID: "test", SiteBase: ts.URL, StudioName: "Test"},
 		Client: ts.Client(),
 	}
 	ch, err := s.ListScenes(context.Background(), ts.URL+"/videos", scraper.ListOpts{})
@@ -361,7 +361,7 @@ func TestListScenesKnownIDs(t *testing.T) {
 	defer ts.Close()
 
 	s := &Scraper{
-		Config: SiteConfig{SiteID: "test", SiteBase: ts.URL, StudioName: "Test"},
+		cfg:    SiteConfig{SiteID: "test", SiteBase: ts.URL, StudioName: "Test"},
 		Client: ts.Client(),
 	}
 	ch, err := s.ListScenes(context.Background(), ts.URL+"/videos", scraper.ListOpts{

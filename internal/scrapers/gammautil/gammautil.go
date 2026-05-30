@@ -36,18 +36,18 @@ type SiteConfig struct {
 
 type Scraper struct {
 	Client      *http.Client
-	Config      SiteConfig
+	cfg         SiteConfig
 	AlgoliaHost string
 }
 
-func NewScraper(cfg SiteConfig) *Scraper {
+func New(cfg SiteConfig) *Scraper {
 	host := AlgoliaHost
 	if cfg.AlgoliaHost != "" {
 		host = cfg.AlgoliaHost
 	}
 	return &Scraper{
 		Client:      httpx.NewClient(30 * time.Second),
-		Config:      cfg,
+		cfg:         cfg,
 		AlgoliaHost: host,
 	}
 }
@@ -57,10 +57,10 @@ var actorURLRe = regexp.MustCompile(`/pornstar/view/[^/]+/(\d+)`)
 var serieURLRe = regexp.MustCompile(`/en/serie/(\d+)/`)
 
 func (s *Scraper) refererBase() string {
-	if s.Config.RefererBase != "" {
-		return s.Config.RefererBase
+	if s.cfg.RefererBase != "" {
+		return s.cfg.RefererBase
 	}
-	return s.Config.SiteBase
+	return s.cfg.SiteBase
 }
 
 func (s *Scraper) FetchAPIKey(ctx context.Context) (string, error) {
@@ -116,7 +116,7 @@ func (s *Scraper) Run(ctx context.Context, studioURL string, opts scraper.ListOp
 				return
 			}
 		}
-		scraper.Debugf(1, "%s: fetching page %d", s.Config.SiteID, page)
+		scraper.Debugf(1, "%s: fetching page %d", s.cfg.SiteID, page)
 
 		hits, total, err := s.FetchPage(ctx, apiKey, page, extraFilter)
 		if err != nil {
@@ -132,7 +132,7 @@ func (s *Scraper) Run(ctx context.Context, studioURL string, opts scraper.ListOp
 		}
 
 		if page == 0 && total > 0 {
-			scraper.Debugf(1, "%s: %d total scenes", s.Config.SiteID, total)
+			scraper.Debugf(1, "%s: %d total scenes", s.cfg.SiteID, total)
 			select {
 			case out <- scraper.Progress(total):
 			case <-ctx.Done():
@@ -144,7 +144,7 @@ func (s *Scraper) Run(ctx context.Context, studioURL string, opts scraper.ListOp
 		for _, hit := range hits {
 			id := strconv.Itoa(hit.ClipID)
 			if opts.KnownIDs[id] {
-				scraper.Debugf(1, "%s: hit known ID, stopping early", s.Config.SiteID)
+				scraper.Debugf(1, "%s: hit known ID, stopping early", s.cfg.SiteID)
 				select {
 				case out <- scraper.StoppedEarly():
 				case <-ctx.Done():
@@ -152,7 +152,7 @@ func (s *Scraper) Run(ctx context.Context, studioURL string, opts scraper.ListOp
 				return
 			}
 
-			scene := ToScene(s.Config, studioURL, hit, now)
+			scene := ToScene(s.cfg, studioURL, hit, now)
 			select {
 			case out <- scraper.Scene(scene):
 			case <-ctx.Done():
@@ -168,8 +168,8 @@ func (s *Scraper) Run(ctx context.Context, studioURL string, opts scraper.ListOp
 
 func (s *Scraper) FetchPage(ctx context.Context, apiKey string, page int, extraFilters ...string) ([]AlgoliaHit, int, error) {
 	var parts []string
-	if s.Config.SiteName != "" {
-		parts = append(parts, fmt.Sprintf("availableOnSite:%s AND upcoming:0", s.Config.SiteName))
+	if s.cfg.SiteName != "" {
+		parts = append(parts, fmt.Sprintf("availableOnSite:%s AND upcoming:0", s.cfg.SiteName))
 	} else {
 		parts = append(parts, "upcoming:0")
 	}

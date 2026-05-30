@@ -27,11 +27,11 @@ type SiteConfig struct {
 
 type Scraper struct {
 	Client *http.Client
-	Config SiteConfig
+	cfg    SiteConfig
 }
 
-func NewScraper(cfg SiteConfig) *Scraper {
-	return &Scraper{Client: httpx.NewClient(30 * time.Second), Config: cfg}
+func New(cfg SiteConfig) *Scraper {
+	return &Scraper{Client: httpx.NewClient(30 * time.Second), cfg: cfg}
 }
 
 func (s *Scraper) Run(ctx context.Context, studioURL string, opts scraper.ListOpts, out chan<- scraper.SceneResult) {
@@ -88,9 +88,9 @@ func (s *Scraper) Run(ctx context.Context, studioURL string, opts scraper.ListOp
 					return
 				}
 			}
-			scraper.Debugf(1, "%s: fetching page %d", s.Config.SiteID, page)
+			scraper.Debugf(1, "%s: fetching page %d", s.cfg.SiteID, page)
 
-			url := listingURL(s.Config.SiteBase, kind, value, page)
+			url := listingURL(s.cfg.SiteBase, kind, value, page)
 			body, err := s.fetchPage(ctx, url)
 			if err != nil {
 				select {
@@ -114,7 +114,7 @@ func (s *Scraper) Run(ctx context.Context, studioURL string, opts scraper.ListOp
 					if total == 0 {
 						total = len(scenes)
 					}
-					scraper.Debugf(1, "%s: %d total scenes", s.Config.SiteID, total)
+					scraper.Debugf(1, "%s: %d total scenes", s.cfg.SiteID, total)
 					select {
 					case out <- scraper.Progress(total):
 					case <-ctx.Done():
@@ -129,7 +129,7 @@ func (s *Scraper) Run(ctx context.Context, studioURL string, opts scraper.ListOp
 
 			for _, sc := range scenes {
 				if opts.KnownIDs[sc.ID] {
-					scraper.Debugf(1, "%s: hit known ID, stopping early", s.Config.SiteID)
+					scraper.Debugf(1, "%s: hit known ID, stopping early", s.cfg.SiteID)
 					select {
 					case out <- scraper.StoppedEarly():
 					case <-ctx.Done():
@@ -301,7 +301,7 @@ func (s *Scraper) fetchDetail(ctx context.Context, ls listingScene, delay time.D
 		}
 	}
 
-	url := fmt.Sprintf("%s/trailers/%s/", s.Config.SiteBase, ls.Slug)
+	url := fmt.Sprintf("%s/trailers/%s/", s.cfg.SiteBase, ls.Slug)
 	body, err := s.fetchPage(ctx, url)
 	if err != nil {
 		return models.Scene{}, fmt.Errorf("detail %s: %w", ls.ID, err)
@@ -337,8 +337,8 @@ func (s *Scraper) fetchDetail(ctx context.Context, ls listingScene, delay time.D
 
 	return models.Scene{
 		ID:          ls.ID,
-		SiteID:      s.Config.SiteID,
-		StudioURL:   s.Config.SiteBase,
+		SiteID:      s.cfg.SiteID,
+		StudioURL:   s.cfg.SiteBase,
 		Title:       ls.Title,
 		URL:         url,
 		Date:        date,
@@ -347,7 +347,7 @@ func (s *Scraper) fetchDetail(ctx context.Context, ls listingScene, delay time.D
 		Performers:  performers,
 		Tags:        tags,
 		Thumbnail:   ls.Thumb,
-		Studio:      s.Config.StudioName,
+		Studio:      s.cfg.StudioName,
 		ScrapedAt:   time.Now().UTC(),
 	}, nil
 }

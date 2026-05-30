@@ -274,11 +274,9 @@ func TestListScenes(t *testing.T) {
 	ts := newTestServer([]int{3, 2, 1})
 	defer ts.Close()
 
-	s := &ftvutil.Scraper{
-		Cfg:    ftvutil.SiteConfig{SiteID: "ftvmilfs", Domain: "ftvmilfs.com", Studio: "FTV MILFs", TitleSite: "FTVMilfs.com"},
-		Client: ts.Client(),
-		Base:   ts.URL,
-	}
+	s := ftvutil.New(ftvutil.SiteConfig{SiteID: "ftvmilfs", Domain: "ftvmilfs.com", Studio: "FTV MILFs", TitleSite: "FTVMilfs.com"})
+	s.Client = ts.Client()
+	s.Base = ts.URL
 	ch, err := s.ListScenes(context.Background(), ts.URL+"/updates.html", scraper.ListOpts{})
 	if err != nil {
 		t.Fatal(err)
@@ -294,11 +292,9 @@ func TestListScenesKnownIDs(t *testing.T) {
 	ts := newTestServer([]int{5, 4, 3, 2, 1})
 	defer ts.Close()
 
-	s := &ftvutil.Scraper{
-		Cfg:    ftvutil.SiteConfig{SiteID: "ftvmilfs", Domain: "ftvmilfs.com", Studio: "FTV MILFs", TitleSite: "FTVMilfs.com"},
-		Client: ts.Client(),
-		Base:   ts.URL,
-	}
+	s := ftvutil.New(ftvutil.SiteConfig{SiteID: "ftvmilfs", Domain: "ftvmilfs.com", Studio: "FTV MILFs", TitleSite: "FTVMilfs.com"})
+	s.Client = ts.Client()
+	s.Base = ts.URL
 	ch, err := s.ListScenes(context.Background(), ts.URL+"/updates.html", scraper.ListOpts{
 		KnownIDs: map[string]bool{"3": true},
 	})
@@ -319,11 +315,9 @@ func TestListScenesEnrichment(t *testing.T) {
 	ts := newTestServer([]int{3, 2, 1})
 	defer ts.Close()
 
-	s := &ftvutil.Scraper{
-		Cfg:    ftvutil.SiteConfig{SiteID: "ftvmilfs", Domain: "ftvmilfs.com", Studio: "FTV MILFs", TitleSite: "FTVMilfs.com"},
-		Client: ts.Client(),
-		Base:   ts.URL,
-	}
+	s := ftvutil.New(ftvutil.SiteConfig{SiteID: "ftvmilfs", Domain: "ftvmilfs.com", Studio: "FTV MILFs", TitleSite: "FTVMilfs.com"})
+	s.Client = ts.Client()
+	s.Base = ts.URL
 	ch, err := s.ListScenes(context.Background(), ts.URL+"/updates.html", scraper.ListOpts{})
 	if err != nil {
 		t.Fatal(err)

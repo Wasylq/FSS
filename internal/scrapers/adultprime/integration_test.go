@@ -13,7 +13,7 @@ func TestLiveScrapeAll(t *testing.T) {
 	for _, cfg := range sites {
 		t.Run(cfg.SiteID, func(t *testing.T) {
 			t.Parallel()
-			s := adultprimeutil.NewScraper(cfg)
+			s := adultprimeutil.New(cfg)
 			testutil.RunLiveScrape(t, s, "https://adultprime.com/studios/studio/"+cfg.Slug, 2)
 		})
 	}

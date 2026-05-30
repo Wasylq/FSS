@@ -94,7 +94,7 @@ func newTestScraper(ts *httptest.Server) *Scraper {
 	s := &Scraper{
 		client: ts.Client(),
 		base:   ts.URL,
-		Config: SiteConfig{
+		cfg: SiteConfig{
 			SiteID:     "test-studio",
 			Slug:       "TestStudio",
 			StudioName: "Test Studio",
@@ -300,7 +300,7 @@ func TestDetailParsing(t *testing.T) {
 }
 
 func TestMatchesURL(t *testing.T) {
-	s := NewScraper(SiteConfig{
+	s := New(SiteConfig{
 		SiteID:     "test-studio",
 		Slug:       "Clubsweethearts",
 		StudioName: "Club SweetHearts",

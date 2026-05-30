@@ -122,7 +122,7 @@ func newScraper(cfg scoregrouputil.SiteConfig) *siteScraper {
 	escaped := regexp.QuoteMeta(domain)
 	re := regexp.MustCompile(`^https?://(?:www\.)?` + escaped + `(?:/|$)`)
 	return &siteScraper{
-		sg:      scoregrouputil.NewScraper(cfg),
+		sg:      scoregrouputil.New(cfg),
 		config:  cfg,
 		matchRe: re,
 	}

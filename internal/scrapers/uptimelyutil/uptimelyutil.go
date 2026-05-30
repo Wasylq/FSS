@@ -27,20 +27,20 @@ type SiteConfig struct {
 }
 
 type Scraper struct {
-	Cfg    SiteConfig
+	cfg    SiteConfig
 	Client *http.Client
 }
 
 func New(cfg SiteConfig) *Scraper {
 	return &Scraper{
-		Cfg:    cfg,
+		cfg:    cfg,
 		Client: httpx.NewClient(30 * time.Second),
 	}
 }
 
-func (s *Scraper) ID() string               { return s.Cfg.ID }
-func (s *Scraper) Patterns() []string       { return s.Cfg.Patterns }
-func (s *Scraper) MatchesURL(u string) bool { return s.Cfg.MatchRe.MatchString(u) }
+func (s *Scraper) ID() string               { return s.cfg.ID }
+func (s *Scraper) Patterns() []string       { return s.cfg.Patterns }
+func (s *Scraper) MatchesURL(u string) bool { return s.cfg.MatchRe.MatchString(u) }
 
 func (s *Scraper) ListScenes(ctx context.Context, studioURL string, opts scraper.ListOpts) (<-chan scraper.SceneResult, error) {
 	out := make(chan scraper.SceneResult)
@@ -60,13 +60,13 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 
 	work := make(chan listingItem)
 	var wg sync.WaitGroup
-	scraper.Debugf(1, "%s: fetching detail pages with %d workers", s.Cfg.ID, workers)
+	scraper.Debugf(1, "%s: fetching detail pages with %d workers", s.cfg.ID, workers)
 	for i := 0; i < workers; i++ {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
 			for item := range work {
-				detailURL := buildDetailURL(studioURL, item.code, s.Cfg.Domain)
+				detailURL := buildDetailURL(studioURL, item.code, s.cfg.Domain)
 				scene, err := s.fetchDetail(ctx, studioURL, item, detailURL, opts.Delay)
 				if err != nil {
 					select {
@@ -100,7 +100,7 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 				}
 			}
 
-			scraper.Debugf(1, "%s: fetching page %d", s.Cfg.ID, page)
+			scraper.Debugf(1, "%s: fetching page %d", s.cfg.ID, page)
 			pageURL := buildPageURL(baseURL, page)
 			body, err := s.fetchPage(ctx, pageURL)
 			if err != nil {
@@ -121,7 +121,7 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 				if total <= 0 {
 					total = len(items)
 				}
-				scraper.Debugf(1, "%s: %d total scenes", s.Cfg.ID, total)
+				scraper.Debugf(1, "%s: %d total scenes", s.cfg.ID, total)
 				select {
 				case out <- scraper.Progress(total):
 				case <-ctx.Done():
@@ -132,7 +132,7 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 			newItems := 0
 			for _, item := range items {
 				if opts.KnownIDs[item.code] {
-					scraper.Debugf(1, "%s: hit known ID %s, stopping early", s.Cfg.ID, item.code)
+					scraper.Debugf(1, "%s: hit known ID %s, stopping early", s.cfg.ID, item.code)
 					select {
 					case out <- scraper.StoppedEarly():
 					case <-ctx.Done():
@@ -267,7 +267,7 @@ func (s *Scraper) fetchDetail(ctx context.Context, studioURL string, item listin
 		return models.Scene{}, fmt.Errorf("detail %s: %w", item.code, err)
 	}
 
-	return parseDetail(body, s.Cfg.ID, s.Cfg.Studio, studioURL, item, detailURL), nil
+	return parseDetail(body, s.cfg.ID, s.cfg.Studio, studioURL, item, detailURL), nil
 }
 
 func parseDetail(body []byte, siteID, studio, studioURL string, item listingItem, detailURL string) models.Scene {

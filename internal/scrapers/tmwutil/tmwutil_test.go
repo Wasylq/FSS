@@ -106,7 +106,7 @@ func newTestScraper(ts *httptest.Server) *Scraper {
 	return &Scraper{
 		client: ts.Client(),
 		base:   ts.URL,
-		Config: SiteConfig{
+		cfg: SiteConfig{
 			SiteID:     "tmw-test-studio",
 			Slug:       "teststudio",
 			Domain:     "teststudio.com",
@@ -359,7 +359,7 @@ func TestListScenesHub(t *testing.T) {
 	s := &Scraper{
 		client: ts.Client(),
 		base:   ts.URL,
-		Config: SiteConfig{
+		cfg: SiteConfig{
 			SiteID:     "tmw-hubstudio",
 			Slug:       "hubstudio",
 			Domain:     "hubstudio.com",
@@ -390,7 +390,7 @@ func TestListScenesHub(t *testing.T) {
 }
 
 func TestMatchesURL(t *testing.T) {
-	s := NewScraper(SiteConfig{
+	s := New(SiteConfig{
 		SiteID:     "tmw-anal-angels",
 		Slug:       "anal-angels",
 		Domain:     "anal-angels.com",

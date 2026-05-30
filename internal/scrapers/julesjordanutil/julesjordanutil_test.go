@@ -394,7 +394,7 @@ func newTestScraper(ts *httptest.Server) *Scraper {
 	return &Scraper{
 		client: ts.Client(),
 		base:   ts.URL,
-		Config: SiteConfig{SiteID: "test-jj", Domain: "test.local", StudioName: "Test Studio", Template: TemplateJJ},
+		cfg:    SiteConfig{SiteID: "test-jj", Domain: "test.local", StudioName: "Test Studio", Template: TemplateJJ},
 	}
 }
 
@@ -484,7 +484,7 @@ func TestListScenesDVDMode(t *testing.T) {
 }
 
 func TestMatchesURL(t *testing.T) {
-	s := NewScraper(SiteConfig{SiteID: "julesjordan", Domain: "julesjordan.com", StudioName: "Jules Jordan"})
+	s := New(SiteConfig{SiteID: "julesjordan", Domain: "julesjordan.com", StudioName: "Jules Jordan"})
 	cases := []struct {
 		url  string
 		want bool

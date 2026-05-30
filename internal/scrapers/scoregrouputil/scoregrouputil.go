@@ -27,11 +27,11 @@ type SiteConfig struct {
 
 type Scraper struct {
 	Client *http.Client
-	Config SiteConfig
+	cfg    SiteConfig
 }
 
-func NewScraper(cfg SiteConfig) *Scraper {
-	return &Scraper{Client: httpx.NewClient(30 * time.Second), Config: cfg}
+func New(cfg SiteConfig) *Scraper {
+	return &Scraper{Client: httpx.NewClient(30 * time.Second), cfg: cfg}
 }
 
 func (s *Scraper) Run(ctx context.Context, studioURL string, opts scraper.ListOpts, out chan<- scraper.SceneResult) {
@@ -80,10 +80,10 @@ func (s *Scraper) Run(ctx context.Context, studioURL string, opts scraper.ListOp
 		for page := 1; ; page++ {
 			var url string
 			if singlePage {
-				scraper.Debugf(1, "%s: fetching page %d", s.Config.SiteID, page)
+				scraper.Debugf(1, "%s: fetching page %d", s.cfg.SiteID, page)
 				url = stripNATS(studioURL)
 			} else {
-				url = fmt.Sprintf("%s%s?page=%d", s.Config.SiteBase, s.Config.VideosPath, page)
+				url = fmt.Sprintf("%s%s?page=%d", s.cfg.SiteBase, s.cfg.VideosPath, page)
 			}
 
 			body, err := s.fetchPage(ctx, url)
@@ -95,7 +95,7 @@ func (s *Scraper) Run(ctx context.Context, studioURL string, opts scraper.ListOp
 				return
 			}
 
-			scenes := parseListingPage(body, s.Config.SiteBase)
+			scenes := parseListingPage(body, s.cfg.SiteBase)
 			if page == 1 {
 				if singlePage {
 					select {
@@ -106,7 +106,7 @@ func (s *Scraper) Run(ctx context.Context, studioURL string, opts scraper.ListOp
 				} else {
 					totalPages := extractMaxPage(body)
 					total := len(scenes) * totalPages
-					scraper.Debugf(1, "%s: %d total scenes", s.Config.SiteID, total)
+					scraper.Debugf(1, "%s: %d total scenes", s.cfg.SiteID, total)
 					select {
 					case out <- scraper.Progress(total):
 					case <-ctx.Done():
@@ -121,7 +121,7 @@ func (s *Scraper) Run(ctx context.Context, studioURL string, opts scraper.ListOp
 
 			for _, sc := range scenes {
 				if opts.KnownIDs[sc.id] {
-					scraper.Debugf(1, "%s: hit known ID, stopping early", s.Config.SiteID)
+					scraper.Debugf(1, "%s: hit known ID, stopping early", s.cfg.SiteID)
 					select {
 					case out <- scraper.StoppedEarly():
 					case <-ctx.Done():
@@ -153,7 +153,7 @@ func (s *Scraper) Run(ctx context.Context, studioURL string, opts scraper.ListOp
 }
 
 func (s *Scraper) isModelURL(u string) bool {
-	if s.Config.ModelsPath != "" && strings.Contains(u, s.Config.ModelsPath) {
+	if s.cfg.ModelsPath != "" && strings.Contains(u, s.cfg.ModelsPath) {
 		return true
 	}
 	return false
@@ -339,8 +339,8 @@ func (s *Scraper) fetchDetail(ctx context.Context, ls listingScene, delay time.D
 
 	return models.Scene{
 		ID:          ls.id,
-		SiteID:      s.Config.SiteID,
-		StudioURL:   s.Config.SiteBase,
+		SiteID:      s.cfg.SiteID,
+		StudioURL:   s.cfg.SiteBase,
 		Title:       ls.title,
 		URL:         ls.url,
 		Date:        date,
@@ -349,7 +349,7 @@ func (s *Scraper) fetchDetail(ctx context.Context, ls listingScene, delay time.D
 		Performers:  ls.performers,
 		Tags:        tags,
 		Thumbnail:   ls.thumb,
-		Studio:      s.Config.StudioName,
+		Studio:      s.cfg.StudioName,
 		ScrapedAt:   time.Now().UTC(),
 	}, nil
 }

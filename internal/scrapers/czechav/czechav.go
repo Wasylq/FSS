@@ -70,6 +70,6 @@ var sites = []czechavutil.SiteConfig{
 
 func init() {
 	for _, cfg := range sites {
-		scraper.Register(czechavutil.NewScraper(cfg))
+		scraper.Register(czechavutil.New(cfg))
 	}
 }

@@ -23,6 +23,6 @@ var sites = []metartutil.SiteConfig{
 
 func init() {
 	for _, cfg := range sites {
-		scraper.Register(metartutil.NewScraper(cfg))
+		scraper.Register(metartutil.New(cfg))
 	}
 }

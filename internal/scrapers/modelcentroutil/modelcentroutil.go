@@ -25,7 +25,7 @@ type SiteConfig struct {
 }
 
 type Scraper struct {
-	Config SiteConfig
+	cfg    SiteConfig
 	Client *http.Client
 }
 
@@ -37,13 +37,13 @@ func jsonHeaders() map[string]string {
 
 func New(cfg SiteConfig) *Scraper {
 	return &Scraper{
-		Config: cfg,
+		cfg:    cfg,
 		Client: httpx.NewClient(30 * time.Second),
 	}
 }
 
-func (s *Scraper) ID() string         { return s.Config.SiteID }
-func (s *Scraper) Patterns() []string { return []string{domainFromBase(s.Config.SiteBase) + "/videos"} }
+func (s *Scraper) ID() string         { return s.cfg.SiteID }
+func (s *Scraper) Patterns() []string { return []string{domainFromBase(s.cfg.SiteBase) + "/videos"} }
 
 func (s *Scraper) ListScenes(ctx context.Context, studioURL string, opts scraper.ListOpts) (<-chan scraper.SceneResult, error) {
 	out := make(chan scraper.SceneResult)
@@ -66,7 +66,7 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 				return
 			}
 		}
-		scraper.Debugf(1, "%s: fetching page %d", s.Config.SiteID, offset)
+		scraper.Debugf(1, "%s: fetching page %d", s.cfg.SiteID, offset)
 
 		listing, total, err := s.FetchListing(ctx, offset)
 		if err != nil {
@@ -107,7 +107,7 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 				return
 			}
 
-			scene := ToScene(s.Config, item, detail, studioURL, now)
+			scene := ToScene(s.cfg, item, detail, studioURL, now)
 			if !send(ctx, out, scraper.Scene(scene)) {
 				return
 			}
@@ -169,7 +169,7 @@ func (s *Scraper) FetchListing(ctx context.Context, offset int) ([]APIScene, int
 		"&limit=%d&offset=%d"+
 		"&metaFields[totalCount]=1"+
 		"&transitParameters[preset]=videos",
-		s.Config.SiteBase, PerPage, offset)
+		s.cfg.SiteBase, PerPage, offset)
 
 	resp, err := httpx.Do(ctx, s.Client, httpx.Request{
 		URL:     u,
@@ -196,7 +196,7 @@ func (s *Scraper) FetchDetail(ctx context.Context, id int) (*APIScene, error) {
 		"&fields[5]=length&fields[6]=sites.publishDate"+
 		"&limit=1"+
 		"&transitParameters[preset]=scene",
-		s.Config.SiteBase, id)
+		s.cfg.SiteBase, id)
 
 	resp, err := httpx.Do(ctx, s.Client, httpx.Request{
 		URL:     u,

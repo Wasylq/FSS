@@ -131,7 +131,10 @@ func TestResolveSlugURL(t *testing.T) {
 	defer ts.Close()
 
 	cfg := ayloutil.SiteConfig{SiteID: "bangbros", SiteBase: ts.URL, StudioName: "Bang Bros"}
-	s := &Scraper{aylo: &ayloutil.Scraper{Client: ts.Client(), Config: cfg, APIHost: ts.URL}}
+	aylo := ayloutil.New(cfg)
+	aylo.Client = ts.Client()
+	aylo.APIHost = ts.URL
+	s := &Scraper{aylo: aylo}
 
 	cases := []struct {
 		input   string
@@ -202,7 +205,10 @@ func TestListScenes(t *testing.T) {
 	defer ts.Close()
 
 	cfg := ayloutil.SiteConfig{SiteID: "bangbros", SiteBase: ts.URL, StudioName: "Bang Bros"}
-	s := &Scraper{aylo: &ayloutil.Scraper{Client: ts.Client(), Config: cfg, APIHost: ts.URL}}
+	aylo := ayloutil.New(cfg)
+	aylo.Client = ts.Client()
+	aylo.APIHost = ts.URL
+	s := &Scraper{aylo: aylo}
 
 	ch, err := s.ListScenes(context.Background(), ts.URL, scraper.ListOpts{})
 	if err != nil {
@@ -236,7 +242,10 @@ func TestListScenesKnownIDs(t *testing.T) {
 	defer ts.Close()
 
 	cfg := ayloutil.SiteConfig{SiteID: "bangbros", SiteBase: ts.URL, StudioName: "Bang Bros"}
-	s := &Scraper{aylo: &ayloutil.Scraper{Client: ts.Client(), Config: cfg, APIHost: ts.URL}}
+	aylo := ayloutil.New(cfg)
+	aylo.Client = ts.Client()
+	aylo.APIHost = ts.URL
+	s := &Scraper{aylo: aylo}
 
 	ch, err := s.ListScenes(context.Background(), ts.URL, scraper.ListOpts{
 		KnownIDs: map[string]bool{"2002": true},

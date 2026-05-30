@@ -248,7 +248,7 @@ func TestFetchAPIKey(t *testing.T) {
 		}))
 		defer ts.Close()
 
-		s := &Scraper{Client: ts.Client(), Config: SiteConfig{SiteBase: ts.URL}}
+		s := &Scraper{Client: ts.Client(), cfg: SiteConfig{SiteBase: ts.URL}}
 		key, err := s.FetchAPIKey(context.Background())
 		if err != nil {
 			t.Fatalf("FetchAPIKey error: %v", err)
@@ -264,7 +264,7 @@ func TestFetchAPIKey(t *testing.T) {
 		}))
 		defer ts.Close()
 
-		s := &Scraper{Client: ts.Client(), Config: SiteConfig{SiteBase: ts.URL}}
+		s := &Scraper{Client: ts.Client(), cfg: SiteConfig{SiteBase: ts.URL}}
 		if _, err := s.FetchAPIKey(context.Background()); err == nil {
 			t.Error("expected error when API key missing")
 		}
@@ -285,7 +285,7 @@ func TestFetchPage(t *testing.T) {
 
 	s := &Scraper{
 		Client:      ts.Client(),
-		Config:      SiteConfig{SiteName: "puretaboo", SiteBase: "https://example.com"},
+		cfg:         SiteConfig{SiteName: "puretaboo", SiteBase: "https://example.com"},
 		AlgoliaHost: ts.URL,
 	}
 	got, total, err := s.FetchPage(context.Background(), "test-key", 0)
@@ -317,7 +317,7 @@ func TestFetchPageActorFilter(t *testing.T) {
 
 	s := &Scraper{
 		Client:      ts.Client(),
-		Config:      SiteConfig{SiteName: "lethalhardcore", SiteBase: "https://example.com"},
+		cfg:         SiteConfig{SiteName: "lethalhardcore", SiteBase: "https://example.com"},
 		AlgoliaHost: ts.URL,
 	}
 	_, _, err := s.FetchPage(context.Background(), "test-key", 0, "actors.actor_id:111676")

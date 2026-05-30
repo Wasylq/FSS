@@ -5,7 +5,7 @@ import (
 	"github.com/Wasylq/FSS/scraper"
 )
 
-var s = ftvutil.NewScraper(ftvutil.SiteConfig{
+var s = ftvutil.New(ftvutil.SiteConfig{
 	SiteID:    "ftvmilfs",
 	Domain:    "ftvmilfs.com",
 	Studio:    "FTV MILFs",

@@ -22,20 +22,20 @@ type SiteConfig struct {
 }
 
 type Scraper struct {
-	Cfg    SiteConfig
+	cfg    SiteConfig
 	Client *http.Client
 }
 
 func New(cfg SiteConfig) *Scraper {
 	return &Scraper{
-		Cfg:    cfg,
+		cfg:    cfg,
 		Client: httpx.NewClient(30 * time.Second),
 	}
 }
 
-func (s *Scraper) ID() string               { return s.Cfg.ID }
-func (s *Scraper) Patterns() []string       { return s.Cfg.Patterns }
-func (s *Scraper) MatchesURL(u string) bool { return s.Cfg.MatchRe.MatchString(u) }
+func (s *Scraper) ID() string               { return s.cfg.ID }
+func (s *Scraper) Patterns() []string       { return s.cfg.Patterns }
+func (s *Scraper) MatchesURL(u string) bool { return s.cfg.MatchRe.MatchString(u) }
 
 func (s *Scraper) ListScenes(ctx context.Context, studioURL string, opts scraper.ListOpts) (<-chan scraper.SceneResult, error) {
 	out := make(chan scraper.SceneResult)
@@ -66,7 +66,7 @@ func extractID(rawURL string) string {
 func (s *Scraper) run(ctx context.Context, opts scraper.ListOpts, out chan<- scraper.SceneResult) {
 	defer close(out)
 
-	scraper.Debugf(1, "%s: fetching video export", s.Cfg.ID)
+	scraper.Debugf(1, "%s: fetching video export", s.cfg.ID)
 	export, err := s.fetchExport(ctx)
 	if err != nil {
 		select {
@@ -85,7 +85,7 @@ func (s *Scraper) run(ctx context.Context, opts scraper.ListOpts, out chan<- scr
 	}
 
 	if len(export) > 0 {
-		scraper.Debugf(1, "%s: %d total scenes from export", s.Cfg.ID, len(export))
+		scraper.Debugf(1, "%s: %d total scenes from export", s.cfg.ID, len(export))
 		select {
 		case out <- scraper.Progress(len(export)):
 		case <-ctx.Done():
@@ -107,7 +107,7 @@ func (s *Scraper) run(ctx context.Context, opts scraper.ListOpts, out chan<- scr
 			}
 		}
 
-		scraper.Debugf(1, "%s: fetching page %d", s.Cfg.ID, page)
+		scraper.Debugf(1, "%s: fetching page %d", s.cfg.ID, page)
 		cards, err := s.fetchListingPage(ctx, page)
 		if err != nil {
 			select {
@@ -127,7 +127,7 @@ func (s *Scraper) run(ctx context.Context, opts scraper.ListOpts, out chan<- scr
 				continue
 			}
 			if opts.KnownIDs[id] {
-				scraper.Debugf(1, "%s: hit known ID %s, stopping early", s.Cfg.ID, id)
+				scraper.Debugf(1, "%s: hit known ID %s, stopping early", s.cfg.ID, id)
 				stoppedEarly = true
 				break
 			}
@@ -153,13 +153,13 @@ func (s *Scraper) run(ctx context.Context, opts scraper.ListOpts, out chan<- scr
 func (s *Scraper) buildScene(c listingCard, ev exportVideo, id string, now time.Time) models.Scene {
 	sc := models.Scene{
 		ID:         id,
-		SiteID:     s.Cfg.ID,
-		StudioURL:  s.Cfg.SiteBase,
+		SiteID:     s.cfg.ID,
+		StudioURL:  s.cfg.SiteBase,
 		Title:      c.title,
-		URL:        s.Cfg.SiteBase + c.path,
+		URL:        s.cfg.SiteBase + c.path,
 		Date:       c.date,
 		Performers: c.performers,
-		Studio:     s.Cfg.Studio,
+		Studio:     s.cfg.Studio,
 		ScrapedAt:  now,
 	}
 
@@ -179,7 +179,7 @@ func (s *Scraper) buildScene(c listingCard, ev exportVideo, id string, now time.
 
 func (s *Scraper) fetchExport(ctx context.Context) ([]exportVideo, error) {
 	resp, err := httpx.Do(ctx, s.Client, httpx.Request{
-		URL: s.Cfg.SiteBase + "/export/videos.json",
+		URL: s.cfg.SiteBase + "/export/videos.json",
 		Headers: func() map[string]string {
 			h := httpx.BrowserHeaders(httpx.UserAgentFirefox)
 			h["Accept"] = "application/json"
@@ -251,7 +251,7 @@ func parseListingCards(body []byte) []listingCard {
 }
 
 func (s *Scraper) fetchListingPage(ctx context.Context, page int) ([]listingCard, error) {
-	u := fmt.Sprintf("%s/?o=d&p=%d", s.Cfg.SiteBase, page)
+	u := fmt.Sprintf("%s/?o=d&p=%d", s.cfg.SiteBase, page)
 	resp, err := httpx.Do(ctx, s.Client, httpx.Request{
 		URL: u,
 		Headers: func() map[string]string {

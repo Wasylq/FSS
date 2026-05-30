@@ -15,6 +15,6 @@ var sites = []realspankingsutil.SiteConfig{
 
 func init() {
 	for _, cfg := range sites {
-		scraper.Register(realspankingsutil.NewScraper(cfg))
+		scraper.Register(realspankingsutil.New(cfg))
 	}
 }

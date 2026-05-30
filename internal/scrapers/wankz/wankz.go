@@ -44,7 +44,7 @@ func init() {
 		re := regexp.MustCompile(fmt.Sprintf(`^https?://(?:www\.)?%s(?:/|$)`, escaped))
 
 		s := &siteScraper{
-			wankz: wankzutil.NewScraper(wankzutil.SiteConfig{
+			wankz: wankzutil.New(wankzutil.SiteConfig{
 				SiteID:     cfg.SiteID,
 				SiteBase:   "https://www." + cfg.Domain,
 				StudioName: cfg.StudioName,

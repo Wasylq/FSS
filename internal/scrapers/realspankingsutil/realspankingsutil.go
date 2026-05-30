@@ -35,26 +35,26 @@ type SiteConfig struct {
 type Scraper struct {
 	client *http.Client
 	base   string
-	Config SiteConfig
+	cfg    SiteConfig
 }
 
-func NewScraper(cfg SiteConfig) *Scraper {
+func New(cfg SiteConfig) *Scraper {
 	return &Scraper{
 		client: httpx.NewClient(30 * time.Second),
 		base:   "https://" + cfg.Domain,
-		Config: cfg,
+		cfg:    cfg,
 	}
 }
 
-func (s *Scraper) ID() string { return s.Config.SiteID }
+func (s *Scraper) ID() string { return s.cfg.SiteID }
 
 func (s *Scraper) Patterns() []string {
-	return []string{s.Config.Domain}
+	return []string{s.cfg.Domain}
 }
 
 func (s *Scraper) MatchesURL(u string) bool {
 	lower := strings.ToLower(u)
-	domain := strings.ToLower(s.Config.Domain)
+	domain := strings.ToLower(s.cfg.Domain)
 	domain = strings.TrimPrefix(domain, "www.")
 	return strings.Contains(lower, "://"+domain) || strings.Contains(lower, "://www."+domain)
 }
@@ -76,8 +76,8 @@ type listingItem struct {
 func (s *Scraper) run(ctx context.Context, opts scraper.ListOpts, out chan<- scraper.SceneResult) {
 	defer close(out)
 
-	scraper.Debugf(1, "%s: starting scrape (type=%d)", s.Config.SiteID, s.Config.Type)
-	switch s.Config.Type {
+	scraper.Debugf(1, "%s: starting scrape (type=%d)", s.cfg.SiteID, s.cfg.Type)
+	switch s.cfg.Type {
 	case TypeRSI:
 		s.runPaged(ctx, opts, out, 0, s.buildRSIURL, parseRSI)
 	case TypeSpankedCoeds:
@@ -99,7 +99,7 @@ func (s *Scraper) runPaged(ctx context.Context, opts scraper.ListOpts, out chan<
 			return
 		}
 
-		scraper.Debugf(1, "%s: fetching page %d", s.Config.SiteID, page)
+		scraper.Debugf(1, "%s: fetching page %d", s.cfg.SiteID, page)
 		body, err := s.fetchPage(ctx, buildURL(page))
 		if err != nil {
 			select {
@@ -123,7 +123,7 @@ func (s *Scraper) runPaged(ctx context.Context, opts scraper.ListOpts, out chan<
 		case <-ctx.Done():
 			return
 		}
-		scraper.Debugf(1, "%s: fetching page %d", s.Config.SiteID, page)
+		scraper.Debugf(1, "%s: fetching page %d", s.cfg.SiteID, page)
 	}
 }
 
@@ -133,7 +133,7 @@ func (s *Scraper) runYears(ctx context.Context, opts scraper.ListOpts, out chan<
 		if ctx.Err() != nil {
 			return
 		}
-		scraper.Debugf(1, "%s: fetching year %d", s.Config.SiteID, year)
+		scraper.Debugf(1, "%s: fetching year %d", s.cfg.SiteID, year)
 
 		url := fmt.Sprintf("%s/updates.php?year=%d", s.base, year)
 		body, err := s.fetchPage(ctx, url)
@@ -179,7 +179,7 @@ func (s *Scraper) runSingle(ctx context.Context, opts scraper.ListOpts, out chan
 func (s *Scraper) sendItems(ctx context.Context, opts scraper.ListOpts, out chan<- scraper.SceneResult, items []listingItem) bool {
 	for _, item := range items {
 		if opts.KnownIDs[item.id] {
-			scraper.Debugf(1, "%s: hit known ID, stopping early", s.Config.SiteID)
+			scraper.Debugf(1, "%s: hit known ID, stopping early", s.cfg.SiteID)
 			select {
 			case out <- scraper.StoppedEarly():
 			case <-ctx.Done():
@@ -199,12 +199,12 @@ func (s *Scraper) sendItems(ctx context.Context, opts scraper.ListOpts, out chan
 func (s *Scraper) buildScene(item listingItem) models.Scene {
 	return models.Scene{
 		ID:          item.id,
-		SiteID:      s.Config.SiteID,
+		SiteID:      s.cfg.SiteID,
 		StudioURL:   s.base,
 		Title:       item.title,
 		URL:         s.base,
 		Thumbnail:   item.thumb,
-		Studio:      s.Config.StudioName,
+		Studio:      s.cfg.StudioName,
 		Date:        item.date,
 		Description: item.description,
 		ScrapedAt:   time.Now().UTC(),
