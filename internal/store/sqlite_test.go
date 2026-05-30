@@ -482,6 +482,32 @@ func TestSQLiteMarkDeleted(t *testing.T) {
 	}
 }
 
+func TestSQLiteMarkDeletedNonexistentID(t *testing.T) {
+	s := newTestDB(t)
+	now := time.Now().UTC().Truncate(time.Second)
+
+	scenes := []models.Scene{
+		{ID: "1", SiteID: "manyvids", StudioURL: testStudioURL, Title: "A", ScrapedAt: now},
+	}
+	if err := s.Save(testStudioURL, scenes); err != nil {
+		t.Fatal(err)
+	}
+
+	// MarkDeleted with a non-existent ID should not error.
+	if err := s.MarkDeleted(testStudioURL, "manyvids", []string{"nonexistent"}); err != nil {
+		t.Fatalf("MarkDeleted for non-existent ID should not error: %v", err)
+	}
+
+	// Existing scene should be unaffected.
+	loaded, err := s.Load(testStudioURL)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(loaded) != 1 || loaded[0].DeletedAt != nil {
+		t.Error("existing scene should be unaffected by non-existent MarkDeleted")
+	}
+}
+
 // TestSQLiteSaveAutoRevives locks in the documented Save contract: a
 // re-emitted scene with DeletedAt == nil clears any prior soft-delete.
 // This is the "site brought the scene back" path that the cmd layer's

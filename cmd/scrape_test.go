@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"context"
+	"fmt"
 	"path/filepath"
 	"slices"
 	"strings"
@@ -435,6 +436,138 @@ func sceneIDs(s []models.Scene) []string {
 		ids[i] = sc.ID
 	}
 	return ids
+}
+
+// collectScenes partial-error tests
+
+type mixedScraper struct {
+	id     string
+	scenes []models.Scene
+	errors int
+}
+
+func (f *mixedScraper) ID() string             { return f.id }
+func (f *mixedScraper) Patterns() []string     { return nil }
+func (f *mixedScraper) MatchesURL(string) bool { return true }
+
+func (f *mixedScraper) ListScenes(_ context.Context, _ string, _ scraper.ListOpts) (<-chan scraper.SceneResult, error) {
+	ch := make(chan scraper.SceneResult, len(f.scenes)+f.errors)
+	for i := range f.errors {
+		ch <- scraper.Error(fmt.Errorf("error %d", i+1))
+	}
+	for _, s := range f.scenes {
+		ch <- scraper.Scene(s)
+	}
+	close(ch)
+	return ch, nil
+}
+
+func TestCollectScenes_errorsWithSomeScenes(t *testing.T) {
+	sc := &mixedScraper{
+		id: "mix",
+		scenes: []models.Scene{
+			{ID: "1", SiteID: "mix", Title: "Scene 1"},
+		},
+		errors: 2,
+	}
+	scenes, err := collectScenes(context.Background(), sc, "https://example.com", scraper.ListOpts{})
+	if err != nil {
+		t.Fatalf("expected no error when some scenes succeed, got: %v", err)
+	}
+	if len(scenes) != 1 {
+		t.Errorf("got %d scenes, want 1", len(scenes))
+	}
+}
+
+func TestCollectScenes_allErrorsNoScenes(t *testing.T) {
+	sc := &mixedScraper{
+		id:     "mix",
+		errors: 3,
+	}
+	_, err := collectScenes(context.Background(), sc, "https://example.com", scraper.ListOpts{})
+	if err == nil {
+		t.Fatal("expected error when all attempts fail with 0 scenes")
+	}
+	if !strings.Contains(err.Error(), "0 scenes") {
+		t.Errorf("error should mention 0 scenes, got: %v", err)
+	}
+}
+
+func TestCollectScenes_noErrorsNoScenes(t *testing.T) {
+	sc := &mixedScraper{id: "mix"}
+	scenes, err := collectScenes(context.Background(), sc, "https://example.com", scraper.ListOpts{})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if len(scenes) != 0 {
+		t.Errorf("got %d scenes, want 0", len(scenes))
+	}
+}
+
+// scrapeRefresh soft-delete state machine tests
+
+func TestScrapeRefresh_softDeleteAndRevive(t *testing.T) {
+	const studioURL = "https://example.com/studio/test"
+	t0 := time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC)
+
+	build := func(id string) models.Scene {
+		return models.Scene{
+			ID: id, SiteID: "fakesite", StudioURL: studioURL,
+			Title: "Scene " + id, URL: "https://example.com/" + id,
+			ScrapedAt: t0,
+		}
+	}
+
+	st := store.NewFlat(t.TempDir(), []string{"json"})
+	// Seed: scenes 1, 2, 3 all present.
+	if err := st.Save(studioURL, []models.Scene{build("1"), build("2"), build("3")}); err != nil {
+		t.Fatal(err)
+	}
+
+	// Phase 1: scene 2 disappears → should be soft-deleted.
+	sc := &fakeScraper{
+		id:      "fakesite",
+		batches: [][]models.Scene{{build("1"), build("3")}},
+	}
+	result, err := scrapeRefresh(context.Background(), sc, st, studioURL, 1, 0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := st.Save(studioURL, result); err != nil {
+		t.Fatal(err)
+	}
+
+	loaded, _ := st.Load(studioURL)
+	byID := map[string]models.Scene{}
+	for _, s := range loaded {
+		byID[s.ID] = s
+	}
+	if byID["2"].DeletedAt == nil {
+		t.Fatal("scene 2 should be soft-deleted after disappearing")
+	}
+	if byID["1"].DeletedAt != nil {
+		t.Error("scene 1 should not be soft-deleted")
+	}
+
+	// Phase 2: scene 2 comes back → should be revived (DeletedAt == nil).
+	sc2 := &fakeScraper{
+		id:      "fakesite",
+		batches: [][]models.Scene{{build("1"), build("2"), build("3")}},
+	}
+	result2, err := scrapeRefresh(context.Background(), sc2, st, studioURL, 1, 0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := st.Save(studioURL, result2); err != nil {
+		t.Fatal(err)
+	}
+
+	loaded2, _ := st.Load(studioURL)
+	for _, s := range loaded2 {
+		if s.ID == "2" && s.DeletedAt != nil {
+			t.Error("scene 2 should be revived after reappearing")
+		}
+	}
 }
 
 func TestParseFormats_json(t *testing.T) {

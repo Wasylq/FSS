@@ -2,6 +2,7 @@ package scraper
 
 import (
 	"context"
+	"strings"
 	"testing"
 )
 
@@ -122,6 +123,26 @@ func TestAllEmpty(t *testing.T) {
 	if len(all) != 0 {
 		t.Errorf("All() on empty registry returned %d", len(all))
 	}
+}
+
+func TestRegisterDuplicatePanics(t *testing.T) {
+	old := registered
+	registered = nil
+	t.Cleanup(func() { registered = old })
+
+	Register(&fakeScraper{id: "dup"})
+
+	defer func() {
+		r := recover()
+		if r == nil {
+			t.Fatal("expected panic on duplicate ID")
+		}
+		msg, ok := r.(string)
+		if !ok || !strings.Contains(msg, "dup") {
+			t.Errorf("panic message = %v, want to contain 'dup'", r)
+		}
+	}()
+	Register(&fakeScraper{id: "dup"})
 }
 
 func TestResultKindString(t *testing.T) {

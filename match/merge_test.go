@@ -168,6 +168,57 @@ func TestMergeScenesEmptyWithExistingDate(t *testing.T) {
 	}
 }
 
+func TestCleanDescription(t *testing.T) {
+	cases := []struct {
+		name  string
+		input string
+		want  string
+	}{
+		{"triple spaces become newline", "word   word", "word\nword"},
+		{"triple blank lines collapse", "a\n\n\nb", "a\n\nb"},
+		{"many blank lines collapse", "a\n\n\n\n\nb", "a\n\nb"},
+		{"leading/trailing whitespace stripped", "  hello  ", "hello"},
+		{"tabs count as space runs", "word\t\t\tword", "word\nword"},
+		{"two spaces not enough", "word  word", "word  word"},
+		{"normal text unchanged", "A short description.", "A short description."},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			got := cleanDescription(c.input)
+			if got != c.want {
+				t.Errorf("cleanDescription(%q) = %q, want %q", c.input, got, c.want)
+			}
+		})
+	}
+}
+
+func TestMergeScenesResolutionTie(t *testing.T) {
+	s1 := models.Scene{
+		ID:     "1",
+		SiteID: "siteA",
+		Title:  "Scene A",
+		Width:  1920,
+		Height: 1080,
+	}
+	s2 := models.Scene{
+		ID:     "2",
+		SiteID: "siteB",
+		Title:  "Scene B",
+		Width:  1920,
+		Height: 800,
+	}
+
+	m := MergeScenes([]models.Scene{s1, s2}, time.Time{})
+
+	// When widths tie, the first scene's values should be kept (> comparison, not >=).
+	if m.Width != 1920 {
+		t.Errorf("Width = %d, want 1920", m.Width)
+	}
+	if m.Height != 1080 {
+		t.Errorf("Height = %d, want 1080 (first scene wins on tie)", m.Height)
+	}
+}
+
 func TestResolutionTags(t *testing.T) {
 	cases := []struct {
 		width int

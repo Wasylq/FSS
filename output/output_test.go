@@ -3,6 +3,8 @@ package output
 import (
 	"encoding/csv"
 	"encoding/json"
+	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"strings"
@@ -410,5 +412,31 @@ func TestSweepStaleTempFiles_skipsSubdir(t *testing.T) {
 	// Subdirectory must still exist.
 	if _, err := os.Stat(sub); err != nil {
 		t.Errorf("subdir was wrongly removed: %v", err)
+	}
+}
+
+func TestAtomicWriteFileCleanupOnWriteError(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "fail.json")
+
+	wantErr := "write boom"
+	err := atomicWriteFile(path, func(w io.Writer) error {
+		return fmt.Errorf("%s", wantErr)
+	})
+	if err == nil || err.Error() != wantErr {
+		t.Fatalf("expected error %q, got %v", wantErr, err)
+	}
+
+	// Temp file should be cleaned up.
+	entries, _ := os.ReadDir(dir)
+	for _, e := range entries {
+		if strings.HasPrefix(e.Name(), ".fss-tmp-") {
+			t.Errorf("temp file not cleaned up after write error: %s", e.Name())
+		}
+	}
+
+	// Target file should not exist.
+	if _, err := os.Stat(path); !os.IsNotExist(err) {
+		t.Errorf("target file should not exist after write error")
 	}
 }

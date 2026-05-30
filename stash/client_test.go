@@ -320,6 +320,37 @@ func TestEnsureTag_createsWhenMissing(t *testing.T) {
 	}
 }
 
+func TestEnsureTag_findsViaAlias(t *testing.T) {
+	var calls []string
+	c, _ := newTestClient(t, func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		var req graphqlRequest
+		_ = json.NewDecoder(r.Body).Decode(&req)
+		switch {
+		case strings.Contains(req.Query, "aliases"):
+			calls = append(calls, "findByAlias")
+			_, _ = w.Write([]byte(`{"data":{"findTags":{"tags":[{"id":"77","name":"Blow Job"}]}}}`))
+		case strings.Contains(req.Query, "findTags"):
+			calls = append(calls, "findByName")
+			_, _ = w.Write([]byte(`{"data":{"findTags":{"tags":[]}}}`))
+		case strings.Contains(req.Query, "tagCreate"):
+			calls = append(calls, "create")
+			_, _ = w.Write([]byte(`{"data":{"tagCreate":{"id":"99"}}}`))
+		}
+	})
+
+	id, err := c.EnsureTag(context.Background(), "blowjob")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if id != "77" {
+		t.Errorf("id = %q, want 77 (from alias)", id)
+	}
+	if len(calls) != 2 || calls[0] != "findByName" || calls[1] != "findByAlias" {
+		t.Errorf("call sequence = %v, want [findByName, findByAlias]", calls)
+	}
+}
+
 func TestEnsurePerformer_findsExisting(t *testing.T) {
 	c, _ := newTestClient(t, graphqlHandler(t, map[string]string{
 		"findPerformers": `{"data":{"findPerformers":{"performers":[{"id":"7","name":"Alice"}]}}}`,

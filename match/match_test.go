@@ -37,6 +37,14 @@ func TestNormalize(t *testing.T) {
 		// suffixes don't occur in real FSS data; if they did, the inner one
 		// bleeds into the normalized title as an extra word.
 		{"Title (HD) (4K)", "title hd"},
+		// Zero-width Unicode characters are stripped (they're non-alphanumeric).
+		{"Hello\u200bWorld", "hello world"}, // U+200B zero-width space
+		{"Test\u200cTitle", "test title"},   // U+200C zero-width non-joiner
+		{"Scene\u200dName", "scene name"},   // U+200D zero-width joiner
+		{"Video\ufeffClip", "video clip"},   // U+FEFF byte order mark
+		// Non-ASCII letters are stripped by the [^a-z0-9]+ regex.
+		{"Café Scene", "caf scene"},
+		{"Ñoño Video", "o o video"},
 	}
 	for _, c := range cases {
 		got := Normalize(c.input)
