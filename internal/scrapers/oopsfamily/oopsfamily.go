@@ -253,8 +253,8 @@ type detailData struct {
 }
 
 type jsonLD struct {
-	UploadDate string      `json:"uploadDate"`
-	Genre      interface{} `json:"genre"`
+	UploadDate string `json:"uploadDate"`
+	Genre      any    `json:"genre"`
 }
 
 var jsonLDRe = regexp.MustCompile(`(?s)<script type="application/ld\+json">\s*(\{.*?})\s*</script>`)
@@ -278,7 +278,7 @@ func parseDetailPage(body []byte) detailData {
 	}
 
 	switch v := ld.Genre.(type) {
-	case []interface{}:
+	case []any:
 		for _, g := range v {
 			if s, ok := g.(string); ok && s != "Pornography" {
 				d.tags = append(d.tags, s)
