@@ -29,3 +29,7 @@ func newTestScraper(cfg siteConfig) *veutil.Scraper {
 func TestLiveMommysBoy(t *testing.T) {
 	testutil.RunLiveScrape(t, newTestScraper(sites[5]), "https://mommysboy.net/", 2)
 }
+
+func TestLiveMommysBoyTagPage(t *testing.T) {
+	testutil.RunLiveScrape(t, newTestScraper(sites[5]), "https://mommysboy.net/tag/cory-chase/", 2)
+}

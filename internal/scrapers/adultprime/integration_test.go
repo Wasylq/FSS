@@ -18,3 +18,8 @@ func TestLiveScrapeAll(t *testing.T) {
 		})
 	}
 }
+
+func TestLiveScrapeNicheFilter(t *testing.T) {
+	s := adultprimeutil.New(sites[0])
+	testutil.RunLiveScrape(t, s, "https://adultprime.com/studios/videos?website="+sites[0].Slug+"&niche=Blowjob", 2)
+}

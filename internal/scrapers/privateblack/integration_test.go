@@ -11,3 +11,7 @@ import (
 func TestLivePrivateBlack(t *testing.T) {
 	testutil.RunLiveScrape(t, New(), "https://www.privateblack.com/scenes", 4)
 }
+
+func TestLivePrivateBlackPornstar(t *testing.T) {
+	testutil.RunLiveScrape(t, New(), "https://www.privateblack.com/pornstar/363-milenaray/", 2)
+}

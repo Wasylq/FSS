@@ -27,3 +27,8 @@ func TestLiveScrapeAll(t *testing.T) {
 		})
 	}
 }
+
+func TestLiveScrapeModelPage(t *testing.T) {
+	s := tmwutil.New(sites[0])
+	testutil.RunLiveScrape(t, s, "https://"+sites[0].Domain+"/models/Sybil-A.html", 2)
+}

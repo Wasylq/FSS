@@ -32,6 +32,10 @@ func TestLivePornOnStage(t *testing.T) {
 	testutil.RunLiveScrape(t, extrememoviepassutil.New(siteByID(t, "pornonstage")), "https://www.pornonstage.com/tour/", 2)
 }
 
+func TestLiveSexyCuckoldModelPage(t *testing.T) {
+	testutil.RunLiveScrape(t, extrememoviepassutil.New(siteByID(t, "sexycuckold")), "https://www.sexycuckold.com/tour/models/Asya-Murkovski.html", 2)
+}
+
 func siteByID(t *testing.T, id string) extrememoviepassutil.SiteConfig {
 	t.Helper()
 	for _, s := range sites {

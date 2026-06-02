@@ -23,3 +23,8 @@ func TestLiveCzechStreets(t *testing.T) {
 	s := czechavutil.New(czechavutil.SiteConfig{SiteID: "czechstreets", Domain: "czechstreets.com", Studio: "Czech Streets"})
 	testutil.RunLiveScrape(t, s, "https://czechstreets.com", 3)
 }
+
+func TestLiveCzechCastingPerformerSearch(t *testing.T) {
+	s := czechavutil.New(czechavutil.SiteConfig{SiteID: "czechcasting", Domain: "czechcasting.com", Studio: "Czech Casting"})
+	testutil.RunLiveScrape(t, s, "https://czechcasting.com/pages/search/?q=Tereza&adult-performer", 2)
+}
