@@ -130,7 +130,22 @@ func TestBuildIDRegex(t *testing.T) {
 }
 
 func newTestServer(scenes []sceneJSON, totalPages int) *httptest.Server {
+	return newTestServerWithModels(scenes, totalPages, nil)
+}
+
+func newTestServerWithModels(scenes []sceneJSON, totalPages int, modelScenes map[string][]sceneJSON) *httptest.Server {
+	modelPaths := make(map[string][]sceneJSON, len(modelScenes))
+	for slug, ms := range modelScenes {
+		modelPaths["/_next/data/test-build-123/models/"+slug+".json"] = ms
+	}
 	return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if ms, ok := modelPaths[r.URL.Path]; ok {
+			w.Header().Set("Content-Type", "application/json")
+			resp := modelDataResponse{}
+			resp.PageProps.ModelLatestContents = ms
+			_ = json.NewEncoder(w).Encode(resp)
+			return
+		}
 		switch r.URL.Path {
 		case "/":
 			w.Header().Set("Content-Type", "text/html")
@@ -214,5 +229,37 @@ func TestKnownIDs(t *testing.T) {
 	}
 	if !stopped {
 		t.Error("expected StoppedEarly")
+	}
+}
+
+func TestModelPage(t *testing.T) {
+	modelScenes := map[string][]sceneJSON{
+		"jane-doe": {
+			{ID: 10, Title: "Model Scene One", Slug: "model-scene-one", Models: []string{"JANE DOE"}, SecondsDuration: 300},
+			{ID: 11, Title: "Model Scene Two", Slug: "model-scene-two", Models: []string{"JANE DOE"}, SecondsDuration: 450},
+		},
+	}
+
+	srv := newTestServerWithModels(nil, 0, modelScenes)
+	defer srv.Close()
+
+	cfg := testCfg
+	cfg.BaseURL = srv.URL
+
+	s := New(cfg)
+	ch, err := s.ListScenes(context.Background(), srv.URL+"/models/jane-doe", scraper.ListOpts{})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	got := testutil.CollectScenes(t, ch)
+	if len(got) != 2 {
+		t.Fatalf("got %d scenes, want 2", len(got))
+	}
+	if got[0].Title != "Model Scene One" {
+		t.Errorf("scenes[0].Title = %q, want %q", got[0].Title, "Model Scene One")
+	}
+	if got[0].Performers[0] != "Jane Doe" {
+		t.Errorf("scenes[0].Performers[0] = %q, want %q", got[0].Performers[0], "Jane Doe")
 	}
 }

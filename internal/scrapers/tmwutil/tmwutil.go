@@ -51,6 +51,7 @@ func (s *Scraper) ID() string { return s.cfg.SiteID }
 func (s *Scraper) Patterns() []string {
 	return []string{
 		s.cfg.Domain + "/categories/movies",
+		s.cfg.Domain + "/models/{slug}.html",
 		s.cfg.Domain + "/trailers/",
 		"teenmegaworld.net/categories/" + s.cfg.Slug,
 	}
@@ -67,15 +68,61 @@ func (s *Scraper) MatchesURL(u string) bool {
 		strings.Contains(lower, "teenmegaworld.net/sites/"+slug)
 }
 
-func (s *Scraper) ListScenes(ctx context.Context, _ string, opts scraper.ListOpts) (<-chan scraper.SceneResult, error) {
+var modelSlugRe = regexp.MustCompile(`/models/([^_/.]+?)(?:\.html)?$`)
+
+func (s *Scraper) ListScenes(ctx context.Context, studioURL string, opts scraper.ListOpts) (<-chan scraper.SceneResult, error) {
 	out := make(chan scraper.SceneResult)
-	go s.run(ctx, opts, out)
+	go s.run(ctx, studioURL, opts, out)
 	return out, nil
 }
 
-func (s *Scraper) run(ctx context.Context, opts scraper.ListOpts, out chan<- scraper.SceneResult) {
+func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOpts, out chan<- scraper.SceneResult) {
 	defer close(out)
 
+	if modelSlugRe.MatchString(studioURL) {
+		scraper.Debugf(1, "%s: detected model page", s.cfg.SiteID)
+		s.scrapeModelPage(ctx, studioURL, opts, out)
+		return
+	}
+
+	s.scrapeListing(ctx, opts, out)
+}
+
+func (s *Scraper) scrapeModelPage(ctx context.Context, studioURL string, opts scraper.ListOpts, out chan<- scraper.SceneResult) {
+	pageURL := studioURL
+	if !strings.HasPrefix(pageURL, "http") {
+		pageURL = s.base + pageURL
+	}
+
+	body, err := s.fetchPage(ctx, pageURL)
+	if err != nil {
+		select {
+		case out <- scraper.Error(err):
+		case <-ctx.Done():
+		}
+		return
+	}
+
+	items := parseListingPage(body, s.base)
+	if len(items) == 0 {
+		return
+	}
+	scraper.Debugf(1, "%s: found %d scenes on model page", s.cfg.SiteID, len(items))
+
+	select {
+	case out <- scraper.Progress(len(items)):
+	case <-ctx.Done():
+		return
+	}
+
+	workers := opts.Workers
+	if workers <= 0 {
+		workers = 4
+	}
+	s.fetchDetails(ctx, items, opts, out, workers)
+}
+
+func (s *Scraper) scrapeListing(ctx context.Context, opts scraper.ListOpts, out chan<- scraper.SceneResult) {
 	workers := opts.Workers
 	if workers <= 0 {
 		workers = 4
@@ -178,6 +225,58 @@ func (s *Scraper) run(ctx context.Context, opts scraper.ListOpts, out chan<- scr
 				case <-ctx.Done():
 					return
 				}
+			}
+		}
+	}()
+
+	wg.Wait()
+}
+
+func (s *Scraper) fetchDetails(ctx context.Context, items []listingItem, opts scraper.ListOpts, out chan<- scraper.SceneResult, workers int) {
+	type detailWork struct {
+		listing listingItem
+	}
+	work := make(chan detailWork)
+	var wg sync.WaitGroup
+
+	for i := 0; i < workers; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			for dw := range work {
+				scene, err := s.fetchDetail(ctx, dw.listing, opts.Delay)
+				if err != nil {
+					select {
+					case out <- scraper.Error(err):
+					case <-ctx.Done():
+						return
+					}
+					continue
+				}
+				select {
+				case out <- scraper.Scene(scene):
+				case <-ctx.Done():
+					return
+				}
+			}
+		}()
+	}
+
+	go func() {
+		defer close(work)
+		for _, item := range items {
+			if opts.KnownIDs[item.id] {
+				scraper.Debugf(1, "%s: hit known ID %s, stopping early", s.cfg.SiteID, item.id)
+				select {
+				case out <- scraper.StoppedEarly():
+				case <-ctx.Done():
+				}
+				return
+			}
+			select {
+			case work <- detailWork{listing: item}:
+			case <-ctx.Done():
+				return
 			}
 		}
 	}()

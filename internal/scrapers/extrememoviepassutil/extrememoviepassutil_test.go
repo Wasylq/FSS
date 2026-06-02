@@ -317,3 +317,41 @@ func TestListScenes_knownIDsStopsEarly(t *testing.T) {
 		t.Error("expected StoppedEarly signal")
 	}
 }
+
+func TestListScenes_modelPage(t *testing.T) {
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/html")
+		switch r.URL.Path {
+		case "/tour/models/Asya-Murkovski.html":
+			_, _ = fmt.Fprint(w, listingHTML)
+		default:
+			http.NotFound(w, r)
+		}
+	}))
+	defer ts.Close()
+
+	s := New(SiteConfig{
+		ID:       "sexycuckold",
+		SiteBase: ts.URL,
+		Studio:   "SexyCuckold",
+		MatchRe:  regexp.MustCompile(`.*`),
+	})
+
+	ch, err := s.ListScenes(context.Background(), ts.URL+"/tour/models/Asya-Murkovski.html", scraper.ListOpts{})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	var scenes int
+	for r := range ch {
+		switch r.Kind {
+		case scraper.KindScene:
+			scenes++
+		case scraper.KindError:
+			t.Errorf("unexpected error: %v", r.Err)
+		}
+	}
+	if scenes != 2 {
+		t.Errorf("got %d scenes, want 2", scenes)
+	}
+}

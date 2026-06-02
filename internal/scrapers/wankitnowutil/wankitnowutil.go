@@ -37,8 +37,10 @@ func New(cfg SiteConfig) *Scraper {
 
 var _ scraper.StudioScraper = (*Scraper)(nil)
 
-func (s *Scraper) ID() string         { return s.cfg.ID }
-func (s *Scraper) Patterns() []string { return s.cfg.Patterns }
+func (s *Scraper) ID() string { return s.cfg.ID }
+func (s *Scraper) Patterns() []string {
+	return append(s.cfg.Patterns, s.cfg.Domain+"/models/{slug}")
+}
 func (s *Scraper) MatchesURL(u string) bool {
 	return s.cfg.MatchRe.MatchString(u)
 }
@@ -50,9 +52,11 @@ func (s *Scraper) siteBase() string {
 	return "https://www." + s.cfg.Domain
 }
 
-func (s *Scraper) ListScenes(ctx context.Context, _ string, opts scraper.ListOpts) (<-chan scraper.SceneResult, error) {
+var modelSlugRe = regexp.MustCompile(`/models/([^/?#]+)`)
+
+func (s *Scraper) ListScenes(ctx context.Context, studioURL string, opts scraper.ListOpts) (<-chan scraper.SceneResult, error) {
 	out := make(chan scraper.SceneResult)
-	go s.run(ctx, opts, out)
+	go s.run(ctx, studioURL, opts, out)
 	return out, nil
 }
 
@@ -129,8 +133,20 @@ func (s *Scraper) fetchPage(ctx context.Context, buildID string, page int) (*nex
 	return &data, nil
 }
 
-func (s *Scraper) run(ctx context.Context, opts scraper.ListOpts, out chan<- scraper.SceneResult) {
+type modelDataResponse struct {
+	PageProps struct {
+		ModelLatestContents []sceneJSON `json:"model_latest_contents"`
+	} `json:"pageProps"`
+}
+
+func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOpts, out chan<- scraper.SceneResult) {
 	defer close(out)
+
+	if m := modelSlugRe.FindStringSubmatch(studioURL); m != nil {
+		scraper.Debugf(1, "%s: detected model page: %s", s.cfg.ID, m[1])
+		s.scrapeModelPage(ctx, m[1], opts, out)
+		return
+	}
 
 	scraper.Debugf(1, "%s: fetching build ID", s.cfg.ID)
 	buildID, err := s.fetchBuildID(ctx)
@@ -163,6 +179,72 @@ func (s *Scraper) run(ctx context.Context, opts scraper.ListOpts, out chan<- scr
 			Done:   page >= contents.TotalPages,
 		}, nil
 	})
+}
+
+func (s *Scraper) scrapeModelPage(ctx context.Context, slug string, opts scraper.ListOpts, out chan<- scraper.SceneResult) {
+	buildID, err := s.fetchBuildID(ctx)
+	if err != nil {
+		select {
+		case out <- scraper.Error(err):
+		case <-ctx.Done():
+		}
+		return
+	}
+
+	u := fmt.Sprintf("%s/_next/data/%s/models/%s.json", s.siteBase(), buildID, slug)
+	resp, err := httpx.Do(ctx, s.client, httpx.Request{
+		URL:     u,
+		Headers: httpx.BrowserHeaders(httpx.UserAgentChrome),
+	})
+	if err != nil {
+		select {
+		case out <- scraper.Error(fmt.Errorf("model page %s: %w", slug, err)):
+		case <-ctx.Done():
+		}
+		return
+	}
+	defer func() { _ = resp.Body.Close() }()
+
+	var data modelDataResponse
+	if err := httpx.DecodeJSON(resp.Body, &data); err != nil {
+		select {
+		case out <- scraper.Error(fmt.Errorf("decode model page %s: %w", slug, err)):
+		case <-ctx.Done():
+		}
+		return
+	}
+
+	scenes := data.PageProps.ModelLatestContents
+	if len(scenes) == 0 {
+		return
+	}
+	scraper.Debugf(1, "%s: found %d scenes for model %s", s.cfg.ID, len(scenes), slug)
+
+	siteBase := s.siteBase()
+	now := time.Now().UTC()
+
+	select {
+	case out <- scraper.Progress(len(scenes)):
+	case <-ctx.Done():
+		return
+	}
+
+	for _, sc := range scenes {
+		id := strconv.Itoa(sc.ID)
+		if opts.KnownIDs[id] {
+			scraper.Debugf(1, "%s: hit known ID %s, stopping early", s.cfg.ID, id)
+			select {
+			case out <- scraper.StoppedEarly():
+			case <-ctx.Done():
+			}
+			return
+		}
+		select {
+		case out <- scraper.Scene(toScene(sc, s.cfg.ID, siteBase, s.cfg.Studio, now)):
+		case <-ctx.Done():
+			return
+		}
+	}
 }
 
 func toScene(sc sceneJSON, siteID, siteBase, studio string, now time.Time) models.Scene {

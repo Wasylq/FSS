@@ -389,6 +389,40 @@ func TestListScenesHub(t *testing.T) {
 	}
 }
 
+func TestModelPage(t *testing.T) {
+	var ts *httptest.Server
+	ts = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case "/models/Jane-Doe.html":
+			_, _ = fmt.Fprint(w, listingHTML(ts.URL))
+		case "/trailers/First-Test-Scene.html", "/trailers/Second-Scene-Here.html":
+			_, _ = fmt.Fprint(w, fixtureDetail)
+		default:
+			http.NotFound(w, r)
+		}
+	}))
+	defer ts.Close()
+
+	s := newTestScraper(ts)
+	ch, err := s.ListScenes(context.Background(), ts.URL+"/models/Jane-Doe.html", scraper.ListOpts{})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	var sceneCount int
+	for r := range ch {
+		switch r.Kind {
+		case scraper.KindScene:
+			sceneCount++
+		case scraper.KindError:
+			t.Errorf("unexpected error: %v", r.Err)
+		}
+	}
+	if sceneCount != 2 {
+		t.Errorf("got %d scenes, want 2", sceneCount)
+	}
+}
+
 func TestMatchesURL(t *testing.T) {
 	s := New(SiteConfig{
 		SiteID:     "tmw-anal-angels",
