@@ -13,6 +13,18 @@ FSS handles credentials in two places:
 - Never commit `config.yaml` to version control. The `.gitignore` does not cover it since it lives outside the repo (XDG config directory), but be careful if you copy it into the project.
 - Site API keys extracted at runtime are ephemeral and not stored.
 
+## User-Agent
+
+FSS defaults to a Firefox user-agent string. You can override it in `config.yaml`:
+
+```yaml
+user_agent: "chrome"              # use the built-in Chrome UA
+user_agent: "MyBot/1.0"           # use a custom string
+user_agent: ""                    # default: Firefox UA
+```
+
+The UA string is sent with every HTTP request to scraper target sites. It does not affect requests to your Stash instance.
+
 ## Network
 
 FSS makes outbound HTTP requests to:

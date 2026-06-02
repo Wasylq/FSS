@@ -44,82 +44,63 @@ This triggers `init()` and registers the scraper. Without this line, the scraper
 
 The `ListScenes` method launches a goroutine that sends `SceneResult` values on a channel. See `internal/scrapers/pornhub/pornhub.go` for the simplest complete example.
 
-Required pattern:
+**Use `scraper.Paginate`** for page-numbered pagination — it handles delay, ctx cancellation, progress reporting, KnownIDs early-stop, and scene sending. Your callback just fetches and parses one page:
 
 ```go
-func (s *Scraper) ListScenes(ctx context.Context, studioURL string, opts scraper.ListOpts) (<-chan scraper.SceneResult, error) {
-    out := make(chan scraper.SceneResult)
-    go s.run(ctx, studioURL, opts, out)
-    return out, nil
-}
-
 func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOpts, out chan<- scraper.SceneResult) {
     defer close(out) // MUST be the first line
+    now := time.Now().UTC()
 
-    for page := 1; ; page++ {
-        if ctx.Err() != nil {
-            return
-        }
-
-        // Respect delay between pages
-        if page > 1 && opts.Delay > 0 {
-            select {
-            case <-time.After(opts.Delay):
-            case <-ctx.Done():
-                return
-            }
-        }
-
-        items, err := s.fetchPage(ctx, studioURL, page)
+    scraper.Paginate(ctx, opts, "mysite", out, func(ctx context.Context, page int) (scraper.PageResult, error) {
+        items, total, err := s.fetchPage(ctx, studioURL, page)
         if err != nil {
-            select {
-            case out <- scraper.SceneResult{Err: err}:
-            case <-ctx.Done():
-            }
-            return
+            return scraper.PageResult{}, err
         }
-
-        if len(items) == 0 {
-            return // no more pages
+        scenes := make([]models.Scene, len(items))
+        for i, item := range items {
+            scenes[i] = toScene(item, studioURL, now)
         }
-
-        // Send total hint once (first page only) for progress display
-        if page == 1 && totalCount > 0 {
-            select {
-            case out <- scraper.SceneResult{Total: totalCount}:
-            case <-ctx.Done():
-                return
-            }
-        }
-
-        now := time.Now().UTC()
-        for _, item := range items {
-            // Incremental mode: stop when we hit a known ID
-            if len(opts.KnownIDs) > 0 && opts.KnownIDs[item.id] {
-                select {
-                case out <- scraper.SceneResult{StoppedEarly: true}:
-                case <-ctx.Done():
-                }
-                return
-            }
-
-            scene := toScene(studioURL, item, now)
-            select {
-            case out <- scraper.SceneResult{Scene: scene}:
-            case <-ctx.Done():
-                return
-            }
-        }
-    }
+        return scraper.PageResult{
+            Scenes: scenes,
+            Total:  total,                    // set on first page for progress display
+            Done:   len(items) == 0,          // or page >= totalPages
+        }, nil
+    })
 }
 ```
+
+For scrapers that can't use `Paginate` (worker pools, cursor-based pagination), use the manual loop pattern — every channel send must be wrapped in `select` with `case <-ctx.Done(): return` to prevent goroutine leaks. See `manyvids` or `kink` for examples.
 
 **Critical rules:**
 
 - `defer close(out)` must be the first line in `run()` — the consumer blocks on this channel
-- Every channel send must be wrapped in `select` with `case <-ctx.Done(): return` to prevent goroutine leaks on cancellation
-- Send `SceneResult{Total: n}` once after the first page so the CLI can show progress
-- Send `SceneResult{StoppedEarly: true}` when hitting a known ID in incremental mode
+- `Paginate` handles ctx cancellation, delay, and progress internally — no manual select needed in the callback
+
+### 4a. Add debug logging
+
+All scrapers must include level-1 debug logging with `scraper.Debugf(1, ...)`. `Paginate` handles page-fetch and total-count logging automatically; add only what it doesn't cover:
+
+```go
+// URL mode detection (if your scraper supports multiple URL types):
+scraper.Debugf(1, "mysite: scraping model page")
+
+// Worker pool launch (if applicable):
+scraper.Debugf(1, "mysite: fetching %d details with %d workers", n, workers)
+```
+
+Debug levels by convention: **1** = high-level operations, **2** = HTTP requests (handled by `httpx.Do` automatically), **3** = parsing details.
+
+### 4b. Check for URL filtering modes
+
+Most sites support more than just the main video listing. Check whether the site offers filtered views and add support for each:
+
+- **Model/performer page** (`/model/{slug}`, `/pornstar/{slug}`) — scenes for one performer
+- **Channel/series page** (`/channel/{slug}`, `/series/{slug}`) — sub-studio scenes
+- **Tag/category page** (`/tag/{slug}`, `/categories/{name}`)
+
+Add each supported URL pattern to `Patterns()` so `fss list-scrapers` shows them. See `kink` (channel/model/tag/series) or `nubiles` (model profile) for examples.
+
+**Pitfall**: model pages often mix videos and galleries — only return video entries.
 
 ### 5. Build the Scene
 
@@ -155,7 +136,11 @@ For free sites (e.g. Pornhub):
 scene.AddPrice(models.PriceSnapshot{Date: now, IsFree: true})
 ```
 
-### 6. WordPress sites — use wputil
+### 6. Check for an existing platform
+
+Before building a standalone scraper, check [docs/platform-detection.md](docs/platform-detection.md) — your site may belong to an existing `*util` package (Aylo, Gamma, Adult Prime, etc.). If so, you only need a thin wrapper with a site config entry. If no match, build a standalone scraper.
+
+### 7. WordPress sites — use wputil
 
 For WordPress-based sites, the `internal/scrapers/wputil` package provides shared helpers:
 
@@ -168,7 +153,7 @@ For WordPress-based sites, the `internal/scrapers/wputil` package provides share
 
 See `taratainton` and `momcomesfirst` for examples. Your scraper only needs to implement the site-specific `parsePage` callback and registration.
 
-### 7. Use the shared HTTP layer
+### 8. Use the shared HTTP layer
 
 All scrapers should use the shared HTTP client:
 
@@ -189,7 +174,7 @@ resp, err := httpx.Do(ctx, s.client, httpx.Request{
 
 This gives you connection pooling, automatic retries with backoff (0s/2s/4s), and fail-fast on non-retryable 4xx errors.
 
-### 8. Write tests
+### 9. Write tests
 
 Create `internal/scrapers/<site>/<site>_test.go`. Tests should be offline — use `httptest.NewServer` to serve fixture HTML/JSON responses:
 
@@ -258,11 +243,16 @@ FSS_STASH_URL=http://192.168.1.50:9999 FSS_STASH_API_KEY=yourkey make smoke-stas
 
 If Stash isn't reachable, all tests skip gracefully — no failures.
 
-### 9. Update docs
+### 10. Update docs and tracking files
 
-Add a row to [docs/scrapers.md](docs/scrapers.md) with the site name, URL pattern, platform, and notes.
+- Add a row to [docs/scrapers.md](docs/scrapers.md) with the site name, URL pattern, platform, and notes.
+- Update the site count in `README.md` (auto-verified by `TestReadmeScraperCount` — run `go test ./internal/scrapers/all/...` and it will auto-fix).
+- If the new scraper covers a stashdb studio tree, remove the completed entries from all three tracking files:
+  - `docs/stashdb-studios.json` — remove entries where the entire tree (parent + all children) is now covered
+  - `docs/stashdb-scene-counts.json` — remove the same entries
+  - `docs/partially-covered.json` — remove or update completion counts
 
-### 10. Verify
+### 11. Verify
 
 ```bash
 go build ./...                           # compiles

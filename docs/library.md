@@ -25,7 +25,7 @@ go get github.com/Wasylq/FSS@latest # Or use tag for stable release
 **Registering scrapers:** The individual scraper implementations live under `internal/scrapers/`, but a public aggregator package re-exports them all:
 
 ```go
-import _ "github.com/Wasylq/FSS/scrapers/all"  // registers all 102 scrapers
+import _ "github.com/Wasylq/FSS/scrapers/all"  // registers all scrapers
 ```
 
 This is all you need to populate the registry for scraping from external code.

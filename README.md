@@ -9,31 +9,42 @@ Scrapes all scenes and metadata from a studio URL. Designed to be easily extende
 
 ## Supported sites
 
-**1162 sites** across 15+ platforms — [full list with URL patterns →](docs/scrapers.md) · [searchable A-Z domain list →](docs/sites.md)
+**1162 sites** across 30+ platforms — [full list with URL patterns →](docs/scrapers.md) · [searchable A-Z domain list →](docs/sites.md)
 
-| Platform | Count | Examples |
-|----------|------:|---------|
-| Score Group | 93 | Scoreland, XL Girls, 18Eighteen, Leg Sex, Naughty Mag, 50 Plus MILFs, … |
-| Gamma/Algolia | 93 | Adult Time, BiPhoria, Blowpass, Burning Angel, Devil's Film, Diabolic, Dogfart Network, Evil Angel, Fame Digital, Girlcore, Girlsway, Modern-Day Sins, Mommy's Girl, OpenLife, Pretty Dirty, Pure Taboo, Throated, Transfixed, Web Young, White Ghetto, Wicked, Zero Tolerance Films, … |
-| WP video-elements | 12 | DaughterSwap, MommysBoy, PervMom, SisLovesMe, … |
-| SpiceVids collections | 1001 | AdamAndEveVOD, Crunchboy, 1111Customs, AdultTime, NewSensations, … (Aylo marketplace) |
-| Aylo/Juan | 39 | Babes, BangBros, BigStr, Brazzers, Bromo, Dancing Bear, Erito, FakeHub, HentaiPros, House Humpers, Icon Male, Killergram, LetsDoeIt, Men, Metro, MileHigh, NextDoorHobby, Noir Male, Reality Kings, Sean Cody, Sex Selector, SpiceVids, Sweet Sinner, Sweetheart Video, Transsensual, True Amateurs, TwinkPop, Virtual Porn, WhyNotBi, … |
-| FYC/PornPros | 20 | Passion HD, Tiny4K, POVD, Casting Couch X, Lubed, SpyFam, Cum4K, Exotic4K, WetVR, BBC Pie, … |
-| WordPress | 5 | Anal Therapy, Family Therapy, Tara Tainton, … |
-| POVR/WankzVR | 4 | BrasilVR, MilfVR, TranzVR, WankzVR |
-| Up-Timely CMS | 6 | Attackers, DAS!, Idea Pocket, Madonna, MOODYZ, S1 NO.1 STYLE |
-| SexMex Pro CMS | 3 | Exposed Latinas, SexMex, Trans Queens |
-| ModelCentro | 28 | Penny Barber, The Jerky Girls, Mugur Porn, Thicc Vision, Cum Trainer, Monster Males, … |
-| MetArt Network | 13 | MetArt, SexArt, ALS Scan, Viv Thomas, MetArt X, Errotica Archives, Stunning 18, … |
-| Railway/Express | 3 | Smoking Erotica, Smoking Models, Spanking Glamour |
-| Grooby | 42 | Grooby Girls, TGirls.xxx, Brazilian Transsexuals, TGirl Japan, Grooby VR, Black TGirls, Femout.xxx, Ladyboy.xxx, … |
-| New Sensations | 8 | New Sensations, FamilyXXX, Hot Wife XXX, Girl Girl XXX, Fresh Outta High School, Shane Diesel XXX, … |
-| Wow Network | 4 | WowGirls, Ultra Films, angels.love, sensual.love |
-| TeamSkeet/PSM | 47 | TeamSkeet, MYLF, Family Strokes, Freeuse, Pervz, Shoplyfter, SayUncle, Dad Crush, Sis Loves Me, Hijab Hookup, … |
-| Full Porn Network | 22 | Analized, James Deen, Bad Daddy POV, Porn Force, DTF Sluts, Slut Inspection, Abbie Maley, Broken Sluts, … |
-| Wankz | 2 | Wankz, Lethal Pass |
-| Stashbox | 1+ | StashDB, any stashbox instance (config-driven) |
-| Standalone | 58 | Anal Vids, APClips, Bare Back Studios, Beautiful Agony, Clips4Sale, Crunchboy, Cum Louder, DEEP'S, Fakings, Glory Quest, GrandparentsX, I Feel Myself, I Shot Myself, Jules Jordan, Kink, KM Produce, Legs Emporium, Lucas Entertainment, ManyVids, Mousouzoku, Naked News, Pornbox, Pornhub, Pure CFNM, r18.dev, Raw Fuck Club, SexLikeReal, Takara TV, TitanMen, VENUS, … |
+| Platform | Examples |
+|----------|---------|
+| Adult Prime | Private, DDF Network, Her Limit, Hands On Hardcore, … |
+| Aylo/Juan | Babes, BangBros, Brazzers, Bromo, FakeHub, Men, MileHigh, Reality Kings, Sean Cody, SpiceVids, … |
+| Czech AV | Czech Casting, Czech Massage, Czech Streets, Czech Amateurs, Czech Couples, … |
+| FTV | FTV Girls, FTV MILFs |
+| FYC/PornPros | Passion HD, Tiny4K, POVD, Casting Couch X, Lubed, SpyFam, PORN+, … |
+| Full Porn Network | Analized, James Deen, Bad Daddy POV, Porn Force, DTF Sluts, … |
+| Gamma/Algolia | Adult Time, Burning Angel, Dogfart Network, Evil Angel, Girlsway, Pure Taboo, Wicked, … |
+| Grooby | Grooby Girls, TGirls.xxx, Brazilian Transsexuals, TGirl Japan, Black TGirls, … |
+| Jules Jordan Network | Jules Jordan, Manuel Ferrara, The Score, … |
+| MetArt Network | MetArt, SexArt, ALS Scan, Viv Thomas, MetArt X, Errotica Archives, … |
+| ModelCentro | Penny Barber, The Jerky Girls, Mugur Porn, The Lion XXX, RosellaExtrem, … |
+| New Sensations | New Sensations, FamilyXXX, Hot Wife XXX, Girl Girl XXX, … |
+| POVR/WankzVR | BrasilVR, MilfVR, TranzVR, WankzVR |
+| Score Group | Scoreland, XL Girls, 18Eighteen, Leg Sex, Naughty Mag, 50 Plus MILFs, … |
+| SexMex Pro CMS | Exposed Latinas, SexMex, Trans Queens |
+| SpiceVids collections | AdamAndEveVOD, Crunchboy, 1111Customs, AdultTime, NewSensations, … |
+| Spizoo | Spizoo, Jessica Jaymes, Kelly Madison, Sara Jay, … |
+| TeamSkeet/PSM | TeamSkeet, MYLF, Family Strokes, Freeuse, Shoplyfter, SayUncle, Dad Crush, … |
+| Teen Mega World | Anal Angels, Beauty Angels, Creampie Angels, Dirty Flix, Nubile Girls HD, … |
+| Up-Timely CMS | Attackers, DAS!, Idea Pocket, Madonna, MOODYZ, S1 NO.1 STYLE |
+| Vixen MG | Vixen, Blacked, Tushy, Deeper, Slayed, Milfy, … |
+| WP video-elements | DaughterSwap, MommysBoy, PervMom, SisLovesMe, … |
+| Wank It Now | Wank It Now, Wank It Now VR |
+| Wankz | Wankz, Lethal Pass |
+| Wow Network | WowGirls, Ultra Films, angels.love, sensual.love |
+| Flourish | Flourish, NaughtyNatural, Cherry Pop, … |
+| Glamose/UTG | UTG, Glamose, Prestige, … |
+| Railway/Express | Smoking Erotica, Smoking Models, Spanking Glamour |
+| Real Spankings | Real Spankings, Real Spankings Institute |
+| WordPress | Anal Therapy, Family Therapy, Tara Tainton, … |
+| Stashbox | StashDB, any stashbox instance (config-driven) |
+| Standalone | Anal Vids, APClips, Bare Back Studios, Clips4Sale, Kink, ManyVids, Pornbox, Pornhub, SexLikeReal, … |
 
 ## Install
 
@@ -174,6 +185,9 @@ fss list-scrapers
 
 # Check if a URL is supported
 fss check <url>
+
+# Debug output (stackable: -d, -dd, -ddd)
+fss scrape -d <url>
 ```
 
 ### NFO sidecar files

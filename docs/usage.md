@@ -17,6 +17,12 @@ For NFO sidecar file generation, see [identify.md](identify.md).
 
 ## CLI flags
 
+### Global flags
+
+| Flag | Type | Default | Description |
+|------|------|---------|-------------|
+| `--debug`, `-d` | count | 0 | Increase debug verbosity. Stackable: `-d` = high-level ops, `-dd` = HTTP requests, `-ddd` = parsing details |
+
 ### `fss scrape <studio-url>`
 
 | Flag | Type | Default | Description |
@@ -37,7 +43,11 @@ For NFO sidecar file generation, see [identify.md](identify.md).
 
 ### `fss list-scrapers`
 
-Prints all registered scrapers and the URL patterns each one handles. No flags.
+Prints all registered scrapers and the URL patterns each one handles.
+
+| Flag | Type | Default | Description |
+|------|------|---------|-------------|
+| `--markdown` | bool | false | Output as a markdown table (useful for docs) |
 
 ### `fss list-studios`
 

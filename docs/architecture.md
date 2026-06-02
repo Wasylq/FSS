@@ -86,7 +86,7 @@ Scrapers never know which store is active.
 
 ## Shared Scraper Packages
 
-27+ `*util` packages eliminate duplication for sites that share a platform. Key examples:
+`*util` packages eliminate duplication for sites that share a platform. Key examples:
 
 ### ayloutil
 
@@ -151,7 +151,7 @@ All scrapers share a single HTTP transport (`MaxIdleConnsPerHost: 10`) for conne
 `httpx.Do()` wraps requests with:
 - **Retry with backoff**: network errors, 429, 5xx are retried up to 3 times with `attempt * 2s` sleep
 - **Fail-fast**: non-retryable 4xx errors return immediately as `*StatusError`
-- **Centralized UA strings**: `UserAgentFirefox` and `UserAgentChrome` constants, versioned in one place
+- **Centralized UA strings**: `UserAgentFirefox` and `UserAgentChrome` constants, versioned in one place. Overridable via `user_agent` config field (`"firefox"`, `"chrome"`, or a custom string); applied at startup by `httpx.SetDefaultUA()`
 
 `httpx.NewClient(timeout)` creates a client using the shared transport.
 

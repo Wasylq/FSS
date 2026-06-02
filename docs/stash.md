@@ -22,6 +22,8 @@ Precedence: flag > env var > config.
 
 ## CLI flags
 
+All `fss stash` subcommands support the global `-d` flag for debug output (stackable: `-d`, `-dd`, `-ddd`).
+
 ### `fss stash unmatched`
 
 Lists Stash scenes that have no StashDB metadata (`stash_id_count == 0`).
