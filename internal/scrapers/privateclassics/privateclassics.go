@@ -80,6 +80,7 @@ func (s *Scraper) Patterns() []string {
 		"privateclassics.com/",
 		"privateclassics.com/en/scenes",
 		"privateclassics.com/en/scenes/{N}/",
+		"privateclassics.com/en/pornstar/{id}-{slug}",
 	}
 }
 
@@ -185,10 +186,18 @@ func (s *Scraper) listingURL(page int) string {
 	return fmt.Sprintf("%s/en/scenes/%d/", s.base, page)
 }
 
+var pornstarPathRe = regexp.MustCompile(`/(?:en/)?pornstar/(\d+-[A-Za-z0-9-]+)`)
+
 func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOpts, out chan<- scraper.SceneResult) {
 	defer close(out)
-	scraper.Debugf(1, "privateclassics: scraping full catalog")
 
+	if pornstarPathRe.MatchString(studioURL) {
+		scraper.Debugf(1, "privateclassics: detected pornstar page")
+		s.scrapePornstarPage(ctx, studioURL, opts, out)
+		return
+	}
+
+	scraper.Debugf(1, "privateclassics: scraping full catalog")
 	now := time.Now().UTC()
 	firstPage := true
 	scraper.Paginate(ctx, opts, "privateclassics", out, func(ctx context.Context, page int) (scraper.PageResult, error) {
@@ -209,6 +218,50 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 		}
 		return scraper.PageResult{Scenes: scenes, Total: total}, nil
 	})
+}
+
+func (s *Scraper) scrapePornstarPage(ctx context.Context, studioURL string, opts scraper.ListOpts, out chan<- scraper.SceneResult) {
+	pageURL := studioURL
+	if !strings.HasPrefix(pageURL, "http") {
+		pageURL = s.base + pageURL
+	}
+
+	body, err := s.fetchPage(ctx, pageURL)
+	if err != nil {
+		select {
+		case out <- scraper.Error(err):
+		case <-ctx.Done():
+		}
+		return
+	}
+
+	items := parseListing(body)
+	if len(items) == 0 {
+		return
+	}
+	scraper.Debugf(1, "privateclassics: found %d scenes on pornstar page", len(items))
+
+	now := time.Now().UTC()
+	select {
+	case out <- scraper.Progress(len(items)):
+	case <-ctx.Done():
+		return
+	}
+
+	for _, item := range items {
+		if opts.KnownIDs[item.id] {
+			select {
+			case out <- scraper.StoppedEarly():
+			case <-ctx.Done():
+			}
+			return
+		}
+		select {
+		case out <- scraper.Scene(s.toScene(item, studioURL, now)):
+		case <-ctx.Done():
+			return
+		}
+	}
 }
 
 func (s *Scraper) toScene(item sceneItem, studioURL string, now time.Time) models.Scene {

@@ -49,6 +49,7 @@ func (s *Scraper) Patterns() []string {
 	return []string{
 		s.cfg.Domain,
 		s.cfg.Domain + "/video/{slug}",
+		s.cfg.Domain + "/pages/search/?q={name}&adult-performer",
 	}
 }
 
@@ -153,9 +154,149 @@ func appendUnique(slice []string, val string) []string {
 	return append(slice, val)
 }
 
+var searchPerformerRe = regexp.MustCompile(`/pages/search/\?q=([^&#]+)&adult-performer`)
+var searchVideoSlugRe = regexp.MustCompile(`href="/video/([^/"]+)/"`)
+
 func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOpts, out chan<- scraper.SceneResult) {
 	defer close(out)
 
+	if searchPerformerRe.MatchString(studioURL) {
+		scraper.Debugf(1, "%s: detected performer search page", s.cfg.SiteID)
+		s.scrapePerformerSearch(ctx, studioURL, opts, out)
+		return
+	}
+
+	s.scrapeSitemap(ctx, studioURL, opts, out)
+}
+
+func (s *Scraper) scrapePerformerSearch(ctx context.Context, studioURL string, opts scraper.ListOpts, out chan<- scraper.SceneResult) {
+	searchURL := studioURL
+	if !strings.HasPrefix(searchURL, "http") {
+		searchURL = s.Base + searchURL
+	}
+
+	body, err := s.fetchPage(ctx, searchURL)
+	if err != nil {
+		select {
+		case out <- scraper.Error(fmt.Errorf("search page: %w", err)):
+		case <-ctx.Done():
+		}
+		return
+	}
+
+	seen := map[string]bool{}
+	var slugs []string
+	for _, m := range searchVideoSlugRe.FindAllSubmatch(body, -1) {
+		slug := string(m[1])
+		if !seen[slug] {
+			seen[slug] = true
+			slugs = append(slugs, slug)
+		}
+	}
+
+	if len(slugs) == 0 {
+		return
+	}
+	scraper.Debugf(1, "%s: found %d scenes on performer page", s.cfg.SiteID, len(slugs))
+
+	select {
+	case out <- scraper.Progress(len(slugs)):
+	case <-ctx.Done():
+		return
+	}
+
+	workers := opts.Workers
+	if workers <= 0 {
+		workers = 4
+	}
+
+	work := make(chan string, workers)
+	var wg sync.WaitGroup
+	for i := 0; i < workers; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			for slug := range work {
+				if opts.Delay > 0 {
+					select {
+					case <-time.After(opts.Delay):
+					case <-ctx.Done():
+						return
+					}
+				}
+				scene, ferr := s.fetchSceneBySlug(ctx, slug, studioURL)
+				if ferr != nil {
+					select {
+					case out <- scraper.Error(ferr):
+					case <-ctx.Done():
+						return
+					}
+					continue
+				}
+				select {
+				case out <- scraper.Scene(scene):
+				case <-ctx.Done():
+					return
+				}
+			}
+		}()
+	}
+
+	for _, slug := range slugs {
+		if opts.KnownIDs[slug] {
+			scraper.Debugf(1, "%s: hit known ID %s, stopping early", s.cfg.SiteID, slug)
+			select {
+			case out <- scraper.StoppedEarly():
+			case <-ctx.Done():
+			}
+			break
+		}
+		select {
+		case work <- slug:
+		case <-ctx.Done():
+		}
+	}
+	close(work)
+	wg.Wait()
+}
+
+func (s *Scraper) fetchSceneBySlug(ctx context.Context, slug, studioURL string) (models.Scene, error) {
+	sceneURL := s.Base + "/video/" + slug + "/"
+	detailBody, err := s.fetchPage(ctx, sceneURL)
+	if err != nil {
+		return models.Scene{}, fmt.Errorf("detail %s: %w", slug, err)
+	}
+
+	detail := ParseDetailPage(detailBody)
+	now := time.Now().UTC()
+
+	sc := models.Scene{
+		ID:         slug,
+		SiteID:     s.cfg.SiteID,
+		StudioURL:  studioURL,
+		URL:        sceneURL,
+		Performers: detail.Performers,
+		Tags:       detail.Tags,
+		Studio:     s.cfg.Studio,
+		ScrapedAt:  now,
+	}
+
+	if vo := parseutil.ExtractVideoObject(detailBody); vo != nil {
+		sc.Title = vo.Name
+		sc.Description = vo.Description
+		sc.Thumbnail = vo.ThumbnailURL
+		sc.Duration = parseutil.ParseDurationISO(vo.Duration)
+		if vo.UploadDate != "" {
+			if t, err := time.Parse("2006-01-02", vo.UploadDate); err == nil {
+				sc.Date = t.UTC()
+			}
+		}
+	}
+
+	return sc, nil
+}
+
+func (s *Scraper) scrapeSitemap(ctx context.Context, studioURL string, opts scraper.ListOpts, out chan<- scraper.SceneResult) {
 	workers := opts.Workers
 	if workers <= 0 {
 		workers = 4

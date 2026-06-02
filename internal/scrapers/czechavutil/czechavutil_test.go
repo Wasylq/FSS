@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 	"time"
 
@@ -349,5 +350,55 @@ func TestSceneDate(t *testing.T) {
 	wantDate := time.Date(2026, 1, 15, 0, 0, 0, 0, time.UTC)
 	if !results[0].Date.Equal(wantDate) {
 		t.Errorf("date = %v, want %v", results[0].Date, wantDate)
+	}
+}
+
+const searchDetailTpl = `<html><head>
+<script type="application/ld+json">
+{"@type":"VideoObject","name":"Scene %d","description":"Desc %d","thumbnailUrl":"https://cdn.test/thumb-%d.jpg","duration":"PT10M","uploadDate":"2026-03-01","actor":["Tereza"],"keywords":"casting"}
+</script>
+</head><body></body></html>`
+
+func TestPerformerSearch(t *testing.T) {
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch {
+		case r.URL.Path == "/pages/search/":
+			w.Header().Set("Content-Type", "text/html")
+			_, _ = fmt.Fprint(w, `<html><body>
+				<a href="/video/scene-1/">Scene 1</a>
+				<a href="/video/scene-2/">Scene 2</a>
+			</body></html>`)
+		case strings.HasPrefix(r.URL.Path, "/video/scene-"):
+			w.Header().Set("Content-Type", "text/html")
+			var id int
+			_, _ = fmt.Sscanf(r.URL.Path, "/video/scene-%d/", &id)
+			_, _ = fmt.Fprintf(w, searchDetailTpl, id, id, id)
+		default:
+			http.NotFound(w, r)
+		}
+	}))
+	defer ts.Close()
+
+	domain := ts.Listener.Addr().String()
+	s := &Scraper{
+		cfg:    SiteConfig{SiteID: "test", Domain: domain, Studio: "Test"},
+		Client: ts.Client(),
+		Base:   ts.URL,
+	}
+
+	ch, err := s.ListScenes(context.Background(), ts.URL+"/pages/search/?q=Tereza&adult-performer", scraper.ListOpts{})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	results := testutil.CollectScenes(t, ch)
+	if len(results) != 2 {
+		t.Fatalf("got %d scenes, want 2", len(results))
+	}
+	if results[0].Performers[0] != "Tereza" {
+		t.Errorf("performers = %v", results[0].Performers)
+	}
+	if results[0].Duration != 600 {
+		t.Errorf("duration = %d, want 600", results[0].Duration)
 	}
 }
