@@ -45,6 +45,8 @@ var sites = []siteConfig{
 	{"throatwars", "throatwars.com", "Throat Wars", nil},
 	{"wetwetgirls", "wetwetgirls.com", "Wet Wet Girls", nil},
 	{"yungdumbsluts", "yungdumbsluts.com", "Yung Dumb Sluts", nil},
+	{"rosellaextrem", "rosella-extrem.com", "RosellaExtrem", nil},
+	{"thelionxxx", "thelionxxx.com", "The Lion XXX", nil},
 }
 
 type siteScraper struct {

@@ -62,6 +62,13 @@ var sites = []siteConfig{
 		matchRe:  regexp.MustCompile(`^https?://(?:www\.)?manpuppy\.com`),
 		patterns: []string{"manpuppy.com", "manpuppy.com/videos", "manpuppy.com/models/{id}-{slug}"},
 	},
+	{
+		id:       "milflicious",
+		domain:   "milflicious.com",
+		studio:   "Milflicious",
+		matchRe:  regexp.MustCompile(`^https?://(?:www\.)?milflicious\.com`),
+		patterns: []string{"milflicious.com", "milflicious.com/videos", "milflicious.com/models/{id}-{slug}"},
+	},
 }
 
 func init() {

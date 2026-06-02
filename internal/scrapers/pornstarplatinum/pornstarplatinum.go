@@ -20,22 +20,23 @@
 // Stepmom), no filter is applied. `Scene.Series` always carries the
 // per-card model name so a downstream consumer can filter further.
 //
-// **11 PSP performers don't have findable sister-site tour URLs**
+// **10 PSP performers don't have findable sister-site tour URLs**
 // (parked, retired, or the network.php slug is typo'd):
 //
-//	Mindi Mink, Eva Notty, Havana Ginger, Tifanny Tyler,
-//	Rachael Cavalli, Whore Today Gone Tomorrow, Nikita Von James,
-//	Claudia Valentine, Emily's Playground, Raven Bay, Prince Yahshua.
+//	Eva Notty, Havana Ginger, Tifanny Tyler, Rachael Cavalli,
+//	Whore Today Gone Tomorrow, Nikita Von James, Claudia Valentine,
+//	Emily's Playground, Raven Bay, Prince Yahshua.
 //
 // Their scenes still appear in the catalogue and are correctly
 // attributed via `Scene.Series` when the operator scrapes the parent
 // URL — just no dedicated per-pornstar URL match.
 //
-// **7 sister tours have a working per-site endpoint** that avoids the
+// **8 sister tours have a working per-site endpoint** that avoids the
 // 295-page catalogue walk: Dee Williams, Kate Frost, Brooke Wylde,
-// Veronica Avluv, Sexy Vanessa (sceneBlock template); Taboo Stepmom
-// (tbsm template, themed); Joslyn James (Movies categories template).
-// All other sister tours still walk the catalogue + filter by performer.
+// Veronica Avluv, Sexy Vanessa, Mindi Mink (sceneBlock template);
+// Taboo Stepmom (tbsm template, themed); Joslyn James (Movies
+// categories template). All other sister tours still walk the catalogue
+// + filter by performer.
 //
 // Card markup:
 //
@@ -163,6 +164,11 @@ var sites = []siteFilter{
 		matchRe:       regexp.MustCompile(`(?i)^https?://(?:tour\.|www\.)?sexyvanessa\.com\b`),
 		Performer:     "Sexy Vanessa",
 		PerSiteVideos: "https://tour.sexyvanessa.com/videos",
+	},
+	{
+		matchRe:       regexp.MustCompile(`(?i)^https?://(?:tour\.|www\.)?mindiminkxxx\.com\b`),
+		Performer:     "Mindi Mink",
+		PerSiteVideos: "https://tour.mindiminkxxx.com/videos.php",
 	},
 	{
 		// Themed brand (multiple performers) — Performer stays empty so
@@ -296,20 +302,23 @@ var (
 	// the page lists across either template — and treat the rest of the
 	// fields as opportunistic enrichments.
 	perSiteHrefRe  = regexp.MustCompile(`href="(?:/)?(?:model|set)/(\d+)/([^"?]+)\.html\?[^"]*"`)
-	perSiteThumbRe = regexp.MustCompile(`pspthumbnails/+(\d+)\.jpg`)
+	perSiteThumbRe = regexp.MustCompile(`<img[^>]+src="((?:https?:)?//[^"]*(?:pspthumbnails|contentthumbs)/+\d+[^"]*\.jpg)"`)
+
 	// perSiteDateRe captures `Month D, YYYY` from `<div class="sceneDate">…</div>` (Dee template).
 	perSiteDateRe = regexp.MustCompile(`<div class="sceneDate">\s*([A-Z][a-z]+ \d{1,2}, \d{4})\s*</div>`)
 )
 
 type card struct {
-	id        string
-	url       string // path-only, absolutised in toScene
-	thumb     string
-	title     string
-	performer string
-	date      time.Time
-	views     int
-	likes     int
+	id          string
+	url         string // path-only, absolutised in toScene
+	thumb       string
+	title       string
+	performer   string
+	date        time.Time
+	views       int
+	likes       int
+	description string
+	duration    int // seconds
 }
 
 func parseCards(body []byte) ([]card, int) {
@@ -421,15 +430,13 @@ func parsePerSiteCards(body []byte, performer, siteBase string) ([]card, int) {
 		})
 	}
 
-	// 2) Walk the body once more pairing each thumbnail with the
-	//    nearest preceding card. Both templates emit the thumb before
-	//    the title anchor, so the "nearest preceding hyperlink" rule
-	//    attributes thumbs correctly.
+	// 2) Pair each thumbnail and date with the closest href (by
+	//    absolute source-position distance). Templates vary in whether
+	//    the thumb/date appears before or after the card's anchor, so
+	//    nearest-match handles both layouts.
 	if len(cards) > 0 {
 		thumbLocs := perSiteThumbRe.FindAllStringSubmatchIndex(page, -1)
 		hrefLocs := perSiteHrefRe.FindAllStringSubmatchIndex(page, -1)
-		// Build a slice of (start_pos, idx_into_cards) for each href in
-		// source order so we can walk thumbs and bind to the next href.
 		type hrefMark struct {
 			pos   int
 			cardI int
@@ -444,16 +451,26 @@ func parsePerSiteCards(body []byte, performer, siteBase string) ([]card, int) {
 			hSeen[id] = true
 			hrefs = append(hrefs, hrefMark{pos: m[0], cardI: seen[id]})
 		}
+
 		for _, t := range thumbLocs {
-			thumbID := page[t[2]:t[3]]
-			// First href whose pos >= thumb pos.
-			for _, h := range hrefs {
-				if h.pos >= t[0] {
-					if cards[h.cardI].thumb == "" {
-						cards[h.cardI].thumb = thumbCDN + "/pspthumbnails/" + thumbID + ".jpg"
-					}
-					break
+			imgURL := page[t[2]:t[3]]
+			if strings.HasPrefix(imgURL, "//") {
+				imgURL = "https:" + imgURL
+			}
+			bestDist := len(page) + 1
+			bestIdx := -1
+			for j := range hrefs {
+				dist := hrefs[j].pos - t[0]
+				if dist < 0 {
+					dist = -dist
 				}
+				if dist < bestDist {
+					bestDist = dist
+					bestIdx = j
+				}
+			}
+			if bestIdx >= 0 && cards[hrefs[bestIdx].cardI].thumb == "" {
+				cards[hrefs[bestIdx].cardI].thumb = imgURL
 			}
 		}
 
@@ -463,14 +480,21 @@ func parsePerSiteCards(body []byte, performer, siteBase string) ([]card, int) {
 		dateLocs := perSiteDateRe.FindAllStringSubmatchIndex(page, -1)
 		for _, d := range dateLocs {
 			dateStr := page[d[2]:d[3]]
-			for _, h := range hrefs {
-				if h.pos >= d[0] {
-					if cards[h.cardI].date.IsZero() {
-						if t, err := time.Parse("January 2, 2006", dateStr); err == nil {
-							cards[h.cardI].date = t.UTC()
-						}
-					}
-					break
+			bestDist := len(page) + 1
+			bestIdx := -1
+			for j := range hrefs {
+				dist := hrefs[j].pos - d[0]
+				if dist < 0 {
+					dist = -dist
+				}
+				if dist < bestDist {
+					bestDist = dist
+					bestIdx = j
+				}
+			}
+			if bestIdx >= 0 && cards[hrefs[bestIdx].cardI].date.IsZero() {
+				if t, err := time.Parse("January 2, 2006", dateStr); err == nil {
+					cards[hrefs[bestIdx].cardI].date = t.UTC()
 				}
 			}
 		}
@@ -514,9 +538,11 @@ func slugToTitle(slug string) string {
 // has a stable anchor.
 var (
 	tbsmCardStartRe = regexp.MustCompile(`<div class="scenesbgcolor">`)
-	tbsmImgRe       = regexp.MustCompile(`<img[^>]+src="([^"]+)"[^>]+cid="(\d+)"`)
+	tbsmImgRe       = regexp.MustCompile(`<img[^>]+src="([^"]+)"[^>]+class="[^"]*scene-thumb"`)
+	tbsmThumbIDRe   = regexp.MustCompile(`tbsm_contentthumbs/\d+/\d+/(\d+)`)
 	tbsmTitleRe     = regexp.MustCompile(`(?s)<a[^>]+href="/join">\s*<h4>\s*([^<]+?)\s*</h4>`)
 	tbsmDescRe      = regexp.MustCompile(`<p class="description">\s*([^<]+?)\s*</p>`)
+	tbsmDurationRe  = regexp.MustCompile(`Video:\s*(\d+:\d+)`)
 )
 
 func parsePerSiteCardsTbsm(body []byte, siteBase string) ([]card, int) {
@@ -535,7 +561,11 @@ func parsePerSiteCardsTbsm(body []byte, siteBase string) ([]card, int) {
 		var c card
 		if m := tbsmImgRe.FindStringSubmatch(block); m != nil {
 			c.thumb = m[1]
-			c.id = m[2]
+			// Extract scene ID from thumb path — the cid attribute is
+			// broken on taboostepmom (always the same value).
+			if tid := tbsmThumbIDRe.FindStringSubmatch(m[1]); tid != nil {
+				c.id = tid[1]
+			}
 		}
 		if c.id == "" || seen[c.id] {
 			continue
@@ -544,8 +574,6 @@ func parsePerSiteCardsTbsm(body []byte, siteBase string) ([]card, int) {
 
 		if m := tbsmTitleRe.FindStringSubmatch(block); m != nil {
 			full := cleanText(m[1])
-			// "{Performer} in {Title}" → performer + title; fall back
-			// to using the full string as title if " in " is absent.
 			if idx := strings.Index(full, " in "); idx > 0 {
 				c.performer = full[:idx]
 				c.title = full
@@ -553,12 +581,13 @@ func parsePerSiteCardsTbsm(body []byte, siteBase string) ([]card, int) {
 				c.title = full
 			}
 		}
-		// Description is a nice-to-have; drop it for now to keep
-		// Scene.Description in sync with the other parsers which don't
-		// set it either.
-		_ = tbsmDescRe
+		if m := tbsmDescRe.FindStringSubmatch(block); m != nil {
+			c.description = cleanText(m[1])
+		}
+		if m := tbsmDurationRe.FindStringSubmatch(block); m != nil {
+			c.duration = parseDurationColon(m[1])
+		}
 
-		// Synthesised URL — Taboo Stepmom has no public detail page.
 		c.url = siteBase + "/#scene-" + c.id
 
 		cards = append(cards, c)
@@ -647,6 +676,24 @@ func parsePerSiteCardsMovies(body []byte, performer string) ([]card, int) {
 		}
 	}
 	return cards, maxPage
+}
+
+func parseDurationColon(s string) int {
+	parts := strings.SplitN(s, ":", 3)
+	if len(parts) < 2 {
+		return 0
+	}
+	nums := make([]int, len(parts))
+	for i, p := range parts {
+		nums[i], _ = strconv.Atoi(p)
+	}
+	switch len(nums) {
+	case 2:
+		return nums[0]*60 + nums[1]
+	case 3:
+		return nums[0]*3600 + nums[1]*60 + nums[2]
+	}
+	return 0
 }
 
 var wsRe = regexp.MustCompile(`\s+`)
@@ -794,18 +841,20 @@ func (s *Scraper) toScene(c card, studioURL string, now time.Time) models.Scene 
 		url = baseURL + url
 	}
 	scene := models.Scene{
-		ID:        c.id,
-		SiteID:    siteID,
-		StudioURL: studioURL,
-		Title:     c.title,
-		URL:       url,
-		Date:      c.date,
-		Thumbnail: c.thumb,
-		Studio:    studioName,
-		Series:    c.performer, // per-model attribution for downstream filtering
-		ScrapedAt: now,
-		Views:     c.views,
-		Likes:     c.likes,
+		ID:          c.id,
+		SiteID:      siteID,
+		StudioURL:   studioURL,
+		Title:       c.title,
+		URL:         url,
+		Date:        c.date,
+		Thumbnail:   c.thumb,
+		Studio:      studioName,
+		Series:      c.performer,
+		Description: c.description,
+		Duration:    c.duration,
+		ScrapedAt:   now,
+		Views:       c.views,
+		Likes:       c.likes,
 	}
 	if c.performer != "" {
 		scene.Performers = []string{c.performer}
