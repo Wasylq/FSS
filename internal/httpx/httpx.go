@@ -12,6 +12,7 @@ import (
 	"io"
 	"math/rand/v2"
 	"net/http"
+	"net/url"
 	"strings"
 	"sync/atomic"
 	"time"
@@ -184,6 +185,20 @@ func DoWithStatus(ctx context.Context, client *http.Client, r Request) (*http.Re
 	return doInner(ctx, client, r, false)
 }
 
+// redactURL strips query parameters from a URL for debug logging so
+// query-string credentials (e.g. signed CDN URLs) don't leak to stderr.
+func redactURL(rawURL string) string {
+	u, err := url.Parse(rawURL)
+	if err != nil {
+		return rawURL
+	}
+	if u.RawQuery == "" {
+		return rawURL
+	}
+	u.RawQuery = "…"
+	return u.String()
+}
+
 // jitter applies ±25% randomness to a duration to prevent retry lockstep.
 func jitter(d time.Duration) time.Duration {
 	factor := 0.75 + rand.Float64()*0.5 // [0.75, 1.25)
@@ -246,10 +261,11 @@ func doInner(ctx context.Context, client *http.Client, r Request, classifyStatus
 		}
 
 		rid := RequestID(ctx)
+		redacted := redactURL(r.URL)
 		if rid > 0 {
-			scraper.Debugf(2, "[r%d] %s %s", rid, method, r.URL)
+			scraper.Debugf(2, "[r%d] %s %s", rid, method, redacted)
 		} else {
-			scraper.Debugf(2, "%s %s", method, r.URL)
+			scraper.Debugf(2, "%s %s", method, redacted)
 		}
 
 		resp, err := client.Do(req)

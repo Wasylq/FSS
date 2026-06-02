@@ -453,6 +453,24 @@ func TestSetDefaultUA(t *testing.T) {
 	})
 }
 
+func TestRedactURL(t *testing.T) {
+	cases := []struct {
+		in, want string
+	}{
+		{"https://example.com/path", "https://example.com/path"},
+		{"https://example.com/path?key=secret&token=abc", "https://example.com/path?…"},
+		{"https://cdn.example.com/video.mp4?sig=deadbeef", "https://cdn.example.com/video.mp4?…"},
+		{"not-a-url", "not-a-url"},
+		{"", ""},
+	}
+	for _, c := range cases {
+		got := redactURL(c.in)
+		if got != c.want {
+			t.Errorf("redactURL(%q) = %q, want %q", c.in, got, c.want)
+		}
+	}
+}
+
 func contains(s, substr string) bool {
 	for i := 0; i+len(substr) <= len(s); i++ {
 		if s[i:i+len(substr)] == substr {
