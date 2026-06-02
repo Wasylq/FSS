@@ -43,8 +43,10 @@ func New(cfg SiteConfig) *Scraper {
 
 var _ scraper.StudioScraper = (*Scraper)(nil)
 
-func (s *Scraper) ID() string               { return s.cfg.ID }
-func (s *Scraper) Patterns() []string       { return s.cfg.Patterns }
+func (s *Scraper) ID() string { return s.cfg.ID }
+func (s *Scraper) Patterns() []string {
+	return append(s.cfg.Patterns, strings.TrimPrefix(s.cfg.SiteBase, "https://")+"tag/{slug}")
+}
 func (s *Scraper) MatchesURL(u string) bool { return s.cfg.MatchRe.MatchString(u) }
 
 func (s *Scraper) ListScenes(ctx context.Context, studioURL string, opts scraper.ListOpts) (<-chan scraper.SceneResult, error) {
@@ -71,9 +73,12 @@ type wpRendered struct {
 type wpTag struct {
 	ID   int    `json:"id"`
 	Name string `json:"name"`
+	Slug string `json:"slug,omitempty"`
 }
 
 // ---- runner ----
+
+var tagSlugRe = regexp.MustCompile(`/tag/([^/?#]+)`)
 
 func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOpts, out chan<- scraper.SceneResult) {
 	defer close(out)
@@ -88,9 +93,24 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 		return
 	}
 
+	var tagFilter int
+	if m := tagSlugRe.FindStringSubmatch(studioURL); m != nil {
+		slug := strings.TrimRight(m[1], "/")
+		scraper.Debugf(1, "%s: detected tag page: %s", s.cfg.ID, slug)
+		tagFilter, err = s.resolveTagID(ctx, slug)
+		if err != nil {
+			select {
+			case out <- scraper.Error(fmt.Errorf("resolve tag %q: %w", slug, err)):
+			case <-ctx.Done():
+			}
+			return
+		}
+		scraper.Debugf(1, "%s: resolved tag %q to ID %d", s.cfg.ID, slug, tagFilter)
+	}
+
 	now := time.Now().UTC()
 	scraper.Paginate(ctx, opts, s.cfg.ID, out, func(ctx context.Context, page int) (scraper.PageResult, error) {
-		posts, total, err := s.fetchPosts(ctx, page)
+		posts, total, err := s.fetchPostsFiltered(ctx, page, tagFilter)
 		if err != nil {
 			return scraper.PageResult{}, err
 		}
@@ -147,9 +167,12 @@ func (s *Scraper) fetchAllTags(ctx context.Context) (map[int]string, error) {
 
 // ---- post fetching ----
 
-func (s *Scraper) fetchPosts(ctx context.Context, page int) ([]wpPost, int, error) {
+func (s *Scraper) fetchPostsFiltered(ctx context.Context, page int, tagID int) ([]wpPost, int, error) {
 	u := fmt.Sprintf("%s/wp-json/wp/v2/posts?per_page=100&page=%d&orderby=date&order=desc&categories=%d&_fields=id,date_gmt,link,title,content,tags",
 		s.cfg.SiteBase, page, s.cfg.MainCategoryID)
+	if tagID > 0 {
+		u += fmt.Sprintf("&tags=%d", tagID)
+	}
 
 	resp, err := httpx.Do(ctx, s.Client, httpx.Request{
 		URL:     u,
@@ -169,6 +192,27 @@ func (s *Scraper) fetchPosts(ctx context.Context, page int) ([]wpPost, int, erro
 	}
 
 	return posts, total, nil
+}
+
+func (s *Scraper) resolveTagID(ctx context.Context, slug string) (int, error) {
+	u := fmt.Sprintf("%s/wp-json/wp/v2/tags?slug=%s&_fields=id", s.cfg.SiteBase, slug)
+	resp, err := httpx.Do(ctx, s.Client, httpx.Request{
+		URL:     u,
+		Headers: httpx.BrowserHeaders(httpx.UserAgentChrome),
+	})
+	if err != nil {
+		return 0, err
+	}
+	defer func() { _ = resp.Body.Close() }()
+
+	var tags []wpTag
+	if err := httpx.DecodeJSON(resp.Body, &tags); err != nil {
+		return 0, err
+	}
+	if len(tags) == 0 {
+		return 0, fmt.Errorf("tag %q not found", slug)
+	}
+	return tags[0].ID, nil
 }
 
 // ---- scene conversion ----

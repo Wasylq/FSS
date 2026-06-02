@@ -95,15 +95,39 @@ func TestPostToScene(t *testing.T) {
 }
 
 func newTestServer(tags []wpTag, posts []wpPost) *httptest.Server {
+	return newTestServerTagged(tags, posts, nil)
+}
+
+func newTestServerTagged(tags []wpTag, posts []wpPost, taggedPosts map[string][]wpPost) *httptest.Server {
 	return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		switch r.URL.Path {
 		case "/wp-json/wp/v2/tags":
+			if slug := r.URL.Query().Get("slug"); slug != "" {
+				for _, t := range tags {
+					if t.Slug == slug {
+						_ = json.NewEncoder(w).Encode([]wpTag{t})
+						return
+					}
+				}
+				_, _ = w.Write([]byte("[]"))
+				return
+			}
 			w.Header().Set("X-WP-Total", "2")
 			_ = json.NewEncoder(w).Encode(tags)
 		case "/wp-json/wp/v2/posts":
 			page := r.URL.Query().Get("page")
 			if page == "2" {
+				w.Header().Set("X-WP-Total", "0")
+				_, _ = w.Write([]byte("[]"))
+				return
+			}
+			if tagID := r.URL.Query().Get("tags"); tagID != "" {
+				if tp, ok := taggedPosts[tagID]; ok {
+					w.Header().Set("X-WP-Total", itoa(len(tp)))
+					_ = json.NewEncoder(w).Encode(tp)
+					return
+				}
 				w.Header().Set("X-WP-Total", "0")
 				_, _ = w.Write([]byte("[]"))
 				return
@@ -194,6 +218,44 @@ func TestListScenesKnownIDs(t *testing.T) {
 	}
 	if len(scenes) != 1 || scenes[0].Title != "New" {
 		t.Errorf("got %d scenes, want [New]", len(scenes))
+	}
+}
+
+func TestListScenesTagFilter(t *testing.T) {
+	tags := []wpTag{
+		{ID: 10, Name: "Daisy Stone", Slug: "daisy-stone"},
+		{ID: 20, Name: "Joshua Lewis", Slug: "joshua-lewis"},
+	}
+	allPosts := []wpPost{
+		{ID: 100, DateGMT: "2026-04-26T11:00:00", Link: "/scene-one/", Title: wpRendered{Rendered: "Scene One"}, Tags: []int{10, 20}},
+		{ID: 99, DateGMT: "2026-04-25T10:00:00", Link: "/scene-two/", Title: wpRendered{Rendered: "Scene Two"}, Tags: []int{20}},
+	}
+	taggedPosts := map[string][]wpPost{
+		"10": {allPosts[0]},
+	}
+
+	ts := newTestServerTagged(tags, allPosts, taggedPosts)
+	defer ts.Close()
+
+	s := &Scraper{
+		cfg: SiteConfig{
+			ID: "mypervmom", Studio: "PervMom", SiteBase: ts.URL,
+			MainCategoryID: 1, MatchRe: regexp.MustCompile(`.*`),
+		},
+		Client: ts.Client(),
+	}
+
+	ch, err := s.ListScenes(context.Background(), ts.URL+"/tag/daisy-stone/", scraper.ListOpts{})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	scenes := testutil.CollectScenes(t, ch)
+	if len(scenes) != 1 {
+		t.Fatalf("got %d scenes, want 1", len(scenes))
+	}
+	if scenes[0].Title != "Scene One" {
+		t.Errorf("Title = %q, want %q", scenes[0].Title, "Scene One")
 	}
 }
 

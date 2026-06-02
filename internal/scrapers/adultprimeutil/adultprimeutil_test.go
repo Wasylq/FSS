@@ -299,6 +299,47 @@ func TestDetailParsing(t *testing.T) {
 	}
 }
 
+func TestListScenesNicheFilter(t *testing.T) {
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case "/studios/videos":
+			if r.URL.Query().Get("niche") != "Blowjob" {
+				t.Errorf("expected niche=Blowjob, got niche=%s", r.URL.Query().Get("niche"))
+			}
+			page := r.URL.Query().Get("page")
+			if page == "" || page == "1" {
+				_, _ = fmt.Fprintf(w, fixtureListing, 1)
+			} else {
+				_, _ = fmt.Fprint(w, `<html><body></body></html>`)
+			}
+		case "/studios/video/1001", "/studios/video/1002":
+			_, _ = fmt.Fprint(w, fixtureDetail)
+		default:
+			http.NotFound(w, r)
+		}
+	}))
+	defer ts.Close()
+
+	s := newTestScraper(ts)
+	ch, err := s.ListScenes(context.Background(), ts.URL+"/studios/videos?website=TestStudio&niche=Blowjob", scraper.ListOpts{})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	var sceneCount int
+	for r := range ch {
+		switch r.Kind {
+		case scraper.KindScene:
+			sceneCount++
+		case scraper.KindError:
+			t.Errorf("unexpected error: %v", r.Err)
+		}
+	}
+	if sceneCount != 2 {
+		t.Errorf("got %d scenes, want 2", sceneCount)
+	}
+}
+
 func TestMatchesURL(t *testing.T) {
 	s := New(SiteConfig{
 		SiteID:     "test-studio",

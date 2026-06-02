@@ -67,8 +67,11 @@ func New(cfg SiteConfig) *Scraper {
 
 var _ scraper.StudioScraper = (*Scraper)(nil)
 
-func (s *Scraper) ID() string         { return s.cfg.ID }
-func (s *Scraper) Patterns() []string { return s.cfg.Patterns }
+func (s *Scraper) ID() string { return s.cfg.ID }
+func (s *Scraper) Patterns() []string {
+	domain := strings.TrimPrefix(strings.TrimPrefix(s.cfg.SiteBase, "https://"), "http://")
+	return append(s.cfg.Patterns, domain+s.cfg.TourPrefix+"/models/{slug}.html")
+}
 func (s *Scraper) MatchesURL(u string) bool {
 	return s.cfg.MatchRe.MatchString(u)
 }
@@ -190,10 +193,18 @@ func (s *Scraper) listingURL(page int) string {
 	return fmt.Sprintf("%s%s%s_%d_d.html", s.cfg.SiteBase, s.cfg.TourPrefix, s.cfg.ListingBase, page)
 }
 
+var modelSlugRe = regexp.MustCompile(`/models/([^_/.]+?)(?:\.html)?$`)
+
 func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOpts, out chan<- scraper.SceneResult) {
 	defer close(out)
-	scraper.Debugf(1, "%s: scraping full catalog", s.cfg.ID)
 
+	if modelSlugRe.MatchString(studioURL) {
+		scraper.Debugf(1, "%s: detected model page", s.cfg.ID)
+		s.scrapeModelPage(ctx, studioURL, opts, out)
+		return
+	}
+
+	scraper.Debugf(1, "%s: scraping full catalog", s.cfg.ID)
 	now := time.Now().UTC()
 	scraper.Paginate(ctx, opts, s.cfg.ID, out, func(ctx context.Context, page int) (scraper.PageResult, error) {
 		pageURL := s.listingURL(page)
@@ -214,6 +225,51 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 		}
 		return scraper.PageResult{Scenes: scenes, Total: total}, nil
 	})
+}
+
+func (s *Scraper) scrapeModelPage(ctx context.Context, studioURL string, opts scraper.ListOpts, out chan<- scraper.SceneResult) {
+	pageURL := studioURL
+	if !strings.HasPrefix(pageURL, "http") {
+		pageURL = s.cfg.SiteBase + pageURL
+	}
+
+	body, err := s.fetchPage(ctx, pageURL)
+	if err != nil {
+		select {
+		case out <- scraper.Error(err):
+		case <-ctx.Done():
+		}
+		return
+	}
+
+	items := parseListing(body)
+	if len(items) == 0 {
+		return
+	}
+	scraper.Debugf(1, "%s: found %d scenes on model page", s.cfg.ID, len(items))
+
+	now := time.Now().UTC()
+	select {
+	case out <- scraper.Progress(len(items)):
+	case <-ctx.Done():
+		return
+	}
+
+	for _, item := range items {
+		if opts.KnownIDs[item.id] {
+			scraper.Debugf(1, "%s: hit known ID %s, stopping early", s.cfg.ID, item.id)
+			select {
+			case out <- scraper.StoppedEarly():
+			case <-ctx.Done():
+			}
+			return
+		}
+		select {
+		case out <- scraper.Scene(item.toScene(s.cfg.ID, s.cfg.SiteBase, s.cfg.Studio, now)):
+		case <-ctx.Done():
+			return
+		}
+	}
 }
 
 func (item sceneItem) toScene(siteID, siteBase, studio string, now time.Time) models.Scene {

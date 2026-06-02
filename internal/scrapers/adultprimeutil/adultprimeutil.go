@@ -48,6 +48,7 @@ func (s *Scraper) Patterns() []string {
 	return []string{
 		"adultprime.com/studios/studio/" + s.cfg.Slug,
 		"adultprime.com/studios/videos?website=" + s.cfg.Slug,
+		"adultprime.com/studios/videos?website=" + s.cfg.Slug + "&niche={niche}",
 	}
 }
 
@@ -69,8 +70,16 @@ func (s *Scraper) ListScenes(ctx context.Context, studioURL string, opts scraper
 	return out, nil
 }
 
+var nicheRe = regexp.MustCompile(`[?&]niche=([^&#]+)`)
+
 func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOpts, out chan<- scraper.SceneResult) {
 	defer close(out)
+
+	niche := ""
+	if m := nicheRe.FindStringSubmatch(studioURL); m != nil {
+		niche = m[1]
+		scraper.Debugf(1, "%s: detected niche filter: %s", s.cfg.SiteID, niche)
+	}
 
 	workers := opts.Workers
 	if workers <= 0 {
@@ -119,6 +128,9 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 			scraper.Debugf(1, "%s: fetching page %d", s.cfg.SiteID, page)
 
 			url := fmt.Sprintf("%s/studios/videos?website=%s&page=%d", s.base, s.cfg.Slug, page)
+			if niche != "" {
+				url += "&niche=" + niche
+			}
 
 			body, err := s.fetchPage(ctx, url)
 			if err != nil {

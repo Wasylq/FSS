@@ -211,3 +211,37 @@ func TestListScenes_knownIDsStopsEarly(t *testing.T) {
 		t.Error("expected StoppedEarly")
 	}
 }
+
+func TestListScenes_modelPage(t *testing.T) {
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/html")
+		switch r.URL.Path {
+		case "/models/Sophie-Strauss.html":
+			_, _ = fmt.Fprint(w, listingHTML)
+		default:
+			http.NotFound(w, r)
+		}
+	}))
+	defer ts.Close()
+
+	s := New(SiteConfig{
+		ID: "spartavideo", SiteBase: ts.URL, Studio: "Sparta Video",
+		MatchRe: regexp.MustCompile(`.*`),
+	})
+	ch, err := s.ListScenes(context.Background(), ts.URL+"/models/Sophie-Strauss.html", scraper.ListOpts{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	var scenes int
+	for r := range ch {
+		switch r.Kind {
+		case scraper.KindScene:
+			scenes++
+		case scraper.KindError:
+			t.Errorf("error: %v", r.Err)
+		}
+	}
+	if scenes != 3 {
+		t.Errorf("got %d scenes, want 3", scenes)
+	}
+}
