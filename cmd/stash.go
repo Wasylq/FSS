@@ -73,9 +73,14 @@ func isLocalOrPrivate(ip net.IP) bool {
 		ip.IsUnspecified()
 }
 
+var apiKeyFlagOnce sync.Once
+
 func stashAPIKey(cmd *cobra.Command) string {
 	k, _ := cmd.Flags().GetString("api-key")
 	if k != "" {
+		apiKeyFlagOnce.Do(func() {
+			fmt.Fprintln(os.Stderr, "[warn] --api-key is visible in shell history and process listings; prefer FSS_STASH_API_KEY env var or stash.api_key in config.yaml")
+		})
 		return k
 	}
 	if env := os.Getenv("FSS_STASH_API_KEY"); env != "" {
