@@ -1,7 +1,11 @@
 package cmd
 
 import (
+	"fmt"
+	"net"
+	"net/url"
 	"os"
+	"sync"
 
 	"github.com/spf13/cobra"
 )
@@ -20,10 +24,53 @@ func init() {
 
 func stashURL(cmd *cobra.Command) string {
 	u, _ := cmd.Flags().GetString("url")
-	if u != "" {
-		return u
+	if u == "" {
+		u = cfg.Stash.URL
 	}
-	return cfg.Stash.URL
+	warnIfRemoteStash(u)
+	return u
+}
+
+var remoteStashOnce sync.Once
+
+func warnIfRemoteStash(rawURL string) {
+	if rawURL == "" {
+		return
+	}
+	remoteStashOnce.Do(func() {
+		u, err := url.Parse(rawURL)
+		if err != nil {
+			return
+		}
+		host := u.Hostname()
+		if host == "" {
+			return
+		}
+		if ip := net.ParseIP(host); ip != nil {
+			if !isLocalOrPrivate(ip) {
+				fmt.Fprintf(os.Stderr, "[warn] stash URL %q points to a non-local address; API key will be sent there\n", rawURL)
+			}
+			return
+		}
+		ips, err := net.LookupIP(host)
+		if err != nil {
+			return
+		}
+		for _, ip := range ips {
+			if !isLocalOrPrivate(ip) {
+				fmt.Fprintf(os.Stderr, "[warn] stash URL %q resolves to non-local IP %s; API key will be sent there\n", rawURL, ip)
+				return
+			}
+		}
+	})
+}
+
+func isLocalOrPrivate(ip net.IP) bool {
+	return ip.IsLoopback() ||
+		ip.IsPrivate() ||
+		ip.IsLinkLocalUnicast() ||
+		ip.IsLinkLocalMulticast() ||
+		ip.IsUnspecified()
 }
 
 func stashAPIKey(cmd *cobra.Command) string {
