@@ -13,5 +13,5 @@ func TestLivePrivateClassics(t *testing.T) {
 }
 
 func TestLivePrivateClassicsPornstar(t *testing.T) {
-	testutil.RunLiveScrape(t, New(), "https://www.privateclassics.com/en/pornstar/1-silvia-saint", 2)
+	testutil.RunLiveScrape(t, New(), "https://www.privateclassics.com/en/pornstar/51-monica-cameron", 2)
 }
