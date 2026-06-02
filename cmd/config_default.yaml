@@ -1,0 +1,76 @@
+# FSS configuration file.
+#
+# Copy this file to your XDG config directory:
+#   Linux/macOS:  ~/.config/fss/config.yaml
+#   Windows:      %APPDATA%\fss\config.yaml
+#
+# All keys are optional — missing keys use the defaults shown here.
+# CLI flags take precedence over config values.
+#
+# Windows paths with backslashes work fine — FSS handles them automatically.
+
+# Number of parallel metadata-fetching workers (per scrape run).
+workers: 3
+
+# Output format(s). Comma-separate for multiple: "json", "csv", or "json,csv".
+output: json
+
+# Directory where output files are written.
+# Each studio gets its own file: <slugified-studio-url>.json (and/or .csv).
+out_dir: "."
+
+# SQLite database for persistent storage.
+# ""        — disabled, use flat JSON files only (default)
+# "default" — use XDG data dir (~/.local/share/fss/fss.db on Linux)
+# "/path"   — use an explicit path
+# The CLI equivalent is `--db` (no value = default) or `--db /path`.
+db: ""
+
+# Default delay between page requests, in milliseconds.
+# Set to 0 to disable. Prevents rate-limiting by sites with WAFs.
+delay: 500
+
+# User-Agent string for all HTTP requests.
+# "firefox" (default), "chrome", or a full custom UA string.
+# Useful when a WAF (e.g. Wordfence) blocks the default UA.
+# user_agent: "chrome"
+
+# Per-scraper delay overrides (milliseconds). Overrides the global `delay`
+# for the matching scraper ID. Sites without an entry fall back to `delay`.
+# Run `fss list-scrapers` to see all scraper IDs.
+site_delays:
+  # manyvids: 0
+  # pornhub: 2000
+  # clips4sale: 1000
+  # brazzers: 500
+
+# Stashbox instances for the stashbox scraper.
+# Each entry maps a GraphQL endpoint to an API key. The scraper matches
+# incoming URLs against these endpoints to find the right key.
+# Supports any stashbox instance (stashdb.org, pmvstash.org, etc.).
+stashbox:
+  # - url: "https://stashdb.org/graphql"
+  #   api_key: "your-api-key-here"
+  # - url: "https://pmvstash.org/graphql"
+  #   api_key: "another-api-key"
+
+# Stash integration settings (used by `fss stash` subcommands).
+stash:
+  # URL of your Stash instance.
+  url: "http://localhost:9999"
+
+  # API key for Stash authentication.
+  # Prefer the FSS_STASH_API_KEY environment variable over putting secrets here.
+  api_key: ""
+
+  # Tag applied to every scene updated by `fss stash import`.
+  # Created automatically in Stash if it doesn't exist.
+  tag: "fss_import"
+
+  # Tag applied when `--include-stashbox` overwrites scenes that already have
+  # StashDB metadata. Makes overrides easy to find and revert in the Stash UI.
+  stashbox_tag: "fss_stashbox_override"
+
+  # Add resolution tags (4K Available, Full HD Available, HD Available) to
+  # matched scenes based on the highest resolution found across FSS sources.
+  resolution_tags: true

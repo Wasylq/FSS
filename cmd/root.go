@@ -20,7 +20,7 @@ var rootCmd = &cobra.Command{
 		scraper.SetVerbose(verbose)
 
 		switch cmd.Name() {
-		case "version", "list-scrapers":
+		case "version", "list-scrapers", "completion", "init", "path":
 			return nil
 		}
 		var err error

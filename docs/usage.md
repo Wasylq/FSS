@@ -80,6 +80,28 @@ Package:  tmwutil
 
 If the URL is already supported by a registered scraper, it reports that instead of fetching.
 
+### `fss doctor`
+
+Checks environment health: config file, scraper registry, database writability, Stash connectivity, `ffprobe` availability, and network egress.
+
+### `fss completion <bash|zsh|fish|powershell>`
+
+Generates shell completion scripts. Usage:
+
+```bash
+source <(fss completion bash)           # bash
+fss completion zsh > "${fpath[1]}/_fss" # zsh
+fss completion fish | source            # fish
+```
+
+### `fss config init`
+
+Creates a default config file at the XDG config path (e.g. `~/.config/fss/config.yaml`). Fails if the file already exists.
+
+### `fss config path`
+
+Prints the config file path for the current platform.
+
 ### `fss version`
 
 Prints the build version, commit hash, and build date. Checks for newer releases on GitHub.
