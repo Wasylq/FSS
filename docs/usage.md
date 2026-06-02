@@ -68,6 +68,18 @@ Not supported: https://example.com/unknown
 Request support: https://github.com/Wasylq/FSS/issues/new?template=new_scraper.yml&url=...
 ```
 
+### `fss detect <url>`
+
+Fetches a URL once and checks the response for known platform signals (Aylo `instance_token`, Algolia API, `psmcdn.net`, ModelCentro, etc.). Reports the detected platform and corresponding util package. Useful when deciding whether a new site needs a standalone scraper or belongs to an existing shared package.
+
+```bash
+$ fss detect https://www.teenmegaworld.net
+Platform: Teen Mega World
+Package:  tmwutil
+```
+
+If the URL is already supported by a registered scraper, it reports that instead of fetching.
+
 ### `fss version`
 
 Prints the build version, commit hash, and build date. Checks for newer releases on GitHub.
