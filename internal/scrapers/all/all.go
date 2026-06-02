@@ -132,6 +132,7 @@ import (
 	_ "github.com/Wasylq/FSS/internal/scrapers/spicevids"
 	_ "github.com/Wasylq/FSS/internal/scrapers/spizoo"
 	_ "github.com/Wasylq/FSS/internal/scrapers/stashbox"
+	_ "github.com/Wasylq/FSS/internal/scrapers/tainster"
 	_ "github.com/Wasylq/FSS/internal/scrapers/takaratv"
 	_ "github.com/Wasylq/FSS/internal/scrapers/taratainton"
 	_ "github.com/Wasylq/FSS/internal/scrapers/teamskeet"
