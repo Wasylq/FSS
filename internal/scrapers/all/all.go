@@ -5,6 +5,7 @@
 package all
 
 import (
+	_ "github.com/Wasylq/FSS/internal/scrapers/ad4x"
 	_ "github.com/Wasylq/FSS/internal/scrapers/adultdoorway"
 	_ "github.com/Wasylq/FSS/internal/scrapers/adultprime"
 	_ "github.com/Wasylq/FSS/internal/scrapers/alisonangel"
@@ -62,6 +63,7 @@ import (
 	_ "github.com/Wasylq/FSS/internal/scrapers/grooby"
 	_ "github.com/Wasylq/FSS/internal/scrapers/houseofyre"
 	_ "github.com/Wasylq/FSS/internal/scrapers/ifeelmyself"
+	_ "github.com/Wasylq/FSS/internal/scrapers/indiebucks"
 	_ "github.com/Wasylq/FSS/internal/scrapers/innofsin"
 	_ "github.com/Wasylq/FSS/internal/scrapers/ishotmyself"
 	_ "github.com/Wasylq/FSS/internal/scrapers/iwantclips"
@@ -69,6 +71,7 @@ import (
 	_ "github.com/Wasylq/FSS/internal/scrapers/jerkoffinstructions"
 	_ "github.com/Wasylq/FSS/internal/scrapers/julesjordan"
 	_ "github.com/Wasylq/FSS/internal/scrapers/karups"
+	_ "github.com/Wasylq/FSS/internal/scrapers/kbproductions"
 	_ "github.com/Wasylq/FSS/internal/scrapers/kink"
 	_ "github.com/Wasylq/FSS/internal/scrapers/kmproduce"
 	_ "github.com/Wasylq/FSS/internal/scrapers/kocompany"
