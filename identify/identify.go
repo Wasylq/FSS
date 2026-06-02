@@ -183,7 +183,7 @@ func WriteReport(dir string, results []Result) error {
 		return nil
 	}
 
-	return os.WriteFile(filepath.Join(dir, "fss-report.txt"), []byte(sb.String()), 0o644)
+	return os.WriteFile(filepath.Join(dir, "fss-report.txt"), []byte(sb.String()), 0o600)
 }
 
 func nfoPathFor(videoPath string) string {
@@ -197,7 +197,7 @@ func writeNFO(path string, m match.MergedScene) error {
 	if err != nil {
 		return fmt.Errorf("marshalling NFO: %w", err)
 	}
-	return os.WriteFile(path, data, 0o644)
+	return os.WriteFile(path, data, 0o600)
 }
 
 // probeDuration returns the file's duration in seconds via ffprobe, or 0 if

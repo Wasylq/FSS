@@ -139,6 +139,7 @@ func atomicWriteFile(path string, writeFn func(io.Writer) error) error {
 	if err := os.Rename(tmpPath, path); err != nil {
 		return fmt.Errorf("renaming %s → %s: %w", tmpPath, path, err)
 	}
+	_ = os.Chmod(path, 0o600)
 	// POSIX makes the rename atomic w.r.t. concurrent readers but does
 	// NOT guarantee the new directory entry is on disk before a crash.
 	// fsync the parent directory so the rename survives a power loss.

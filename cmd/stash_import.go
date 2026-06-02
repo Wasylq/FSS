@@ -725,7 +725,7 @@ func appendChangelog(dir string, entries []changelogEntry) error {
 	if err != nil {
 		return err
 	}
-	return os.WriteFile(path, out, 0o644)
+	return os.WriteFile(path, out, 0o600)
 }
 
 func extractTagIDs(tags []stash.StashTag) []string {
