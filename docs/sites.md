@@ -1,6 +1,6 @@
 # Covered Sites — All Domains
 
-1177 scrapers covering 1258 distinct domains. Auto-generated from the scraper registry by `TestSitesMdInSync` — do not hand-edit; instead update the scraper's `Patterns()` and re-run `go test ./internal/scrapers/all/...`. The `stashbox` scraper is omitted here because its covered hosts are config-driven; see [`scrapers.md`](scrapers.md).
+1182 scrapers covering 1263 distinct domains. Auto-generated from the scraper registry by `TestSitesMdInSync` — do not hand-edit; instead update the scraper's `Patterns()` and re-run `go test ./internal/scrapers/all/...`. The `stashbox` scraper is omitted here because its covered hosts are config-driven; see [`scrapers.md`](scrapers.md).
 
 Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scraper ID(s)** column lists every scraper that claims URLs on that domain — most domains have one entry, but table-driven networks (`adultprime`, `tmw`, `nextdoorstudios`, etc.) host many sub-studios on a single root domain. See [`scrapers.md`](scrapers.md) for what each ID covers.
 
@@ -11,6 +11,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | 18firstsex.com | `tmw-18firstsex` |
 | 18videoz.com | `18videoz` |
 | 1passforallsites.com | `1passforallsites` |
+| 2poles1hole.com | `2poles1hole` |
 | 3rddegreefilms.com | `3rddegreefilms` |
 | 3wayfuck.com | `porngutter` |
 | 40somethingmag.com | `40somethingmag` |
@@ -87,6 +88,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | auntjudysxxx.com | `auntjudys` |
 | autumn-jade.com | `autumn-jade` |
 | avyscott.puba.com | `pubaavyscott` |
+| aziani.com | `aziani` |
 | babearchives.com | `babearchives` |
 | babes.com | `babes` |
 | backalleytoonzonline.com | `backalleytoonz` |
@@ -242,6 +244,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | creampiecuties.com | `creampiecuties` |
 | creampieforgranny.com | `creampieforgranny` |
 | creampiethais.com | `creampiethais` |
+| creampiled.com | `creampiled` |
 | creativeporn.com | `creativeporn` |
 | cristiannlive.com | `cristiann` |
 | crunchboy.com | `crunchboy` |
@@ -830,6 +833,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | pissinghd.com | `pissinghd` |
 | pissinginaction.com | `tainster` |
 | plantsvscunts.com | `plantsvscunts` |
+| popuporgies.com | `popuporgies` |
 | porkvendors.com | `porkvendors` |
 | porn-uk.com | `porngutter` |
 | pornbox.com | `pornbox` |
@@ -846,6 +850,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | pornstarplatinum.com | `pornstarplatinum` |
 | porntugal.com | `porntugal` |
 | pornworld.com | `pornworld` |
+| portagloryhole.com | `portagloryhole` |
 | povd.com | `povd` |
 | povhotel.com | `povhotel` |
 | povlife.com | `povlife` |
