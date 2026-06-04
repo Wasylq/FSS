@@ -1,6 +1,6 @@
 # Covered Sites — All Domains
 
-1161 scrapers covering 1227 distinct domains. Auto-generated from the scraper registry by `TestSitesMdInSync` — do not hand-edit; instead update the scraper's `Patterns()` and re-run `go test ./internal/scrapers/all/...`. The `stashbox` scraper is omitted here because its covered hosts are config-driven; see [`scrapers.md`](scrapers.md).
+1162 scrapers covering 1242 distinct domains. Auto-generated from the scraper registry by `TestSitesMdInSync` — do not hand-edit; instead update the scraper's `Patterns()` and re-run `go test ./internal/scrapers/all/...`. The `stashbox` scraper is omitted here because its covered hosts are config-driven; see [`scrapers.md`](scrapers.md).
 
 Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scraper ID(s)** column lists every scraper that claims URLs on that domain — most domains have one entry, but table-driven networks (`adultprime`, `tmw`, `nextdoorstudios`, etc.) host many sub-studios on a single root domain. See [`scrapers.md`](scrapers.md) for what each ID covers.
 
@@ -27,6 +27,12 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | adultprime.com | `adultprime-4kcfnm`, `adultprime-arousins`, `adultprime-bamateurs` (+94 more) |
 | adulttime.com | `adulttime`, `adulttimeoriginals` |
 | adventuresxxx.puba.com | `pubaadventuresxxx` |
+| africanbucks.com | `africanbucks` |
+| africancasting.com | `africanbucks` |
+| africanfucktour.com | `africanbucks` |
+| africangf.com | `africanbucks` |
+| africanlesbians.com | `africanbucks` |
+| africansextrip.com | `africanbucks` |
 | ageandbeauty.com | `ageandbeauty` |
 | alisonangel.com | `alisonangel` |
 | alisontyler.puba.com | `pubaalisontyler` |
@@ -46,6 +52,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | analacrobats.com | `analacrobats` |
 | analamateur.com | `analamateur` |
 | analbbc.com | `analbbc` |
+| analfucktour.com | `africanbucks` |
 | analintroductions.com | `private` |
 | analized.com | `analized` |
 | analjesse.com | `analjesse` |
@@ -126,6 +133,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | blackandbig.com | `porngutter` |
 | blacked.com | `blacked` |
 | blackedraw.com | `blackedraw` |
+| blackfucktour.com | `africanbucks` |
 | blackmoneyerotica.com | `blackmoneyerotica` |
 | blackpayback.com | `blackpayback` |
 | blackpynk.com | `blackpynk` |
@@ -356,6 +364,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | exposedlatinas.com | `exposedlatinas` |
 | extremestreets.com | `extremestreets` |
 | exxxtrasmall.com | `exxxtrasmall` |
+| facefucktour.com | `africanbucks` |
 | facepounders.puba.com | `pubafacepounders` |
 | facialabuse.com | `facialabuse` |
 | facialcasting.com | `facialcasting` |
@@ -412,6 +421,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | fuckedfeet.com | `fuckedfeet` |
 | fuckingglasses.com | `fuckingglasses` |
 | fuckmepov.com | `fuckmepov` |
+| fuckmyjeans.com | `africanbucks` |
 | fuckstudies.com | `tmw-fuckstudies` |
 | fuckthosemoms.com | `fuckthosemoms` |
 | fullpornnetwork.com | `fullpornnetwork` |
@@ -574,7 +584,9 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | ladygonzo.com | `ladygonzo` |
 | latexplaytime.com | `latexplaytime` |
 | latinaabuse.com | `latinaabuse` |
+| latinacasting.com | `africanbucks` |
 | latinacoochies.com | `latinacoochies` |
+| latinafucktour.com | `africanbucks` |
 | latinmommas.com | `latinmommas` |
 | leannecrowvideos.com | `leannecrowvideos` |
 | legsemporium.com | `legsemporium` |
@@ -862,6 +874,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | rawfuck.com | `rawfuck` |
 | rawfuckclub.com | `rawfuckclub` |
 | reaganfoxx.com | `reaganfoxx` |
+| realafricans.com | `africanbucks` |
 | realbikinigirls.com | `realbikinigirls` |
 | realgangbangs.com | `realgangbangs` |
 | realitydudes.com | `realitydudes` |
@@ -875,6 +888,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | richardmannevents.com | `richardmannevents` |
 | richardmannsworld.com | `richardmannsworld` |
 | ricporter.tv | `ricporter` |
+| ripherup.com | `africanbucks` |
 | rk.com | `realitykings` |
 | roccosiffredi.com | `roccosiffredi` |
 | rocket-inc.net | `rocketinc` |
@@ -914,6 +928,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | sexflexvideo.com | `sexflexvideo` |
 | sexlikereal.com | `sexlikereal` |
 | sexmex.xxx | `sexmex` |
+| sexpacker.com | `africanbucks` |
 | sexselector.com | `sexselector` |
 | sextapelesbians.com | `sextapelesbians` |
 | sexycuckold.com | `sexycuckold` |

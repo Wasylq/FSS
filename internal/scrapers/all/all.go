@@ -8,6 +8,7 @@ import (
 	_ "github.com/Wasylq/FSS/internal/scrapers/ad4x"
 	_ "github.com/Wasylq/FSS/internal/scrapers/adultdoorway"
 	_ "github.com/Wasylq/FSS/internal/scrapers/adultprime"
+	_ "github.com/Wasylq/FSS/internal/scrapers/africanbucks"
 	_ "github.com/Wasylq/FSS/internal/scrapers/alisonangel"
 	_ "github.com/Wasylq/FSS/internal/scrapers/alternadudes"
 	_ "github.com/Wasylq/FSS/internal/scrapers/analacrobats"

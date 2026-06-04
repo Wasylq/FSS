@@ -43,7 +43,7 @@ var _ scraper.StudioScraper = (*Scraper)(nil)
 
 func init() { scraper.Register(New()) }
 
-func (s *Scraper) ID() string               { return siteID }
+func (s *Scraper) ID() string { return siteID }
 func (s *Scraper) Patterns() []string {
 	return []string{
 		"visit-x.net/{lang}/amateur/{model}/",
