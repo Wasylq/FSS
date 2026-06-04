@@ -41,6 +41,7 @@ import (
 	_ "github.com/Wasylq/FSS/internal/scrapers/eighteenvideoz"
 	_ "github.com/Wasylq/FSS/internal/scrapers/extrememoviepass"
 	_ "github.com/Wasylq/FSS/internal/scrapers/fakings"
+	_ "github.com/Wasylq/FSS/internal/scrapers/faleno"
 	_ "github.com/Wasylq/FSS/internal/scrapers/familytherapy"
 	_ "github.com/Wasylq/FSS/internal/scrapers/fancentro"
 	_ "github.com/Wasylq/FSS/internal/scrapers/faphouse"
