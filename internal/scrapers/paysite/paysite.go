@@ -1,4 +1,4 @@
-package ladysonia
+package paysite
 
 import (
 	"context"
@@ -16,34 +16,36 @@ import (
 	"github.com/Wasylq/FSS/scraper"
 )
 
-const defaultSiteBase = "https://tour.lady-sonia.com"
-
-type Scraper struct {
-	client   *http.Client
-	siteBase string
+type SiteConfig struct {
+	ID       string
+	SiteBase string
+	Patterns []string
+	MatchRe  *regexp.Regexp
 }
 
-func New() *Scraper {
-	return &Scraper{client: httpx.NewClient(30 * time.Second), siteBase: defaultSiteBase}
+type Scraper struct {
+	cfg    SiteConfig
+	client *http.Client
+}
+
+func New(cfg SiteConfig) *Scraper {
+	return &Scraper{
+		cfg:    cfg,
+		client: httpx.NewClient(30 * time.Second),
+	}
 }
 
 var _ scraper.StudioScraper = (*Scraper)(nil)
 
-func init() { scraper.Register(New()) }
-
-func (s *Scraper) ID() string { return "ladysonia" }
-
-func (s *Scraper) Patterns() []string {
-	return []string{"lady-sonia.com"}
+func (s *Scraper) ID() string         { return s.cfg.ID }
+func (s *Scraper) Patterns() []string { return s.cfg.Patterns }
+func (s *Scraper) MatchesURL(u string) bool {
+	return s.cfg.MatchRe.MatchString(u)
 }
-
-var matchRe = regexp.MustCompile(`^https?://(?:(?:www|tour)\.)?lady-sonia\.com(?:/|$)`)
-
-func (s *Scraper) MatchesURL(u string) bool { return matchRe.MatchString(u) }
 
 func (s *Scraper) ListScenes(ctx context.Context, _ string, opts scraper.ListOpts) (<-chan scraper.SceneResult, error) {
 	out := make(chan scraper.SceneResult)
-	go s.run(ctx, s.siteBase, opts, out)
+	go s.run(ctx, s.cfg.SiteBase, opts, out)
 	return out, nil
 }
 
@@ -87,7 +89,7 @@ type videoFormat struct {
 func (s *Scraper) run(ctx context.Context, base string, opts scraper.ListOpts, out chan<- scraper.SceneResult) {
 	defer close(out)
 
-	scraper.Paginate(ctx, opts, "ladysonia", out, func(ctx context.Context, page int) (scraper.PageResult, error) {
+	scraper.Paginate(ctx, opts, s.cfg.ID, out, func(ctx context.Context, page int) (scraper.PageResult, error) {
 		u := fmt.Sprintf("%s/scenes?page=%d", base, page)
 		body, err := s.fetchPage(ctx, u)
 		if err != nil {
@@ -101,7 +103,7 @@ func (s *Scraper) run(ctx context.Context, base string, opts scraper.ListOpts, o
 
 		scenes := make([]models.Scene, len(contents.Data))
 		for i, sc := range contents.Data {
-			scenes[i] = toScene(base, sc)
+			scenes[i] = toScene(s.cfg.ID, base, sc)
 		}
 		return scraper.PageResult{
 			Scenes: scenes,
@@ -135,7 +137,7 @@ func parsePage(body []byte) (*pageContents, error) {
 	return &nd.Props.PageProps.Contents, nil
 }
 
-func toScene(base string, sc scene) models.Scene {
+func toScene(siteID, base string, sc scene) models.Scene {
 	id := strconv.Itoa(sc.ID)
 	sceneURL := fmt.Sprintf("%s/scenes/%s", base, sc.Slug)
 
@@ -162,19 +164,20 @@ func toScene(base string, sc scene) models.Scene {
 	}
 
 	var resolution string
-	if height >= 2160 {
+	switch {
+	case height >= 2160:
 		resolution = "2160p"
-	} else if height >= 1080 {
+	case height >= 1080:
 		resolution = "1080p"
-	} else if height >= 720 {
+	case height >= 720:
 		resolution = "720p"
-	} else if height >= 480 {
+	case height >= 480:
 		resolution = "480p"
 	}
 
 	return models.Scene{
 		ID:          id,
-		SiteID:      "ladysonia",
+		SiteID:      siteID,
 		StudioURL:   base,
 		Title:       sc.Title,
 		URL:         sceneURL,
@@ -184,7 +187,7 @@ func toScene(base string, sc scene) models.Scene {
 		Performers:  sc.Models,
 		Tags:        sc.Tags,
 		Thumbnail:   thumb,
-		Studio:      sc.Site,
+		Studio:      strings.TrimSpace(sc.Site),
 		Width:       width,
 		Height:      height,
 		Resolution:  resolution,

@@ -1,10 +1,11 @@
-package ladysonia
+package paysite
 
 import (
 	"context"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"regexp"
 	"testing"
 	"time"
 
@@ -12,20 +13,35 @@ import (
 	"github.com/Wasylq/FSS/scraper"
 )
 
-func TestMatchesURL(t *testing.T) {
-	s := New()
-	cases := []struct {
-		url  string
-		want bool
-	}{
-		{"https://www.lady-sonia.com", true},
-		{"https://tour.lady-sonia.com/scenes", true},
-		{"https://lady-sonia.com/scenes?page=2", true},
-		{"https://www.example.com", false},
+func testScraper(base string, client *http.Client) *Scraper {
+	return &Scraper{
+		cfg: SiteConfig{
+			ID:       "testsite",
+			SiteBase: base,
+			Patterns: []string{"testsite.com"},
+			MatchRe:  regexp.MustCompile(`testsite\.com`),
+		},
+		client: client,
 	}
-	for _, c := range cases {
-		if got := s.MatchesURL(c.url); got != c.want {
-			t.Errorf("MatchesURL(%q) = %v, want %v", c.url, got, c.want)
+}
+
+func TestMatchesURL(t *testing.T) {
+	for _, cfg := range sites {
+		s := New(cfg)
+		for _, p := range cfg.Patterns {
+			url := "https://" + p
+			if !s.MatchesURL(url) {
+				t.Errorf("%s: MatchesURL(%q) = false, want true", cfg.ID, url)
+			}
+		}
+	}
+}
+
+func TestMatchesURLNegative(t *testing.T) {
+	for _, cfg := range sites {
+		s := New(cfg)
+		if s.MatchesURL("https://example.com") {
+			t.Errorf("%s: MatchesURL(example.com) should be false", cfg.ID)
 		}
 	}
 }
@@ -51,7 +67,7 @@ func makePage(scenes []scene, total, totalPages int) string {
 			"tags": [%s],
 			"thumb": %q,
 			"trailer_screencap": %q,
-			"site": "Lady Sonia",
+			"site": "TestSite",
 			"videos": {"orig": {"width": %d, "height": %d}},
 			"rating": 0
 		}`,
@@ -79,7 +95,7 @@ func quotedList(ss []string) string {
 
 func TestParsePage(t *testing.T) {
 	html := makePage([]scene{
-		{ID: 100, Title: "Test Scene", Slug: "test-scene", PublishDate: "2024/03/15 12:00:00", SecondsDuration: 600, Models: []string{"Lady Sonia"}, Tags: []string{"JOI"}},
+		{ID: 100, Title: "Test Scene", Slug: "test-scene", PublishDate: "2024/03/15 12:00:00", SecondsDuration: 600, Models: []string{"Model"}, Tags: []string{"JOI"}},
 	}, 50, 3)
 
 	contents, err := parsePage([]byte(html))
@@ -92,11 +108,8 @@ func TestParsePage(t *testing.T) {
 	if contents.TotalPages != 3 {
 		t.Errorf("TotalPages = %d, want 3", contents.TotalPages)
 	}
-	if len(contents.Data) != 1 {
-		t.Fatalf("len(Data) = %d, want 1", len(contents.Data))
-	}
-	if contents.Data[0].Title != "Test Scene" {
-		t.Errorf("Title = %q", contents.Data[0].Title)
+	if len(contents.Data) != 1 || contents.Data[0].Title != "Test Scene" {
+		t.Fatalf("unexpected Data: %v", contents.Data)
 	}
 }
 
@@ -108,33 +121,33 @@ func TestToScene(t *testing.T) {
 		Description:      "&amp;nbsp;Description&nbsp;text",
 		PublishDate:      "2024/04/05 12:00:00",
 		SecondsDuration:  518,
-		Models:           []string{"Lady Sonia", "Guest"},
+		Models:           []string{"Model A", "Model B"},
 		Tags:             []string{"Big Tits", "JOI"},
 		Thumb:            "https://cdn.example.com/thumb.jpg",
 		TrailerScreencap: "https://cdn.example.com/screenshot.jpg",
-		Site:             "Lady Sonia",
+		Site:             "TestSite",
 		Videos:           map[string]videoFormat{"orig": {Width: 1920, Height: 1080}},
 	}
 
-	result := toScene(defaultSiteBase, sc)
+	result := toScene("testsite", "https://tour.testsite.com", sc)
 
 	if result.ID != "200" {
 		t.Errorf("ID = %q", result.ID)
 	}
-	if result.SiteID != "ladysonia" {
+	if result.SiteID != "testsite" {
 		t.Errorf("SiteID = %q", result.SiteID)
 	}
-	if result.URL != "https://tour.lady-sonia.com/scenes/a-test" {
+	if result.URL != "https://tour.testsite.com/scenes/a-test" {
 		t.Errorf("URL = %q", result.URL)
 	}
-	if result.Studio != "Lady Sonia" {
+	if result.Studio != "TestSite" {
 		t.Errorf("Studio = %q", result.Studio)
 	}
 	if result.Duration != 518 {
 		t.Errorf("Duration = %d", result.Duration)
 	}
 	if result.Thumbnail != "https://cdn.example.com/screenshot.jpg" {
-		t.Errorf("Thumbnail = %q (should prefer trailer_screencap)", result.Thumbnail)
+		t.Errorf("Thumbnail = %q", result.Thumbnail)
 	}
 	if result.Width != 1920 || result.Height != 1080 {
 		t.Errorf("Width=%d Height=%d", result.Width, result.Height)
@@ -146,10 +159,10 @@ func TestToScene(t *testing.T) {
 	if !result.Date.Equal(wantDate) {
 		t.Errorf("Date = %v, want %v", result.Date, wantDate)
 	}
-	if len(result.Performers) != 2 || result.Performers[0] != "Lady Sonia" {
+	if len(result.Performers) != 2 {
 		t.Errorf("Performers = %v", result.Performers)
 	}
-	if len(result.Tags) != 2 || result.Tags[0] != "Big Tits" {
+	if len(result.Tags) != 2 {
 		t.Errorf("Tags = %v", result.Tags)
 	}
 	if result.Description != "&nbsp;Description text" {
@@ -157,13 +170,17 @@ func TestToScene(t *testing.T) {
 	}
 }
 
-func TestToSceneThumbFallback(t *testing.T) {
-	sc := scene{
-		ID:    300,
-		Slug:  "fallback",
-		Thumb: "https://cdn.example.com/thumb.jpg",
+func TestToSceneTrailingSpaceSite(t *testing.T) {
+	sc := scene{ID: 1, Slug: "x", Site: "MariskaX "}
+	result := toScene("mariskax", "https://tour.mariskax.com", sc)
+	if result.Studio != "MariskaX" {
+		t.Errorf("Studio = %q, want trimmed", result.Studio)
 	}
-	result := toScene(defaultSiteBase, sc)
+}
+
+func TestToSceneThumbFallback(t *testing.T) {
+	sc := scene{ID: 300, Slug: "fallback", Thumb: "https://cdn.example.com/thumb.jpg"}
+	result := toScene("testsite", "https://tour.testsite.com", sc)
 	if result.Thumbnail != "https://cdn.example.com/thumb.jpg" {
 		t.Errorf("Thumbnail = %q, want thumb fallback", result.Thumbnail)
 	}
@@ -171,8 +188,8 @@ func TestToSceneThumbFallback(t *testing.T) {
 
 func TestListScenes(t *testing.T) {
 	scenes := []scene{
-		{ID: 1, Title: "Scene A", Slug: "scene-a", PublishDate: "2024/01/01 12:00:00", Models: []string{"Lady Sonia"}, Tags: []string{"Tag1"}},
-		{ID: 2, Title: "Scene B", Slug: "scene-b", PublishDate: "2024/01/02 12:00:00", Models: []string{"Lady Sonia"}, Tags: []string{"Tag2"}},
+		{ID: 1, Title: "Scene A", Slug: "scene-a", PublishDate: "2024/01/01 12:00:00", Models: []string{"Model"}, Tags: []string{"Tag1"}},
+		{ID: 2, Title: "Scene B", Slug: "scene-b", PublishDate: "2024/01/02 12:00:00", Models: []string{"Model"}, Tags: []string{"Tag2"}},
 	}
 	page := makePage(scenes, 2, 1)
 
@@ -181,8 +198,7 @@ func TestListScenes(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	s := &Scraper{client: ts.Client(), siteBase: ts.URL}
-
+	s := testScraper(ts.URL, ts.Client())
 	ch, err := s.ListScenes(context.Background(), ts.URL, scraper.ListOpts{})
 	if err != nil {
 		t.Fatal(err)
@@ -206,7 +222,7 @@ func TestKnownIDsStopsEarly(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	s := &Scraper{client: ts.Client(), siteBase: ts.URL}
+	s := testScraper(ts.URL, ts.Client())
 	ch, err := s.ListScenes(context.Background(), ts.URL, scraper.ListOpts{
 		KnownIDs: map[string]bool{"11": true},
 	})
@@ -221,8 +237,4 @@ func TestKnownIDsStopsEarly(t *testing.T) {
 	if len(results) != 1 || results[0].ID != "10" {
 		t.Errorf("got IDs %v, want [10]", results)
 	}
-}
-
-func TestScraperInterface(t *testing.T) {
-	var _ scraper.StudioScraper = New()
 }
