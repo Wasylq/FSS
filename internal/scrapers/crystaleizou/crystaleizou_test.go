@@ -127,8 +127,8 @@ func TestSplitPerformers(t *testing.T) {
 	}
 }
 
-func mainPageHTML(base string) string {
-	return fmt.Sprintf(`<html><body>
+func mainPageHTML() string {
+	return `<html><body>
 <div id="side">
 <p><a href="archive/2025_04.html">2025年4月</a></p>
 <p><a href="archive/2025_05.html">2025年5月</a></p>
@@ -143,7 +143,7 @@ func mainPageHTML(base string) string {
 <p class="strong">【出演女優】June Actress</p>
 </div>
 </div>
-</div></body></html>`)
+</div></body></html>`
 }
 
 func archivePageHTML(code, title, date string) string {
@@ -165,7 +165,7 @@ func TestListScenes(t *testing.T) {
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 		switch r.URL.Path {
 		case "/":
-			_, _ = fmt.Fprint(w, mainPageHTML(r.Host))
+			_, _ = fmt.Fprint(w, mainPageHTML())
 		case "/archive/2025_05.html":
 			_, _ = fmt.Fprint(w, archivePageHTML("NITR-550", "May Scene", "2025/5/10"))
 		case "/archive/2025_04.html":
@@ -202,7 +202,7 @@ func TestKnownIDsStopsEarly(t *testing.T) {
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 		switch r.URL.Path {
 		case "/":
-			_, _ = fmt.Fprint(w, mainPageHTML(r.Host))
+			_, _ = fmt.Fprint(w, mainPageHTML())
 		case "/archive/2025_05.html":
 			_, _ = fmt.Fprint(w, archivePageHTML("NITR-550", "May", "2025/5/10"))
 		default:

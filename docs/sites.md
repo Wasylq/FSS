@@ -1,6 +1,6 @@
 # Covered Sites — All Domains
 
-1167 scrapers covering 1248 distinct domains. Auto-generated from the scraper registry by `TestSitesMdInSync` — do not hand-edit; instead update the scraper's `Patterns()` and re-run `go test ./internal/scrapers/all/...`. The `stashbox` scraper is omitted here because its covered hosts are config-driven; see [`scrapers.md`](scrapers.md).
+1172 scrapers covering 1253 distinct domains. Auto-generated from the scraper registry by `TestSitesMdInSync` — do not hand-edit; instead update the scraper's `Patterns()` and re-run `go test ./internal/scrapers/all/...`. The `stashbox` scraper is omitted here because its covered hosts are config-driven; see [`scrapers.md`](scrapers.md).
 
 Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scraper ID(s)** column lists every scraper that claims URLs on that domain — most domains have one entry, but table-driven networks (`adultprime`, `tmw`, `nextdoorstudios`, etc.) host many sub-studios on a single root domain. See [`scrapers.md`](scrapers.md) for what each ID covers.
 
@@ -44,6 +44,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | alsscan.com | `alsscan` |
 | alternadudes.com | `alternadudes` |
 | amateur18.tv | `amateur18` |
+| amateurcfnm.com | `amateurcfnm` |
 | amateurthroats.com | `amateurthroats` |
 | americanmusclehunks.com | `americanmusclehunks` |
 | anal-angels.com | `tmw-anal-angels` |
@@ -210,6 +211,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | catholicboys.com | `catholicboys` |
 | caughtmycoach.com | `nubiles` |
 | cazzofilm.com | `cazzofilm` |
+| cfnmgames.com | `cfnmgames` |
 | cfnmteens.com | `cfnmteens` |
 | charleechaselive.com | `charleechase` |
 | charleychase.puba.com | `pubacharleychase` |
@@ -455,6 +457,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | girlgirlmania.com | `girlgirlmania` |
 | girlgirlxxx.com | `girlgirlxxx` |
 | girlgrind.com | `metro` |
+| girlsabuseguys.com | `girlsabuseguys` |
 | girlskissxxx.com | `girlskissxxx` |
 | girlsonlyporn.com | `nubiles` |
 | girlstryanal.com | `girlstryanal` |
@@ -587,6 +590,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | ladyboy.xxx | `ladyboy` |
 | ladyfyre.com | `ladyfyre` |
 | ladygonzo.com | `ladygonzo` |
+| ladyvoyeurs.com | `ladyvoyeurs` |
 | latexplaytime.com | `latexplaytime` |
 | latinaabuse.com | `latinaabuse` |
 | latinacasting.com | `africanbucks` |
@@ -609,6 +613,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | linseysworld.com | `linseysworld` |
 | lisariveraxo.com | `lisariveraxo` |
 | littleasians.com | `littleasians` |
+| littledick.club | `littledickclub` |
 | littlefromasia.com | `littlefromasia` |
 | littlefromasia.comtag | `littlefromasia` |
 | lolafoxx.puba.com | `pubalolafoxx` |

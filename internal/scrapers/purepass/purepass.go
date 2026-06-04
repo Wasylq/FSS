@@ -1,4 +1,4 @@
-package purecfnm
+package purepass
 
 import (
 	"context"
@@ -15,40 +15,33 @@ import (
 	"github.com/Wasylq/FSS/scraper"
 )
 
-const (
-	defaultBase = "https://www.purecfnm.com"
-	siteID      = "purecfnm"
-)
-
-var matchRe = regexp.MustCompile(`^https?://(?:www\.)?purecfnm\.com(?:/|$)`)
-
-type Scraper struct {
-	client *http.Client
-	base   string
+type SiteConfig struct {
+	ID       string
+	SiteBase string
+	SiteName string
+	Patterns []string
+	MatchRe  *regexp.Regexp
 }
 
-func New() *Scraper {
+type Scraper struct {
+	cfg    SiteConfig
+	client *http.Client
+}
+
+func New(cfg SiteConfig) *Scraper {
 	return &Scraper{
+		cfg:    cfg,
 		client: httpx.NewClient(30 * time.Second),
-		base:   defaultBase,
 	}
 }
 
 var _ scraper.StudioScraper = (*Scraper)(nil)
 
-func init() { scraper.Register(New()) }
-
-func (s *Scraper) ID() string { return siteID }
-
-func (s *Scraper) Patterns() []string {
-	return []string{
-		"purecfnm.com",
-		"purecfnm.com/categories/{slug}_{page}_d.html",
-		"purecfnm.com/models/{slug}.html",
-	}
+func (s *Scraper) ID() string         { return s.cfg.ID }
+func (s *Scraper) Patterns() []string { return s.cfg.Patterns }
+func (s *Scraper) MatchesURL(u string) bool {
+	return s.cfg.MatchRe.MatchString(u)
 }
-
-func (s *Scraper) MatchesURL(u string) bool { return matchRe.MatchString(u) }
 
 func (s *Scraper) ListScenes(ctx context.Context, studioURL string, opts scraper.ListOpts) (<-chan scraper.SceneResult, error) {
 	out := make(chan scraper.SceneResult)
@@ -68,8 +61,6 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 	}
 }
 
-// --- listing pages ---
-
 var catSlugRe = regexp.MustCompile(`/categories/([^_/]+)_\d+_d\.html`)
 
 func extractSlug(studioURL string) string {
@@ -83,13 +74,13 @@ func (s *Scraper) scrapeListingPages(ctx context.Context, studioURL string, opts
 	slug := extractSlug(studioURL)
 	firstPage := true
 
-	scraper.Paginate(ctx, opts, "purecfnm", out, func(ctx context.Context, page int) (scraper.PageResult, error) {
-		pageURL := fmt.Sprintf("%s/categories/%s_%d_d.html", s.base, slug, page)
+	scraper.Paginate(ctx, opts, s.cfg.ID, out, func(ctx context.Context, page int) (scraper.PageResult, error) {
+		pageURL := fmt.Sprintf("%s/categories/%s_%d_d.html", s.cfg.SiteBase, slug, page)
 		body, err := s.fetchPage(ctx, pageURL)
 		if err != nil {
 			return scraper.PageResult{}, err
 		}
-		items := parseListingPage(body, s.base)
+		items := parseListingPage(body, s.cfg.SiteBase)
 		var total int
 		if firstPage {
 			total = estimateTotal(body, len(items))
@@ -97,13 +88,11 @@ func (s *Scraper) scrapeListingPages(ctx context.Context, studioURL string, opts
 		}
 		scenes := make([]models.Scene, len(items))
 		for i, item := range items {
-			scenes[i] = item.toScene(studioURL, s.base, now)
+			scenes[i] = item.toScene(s.cfg, studioURL, now)
 		}
 		return scraper.PageResult{Scenes: scenes, Total: total}, nil
 	})
 }
-
-// --- model page ---
 
 func (s *Scraper) scrapeModelPage(ctx context.Context, studioURL string, opts scraper.ListOpts, out chan<- scraper.SceneResult, now time.Time) {
 	body, err := s.fetchPage(ctx, studioURL)
@@ -115,7 +104,7 @@ func (s *Scraper) scrapeModelPage(ctx context.Context, studioURL string, opts sc
 		return
 	}
 
-	scenes := parseModelPage(body, s.base)
+	scenes := parseModelPage(body, s.cfg.SiteBase)
 	if len(scenes) == 0 {
 		return
 	}
@@ -128,7 +117,7 @@ func (s *Scraper) scrapeModelPage(ctx context.Context, studioURL string, opts sc
 
 	for _, item := range scenes {
 		if opts.KnownIDs[item.id] {
-			scraper.Debugf(1, "purecfnm: hit known ID, stopping early")
+			scraper.Debugf(1, "%s: hit known ID, stopping early", s.cfg.ID)
 			select {
 			case out <- scraper.StoppedEarly():
 			case <-ctx.Done():
@@ -136,14 +125,12 @@ func (s *Scraper) scrapeModelPage(ctx context.Context, studioURL string, opts sc
 			return
 		}
 		select {
-		case out <- scraper.Scene(item.toScene(studioURL, s.base, now)):
+		case out <- scraper.Scene(item.toScene(s.cfg, studioURL, now)):
 		case <-ctx.Done():
 			return
 		}
 	}
 }
-
-// --- parsing ---
 
 type sceneItem struct {
 	id          string
@@ -156,20 +143,20 @@ type sceneItem struct {
 	duration    int
 }
 
-func (item sceneItem) toScene(studioURL, base string, now time.Time) models.Scene {
+func (item sceneItem) toScene(cfg SiteConfig, studioURL string, now time.Time) models.Scene {
 	return models.Scene{
 		ID:          item.id,
-		SiteID:      siteID,
+		SiteID:      cfg.ID,
 		StudioURL:   studioURL,
 		Title:       item.title,
-		URL:         base + "/#" + item.id,
+		URL:         cfg.SiteBase + "/#" + item.id,
 		Date:        item.date,
 		Performers:  item.performers,
 		Description: item.description,
 		Tags:        item.tags,
 		Thumbnail:   item.thumb,
 		Duration:    item.duration,
-		Studio:      "Pure CFNM",
+		Studio:      cfg.SiteName,
 		ScrapedAt:   now,
 	}
 }
@@ -331,8 +318,6 @@ func parseModelPage(body []byte, base string) []sceneItem {
 	}
 	return items
 }
-
-// --- HTTP ---
 
 func (s *Scraper) fetchPage(ctx context.Context, url string) ([]byte, error) {
 	resp, err := httpx.Do(ctx, s.client, httpx.Request{
