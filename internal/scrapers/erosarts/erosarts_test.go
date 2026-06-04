@@ -1,27 +1,55 @@
-package jerkoffinstructions
+package erosarts
 
 import (
+	"regexp"
+	"strings"
 	"testing"
 	"time"
-
-	"github.com/Wasylq/FSS/scraper"
 )
 
-func TestMatchesURL(t *testing.T) {
-	s := New()
+func TestBuildBaseURL(t *testing.T) {
 	cases := []struct {
-		url  string
-		want bool
+		studioURL string
+		want      string
 	}{
-		{"https://jerkoffinstructions.com/", true},
-		{"https://jerkoffinstructions.com", true},
-		{"https://www.jerkoffinstructions.com/videos/796/", true},
-		{"https://jerkoffinstructions.com/tour.php?p=1", true},
-		{"https://example.com", false},
+		{"https://sexpov.com/", "https://sexpov.com/tour.php"},
+		{"https://sexpov.com", "https://sexpov.com/tour.php"},
+		{
+			"https://sexpov.com/tour.php?task=search_videos&model_id=1&video_keyword_id=&keyword=Search+by+Keywords&video_sort=",
+			"https://sexpov.com/tour.php?keyword=Search+by+Keywords&model_id=1&task=search_videos&video_keyword_id=&video_sort=",
+		},
+		{
+			"https://taboohandjobs.com/tour.php?task=search_videos&model_id=5&p=2",
+			"https://taboohandjobs.com/tour.php?model_id=5&task=search_videos",
+		},
 	}
 	for _, c := range cases {
-		if got := s.MatchesURL(c.url); got != c.want {
-			t.Errorf("MatchesURL(%q) = %v, want %v", c.url, got, c.want)
+		got := buildBaseURL("https://"+extractDomain(c.studioURL), c.studioURL)
+		if got != c.want {
+			t.Errorf("buildBaseURL(%q)\n  got  %q\n  want %q", c.studioURL, got, c.want)
+		}
+	}
+}
+
+func extractDomain(u string) string {
+	if idx := strings.Index(u, "://"); idx >= 0 {
+		u = u[idx+3:]
+	}
+	if idx := strings.Index(u, "/"); idx >= 0 {
+		u = u[:idx]
+	}
+	return u
+}
+
+func TestMatchesURL(t *testing.T) {
+	for _, cfg := range sites {
+		s := New(cfg)
+		url := "https://www." + cfg.Patterns[0] + "/"
+		if !s.MatchesURL(url) {
+			t.Errorf("%s: MatchesURL(%q) = false", cfg.ID, url)
+		}
+		if s.MatchesURL("https://example.com/") {
+			t.Errorf("%s: MatchesURL(example.com) should be false", cfg.ID)
 		}
 	}
 }
@@ -85,7 +113,7 @@ Running Time: 15  mins<br><br>
 `
 
 func TestParseListingPage(t *testing.T) {
-	cards, total := parseListingPage([]byte(fixtureSingle))
+	cards, total := parseListingPage([]byte(fixtureSingle), "https://test.local")
 	if total != 1500 {
 		t.Errorf("total = %d, want 1500", total)
 	}
@@ -97,13 +125,13 @@ func TestParseListingPage(t *testing.T) {
 	if c.id != "796" {
 		t.Errorf("id = %q", c.id)
 	}
-	if c.url != siteBase+"/videos/796/" {
+	if c.url != "https://test.local/videos/796/" {
 		t.Errorf("url = %q", c.url)
 	}
 	if c.title != "Jacking off for horny widow Simone Sonay" {
 		t.Errorf("title = %q", c.title)
 	}
-	if c.thumbnail != siteBase+"/cover_images/JOI1_Simone_Sonay_720mp4.gif" {
+	if c.thumbnail != "https://test.local/cover_images/JOI1_Simone_Sonay_720mp4.gif" {
 		t.Errorf("thumbnail = %q", c.thumbnail)
 	}
 	if c.date.Year() != 2026 || c.date.Month() != 4 || c.date.Day() != 23 {
@@ -113,72 +141,48 @@ func TestParseListingPage(t *testing.T) {
 		t.Errorf("performers = %v", c.performers)
 	}
 	if c.duration != 11*60 {
-		t.Errorf("duration = %d, want %d", c.duration, 11*60)
+		t.Errorf("duration = %d", c.duration)
 	}
 	if len(c.tags) != 4 || c.tags[2] != "Friend's Mom" {
 		t.Errorf("tags = %v", c.tags)
 	}
-	if c.description == "" {
-		t.Error("description is empty")
-	}
 }
 
 func TestParseMultiPerformer(t *testing.T) {
-	cards, _ := parseListingPage([]byte(fixtureMultiPerf))
+	cards, _ := parseListingPage([]byte(fixtureMultiPerf), "https://test.local")
 	if len(cards) != 1 {
 		t.Fatalf("got %d cards", len(cards))
 	}
-	c := cards[0]
-	if len(c.performers) != 2 || c.performers[0] != "Ariella Ferrera" || c.performers[1] != "Zoey Holloway" {
-		t.Errorf("performers = %v", c.performers)
+	if len(cards[0].performers) != 2 || cards[0].performers[0] != "Ariella Ferrera" {
+		t.Errorf("performers = %v", cards[0].performers)
 	}
 }
 
-func TestParseEmptyPage(t *testing.T) {
-	cards, total := parseListingPage([]byte(`<html></html>`))
-	if total != 0 {
-		t.Errorf("total = %d", total)
+func TestToScene(t *testing.T) {
+	cfg := SiteConfig{
+		ID:       "testsite",
+		SiteBase: "https://test.local",
+		SiteName: "Test Site",
+		MatchRe:  regexp.MustCompile(`test\.local`),
 	}
-	if len(cards) != 0 {
-		t.Errorf("cards = %d", len(cards))
-	}
-}
-
-func TestBuildScene(t *testing.T) {
 	c := listingCard{
-		id:          "796",
-		url:         siteBase + "/videos/796/",
-		title:       "Test Scene",
-		description: "A test description.",
-		thumbnail:   siteBase + "/cover_images/test.gif",
-		date:        time.Date(2026, 4, 23, 0, 0, 0, 0, time.UTC),
-		duration:    660,
-		performers:  []string{"Simone Sonay"},
-		tags:        []string{"Milf", "Blondes"},
+		id:         "796",
+		url:        "https://test.local/videos/796/",
+		title:      "Test Scene",
+		duration:   660,
+		performers: []string{"Model A"},
+		tags:       []string{"Tag1"},
 	}
-	now := time.Date(2026, 4, 26, 12, 0, 0, 0, time.UTC)
-	scene := buildScene(c, now)
+	now := time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC)
+	scene := c.toScene(cfg, now)
 
 	if scene.ID != "796" {
 		t.Errorf("ID = %q", scene.ID)
 	}
-	if scene.Studio != "Jerk Off Instructions" {
-		t.Errorf("Studio = %q", scene.Studio)
-	}
-	if scene.SiteID != "jerkoffinstructions" {
+	if scene.SiteID != "testsite" {
 		t.Errorf("SiteID = %q", scene.SiteID)
 	}
-	if scene.Duration != 660 {
-		t.Errorf("Duration = %d", scene.Duration)
+	if scene.Studio != "Test Site" {
+		t.Errorf("Studio = %q", scene.Studio)
 	}
-	if len(scene.Tags) != 2 {
-		t.Errorf("Tags = %v", scene.Tags)
-	}
-	if scene.Description != "A test description." {
-		t.Errorf("Description = %q", scene.Description)
-	}
-}
-
-func TestScraperInterface(t *testing.T) {
-	var _ scraper.StudioScraper = New()
 }

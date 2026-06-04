@@ -1,10 +1,10 @@
-package jerkoffinstructions
+package erosarts
 
 import (
 	"context"
-	"fmt"
 	"html"
 	"net/http"
+	"net/url"
 	"regexp"
 	"strconv"
 	"strings"
@@ -15,72 +15,84 @@ import (
 	"github.com/Wasylq/FSS/scraper"
 )
 
-const siteBase = "https://jerkoffinstructions.com"
+type SiteConfig struct {
+	ID       string
+	SiteBase string
+	SiteName string
+	Patterns []string
+	MatchRe  *regexp.Regexp
+}
 
 type Scraper struct {
+	cfg    SiteConfig
 	client *http.Client
 }
 
-func New() *Scraper {
+func New(cfg SiteConfig) *Scraper {
 	c := httpx.NewClient(30 * time.Second)
-	c.CheckRedirect = func(req *http.Request, via []*http.Request) error {
+	c.CheckRedirect = func(*http.Request, []*http.Request) error {
 		return http.ErrUseLastResponse
 	}
-	return &Scraper{client: c}
+	return &Scraper{cfg: cfg, client: c}
 }
 
 var _ scraper.StudioScraper = (*Scraper)(nil)
 
-func init() { scraper.Register(New()) }
-
-func (s *Scraper) ID() string { return "jerkoffinstructions" }
-
-func (s *Scraper) Patterns() []string {
-	return []string{"jerkoffinstructions.com"}
+func (s *Scraper) ID() string         { return s.cfg.ID }
+func (s *Scraper) Patterns() []string { return s.cfg.Patterns }
+func (s *Scraper) MatchesURL(u string) bool {
+	return s.cfg.MatchRe.MatchString(u)
 }
-
-var matchRe = regexp.MustCompile(`^https?://(?:www\.)?jerkoffinstructions\.com(/|$)`)
-
-func (s *Scraper) MatchesURL(u string) bool { return matchRe.MatchString(u) }
 
 func (s *Scraper) ListScenes(ctx context.Context, studioURL string, opts scraper.ListOpts) (<-chan scraper.SceneResult, error) {
 	out := make(chan scraper.SceneResult)
-	go s.run(ctx, opts, out)
+	go s.run(ctx, studioURL, opts, out)
 	return out, nil
 }
 
-// ---- runner ----
-
-func (s *Scraper) run(ctx context.Context, opts scraper.ListOpts, out chan<- scraper.SceneResult) {
+func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOpts, out chan<- scraper.SceneResult) {
 	defer close(out)
 
+	baseURL := buildBaseURL(s.cfg.SiteBase, studioURL)
+	scraper.Debugf(1, "%s: listing base %s", s.cfg.ID, baseURL)
+
 	now := time.Now().UTC()
-	scraper.Paginate(ctx, opts, "jerkoffinstructions", out, func(ctx context.Context, page int) (scraper.PageResult, error) {
-		body, err := s.fetchPage(ctx, page)
+	scraper.Paginate(ctx, opts, s.cfg.ID, out, func(ctx context.Context, page int) (scraper.PageResult, error) {
+		body, err := s.fetchPage(ctx, baseURL, page)
 		if err != nil {
 			return scraper.PageResult{}, err
 		}
 
-		cards, total := parseListingPage(body)
+		cards, total := parseListingPage(body, s.cfg.SiteBase)
 
 		scenes := make([]models.Scene, len(cards))
 		for i, c := range cards {
-			scenes[i] = buildScene(c, now)
+			scenes[i] = c.toScene(s.cfg, now)
 		}
 		return scraper.PageResult{Scenes: scenes, Total: total}, nil
 	})
 }
 
-// ---- HTTP ----
+func buildBaseURL(siteBase, studioURL string) string {
+	u, err := url.Parse(studioURL)
+	if err != nil || u.RawQuery == "" {
+		return siteBase + "/tour.php"
+	}
+	q := u.Query()
+	q.Del("p")
+	base := siteBase + "/tour.php"
+	if encoded := q.Encode(); encoded != "" {
+		base += "?" + encoded
+	}
+	return base
+}
 
-// The server returns 302 with Location: /index.php on every request,
-// but the response body still contains the full page HTML. The client
-// in New() has `CheckRedirect = http.ErrUseLastResponse` so net/http
-// returns the 302 response as-is instead of following it, and httpx.Do
-// passes any status < 400 through without classifying — so the bypass
-// that used to live here is no longer needed.
-func (s *Scraper) fetchPage(ctx context.Context, page int) ([]byte, error) {
-	u := fmt.Sprintf("%s/tour.php?p=%d", siteBase, page)
+func (s *Scraper) fetchPage(ctx context.Context, baseURL string, page int) ([]byte, error) {
+	sep := "?"
+	if strings.Contains(baseURL, "?") {
+		sep = "&"
+	}
+	u := baseURL + sep + "p=" + strconv.Itoa(page)
 	resp, err := httpx.Do(ctx, s.client, httpx.Request{
 		URL: u,
 		Headers: map[string]string{
@@ -95,8 +107,6 @@ func (s *Scraper) fetchPage(ctx context.Context, page int) ([]byte, error) {
 	return httpx.ReadBody(resp.Body)
 }
 
-// ---- parsing ----
-
 type listingCard struct {
 	id          string
 	url         string
@@ -107,6 +117,24 @@ type listingCard struct {
 	performers  []string
 	tags        []string
 	duration    int
+}
+
+func (c listingCard) toScene(cfg SiteConfig, now time.Time) models.Scene {
+	return models.Scene{
+		ID:          c.id,
+		SiteID:      cfg.ID,
+		StudioURL:   cfg.SiteBase,
+		Title:       c.title,
+		Description: c.description,
+		URL:         c.url,
+		Thumbnail:   c.thumbnail,
+		Date:        c.date,
+		Duration:    c.duration,
+		Performers:  c.performers,
+		Tags:        c.tags,
+		Studio:      cfg.SiteName,
+		ScrapedAt:   now,
+	}
 }
 
 var (
@@ -124,7 +152,7 @@ var (
 	totalRe     = regexp.MustCompile(`(\d+)\s+Video\(s\) Found`)
 )
 
-func parseListingPage(body []byte) ([]listingCard, int) {
+func parseListingPage(body []byte, base string) ([]listingCard, int) {
 	total := 0
 	if m := totalRe.FindSubmatch(body); m != nil {
 		total, _ = strconv.Atoi(string(m[1]))
@@ -138,14 +166,14 @@ func parseListingPage(body []byte) ([]listingCard, int) {
 
 		if m := videoURLRe.FindSubmatch(block); m != nil {
 			c.id = string(m[1])
-			c.url = siteBase + "/videos/" + c.id + "/"
+			c.url = base + "/videos/" + c.id + "/"
 		}
 		if c.id == "" {
 			continue
 		}
 
 		if m := thumbRe.FindSubmatch(block); m != nil {
-			c.thumbnail = siteBase + string(m[1])
+			c.thumbnail = base + string(m[1])
 		}
 
 		if m := titleRe.FindSubmatch(block); m != nil {
@@ -155,8 +183,7 @@ func parseListingPage(body []byte) ([]listingCard, int) {
 			}
 		}
 		if c.title == "" {
-			ms := titleRe.FindAllSubmatch(block, -1)
-			for _, tm := range ms {
+			for _, tm := range titleRe.FindAllSubmatch(block, -1) {
 				t := string(tm[1])
 				if !strings.Contains(t, "Video(s) Found") {
 					c.title = html.UnescapeString(strings.TrimSpace(t))
@@ -202,22 +229,4 @@ func parseListingPage(body []byte) ([]listingCard, int) {
 	}
 
 	return cards, total
-}
-
-func buildScene(c listingCard, now time.Time) models.Scene {
-	return models.Scene{
-		ID:          c.id,
-		SiteID:      "jerkoffinstructions",
-		StudioURL:   siteBase,
-		Title:       c.title,
-		Description: c.description,
-		URL:         c.url,
-		Thumbnail:   c.thumbnail,
-		Date:        c.date,
-		Duration:    c.duration,
-		Performers:  c.performers,
-		Tags:        c.tags,
-		Studio:      "Jerk Off Instructions",
-		ScrapedAt:   now,
-	}
 }
