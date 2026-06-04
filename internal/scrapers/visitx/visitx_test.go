@@ -25,7 +25,9 @@ func TestMatchesURL(t *testing.T) {
 		{"https://www.visit-x.net/de/amateur/dirtytina/videos/", true},
 		{"https://www.visit-x.net/es/amateur/someone/videos/", true},
 		{"https://www.visit-x.net/en/amateur/dirtytina/videos/?page=2", true},
-		{"https://www.visit-x.net/en/amateur/dirtytina/", false},
+		{"https://www.visit-x.net/en/amateur/dirtytina/", true},
+		{"https://www.visit-x.net/de/amateur/someone/", true},
+		{"https://visit-x.net/en/amateur/dirtytina", true},
 		{"https://www.visit-x.net/en/amateur/", false},
 		{"https://example.com/en/amateur/x/videos/", false},
 		{"", false},
@@ -45,6 +47,8 @@ func TestModelFromURL(t *testing.T) {
 		{"https://www.visit-x.net/en/amateur/dirtytina/videos/", "dirtytina"},
 		{"https://visit-x.net/de/amateur/SomeModel/videos/", "SomeModel"},
 		{"https://www.visit-x.net/es/amateur/test-model/videos/?page=2", "test-model"},
+		{"https://www.visit-x.net/en/amateur/dirtytina/", "dirtytina"},
+		{"https://visit-x.net/en/amateur/someone", "someone"},
 	}
 	for _, c := range cases {
 		if got := modelFromURL(c.url); got != c.want {

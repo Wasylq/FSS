@@ -22,8 +22,8 @@ const (
 )
 
 var (
-	matchRe = regexp.MustCompile(`^https?://(?:www\.)?visit-x\.net/\w+/amateur/([^/]+)/videos/?(?:\?.*)?$`)
-	modelRe = regexp.MustCompile(`/amateur/([^/]+)/videos`)
+	matchRe = regexp.MustCompile(`^https?://(?:www\.)?visit-x\.net/\w+/amateur/([^/]+)(?:/videos)?/?(?:\?.*)?$`)
+	modelRe = regexp.MustCompile(`/amateur/([^/]+)`)
 	tokenRe = regexp.MustCompile(`"vxqlAccessToken"\s*:\s*"([^"]+)"`)
 )
 
@@ -44,7 +44,12 @@ var _ scraper.StudioScraper = (*Scraper)(nil)
 func init() { scraper.Register(New()) }
 
 func (s *Scraper) ID() string               { return siteID }
-func (s *Scraper) Patterns() []string       { return []string{"visit-x.net/{lang}/amateur/{model}/videos/"} }
+func (s *Scraper) Patterns() []string {
+	return []string{
+		"visit-x.net/{lang}/amateur/{model}/",
+		"visit-x.net/{lang}/amateur/{model}/videos/",
+	}
+}
 func (s *Scraper) MatchesURL(u string) bool { return matchRe.MatchString(u) }
 
 func modelFromURL(u string) string {
