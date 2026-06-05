@@ -230,7 +230,9 @@ func (s *Scraper) fetchAPI(ctx context.Context, url string) ([]byte, error) {
 		return nil, err
 	}
 	defer func() { _ = resp.Body.Close() }()
-	return httpx.ReadBody(resp.Body)
+	// The ChickPass network catalogue (~5 000 scenes with embedded data_types)
+	// exceeds the default 10 MB ReadBody limit; use 50 MB.
+	return httpx.ReadBodyN(resp.Body, 50*1024*1024)
 }
 
 // ---- run loop ----

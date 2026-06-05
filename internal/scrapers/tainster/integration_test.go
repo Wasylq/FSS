@@ -21,5 +21,5 @@ func TestLiveSinxPerformer(t *testing.T) {
 }
 
 func TestLiveSinxTag(t *testing.T) {
-	testutil.RunLiveScrape(t, New(), "https://www.sinx.com/tag/521-orgy", 2)
+	testutil.RunLiveScrape(t, New(), "https://www.sinx.com/tag/3346-hispaniclatino", 2)
 }

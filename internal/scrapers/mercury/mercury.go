@@ -199,12 +199,12 @@ func pageURL(base string, page int) string {
 
 var (
 	articleBlockRe = regexp.MustCompile(`(?s)articles\.push\(\{(.+?)\}\)`)
-	fieldIDRe      = regexp.MustCompile(`\bid:\s*(\d+)`)
-	fieldLinkRe    = regexp.MustCompile(`permalink:\s*["']([^"']+)["']`)
-	fieldTitleRe   = regexp.MustCompile(`title:\s*["']((?:[^"'\\]|\\.)*)["']`)
-	fieldDateRe    = regexp.MustCompile(`date:\s*["']([^"']+)["']`)
-	fieldCatRe     = regexp.MustCompile(`categories:\s*\[([^\]]+)\]`)
-	catStringRe    = regexp.MustCompile(`["']([^"']+)["']`)
+	fieldIDRe      = regexp.MustCompile(`\bid\s*:\s*'?(\d+)'?`)
+	fieldLinkRe    = regexp.MustCompile(`permalink\s*:\s*["']([^"']+)["']`)
+	fieldTitleRe   = regexp.MustCompile(`title\s*:\s*["']((?:[^"'\\]|\\.)*)["']`)
+	fieldDateRe    = regexp.MustCompile(`date\s*:\s*["']([^"']+)["']`)
+	fieldCatRe     = regexp.MustCompile(`categories\s*:\s*\[([^\]]+)\]`)
+	catNameRe      = regexp.MustCompile(`name\s*:\s*["']([^"']+)["']`)
 )
 
 func parseListingPage(body []byte) []listItem {
@@ -233,9 +233,8 @@ func parseListingPage(body []byte) []listItem {
 			item.date = string(m[1])
 		}
 		if m := fieldCatRe.FindSubmatch(content); m != nil {
-			cats := catStringRe.FindAllSubmatch(m[1], -1)
-			if len(cats) > 0 {
-				item.label = string(cats[0][1])
+			if nm := catNameRe.FindSubmatch(m[1]); nm != nil {
+				item.label = string(nm[1])
 			}
 		}
 

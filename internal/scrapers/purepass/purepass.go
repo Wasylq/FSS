@@ -163,7 +163,7 @@ func (item sceneItem) toScene(cfg SiteConfig, studioURL string, now time.Time) m
 
 var (
 	blockRe     = regexp.MustCompile(`data-setid="(\d+)"`)
-	titleRe     = regexp.MustCompile(`(?s)<a[^>]*href="/join/"[^>]*>\s*([^<]+?)\s*</a>`)
+	titleRe     = regexp.MustCompile(`(?s)<a[^>]*(?:href="/join/"|onclick="tload\([^)]*\)")[^>]*>\s*([^<]+?)\s*</a>`)
 	performerRe = regexp.MustCompile(`href="[^"]*models/[^"]*">([^<]+)</a>`)
 	dateValRe   = regexp.MustCompile(`([A-Z][a-z]+ \d{1,2}, \d{4})`)
 	durationRe  = regexp.MustCompile(`(\d+)\s*(?:&nbsp;)*\s*minute`)

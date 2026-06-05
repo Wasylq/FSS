@@ -61,9 +61,10 @@ func (s *Scraper) ListScenes(ctx context.Context, studioURL string, opts scraper
 type nextData struct {
 	Props struct {
 		PageProps struct {
-			Contents contentResponse `json:"contents"`
-			Content  *contentItem    `json:"content"`
-			Model    *modelData      `json:"model"`
+			Contents      contentResponse `json:"contents"`
+			Content       *contentItem    `json:"content"`
+			Model         *modelData      `json:"model"`
+			ModelContents []contentItem   `json:"model_contents"`
 		} `json:"pageProps"`
 	} `json:"props"`
 }
@@ -149,7 +150,9 @@ func (s *Scraper) scrapeModelPage(ctx context.Context, studioURL string, opts sc
 	}
 
 	var items []contentItem
-	if nd.Props.PageProps.Model != nil {
+	if len(nd.Props.PageProps.ModelContents) > 0 {
+		items = nd.Props.PageProps.ModelContents
+	} else if nd.Props.PageProps.Model != nil {
 		items = nd.Props.PageProps.Model.Contents.Data
 	}
 

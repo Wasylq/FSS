@@ -151,14 +151,15 @@ func parseListingPage(body []byte) []sceneItem {
 	return items
 }
 
-// parseGroobyDate parses "8th May 2026" → time.Time.
+// parseGroobyDate parses "8th May 2026" or "5th Jun 2026" → time.Time.
 func parseGroobyDate(s string) time.Time {
 	cleaned := parseutil.StripOrdinalSuffix(s)
-	t, err := time.Parse("2 January 2006", cleaned)
-	if err != nil {
-		return time.Time{}
+	for _, layout := range []string{"2 Jan 2006", "2 January 2006"} {
+		if t, err := time.Parse(layout, cleaned); err == nil {
+			return t.UTC()
+		}
 	}
-	return t.UTC()
+	return time.Time{}
 }
 
 func estimateTotal(body []byte, perPage int) int {

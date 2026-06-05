@@ -2,6 +2,7 @@ package tainster
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"html"
 	"net/http"
@@ -185,6 +186,11 @@ func (s *Scraper) expandSeriesChannel(ctx context.Context, seriesSlug string, op
 		pageURL := fmt.Sprintf("%s/channel/%s/all?sort=newest&page=%d", s.baseURL, seriesSlug, page)
 		slugs, lastPage, err := s.fetchSubChannels(ctx, pageURL)
 		if err != nil {
+			var se *httpx.StatusError
+			if errors.As(err, &se) && se.StatusCode == http.StatusNotFound {
+				scraper.Debugf(1, "tainster: sub-channels page %d: 404, stopping", page)
+				break
+			}
 			select {
 			case out <- scraper.Error(fmt.Errorf("sub-channels page %d: %w", page, err)):
 			case <-ctx.Done():
@@ -223,6 +229,11 @@ func (s *Scraper) collectItems(ctx context.Context, basePath string, opts scrape
 		pageURL := fmt.Sprintf("%s%s?sort=newest&page=%d", s.baseURL, basePath, page)
 		pageItems, lastPage, err := s.fetchListing(ctx, pageURL)
 		if err != nil {
+			var se *httpx.StatusError
+			if errors.As(err, &se) && se.StatusCode == http.StatusNotFound {
+				scraper.Debugf(1, "tainster: listing %s page %d: 404, stopping pagination", basePath, page)
+				break
+			}
 			select {
 			case out <- scraper.Error(fmt.Errorf("listing %s page %d: %w", basePath, page, err)):
 			case <-ctx.Done():
@@ -510,8 +521,11 @@ func buildScene(item listingItem, d sceneDetail, studioURL string, now time.Time
 		Series:      d.series,
 		ScrapedAt:   now,
 	}
-	if item.channel != "" && d.series == "" {
-		scene.Series = item.channel
+	if item.channel != "" {
+		scene.Studio = item.channel
+		if d.series == "" {
+			scene.Series = item.channel
+		}
 	}
 	if d.price > 0 {
 		scene.AddPrice(models.PriceSnapshot{

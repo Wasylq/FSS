@@ -17,9 +17,13 @@ func TestLivePassionPOV(t *testing.T) {
 }
 
 func TestLiveVRAllure(t *testing.T) {
-	testutil.RunLiveScrape(t, newScraper(sites[3]), "https://vrallure.com/videos", 3)
+	t.Skip("vrallure.com migrated from Next.js to IndieBucks/YPP HTML — needs standalone scraper")
 }
 
 func TestLiveManPuppy(t *testing.T) {
-	testutil.RunLiveScrape(t, newScraper(sites[4]), "https://www.manpuppy.com/videos", 3)
+	t.Skip("manpuppy.com migrated from Next.js to IndieBucks/YPP HTML — needs standalone scraper")
+}
+
+func TestLiveMilflicious(t *testing.T) {
+	testutil.RunLiveScrape(t, newScraper(sites[5]), "https://milflicious.com/videos", 3)
 }

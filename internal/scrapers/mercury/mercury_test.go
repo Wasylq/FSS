@@ -17,18 +17,18 @@ const fixtureListing = `<html><body>
 var ld_blog_vars = {};
 ld_blog_vars.articles = [];
 ld_blog_vars.articles.push({
-    id: 31419219,
-    permalink: "https://mercury.diary.to/archives/31419219.html",
-    title: "ホームページ移転のお知らせ",
-    categories: ["マーキュリー","2023/04"],
-    date: '2023-04-27 00:00:05'
+    id : '31419219',
+    permalink : 'https://mercury.diary.to/archives/31419219.html',
+    title : 'ホームページ移転のお知らせ',
+    categories : [ { id:'422721', name:'マーキュリー', permalink:'https://mercury.diary.to/archives/cat_422721.html' }, { id:'425065', name:'2023年04月27日', permalink:'https://mercury.diary.to/archives/cat_425065.html' } ],
+    date : '2023-04-27 00:00:05'
 });
 ld_blog_vars.articles.push({
-    id: 31328743,
-    permalink: "https://mercury.diary.to/archives/31328743.html",
-    title: "HONB-311 素人ナンパ",
-    categories: ["初代渋谷特別特攻本部","2023/03"],
-    date: '2023-03-15 00:00:05'
+    id : '31328743',
+    permalink : 'https://mercury.diary.to/archives/31328743.html',
+    title : 'HONB-311 素人ナンパ',
+    categories : [ { id:'410001', name:'初代渋谷特別特攻本部', permalink:'https://mercury.diary.to/archives/cat_410001.html' }, { id:'420001', name:'2023年03月15日', permalink:'https://mercury.diary.to/archives/cat_420001.html' } ],
+    date : '2023-03-15 00:00:05'
 });
 </script>
 </body></html>`
@@ -286,18 +286,18 @@ func TestRun(t *testing.T) {
 var ld_blog_vars = {};
 ld_blog_vars.articles = [];
 ld_blog_vars.articles.push({
-    id: 31419219,
-    permalink: "%s/archives/31419219.html",
-    title: "Migration notice",
-    categories: ["マーキュリー","2023/04"],
-    date: '2023-04-27 00:00:05'
+    id : '31419219',
+    permalink : '%s/archives/31419219.html',
+    title : 'Migration notice',
+    categories : [ { id:'1', name:'マーキュリー', permalink:'#' } ],
+    date : '2023-04-27 00:00:05'
 });
 ld_blog_vars.articles.push({
-    id: 31328743,
-    permalink: "%s/archives/31328743.html",
-    title: "HONB-311 素人ナンパ",
-    categories: ["初代渋谷特別特攻本部","2023/03"],
-    date: '2023-03-15 00:00:05'
+    id : '31328743',
+    permalink : '%s/archives/31328743.html',
+    title : 'HONB-311 素人ナンパ',
+    categories : [ { id:'2', name:'初代渋谷特別特攻本部', permalink:'#' } ],
+    date : '2023-03-15 00:00:05'
 });
 </script></body></html>`, tsURL, tsURL)
 			_, _ = fmt.Fprint(w, listing)
