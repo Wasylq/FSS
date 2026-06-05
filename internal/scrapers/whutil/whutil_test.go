@@ -95,10 +95,10 @@ const detailJSON = `{
 
 func TestRun(t *testing.T) {
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		switch {
-		case r.URL.Path == "/api/v1/set/list":
+		switch r.URL.Path {
+		case "/api/v1/set/list":
 			_, _ = fmt.Fprint(w, listingJSON)
-		case r.URL.Path == "/api/v1/set/data":
+		case "/api/v1/set/data":
 			_, _ = fmt.Fprint(w, detailJSON)
 		default:
 			http.NotFound(w, r)
@@ -132,10 +132,10 @@ func TestRun(t *testing.T) {
 
 func TestRunWithDetail(t *testing.T) {
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		switch {
-		case r.URL.Path == "/api/v1/set/list":
+		switch r.URL.Path {
+		case "/api/v1/set/list":
 			_, _ = fmt.Fprint(w, `{"latest":[[{"id":1,"setid":"26060951","title":"Scene","category":"Cat","date":"29/05/2026","image":"/thumb.jpg","cs_ribbon":0}]],"count":"1","pages":1}`)
-		case r.URL.Path == "/api/v1/set/data":
+		case "/api/v1/set/data":
 			_, _ = fmt.Fprint(w, detailJSON)
 		default:
 			http.NotFound(w, r)
@@ -181,10 +181,10 @@ func TestRunWithDetail(t *testing.T) {
 
 func TestRunKnownIDs(t *testing.T) {
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		switch {
-		case r.URL.Path == "/api/v1/set/list":
+		switch r.URL.Path {
+		case "/api/v1/set/list":
 			_, _ = fmt.Fprint(w, listingJSON)
-		case r.URL.Path == "/api/v1/set/data":
+		case "/api/v1/set/data":
 			_, _ = fmt.Fprint(w, detailJSON)
 		default:
 			http.NotFound(w, r)
@@ -224,10 +224,10 @@ func TestRunSkipsComingSoon(t *testing.T) {
 	]],"count":"2","pages":1}`
 
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		switch {
-		case r.URL.Path == "/api/v1/set/list":
+		switch r.URL.Path {
+		case "/api/v1/set/list":
 			_, _ = fmt.Fprint(w, listing)
-		case r.URL.Path == "/api/v1/set/data":
+		case "/api/v1/set/data":
 			_, _ = fmt.Fprint(w, `{}`)
 		default:
 			http.NotFound(w, r)

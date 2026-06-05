@@ -35,8 +35,8 @@ type siteScraper struct {
 
 var _ scraper.StudioScraper = (*siteScraper)(nil)
 
-func (s *siteScraper) ID() string              { return s.config.SiteID }
-func (s *siteScraper) Patterns() []string      { return []string{s.config.Domain} }
+func (s *siteScraper) ID() string               { return s.config.SiteID }
+func (s *siteScraper) Patterns() []string       { return []string{s.config.Domain} }
 func (s *siteScraper) MatchesURL(u string) bool { return s.re.MatchString(u) }
 
 func (s *siteScraper) ListScenes(ctx context.Context, studioURL string, opts scraper.ListOpts) (<-chan scraper.SceneResult, error) {

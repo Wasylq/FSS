@@ -265,6 +265,7 @@
 | [Titty Attack](https://www.tittyattack.com) | `tittyattack.com` | TeamSkeet/PSM | No | TeamSkeet, `ts_network` index |
 | [SayUncle](https://www.sayuncle.com) | `sayuncle.com`, `sayuncle.com/models/{slug}`, `sayuncle.com/series/{slug}`, `sayuncle.com/categories/{name}` | TeamSkeet/PSM | No | TeamSkeet, `sau_network` ES index, `/movies/` scene path |
 | [Pure Mature](https://puremature.com) | `puremature.com`, `puremature.com/models/{slug}` | AMA Multimedia | No | JSON REST API, filter by model, resolution from download options |
+| [Mercury](https://mercury.diary.to) | `mercury.diary.to`, `mercury.diary.to/archives/cat_{id}.html` | Livedoor Blog | Yes (JPY) | Japanese AV studio (54 sub-labels). Scrapes from diary.to archive (mercury-2005.com is geo-blocked). Listing via `ld_blog_vars.articles.push()` JS data, detail page worker pool for product code/duration/price/thumbnail. ~920 products, date-sorted, KnownIDs early-stop. Product code as scene ID. |
 | [MilfVR](https://www.milfvr.com) | `milfvr.com` | POVR/WankzVR | No | Export JSON + listing page dates, uses `povrutil` |
 | [MissaX](https://www.missax.com) | `missax.com`, `missax.com/tour/models/{name}.html` | MissaX CMS | No | NATS tour, listing + detail page worker pool, model page support, uses `missaxutil` |
 | [All Her Luv](https://www.allherluv.com) | `allherluv.com`, `allherluv.com/tour/models/{name}.html` | MissaX CMS | No | Thin wrapper around `missaxutil` |
