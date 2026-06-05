@@ -1,6 +1,6 @@
 # Covered Sites — All Domains
 
-1193 scrapers covering 1275 distinct domains. Auto-generated from the scraper registry by `TestSitesMdInSync` — do not hand-edit; instead update the scraper's `Patterns()` and re-run `go test ./internal/scrapers/all/...`. The `stashbox` scraper is omitted here because its covered hosts are config-driven; see [`scrapers.md`](scrapers.md).
+1203 scrapers covering 1286 distinct domains. Auto-generated from the scraper registry by `TestSitesMdInSync` — do not hand-edit; instead update the scraper's `Patterns()` and re-run `go test ./internal/scrapers/all/...`. The `stashbox` scraper is omitted here because its covered hosts are config-driven; see [`scrapers.md`](scrapers.md).
 
 Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scraper ID(s)** column lists every scraper that claims URLs on that domain — most domains have one entry, but table-driven networks (`adultprime`, `tmw`, `nextdoorstudios`, etc.) host many sub-studios on a single root domain. See [`scrapers.md`](scrapers.md) for what each ID covers.
 
@@ -155,6 +155,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | bootyliciousmag.com | `bootyliciousmag` |
 | boppingbabes.com | `boppingbabes` |
 | bosslesson.com | `bosslesson` |
+| bouncychicks.com | `bouncychicks` |
 | boundmusclejocks.com | `boundmusclejocks` |
 | bountyhunterporn.com | `nubiles` |
 | boyforsale.com | `boyforsale` |
@@ -222,6 +223,11 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | cheatingmommy.com | `nubiles` |
 | cheatingsis.com | `nubiles` |
 | cherrypimps.com | `cherrypimps` |
+| chickpass.com | `chickpass` |
+| chickpasslesbians.com | `chickpasslesbians` |
+| chickpassmilfs.com | `chickpassmilfs` |
+| chickpassnetwork.com | `chickpass` |
+| chickpassteens.com | `chickpassteens` |
 | chicksonblackdicks.com | `chicksonblackdicks` |
 | chloesworld.com | `chloesworld` |
 | christianacinn.puba.com | `pubachristianacinn` |
@@ -433,9 +439,11 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | ftvmilfs.com | `ftvmilfs` |
 | fuckedfeet.com | `fuckedfeet` |
 | fuckingglasses.com | `fuckingglasses` |
+| fuckingparties.com | `fuckingparties` |
 | fuckmepov.com | `fuckmepov` |
 | fuckmyjeans.com | `africanbucks` |
 | fuckstudies.com | `tmw-fuckstudies` |
+| fuckthegeek.com | `fuckthegeek` |
 | fuckthosemoms.com | `fuckthosemoms` |
 | fullpornnetwork.com | `fullpornnetwork` |
 | fullyclothedsex.com | `tainster` |
@@ -682,6 +690,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | milfy.com | `milfy` |
 | militarygayxxx.com | `militarygayxxx` |
 | millymarks.com | `millymarks` |
+| minimuff.com | `minimuff` |
 | mishamontana.puba.com | `pubamishamontana` |
 | missax.com | `missax` |
 | missionasspossible.com | `private` |
@@ -1027,6 +1036,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | straplez.com | `straplez` |
 | strippers4k.com | `strippers4k` |
 | studentsexparties.com | `studentsexparties` |
+| stuffintwats.com | `stuffintwats` |
 | stunning18.com | `stunning18` |
 | submissived.com | `submissived` |
 | suggabunny.com | `porngutter` |
@@ -1267,6 +1277,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | xevunleashed.com | `xevbellringer` |
 | xlgirls.com | `xlgirls` |
 | xvirtual.com | `xvirtual` |
+| xxxnj.com | `xxxnj` |
 | youngcourtesans.com | `youngcourtesans` |
 | youngerloverofmine.com | `youngerloverofmine` |
 | youngerloverofmine.comtag | `youngerloverofmine` |

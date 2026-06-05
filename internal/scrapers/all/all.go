@@ -28,6 +28,7 @@ import (
 	_ "github.com/Wasylq/FSS/internal/scrapers/carnalplus"
 	_ "github.com/Wasylq/FSS/internal/scrapers/charleechase"
 	_ "github.com/Wasylq/FSS/internal/scrapers/cherrypimps"
+	_ "github.com/Wasylq/FSS/internal/scrapers/chickpass"
 	_ "github.com/Wasylq/FSS/internal/scrapers/clips4sale"
 	_ "github.com/Wasylq/FSS/internal/scrapers/collegeuniform"
 	_ "github.com/Wasylq/FSS/internal/scrapers/crunchboy"
