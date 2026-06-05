@@ -103,6 +103,7 @@ import (
 	_ "github.com/Wasylq/FSS/internal/scrapers/oopsfamily"
 	_ "github.com/Wasylq/FSS/internal/scrapers/over40handjobs"
 	_ "github.com/Wasylq/FSS/internal/scrapers/paysite"
+	_ "github.com/Wasylq/FSS/internal/scrapers/peatv"
 	_ "github.com/Wasylq/FSS/internal/scrapers/perfectgirlfriend"
 	_ "github.com/Wasylq/FSS/internal/scrapers/pissinghd"
 	_ "github.com/Wasylq/FSS/internal/scrapers/pornbox"
