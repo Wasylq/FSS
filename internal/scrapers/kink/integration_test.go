@@ -14,3 +14,7 @@ func TestLiveScrape(t *testing.T) {
 	testutil.SkipIfPlaceholder(t, liveStudioURL)
 	testutil.RunLiveScrape(t, New(), liveStudioURL, 5)
 }
+
+func TestLiveScrapeKinkMen(t *testing.T) {
+	testutil.RunLiveScrape(t, New(), "https://www.kinkmen.com", 5)
+}

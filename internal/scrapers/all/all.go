@@ -158,6 +158,7 @@ import (
 	_ "github.com/Wasylq/FSS/internal/scrapers/vixen"
 	_ "github.com/Wasylq/FSS/internal/scrapers/vna"
 	_ "github.com/Wasylq/FSS/internal/scrapers/wankitnow"
+	_ "github.com/Wasylq/FSS/internal/scrapers/williamhiggins"
 	_ "github.com/Wasylq/FSS/internal/scrapers/wankitnowvr"
 	_ "github.com/Wasylq/FSS/internal/scrapers/wankz"
 	_ "github.com/Wasylq/FSS/internal/scrapers/wownetwork"

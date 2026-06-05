@@ -1,6 +1,6 @@
 # Covered Sites — All Domains
 
-1183 scrapers covering 1264 distinct domains. Auto-generated from the scraper registry by `TestSitesMdInSync` — do not hand-edit; instead update the scraper's `Patterns()` and re-run `go test ./internal/scrapers/all/...`. The `stashbox` scraper is omitted here because its covered hosts are config-driven; see [`scrapers.md`](scrapers.md).
+1192 scrapers covering 1274 distinct domains. Auto-generated from the scraper registry by `TestSitesMdInSync` — do not hand-edit; instead update the scraper's `Patterns()` and re-run `go test ./internal/scrapers/all/...`. The `stashbox` scraper is omitted here because its covered hosts are config-driven; see [`scrapers.md`](scrapers.md).
 
 Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scraper ID(s)** column lists every scraper that claims URLs on that domain — most domains have one entry, but table-driven networks (`adultprime`, `tmw`, `nextdoorstudios`, etc.) host many sub-studios on a single root domain. See [`scrapers.md`](scrapers.md) for what each ID covers.
 
@@ -47,6 +47,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | amateur18.tv | `amateur18` |
 | amateurcfnm.com | `amateurcfnm` |
 | amateurthroats.com | `amateurthroats` |
+| ambushmassage.com | `ambushmassage` |
 | americanmusclehunks.com | `americanmusclehunks` |
 | anal-angels.com | `tmw-anal-angels` |
 | anal-beauty.com | `tmw-anal-beauty` |
@@ -213,6 +214,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | catholicboys.com | `catholicboys` |
 | caughtmycoach.com | `nubiles` |
 | cazzofilm.com | `cazzofilm` |
+| cfnmeu.com | `cfnmeu` |
 | cfnmgames.com | `cfnmgames` |
 | cfnmteens.com | `cfnmteens` |
 | charleechaselive.com | `charleechase` |
@@ -230,6 +232,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | clips4sale.com | `clips4sale` |
 | clubamberrayne.com | `clubamberrayne` |
 | clubbdsm.com | `clubbdsm` |
+| clubinfernodungeon.com | `clubinfernodungeon` |
 | clubkayden.com | `clubkayden` |
 | cock4stepmom.com | `cock4stepmom` |
 | cocksuckerprod.com | `cocksuckerprod` |
@@ -410,6 +413,8 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | firstanaldate.com | `firstanaldate` |
 | firstbgg.com | `tmw-firstbgg` |
 | firstclasspov.com | `firstclasspov` |
+| fistingcentral.com | `fistingcentral` |
+| fistinginferno.com | `fistinginferno` |
 | flatandfuckedmilfs.com | `flatandfuckedmilfs` |
 | flexidolls.com | `flexidolls` |
 | flourishuniv.com | `flourishuniv` |
@@ -581,6 +586,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | kimberleelive.com | `kimberlee` |
 | kink.com | `kink` |
 | kink305.com | `kink305` |
+| kinkmen.com | `kink` |
 | kinkyfamily.com | `kinkyfamily` |
 | kinkyspa.com | `metro` |
 | kirstenprice.puba.com | `pubakirstenprice` |
@@ -637,6 +643,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | magmafilm.com | `gasm` |
 | majorhotwife.com | `majorhotwife` |
 | makehimcuckold.com | `makehimcuckold` |
+| malefeet4u.com | `malefeet4u` |
 | manpuppy.com | `manpuppy` |
 | manuelferrara.com | `manuelferrara` |
 | manyvids.com | `manyvids` |
@@ -1014,6 +1021,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | stepmomfun.com | `stepmomfun` |
 | stepsiblingscaught.com | `nubiles` |
 | str8chaser.com | `realitydudes` |
+| str8hell.com | `str8hell` |
 | str8togay.com | `men` |
 | straplez.com | `straplez` |
 | strippers4k.com | `strippers4k` |
@@ -1028,6 +1036,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | swappz.com | `swappz` |
 | sweetheartvideo.com | `sweetheartvideo` |
 | sweetsinner.com | `sweetsinner` |
+| swnude.com | `swnude` |
 | t.porn | `tporn` |
 | taboohandjobs.com | `taboohandjobs` |
 | tabooheat.com | `tabooheat` |
@@ -1198,6 +1207,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | wicked.com | `wicked` |
 | wifey.com | `wifey` |
 | wildoncam.com | `wildoncam` |
+| williamhiggins.com | `williamhiggins` |
 | womenbyjuliaann.com | `womenbyjuliaann` |
 | worshipjasmine.com | `worshipjasmine` |
 | wow-orgasms.com | `tmw-wow-orgasms` |

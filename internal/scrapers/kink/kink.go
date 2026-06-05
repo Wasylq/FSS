@@ -43,13 +43,27 @@ func (s *Scraper) Patterns() []string {
 		"kink.com/series/{slug}",
 		"kink.com/shoots?channelIds={slug}",
 		"kink.com/shoots?performerIds={id}",
+		"kinkmen.com",
+		"kinkmen.com/channel/{slug}",
+		"kinkmen.com/model/{id}/{slug}",
+		"kinkmen.com/tag/{slug}",
+		"kinkmen.com/series/{slug}",
 	}
 }
 
-var matchRe = regexp.MustCompile(`^https?://(?:www\.)?kink\.com(?:/|$)`)
+var matchRe = regexp.MustCompile(`^https?://(?:www\.)?kink(?:men)?\.com(?:/|$)`)
 
 func (s *Scraper) MatchesURL(u string) bool {
 	return matchRe.MatchString(u)
+}
+
+var kinkmenHostRe = regexp.MustCompile(`(?i)kinkmen\.com`)
+
+func resolveSiteIdentity(rawURL string) (siteID, studioBase string) {
+	if kinkmenHostRe.MatchString(rawURL) {
+		return "kinkmen", "https://www.kinkmen.com"
+	}
+	return "kink", "https://www.kink.com"
 }
 
 func (s *Scraper) ListScenes(ctx context.Context, studioURL string, opts scraper.ListOpts) (<-chan scraper.SceneResult, error) {
@@ -75,9 +89,11 @@ type listEntry struct {
 func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOpts, out chan<- scraper.SceneResult) {
 	defer close(out)
 
+	siteID, studioBase := resolveSiteIdentity(studioURL)
+
 	lc := resolveListingConfig(studioURL)
 	if lc.mode == modeSeries {
-		s.runSeries(ctx, lc, opts, out)
+		s.runSeries(ctx, lc, siteID, studioBase, opts, out)
 		return
 	}
 
@@ -96,7 +112,7 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 						return
 					}
 				}
-				scene, err := s.fetchDetail(ctx, entry)
+				scene, err := s.fetchDetail(ctx, entry, siteID, studioBase)
 				if err != nil {
 					select {
 					case out <- scraper.Error(err):
@@ -192,7 +208,7 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 
 var seriesShootIDRe = regexp.MustCompile(`imagedb/(\d+)/`)
 
-func (s *Scraper) runSeries(ctx context.Context, lc listingConfig, opts scraper.ListOpts, out chan<- scraper.SceneResult) {
+func (s *Scraper) runSeries(ctx context.Context, lc listingConfig, siteID, studioBase string, opts scraper.ListOpts, out chan<- scraper.SceneResult) {
 	body, err := s.fetchHTML(ctx, lc.baseURL)
 	if err != nil {
 		select {
@@ -248,7 +264,7 @@ func (s *Scraper) runSeries(ctx context.Context, lc listingConfig, opts scraper.
 			id:  id,
 			url: fmt.Sprintf("%s/shoot/%s", base, id),
 		}
-		scene, fetchErr := s.fetchDetail(ctx, entry)
+		scene, fetchErr := s.fetchDetail(ctx, entry, siteID, studioBase)
 		if fetchErr != nil {
 			select {
 			case out <- scraper.Error(fetchErr):
@@ -420,7 +436,7 @@ type trackingData struct {
 
 var dataSetupRe = regexp.MustCompile(`data-setup="([^"]+)"`)
 
-func (s *Scraper) fetchDetail(ctx context.Context, entry listEntry) (models.Scene, error) {
+func (s *Scraper) fetchDetail(ctx context.Context, entry listEntry, siteID, studioBase string) (models.Scene, error) {
 	body, err := s.fetchHTML(ctx, entry.url)
 	if err != nil {
 		return models.Scene{}, fmt.Errorf("detail %s: %w", entry.id, err)
@@ -429,8 +445,8 @@ func (s *Scraper) fetchDetail(ctx context.Context, entry listEntry) (models.Scen
 	now := time.Now().UTC()
 	scene := models.Scene{
 		ID:         entry.id,
-		SiteID:     "kink",
-		StudioURL:  "https://www.kink.com",
+		SiteID:     siteID,
+		StudioURL:  studioBase,
 		Title:      entry.title,
 		URL:        entry.url,
 		Thumbnail:  entry.thumbnail,

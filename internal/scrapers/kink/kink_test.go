@@ -24,6 +24,10 @@ func TestMatchesURL(t *testing.T) {
 		{"https://www.kink.com/channel/sex-and-submission", true},
 		{"https://www.kink.com/shoots?channelIds=sexandsubmission", true},
 		{"https://www.kink.com/shoot/108031", true},
+		{"https://www.kinkmen.com", true},
+		{"https://kinkmen.com", true},
+		{"https://www.kinkmen.com/channel/bound-gods", true},
+		{"https://www.kinkmen.com/shoot/108095", true},
 		{"https://www.brazzers.com", false},
 		{"https://example.com", false},
 	}
@@ -51,6 +55,11 @@ func TestResolveListingConfig(t *testing.T) {
 		{"https://www.kink.com/shoots?channelIds=whippedass", modeShootsAPI, "https://www.kink.com/shoots?channelIds=whippedass&sort=published"},
 		{"https://www.kink.com/tag/first-anal-bdsm", modeDirectPage, "https://www.kink.com/tag/first-anal-bdsm"},
 		{"https://www.kink.com/series/security-risk", modeSeries, "https://www.kink.com/series/security-risk"},
+		{"https://www.kinkmen.com", modeShootsAPI, "https://www.kinkmen.com/shoots?sort=published"},
+		{"https://www.kinkmen.com/channel/bound-gods", modeShootsAPI, "https://www.kinkmen.com/shoots?channelIds=boundgods&sort=published"},
+		{"https://www.kinkmen.com/model/12345/Test", modeShootsAPI, "https://www.kinkmen.com/shoots?performerIds=12345&sort=published"},
+		{"https://www.kinkmen.com/tag/bondage", modeDirectPage, "https://www.kinkmen.com/tag/bondage"},
+		{"https://www.kinkmen.com/series/test", modeSeries, "https://www.kinkmen.com/series/test"},
 	}
 	for _, c := range cases {
 		lc := resolveListingConfig(c.url)
@@ -206,6 +215,26 @@ func TestFetchListing(t *testing.T) {
 	}
 }
 
+func TestResolveSiteIdentity(t *testing.T) {
+	cases := []struct {
+		url        string
+		wantSiteID string
+		wantBase   string
+	}{
+		{"https://www.kink.com", "kink", "https://www.kink.com"},
+		{"https://kink.com/channel/hogtied", "kink", "https://www.kink.com"},
+		{"https://www.kinkmen.com", "kinkmen", "https://www.kinkmen.com"},
+		{"https://kinkmen.com/channel/bound-gods", "kinkmen", "https://www.kinkmen.com"},
+		{"https://www.kinkmen.com/shoot/108095", "kinkmen", "https://www.kinkmen.com"},
+	}
+	for _, c := range cases {
+		siteID, base := resolveSiteIdentity(c.url)
+		if siteID != c.wantSiteID || base != c.wantBase {
+			t.Errorf("resolveSiteIdentity(%q) = (%q, %q), want (%q, %q)", c.url, siteID, base, c.wantSiteID, c.wantBase)
+		}
+	}
+}
+
 func TestFetchDetail(t *testing.T) {
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		_, _ = fmt.Fprint(w, detailHTML)
@@ -223,11 +252,17 @@ func TestFetchDetail(t *testing.T) {
 		date:       "Apr 24, 2026",
 	}
 
-	scene, err := s.fetchDetail(context.Background(), entry)
+	scene, err := s.fetchDetail(context.Background(), entry, "kink", "https://www.kink.com")
 	if err != nil {
 		t.Fatal(err)
 	}
 
+	if scene.SiteID != "kink" {
+		t.Errorf("SiteID = %q, want kink", scene.SiteID)
+	}
+	if scene.StudioURL != "https://www.kink.com" {
+		t.Errorf("StudioURL = %q", scene.StudioURL)
+	}
 	if scene.Description != "A detailed description of the scene." {
 		t.Errorf("Description = %q", scene.Description)
 	}
@@ -254,6 +289,31 @@ func TestFetchDetail(t *testing.T) {
 	}
 	if !has4k {
 		t.Errorf("Tags missing 4K: %v", scene.Tags)
+	}
+}
+
+func TestFetchDetailKinkMen(t *testing.T) {
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		_, _ = fmt.Fprint(w, detailHTML)
+	}))
+	defer ts.Close()
+
+	s := &Scraper{client: ts.Client()}
+	entry := listEntry{
+		id:  "108095",
+		url: ts.URL + "/shoot/108095",
+	}
+
+	scene, err := s.fetchDetail(context.Background(), entry, "kinkmen", "https://www.kinkmen.com")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if scene.SiteID != "kinkmen" {
+		t.Errorf("SiteID = %q, want kinkmen", scene.SiteID)
+	}
+	if scene.StudioURL != "https://www.kinkmen.com" {
+		t.Errorf("StudioURL = %q, want https://www.kinkmen.com", scene.StudioURL)
 	}
 }
 

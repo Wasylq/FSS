@@ -159,6 +159,13 @@ var sites = []siteConfig{
 	{"3rddegreefilms", "3rddegreefilms.com", "3rd Degree Films", "3rddegreefilms", "", ""},
 	{"diabolic", "diabolic.com", "Diabolic", "diabolic", "", ""},
 
+	// Fisting Inferno segment — network hub (all content in the segment)
+	{"fistinginferno", "fistinginferno.com", "", "", "", ""},
+
+	// Fisting Inferno segment — individual sites with own domains and segments
+	{"clubinfernodungeon", "clubinfernodungeon.com", "Club Inferno Dungeon", "", "", ""},
+	{"fistingcentral", "fistingcentral.com", "Fisting Central", "", "", ""},
+
 	// Addicted 2 Girls segment (own segment, under Zero Tolerance Films tree)
 	{"addicted2girls", "addicted2girls.com", "Addicted 2 Girls", "", "", ""},
 
