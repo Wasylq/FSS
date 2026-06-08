@@ -146,6 +146,7 @@ import (
 	_ "github.com/Wasylq/FSS/internal/scrapers/sexlikereal"
 	_ "github.com/Wasylq/FSS/internal/scrapers/sexmexpro"
 	_ "github.com/Wasylq/FSS/internal/scrapers/sindrive"
+	_ "github.com/Wasylq/FSS/internal/scrapers/smqueenroad"
 	_ "github.com/Wasylq/FSS/internal/scrapers/sofiemarie"
 	_ "github.com/Wasylq/FSS/internal/scrapers/spicevids"
 	_ "github.com/Wasylq/FSS/internal/scrapers/spizoo"
