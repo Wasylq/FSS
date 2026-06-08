@@ -16,22 +16,20 @@ import (
 	"github.com/Wasylq/FSS/scraper"
 )
 
-const (
-	defaultBase = "https://www.auntjudysxxx.com"
-	siteID      = "auntjudys"
-)
+const siteID = "auntjudys"
 
-var matchRe = regexp.MustCompile(`^https?://(?:www\.)?auntjudysxxx\.com(?:/|$)`)
+var (
+	matchRe = regexp.MustCompile(`^https?://(?:www\.)?auntjudys(?:xxx)?\.com(?:/|$)`)
+	baseRe  = regexp.MustCompile(`^(https?://(?:www\.)?auntjudys(?:xxx)?\.com)`)
+)
 
 type Scraper struct {
 	client *http.Client
-	base   string
 }
 
 func New() *Scraper {
 	return &Scraper{
 		client: httpx.NewClient(30 * time.Second),
-		base:   defaultBase,
 	}
 }
 
@@ -45,6 +43,9 @@ func (s *Scraper) Patterns() []string {
 		"auntjudysxxx.com",
 		"auntjudysxxx.com/tour/categories/movies.html",
 		"auntjudysxxx.com/tour/models/{slug}.html",
+		"auntjudys.com",
+		"auntjudys.com/tour/categories/movies.html",
+		"auntjudys.com/tour/models/{slug}.html",
 	}
 }
 func (s *Scraper) MatchesURL(u string) bool { return matchRe.MatchString(u) }
@@ -55,8 +56,21 @@ func (s *Scraper) ListScenes(ctx context.Context, studioURL string, opts scraper
 	return out, nil
 }
 
+func resolveBase(studioURL string) string {
+	if m := baseRe.FindString(studioURL); m != "" {
+		return strings.TrimRight(m, "/")
+	}
+	if idx := strings.Index(studioURL, "/tour/"); idx >= 0 {
+		return studioURL[:idx]
+	}
+	return "https://www.auntjudysxxx.com"
+}
+
 func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOpts, out chan<- scraper.SceneResult) {
 	defer close(out)
+
+	base := resolveBase(studioURL)
+	scraper.Debugf(1, "auntjudys: using base %s", base)
 
 	workers := opts.Workers
 	if workers <= 0 {
@@ -93,16 +107,16 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 	go func() {
 		defer close(work)
 		if isModel {
-			s.enqueueModelPage(ctx, studioURL, opts, out, work)
+			s.enqueueModelPage(ctx, base, studioURL, opts, out, work)
 		} else {
-			s.enqueueListingPages(ctx, opts, out, work)
+			s.enqueueListingPages(ctx, base, opts, out, work)
 		}
 	}()
 
 	wg.Wait()
 }
 
-func (s *Scraper) enqueueListingPages(ctx context.Context, opts scraper.ListOpts, out chan<- scraper.SceneResult, work chan<- listingScene) {
+func (s *Scraper) enqueueListingPages(ctx context.Context, base string, opts scraper.ListOpts, out chan<- scraper.SceneResult, work chan<- listingScene) {
 	for page := 1; ; page++ {
 		if ctx.Err() != nil {
 			return
@@ -118,9 +132,9 @@ func (s *Scraper) enqueueListingPages(ctx context.Context, opts scraper.ListOpts
 
 		var pageURL string
 		if page == 1 {
-			pageURL = s.base + "/tour/categories/movies.html"
+			pageURL = base + "/tour/categories/movies.html"
 		} else {
-			pageURL = fmt.Sprintf("%s/tour/categories/movies_%d_d.html", s.base, page)
+			pageURL = fmt.Sprintf("%s/tour/categories/movies_%d_d.html", base, page)
 		}
 
 		body, err := s.fetchPage(ctx, pageURL)
@@ -132,7 +146,7 @@ func (s *Scraper) enqueueListingPages(ctx context.Context, opts scraper.ListOpts
 			return
 		}
 
-		scenes := parseListingPage(body, s.base)
+		scenes := parseListingPage(body, base)
 		if len(scenes) == 0 {
 			return
 		}
@@ -167,7 +181,7 @@ func (s *Scraper) enqueueListingPages(ctx context.Context, opts scraper.ListOpts
 	}
 }
 
-func (s *Scraper) enqueueModelPage(ctx context.Context, modelURL string, opts scraper.ListOpts, out chan<- scraper.SceneResult, work chan<- listingScene) {
+func (s *Scraper) enqueueModelPage(ctx context.Context, base, modelURL string, opts scraper.ListOpts, out chan<- scraper.SceneResult, work chan<- listingScene) {
 	body, err := s.fetchPage(ctx, modelURL)
 	if err != nil {
 		select {
@@ -177,7 +191,7 @@ func (s *Scraper) enqueueModelPage(ctx context.Context, modelURL string, opts sc
 		return
 	}
 
-	scenes := parseListingPage(body, s.base)
+	scenes := parseListingPage(body, base)
 	if len(scenes) == 0 {
 		return
 	}

@@ -22,12 +22,34 @@ func TestMatchesURL(t *testing.T) {
 		{"https://auntjudysxxx.com/tour/categories/movies.html", true},
 		{"https://www.auntjudysxxx.com/tour/models/andi-james.html", true},
 		{"https://www.auntjudysxxx.com/", true},
+		{"https://www.auntjudys.com/tour/categories/movies.html", true},
+		{"https://auntjudys.com/tour/categories/movies.html", true},
+		{"https://www.auntjudys.com/", true},
+		{"http://www.auntjudys.com/tour/models/andi-james.html", true},
 		{"https://example.com/auntjudys", false},
 		{"", false},
 	}
 	for _, c := range cases {
 		if got := s.MatchesURL(c.url); got != c.want {
 			t.Errorf("MatchesURL(%q) = %v, want %v", c.url, got, c.want)
+		}
+	}
+}
+
+func TestResolveBase(t *testing.T) {
+	cases := []struct {
+		url  string
+		want string
+	}{
+		{"https://www.auntjudysxxx.com/tour/categories/movies.html", "https://www.auntjudysxxx.com"},
+		{"https://auntjudysxxx.com/", "https://auntjudysxxx.com"},
+		{"https://www.auntjudys.com/tour/categories/movies.html", "https://www.auntjudys.com"},
+		{"http://auntjudys.com/tour/models/andi.html", "http://auntjudys.com"},
+		{"https://www.auntjudys.com", "https://www.auntjudys.com"},
+	}
+	for _, c := range cases {
+		if got := resolveBase(c.url); got != c.want {
+			t.Errorf("resolveBase(%q) = %q, want %q", c.url, got, c.want)
 		}
 	}
 }
@@ -194,7 +216,7 @@ func TestListScenes(t *testing.T) {
 	ts := newTestServer([][]int{{100, 200}})
 	defer ts.Close()
 
-	s := &Scraper{client: ts.Client(), base: ts.URL}
+	s := &Scraper{client: ts.Client()}
 	ch, err := s.ListScenes(context.Background(), ts.URL+"/tour/categories/movies.html", scraper.ListOpts{})
 	if err != nil {
 		t.Fatal(err)
@@ -216,7 +238,7 @@ func TestListScenesPagination(t *testing.T) {
 	ts := newTestServer([][]int{page1, page2})
 	defer ts.Close()
 
-	s := &Scraper{client: ts.Client(), base: ts.URL}
+	s := &Scraper{client: ts.Client()}
 	ch, err := s.ListScenes(context.Background(), ts.URL+"/tour/categories/movies.html", scraper.ListOpts{})
 	if err != nil {
 		t.Fatal(err)
@@ -232,7 +254,7 @@ func TestListScenesKnownIDs(t *testing.T) {
 	ts := newTestServer([][]int{{1, 2, 3, 4}})
 	defer ts.Close()
 
-	s := &Scraper{client: ts.Client(), base: ts.URL}
+	s := &Scraper{client: ts.Client()}
 	ch, err := s.ListScenes(context.Background(), ts.URL+"/tour/categories/movies.html", scraper.ListOpts{
 		KnownIDs: map[string]bool{"3": true},
 	})
@@ -253,7 +275,7 @@ func TestListScenesModelPage(t *testing.T) {
 	ts := newTestServer([][]int{{10, 20, 30}})
 	defer ts.Close()
 
-	s := &Scraper{client: ts.Client(), base: ts.URL}
+	s := &Scraper{client: ts.Client()}
 	ch, err := s.ListScenes(context.Background(), ts.URL+"/tour/models/test-model.html", scraper.ListOpts{})
 	if err != nil {
 		t.Fatal(err)
