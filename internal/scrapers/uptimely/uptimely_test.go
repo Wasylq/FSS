@@ -5,8 +5,8 @@ import (
 )
 
 func TestSiteCount(t *testing.T) {
-	if len(sites) != 7 {
-		t.Errorf("expected 7 sites, got %d", len(sites))
+	if len(sites) != 8 {
+		t.Errorf("expected 8 sites, got %d", len(sites))
 	}
 }
 
