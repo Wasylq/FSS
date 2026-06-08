@@ -159,6 +159,7 @@ import (
 	_ "github.com/Wasylq/FSS/internal/scrapers/visitx"
 	_ "github.com/Wasylq/FSS/internal/scrapers/vixen"
 	_ "github.com/Wasylq/FSS/internal/scrapers/vna"
+	_ "github.com/Wasylq/FSS/internal/scrapers/vrporn"
 	_ "github.com/Wasylq/FSS/internal/scrapers/wankitnow"
 	_ "github.com/Wasylq/FSS/internal/scrapers/wankitnowvr"
 	_ "github.com/Wasylq/FSS/internal/scrapers/wankz"
