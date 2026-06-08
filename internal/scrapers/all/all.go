@@ -75,6 +75,7 @@ import (
 	_ "github.com/Wasylq/FSS/internal/scrapers/houseofyre"
 	_ "github.com/Wasylq/FSS/internal/scrapers/ifeelmyself"
 	_ "github.com/Wasylq/FSS/internal/scrapers/indiebucks"
+	_ "github.com/Wasylq/FSS/internal/scrapers/indiesav"
 	_ "github.com/Wasylq/FSS/internal/scrapers/innofsin"
 	_ "github.com/Wasylq/FSS/internal/scrapers/ishotmyself"
 	_ "github.com/Wasylq/FSS/internal/scrapers/iwantclips"
