@@ -7,8 +7,8 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
-	"time"
 
+	"github.com/Wasylq/FSS/internal/scrapers/mymemberutil"
 	"github.com/Wasylq/FSS/internal/scrapers/testutil"
 	"github.com/Wasylq/FSS/scraper"
 )
@@ -32,89 +32,8 @@ func TestMatchesURL(t *testing.T) {
 	}
 }
 
-func TestSlugify(t *testing.T) {
-	cases := []struct {
-		input string
-		want  string
-	}{
-		{"MILF1928 - Breakfast Fuck 3", "milf1928-breakfast-fuck-3"},
-		{"MILF1878 - Cucked Stepson", "milf1878-cucked-stepson"},
-		{"Fetish186 - Jerk Off Encouragement, Rachel and Addie", "fetish186-jerk-off-encouragement-rachel-and-addie"},
-		{"Simple Title", "simple-title"},
-	}
-	for _, c := range cases {
-		if got := slugify(c.input); got != c.want {
-			t.Errorf("slugify(%q) = %q, want %q", c.input, got, c.want)
-		}
-	}
-}
-
-func TestParseDate(t *testing.T) {
-	cases := []struct {
-		input string
-		year  int
-		month time.Month
-		day   int
-	}{
-		{"2026-04-17T16:00:13.000000Z", 2026, 4, 17},
-		{"2025-12-08T23:45:22.000000Z", 2025, 12, 8},
-		{"", 1, 1, 1},
-	}
-	for _, c := range cases {
-		d := parseDate(c.input)
-		if c.input == "" {
-			if !d.IsZero() {
-				t.Errorf("parseDate(%q) should be zero", c.input)
-			}
-			continue
-		}
-		if d.Year() != c.year || d.Month() != c.month || d.Day() != c.day {
-			t.Errorf("parseDate(%q) = %v", c.input, d)
-		}
-	}
-}
-
-func TestSplitKeywords(t *testing.T) {
-	kw := "Rachel Steele, Tyler Cruise, 4K, B/G, Big Ass, MILF, Step-Mother Fantasy"
-	performers, tags := splitKeywords(kw)
-
-	if len(performers) != 2 || performers[0] != "Rachel Steele" || performers[1] != "Tyler Cruise" {
-		t.Errorf("performers = %v", performers)
-	}
-	if len(tags) != 5 || tags[0] != "4K" || tags[4] != "Step-Mother Fantasy" {
-		t.Errorf("tags = %v", tags)
-	}
-}
-
-func TestSplitKeywordsEmpty(t *testing.T) {
-	performers, tags := splitKeywords("")
-	if len(performers) != 0 || len(tags) != 0 {
-		t.Errorf("expected empty, got performers=%v tags=%v", performers, tags)
-	}
-}
-
-func TestVideoPrice(t *testing.T) {
-	cases := []struct {
-		name   string
-		price  any
-		want   float64
-		wantOK bool
-	}{
-		{"float", 24.99, 24.99, true},
-		{"string", "19.99", 19.99, true},
-		{"nil", nil, 0, false},
-	}
-	for _, c := range cases {
-		vid := apiVideo{StreamPrice: c.price}
-		got, ok := vid.price()
-		if got != c.want || ok != c.wantOK {
-			t.Errorf("%s: price() = (%v, %v), want (%v, %v)", c.name, got, ok, c.want, c.wantOK)
-		}
-	}
-}
-
-func makeTestVideos() []apiVideo {
-	return []apiVideo{
+func makeTestVideos() []mymemberutil.APIVideo {
+	return []mymemberutil.APIVideo{
 		{
 			ID:                        100,
 			Title:                     "MILF100 - Test Scene One",
@@ -146,92 +65,50 @@ func makeTestVideos() []apiVideo {
 	}
 }
 
-const detailPageTemplate = `<!DOCTYPE html><html><head>
+const detailPageHTML = `<!DOCTYPE html><html><head>
 <meta property="og:description" content="Scene description for testing."/>
 <meta property="og:image" content="https://cdn.example.com/og-thumb.jpg"/>
 </head><body>
 <script>self.__next_f.push([1,"keywords\":\"Rachel Steele, Tyler Cruise, 4K, MILF, Step-Mother Fantasy\""])</script>
 </body></html>`
 
-func newTestServer(videos []apiVideo) *httptest.Server {
+func newTestServer(videos []mymemberutil.APIVideo) *httptest.Server {
 	return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
-		case apiPath:
-			page := videosPage{
+		case "/api/cancellable-request":
+			page := mymemberutil.VideosPage{
 				CurrentPage: 1,
 				LastPage:    1,
 				Total:       len(videos),
 				PerPage:     30,
 				Data:        videos,
 			}
-			outer := apiResponse{OK: true}
+			type apiResp struct {
+				OK   bool            `json:"ok"`
+				Data json.RawMessage `json:"data"`
+			}
+			outer := apiResp{OK: true}
 			outer.Data, _ = json.Marshal(page)
 			w.Header().Set("Content-Type", "application/json")
 			_ = json.NewEncoder(w).Encode(outer)
 		default:
-			_, _ = w.Write([]byte(detailPageTemplate))
+			_, _ = w.Write([]byte(detailPageHTML))
 		}
 	}))
 }
 
-func TestFetchPage(t *testing.T) {
-	videos := makeTestVideos()
-	ts := newTestServer(videos)
-	defer ts.Close()
-
-	s := &Scraper{client: ts.Client(), siteBase: ts.URL}
-	vp, err := s.fetchPage(context.Background(), 1)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	if vp.Total != 2 {
-		t.Errorf("Total = %d, want 2", vp.Total)
-	}
-	if len(vp.Data) != 2 {
-		t.Fatalf("got %d items, want 2", len(vp.Data))
-	}
-	if vp.Data[0].Title != "MILF100 - Test Scene One" {
-		t.Errorf("Title = %q", vp.Data[0].Title)
-	}
-}
-
-func TestFetchDetail(t *testing.T) {
-	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		_, _ = w.Write([]byte(detailPageTemplate))
-	}))
-	defer ts.Close()
-
-	s := &Scraper{client: ts.Client(), siteBase: ts.URL}
-	detail, err := s.fetchDetail(context.Background(), ts.URL+"/101-milf100-test-scene-one")
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	if detail.description != "Scene description for testing." {
-		t.Errorf("description = %q", detail.description)
-	}
-	if detail.thumbnail != "https://cdn.example.com/og-thumb.jpg" {
-		t.Errorf("thumbnail = %q", detail.thumbnail)
-	}
-	if len(detail.performers) != 2 || detail.performers[0] != "Rachel Steele" || detail.performers[1] != "Tyler Cruise" {
-		t.Errorf("performers = %v", detail.performers)
-	}
-	if len(detail.tags) != 3 || detail.tags[0] != "4K" {
-		t.Errorf("tags = %v", detail.tags)
-	}
-}
-
 func TestBuildScene(t *testing.T) {
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		_, _ = w.Write([]byte(detailPageTemplate))
+		_, _ = w.Write([]byte(detailPageHTML))
 	}))
 	defer ts.Close()
 
-	s := &Scraper{client: ts.Client(), siteBase: ts.URL}
-	vid := makeTestVideos()[1]
+	s := New()
+	s.mm.Client = ts.Client()
+	s.mm.SiteBase = ts.URL
 
-	scene, err := s.buildScene(context.Background(), ts.URL, vid)
+	vid := makeTestVideos()[1]
+	scene, err := s.mm.BuildScene(context.Background(), ts.URL, vid)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -251,10 +128,7 @@ func TestBuildScene(t *testing.T) {
 	if scene.Width != 3840 || scene.Height != 2160 {
 		t.Errorf("Resolution: %dx%d", scene.Width, scene.Height)
 	}
-	if scene.Resolution != "2160p" {
-		t.Errorf("Resolution = %q", scene.Resolution)
-	}
-	if scene.Studio != studioName {
+	if scene.Studio != "Rachel Steele" {
 		t.Errorf("Studio = %q", scene.Studio)
 	}
 	if scene.Views != 300 {
@@ -282,14 +156,16 @@ func TestListScenes(t *testing.T) {
 	ts := newTestServer(videos)
 	defer ts.Close()
 
-	s := &Scraper{client: ts.Client(), siteBase: ts.URL}
+	s := New()
+	s.mm.Client = ts.Client()
+	s.mm.SiteBase = ts.URL
+
 	ch, err := s.ListScenes(context.Background(), ts.URL, scraper.ListOpts{Workers: 1})
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	scenes := testutil.CollectScenes(t, ch)
-
 	if len(scenes) != 2 {
 		t.Fatalf("got %d scenes, want 2", len(scenes))
 	}
@@ -300,7 +176,10 @@ func TestListScenesKnownIDs(t *testing.T) {
 	ts := newTestServer(videos)
 	defer ts.Close()
 
-	s := &Scraper{client: ts.Client(), siteBase: ts.URL}
+	s := New()
+	s.mm.Client = ts.Client()
+	s.mm.SiteBase = ts.URL
+
 	ch, err := s.ListScenes(context.Background(), ts.URL, scraper.ListOpts{
 		Workers:  1,
 		KnownIDs: map[string]bool{"200": true},
@@ -310,7 +189,6 @@ func TestListScenesKnownIDs(t *testing.T) {
 	}
 
 	scenes, stoppedEarly := testutil.CollectScenesWithStop(t, ch)
-
 	if !stoppedEarly {
 		t.Error("expected StoppedEarly signal")
 	}
@@ -320,21 +198,23 @@ func TestListScenesKnownIDs(t *testing.T) {
 }
 
 func TestListScenesSkipsUnpublished(t *testing.T) {
-	videos := []apiVideo{
+	videos := []mymemberutil.APIVideo{
 		{ID: 1, Title: "Published", IsPublished: true, PublishDate: "2026-01-01T00:00:00.000000Z", ContentMappingID: 1},
 		{ID: 2, Title: "Unpublished", IsPublished: false, PublishDate: "2026-01-02T00:00:00.000000Z", ContentMappingID: 2},
 	}
 	ts := newTestServer(videos)
 	defer ts.Close()
 
-	s := &Scraper{client: ts.Client(), siteBase: ts.URL}
+	s := New()
+	s.mm.Client = ts.Client()
+	s.mm.SiteBase = ts.URL
+
 	ch, err := s.ListScenes(context.Background(), ts.URL, scraper.ListOpts{Workers: 1})
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	scenes := testutil.CollectScenes(t, ch)
-
 	if len(scenes) != 1 {
 		t.Errorf("got %d scenes, want 1 (unpublished should be skipped)", len(scenes))
 	}
@@ -344,18 +224,14 @@ func TestListScenesSkipsUnpublished(t *testing.T) {
 }
 
 func TestMultiPage(t *testing.T) {
-	pageData := map[int][]apiVideo{
-		1: {
-			{ID: 1, Title: "Scene A", IsPublished: true, PublishDate: "2026-04-01T00:00:00.000000Z", ContentMappingID: 1},
-		},
-		2: {
-			{ID: 2, Title: "Scene B", IsPublished: true, PublishDate: "2026-03-01T00:00:00.000000Z", ContentMappingID: 2},
-		},
+	pageData := map[int][]mymemberutil.APIVideo{
+		1: {{ID: 1, Title: "Scene A", IsPublished: true, PublishDate: "2026-04-01T00:00:00.000000Z", ContentMappingID: 1}},
+		2: {{ID: 2, Title: "Scene B", IsPublished: true, PublishDate: "2026-03-01T00:00:00.000000Z", ContentMappingID: 2}},
 	}
 
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
-		case apiPath:
+		case "/api/cancellable-request":
 			args := r.URL.Query().Get("args")
 			page := 1
 			for p := 1; p <= 3; p++ {
@@ -370,31 +246,37 @@ func TestMultiPage(t *testing.T) {
 			if page > 2 {
 				videos = nil
 			}
-			vp := videosPage{
+			vp := mymemberutil.VideosPage{
 				CurrentPage: page,
 				LastPage:    lastPage,
 				Total:       2,
 				PerPage:     1,
 				Data:        videos,
 			}
-			outer := apiResponse{OK: true}
+			type apiResp struct {
+				OK   bool            `json:"ok"`
+				Data json.RawMessage `json:"data"`
+			}
+			outer := apiResp{OK: true}
 			outer.Data, _ = json.Marshal(vp)
 			w.Header().Set("Content-Type", "application/json")
 			_ = json.NewEncoder(w).Encode(outer)
 		default:
-			_, _ = w.Write([]byte(detailPageTemplate))
+			_, _ = w.Write([]byte(detailPageHTML))
 		}
 	}))
 	defer ts.Close()
 
-	s := &Scraper{client: ts.Client(), siteBase: ts.URL}
+	s := New()
+	s.mm.Client = ts.Client()
+	s.mm.SiteBase = ts.URL
+
 	ch, err := s.ListScenes(context.Background(), ts.URL, scraper.ListOpts{Workers: 1})
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	scenes := testutil.CollectScenes(t, ch)
-
 	if len(scenes) != 2 {
 		t.Fatalf("got %d scenes, want 2", len(scenes))
 	}
