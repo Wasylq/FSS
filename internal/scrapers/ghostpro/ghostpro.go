@@ -150,9 +150,7 @@ type sceneEntry struct {
 	Thumb            string   `json:"thumb"`
 	Tags             []string `json:"tags"`
 	Models           []string `json:"models"`
-	// Views ships as a JSON string ("49") on some sites — keep it as a string
-	// and parse on demand to avoid type-mismatch unmarshal errors.
-	Views string `json:"views"`
+	Views            flexInt  `json:"views"`
 	// Link is the join.{site}.com paywall URL. Stash uses the public scene URL,
 	// not the affiliate redirect, so we ignore Link and synthesize a stable
 	// scene-anchor URL ourselves.
@@ -259,8 +257,8 @@ func (s *Scraper) toScene(e sceneEntry, now time.Time) models.Scene {
 	if secs := parseDurationMMSS(e.VideosDuration); secs > 0 {
 		scene.Duration = secs
 	}
-	if v, err := strconv.Atoi(strings.TrimSpace(e.Views)); err == nil {
-		scene.Views = v
+	if e.Views > 0 {
+		scene.Views = int(e.Views)
 	}
 
 	return scene

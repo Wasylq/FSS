@@ -154,7 +154,21 @@ func (s *Scraper) runPaginated(ctx context.Context, studioURL string, opts scrap
 				return
 			}
 
-			scene := cardToScene(c, studioURL, now)
+			var scene models.Scene
+			if c.title == "" {
+				scraper.Debugf(1, "maturenl: card %s has no title, fetching detail page", c.id)
+				var err error
+				scene, err = s.fetchDetailScene(ctx, studioURL, c.id)
+				if err != nil {
+					select {
+					case out <- scraper.Error(err):
+					case <-ctx.Done():
+					}
+					continue
+				}
+			} else {
+				scene = cardToScene(c, studioURL, now)
+			}
 			select {
 			case out <- scraper.Scene(scene):
 			case <-ctx.Done():

@@ -1,5 +1,7 @@
 // Package glosstightsglamour scrapes glosstightsglamour.com, a Glamose network
-// site running on ElevatedX CMS. HTML listing with page_N.html pagination.
+// site running on ElevatedX CMS. HTML listing with page_N.html pagination,
+// 5 entries per page. The site wraps past the last page instead of returning
+// empty pages — duplicate detection handles this.
 package glosstightsglamour
 
 import (
@@ -8,12 +10,12 @@ import (
 	"html"
 	"net/http"
 	"regexp"
+	"strconv"
 	"strings"
 	"time"
 
 	"github.com/Wasylq/FSS/internal/httpx"
 	"github.com/Wasylq/FSS/models"
-	"github.com/Wasylq/FSS/parseutil"
 	"github.com/Wasylq/FSS/scraper"
 )
 
@@ -43,15 +45,24 @@ func (s *Scraper) ListScenes(ctx context.Context, studioURL string, opts scraper
 	return out, nil
 }
 
+const blockMarker = `class="update_block">`
+
 var (
-	cardRe   = regexp.MustCompile(`(?s)<a\s+href="(/updates/[^"]+\.html)"[^>]*>.*?<img[^>]+src="([^"]+)"[^>]*alt="([^"]*)"`)
-	modelRe  = regexp.MustCompile(`/models/[^"]*">([^<]+)</a>`)
-	dateRe   = regexp.MustCompile(`(\d{2}/\d{2}/\d{4})`)
-	lastPgRe = regexp.MustCompile(`/updates/page_(\d+)\.html`)
+	titleRe   = regexp.MustCompile(`update_title">([^<]+)`)
+	modelRe   = regexp.MustCompile(`/models/[^"]*\.html">([^<]+)`)
+	dateRe    = regexp.MustCompile(`update_date">(\d{2}/\d{2}/\d{4})`)
+	descRe    = regexp.MustCompile(`latest_update_description">([^<]+)`)
+	thumbRe   = regexp.MustCompile(`large_update_thumb[^>]*\ssrc0_1x="([^"]+)"`)
+	tagRe     = regexp.MustCompile(`/categories/[^"]*\.html">([^<]+)`)
+	trailerRe = regexp.MustCompile(`tload\('([^']+)'`)
+	setIDRe   = regexp.MustCompile(`set-target-(\d+)`)
+	lastPgRe  = regexp.MustCompile(`/updates/page_(\d+)\.html`)
 )
 
 func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOpts, out chan<- scraper.SceneResult) {
 	defer close(out)
+
+	seen := make(map[string]bool)
 
 	scraper.Paginate(ctx, opts, "glosstightsglamour", out, func(ctx context.Context, page int) (scraper.PageResult, error) {
 		var u string
@@ -68,65 +79,83 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 
 		scenes := parseListingPage(body, studioURL)
 
+		allSeen := len(scenes) > 0
+		var fresh []models.Scene
+		for _, sc := range scenes {
+			if seen[sc.ID] {
+				continue
+			}
+			seen[sc.ID] = true
+			allSeen = false
+			fresh = append(fresh, sc)
+		}
+		if allSeen {
+			return scraper.PageResult{Done: true}, nil
+		}
+
 		total := 0
-		done := false
 		if page == 1 {
 			maxPg := parseMaxPage(body)
 			if maxPg > 0 {
-				total = maxPg * 12
+				total = maxPg * 5
 			}
 		}
-		if len(scenes) == 0 {
-			done = true
-		}
 
-		return scraper.PageResult{Scenes: scenes, Total: total, Done: done}, nil
+		done := !hasNextPage(body, page)
+		return scraper.PageResult{Scenes: fresh, Total: total, Done: done}, nil
 	})
 }
 
+func findBlockStarts(text string) []int {
+	var starts []int
+	offset := 0
+	for {
+		idx := strings.Index(text[offset:], blockMarker)
+		if idx < 0 {
+			break
+		}
+		pos := offset + idx
+		starts = append(starts, pos)
+		offset = pos + len(blockMarker)
+	}
+	return starts
+}
+
 func parseListingPage(body []byte, studioURL string) []models.Scene {
-	now := time.Now().UTC()
 	text := string(body)
+	now := time.Now().UTC()
 
-	cards := cardRe.FindAllStringSubmatchIndex(text, -1)
+	starts := findBlockStarts(text)
+	if len(starts) == 0 {
+		return nil
+	}
+
 	var scenes []models.Scene
-	seen := make(map[string]bool)
+	for i, start := range starts {
+		end := len(text)
+		if i+1 < len(starts) {
+			end = starts[i+1]
+		}
+		block := text[start:end]
 
-	for i, loc := range cards {
-		path := text[loc[2]:loc[3]]
-		thumb := text[loc[4]:loc[5]]
-		title := html.UnescapeString(text[loc[6]:loc[7]])
-
-		if title == "" || seen[path] {
+		m := setIDRe.FindStringSubmatch(block)
+		if m == nil {
 			continue
 		}
-		seen[path] = true
-
-		slug := extractSlug(path)
-		if slug == "" {
-			continue
-		}
+		id := m[1]
 
 		scene := models.Scene{
-			ID:        slug,
+			ID:        id,
 			SiteID:    "glosstightsglamour",
 			StudioURL: studioURL,
-			Title:     title,
-			URL:       siteBase + path,
+			URL:       fmt.Sprintf("%s/updates/#scene-%s", siteBase, id),
 			Studio:    "Gloss Tights Glamour",
 			ScrapedAt: now,
 		}
 
-		if !strings.HasPrefix(thumb, "http") {
-			thumb = siteBase + "/" + strings.TrimPrefix(thumb, "/")
+		if m := titleRe.FindStringSubmatch(block); m != nil {
+			scene.Title = strings.TrimSpace(html.UnescapeString(m[1]))
 		}
-		scene.Thumbnail = thumb
-
-		end := len(text)
-		if i+1 < len(cards) {
-			end = cards[i+1][0]
-		}
-		block := text[loc[0]:end]
 
 		if m := modelRe.FindStringSubmatch(block); m != nil {
 			scene.Performers = []string{strings.TrimSpace(m[1])}
@@ -138,38 +167,57 @@ func parseListingPage(body []byte, studioURL string) []models.Scene {
 			}
 		}
 
+		if m := descRe.FindStringSubmatch(block); m != nil {
+			scene.Description = strings.TrimSpace(m[1])
+		}
+
+		if m := thumbRe.FindStringSubmatch(block); m != nil {
+			thumb := m[1]
+			if !strings.HasPrefix(thumb, "http") {
+				thumb = siteBase + "/" + strings.TrimPrefix(thumb, "/")
+			}
+			scene.Thumbnail = thumb
+		}
+
+		if m := trailerRe.FindStringSubmatch(block); m != nil {
+			trailer := m[1]
+			if !strings.HasPrefix(trailer, "http") {
+				trailer = siteBase + "/" + strings.TrimPrefix(trailer, "/")
+			}
+			scene.Preview = trailer
+		}
+
+		var tags []string
+		for _, tm := range tagRe.FindAllStringSubmatch(block, -1) {
+			tag := strings.TrimSpace(tm[1])
+			if tag != "" {
+				tags = append(tags, tag)
+			}
+		}
+		scene.Tags = tags
+
 		scenes = append(scenes, scene)
 	}
 	return scenes
 }
 
-var slugRe = regexp.MustCompile(`/updates/([^/]+)\.html`)
-
-func extractSlug(path string) string {
-	if m := slugRe.FindStringSubmatch(path); m != nil {
-		return m[1]
-	}
-	return ""
-}
-
 func parseMaxPage(body []byte) int {
 	max := 0
 	for _, m := range lastPgRe.FindAllSubmatch(body, -1) {
-		n := parseutil.ParseDurationColon("0:" + string(m[1]))
-		if n == 0 {
-			continue
-		}
-		if int(m[1][0]-'0') > 0 {
-			val := 0
-			for _, c := range m[1] {
-				val = val*10 + int(c-'0')
-			}
-			if val > max {
-				max = val
-			}
+		if n, err := strconv.Atoi(string(m[1])); err == nil && n > max {
+			max = n
 		}
 	}
 	return max
+}
+
+func hasNextPage(body []byte, current int) bool {
+	for _, m := range lastPgRe.FindAllSubmatch(body, -1) {
+		if n, err := strconv.Atoi(string(m[1])); err == nil && n > current {
+			return true
+		}
+	}
+	return false
 }
 
 func (s *Scraper) fetchHTML(ctx context.Context, rawURL string) ([]byte, error) {

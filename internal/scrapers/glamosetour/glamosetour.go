@@ -54,10 +54,9 @@ func (s *Scraper) ListScenes(ctx context.Context, studioURL string, opts scraper
 }
 
 var (
-	cardRe      = regexp.MustCompile(`(?s)<div class="itemmain[^"]*">(.*?)<div class="clearfix">`)
 	lidRe       = regexp.MustCompile(`refstat\.php\?lid=(\d+)`)
 	performerRe = regexp.MustCompile(`window\.status='([^']+)'`)
-	dateRe      = regexp.MustCompile(`Added:\s*([A-Z][a-z]+ \d{1,2}, \d{4})`)
+	dateRe      = regexp.MustCompile(`(?:Added:\s*)?([A-Z][a-z]+ \d{1,2}, \d{4})`)
 	durationRe  = regexp.MustCompile(`(\d+)\.(\d+)mins`)
 	thumbRe     = regexp.MustCompile(`<img\s+src="([^"]+)"`)
 	tagRe       = regexp.MustCompile(`search\('([^']+)'`)
@@ -107,25 +106,42 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 }
 
 func (s *Scraper) parseListingPage(body []byte, studioURL string) []models.Scene {
-	cards := cardRe.FindAllSubmatch(body, -1)
+	text := string(body)
 	now := time.Now().UTC()
-	var scenes []models.Scene
 
-	for _, card := range cards {
-		content := card[1]
+	locs := lidRe.FindAllStringSubmatchIndex(text, -1)
+	if len(locs) == 0 {
+		return nil
+	}
 
-		m := lidRe.FindSubmatch(content)
-		if m == nil {
-			continue
+	type anchor struct {
+		lid   string
+		start int
+	}
+	var anchors []anchor
+	seen := make(map[string]bool)
+	for _, loc := range locs {
+		lid := text[loc[2]:loc[3]]
+		if !seen[lid] {
+			seen[lid] = true
+			anchors = append(anchors, anchor{lid: lid, start: loc[0]})
 		}
-		lid := string(m[1])
+	}
+
+	var scenes []models.Scene
+	for i, a := range anchors {
+		end := len(text)
+		if i+1 < len(anchors) {
+			end = anchors[i+1].start
+		}
+		content := []byte(text[a.start:end])
 
 		scene := models.Scene{
-			ID:        lid,
+			ID:        a.lid,
 			SiteID:    s.cfg.SiteID,
 			StudioURL: studioURL,
 			Studio:    s.cfg.StudioName,
-			URL:       fmt.Sprintf("https://www.%s/refstat.php?lid=%s", s.cfg.Domain, lid),
+			URL:       fmt.Sprintf("https://www.%s/refstat.php?lid=%s", s.cfg.Domain, a.lid),
 			ScrapedAt: now,
 		}
 
@@ -136,7 +152,10 @@ func (s *Scraper) parseListingPage(body []byte, studioURL string) []models.Scene
 		}
 
 		if m := dateRe.FindSubmatch(content); m != nil {
-			if t, err := time.Parse("January 2, 2006", string(m[1])); err == nil {
+			ds := string(m[1])
+			if t, err := time.Parse("January 2, 2006", ds); err == nil {
+				scene.Date = t.UTC()
+			} else if t, err := time.Parse("Jan 2, 2006", ds); err == nil {
 				scene.Date = t.UTC()
 			}
 		}

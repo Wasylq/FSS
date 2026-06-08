@@ -346,9 +346,11 @@ func (s *Scraper) fetchDetail(ctx context.Context, studioURL string, item listin
 }
 
 func (s *Scraper) fetchPage(ctx context.Context, pageURL string) ([]byte, error) {
+	headers := httpx.BrowserHeaders(httpx.UserAgentChrome)
+	headers["Accept-Language"] = "ja,en;q=0.5"
 	resp, err := httpx.Do(ctx, s.client, httpx.Request{
 		URL:     pageURL,
-		Headers: httpx.BrowserHeaders(httpx.UserAgentChrome),
+		Headers: headers,
 	})
 	if err != nil {
 		return nil, err

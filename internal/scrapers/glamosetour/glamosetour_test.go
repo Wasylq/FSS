@@ -19,7 +19,7 @@ const fixtureCard = `<div class="row"><div class="itemmain col-md-3 col-sm-6 col
             <span>4.09mins</span>
         </div>
     </div>
-<div class="clearfix"></div></div>
+</div>
 <div class="itemmain col-md-3 col-sm-6 col-xs-12">
     <div class="itemv">
         <div class="newmodel2-"></div>
@@ -35,7 +35,7 @@ const fixtureCard = `<div class="row"><div class="itemmain col-md-3 col-sm-6 col
             <span>5.12mins</span>
         </div>
     </div>
-<div class="clearfix"></div></div></div>`
+</div></div>`
 
 func TestParseListingPage(t *testing.T) {
 	s := New(SiteConfig{SiteID: "pantyamateur", Domain: "pantyamateur.com", StudioName: "Panty Amateur"})

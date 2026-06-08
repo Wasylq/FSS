@@ -62,6 +62,9 @@ func ValidateScene(t *testing.T, s models.Scene) {
 // The first scene is logged in full (via t.Logf) so a developer running
 // `go test -v` can eyeball the field mapping after a scraper change.
 //
+// On transient network failures (0 scenes returned), retries once after a
+// short pause before failing the test.
+//
 // Fails the test if no scenes are returned or any scene fails ValidateScene.
 func RunLiveScrape(t *testing.T, s scraper.StudioScraper, studioURL string, limit int) {
 	t.Helper()
@@ -70,11 +73,32 @@ func RunLiveScrape(t *testing.T, s scraper.StudioScraper, studioURL string, limi
 		t.Fatalf("scraper %s does not match URL %s", s.ID(), studioURL)
 	}
 
+	const maxAttempts = 2
+	for attempt := 1; attempt <= maxAttempts; attempt++ {
+		count := runOnce(t, s, studioURL, limit, attempt < maxAttempts)
+		if count > 0 {
+			return
+		}
+		if attempt < maxAttempts {
+			t.Logf("%s: 0 scenes on attempt %d, retrying after 3s", s.ID(), attempt)
+			time.Sleep(3 * time.Second)
+		}
+	}
+	t.Fatalf("%s: no scenes returned from %s after %d attempts", s.ID(), studioURL, maxAttempts)
+}
+
+func runOnce(t *testing.T, s scraper.StudioScraper, studioURL string, limit int, tolerateErrors bool) int {
+	t.Helper()
+
 	ctx, cancel := context.WithTimeout(context.Background(), 90*time.Second)
 	defer cancel()
 
 	ch, err := s.ListScenes(ctx, studioURL, scraper.ListOpts{Workers: 3})
 	if err != nil {
+		if tolerateErrors {
+			t.Logf("ListScenes(%s): %v (will retry)", studioURL, err)
+			return 0
+		}
 		t.Fatalf("ListScenes(%s): %v", studioURL, err)
 	}
 
@@ -97,19 +121,16 @@ func RunLiveScrape(t *testing.T, s scraper.StudioScraper, studioURL string, limi
 		ValidateScene(t, result.Scene)
 
 		if count >= limit {
-			cancel() // stop the scraper goroutine
+			cancel()
 			break
 		}
 	}
 
-	// Drain remaining results so the goroutine can exit cleanly.
 	for range ch {
 	}
 
 	t.Logf("%s: validated %d scenes (limit %d)", s.ID(), count, limit)
-	if count == 0 {
-		t.Fatalf("%s: no scenes returned from %s", s.ID(), studioURL)
-	}
+	return count
 }
 
 // CollectScenes drains a SceneResult channel, returning all scenes.

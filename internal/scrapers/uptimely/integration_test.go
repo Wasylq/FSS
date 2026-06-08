@@ -12,6 +12,15 @@ import (
 	"github.com/Wasylq/FSS/internal/scrapers/uptimelyutil"
 )
 
+func findSite(id string) siteConfig {
+	for _, s := range sites {
+		if s.SiteID == id {
+			return s
+		}
+	}
+	panic("site not found: " + id)
+}
+
 func newTestScraper(cfg siteConfig) *uptimelyutil.Scraper {
 	escaped := strings.ReplaceAll(cfg.Domain, ".", `\.`)
 	re := regexp.MustCompile(fmt.Sprintf(`^https?://(?:www\.)?%s/(?:works/list/|actress/detail/)`, escaped))
@@ -33,9 +42,9 @@ func newTestScraper(cfg siteConfig) *uptimelyutil.Scraper {
 }
 
 func TestLiveHHHGroup(t *testing.T) {
-	testutil.RunLiveScrape(t, newTestScraper(sites[2]), "https://hhh-av.com/works/list/release", 2)
+	testutil.RunLiveScrape(t, newTestScraper(findSite("hhhgroup")), "https://hhh-av.com/works/list/release", 2)
 }
 
 func TestLiveIdeaPocket(t *testing.T) {
-	testutil.RunLiveScrape(t, newTestScraper(sites[3]), "https://ideapocket.com/works/list/release", 2)
+	testutil.RunLiveScrape(t, newTestScraper(findSite("ideapocket")), "https://ideapocket.com/works/list/release", 2)
 }
