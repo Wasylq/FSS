@@ -1,6 +1,9 @@
 package glamose
 
 import (
+	"time"
+
+	"github.com/Wasylq/FSS/internal/httpx"
 	"github.com/Wasylq/FSS/internal/scrapers/utgutil"
 	"github.com/Wasylq/FSS/scraper"
 )
@@ -25,4 +28,5 @@ func init() {
 	for _, cfg := range sites {
 		scraper.Register(utgutil.New(cfg))
 	}
+	scraper.Register(&portalScraper{client: httpx.NewClient(30 * time.Second)})
 }
