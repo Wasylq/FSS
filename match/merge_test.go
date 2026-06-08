@@ -243,3 +243,43 @@ func TestResolutionTags(t *testing.T) {
 		}
 	}
 }
+
+func TestMergeStrings(t *testing.T) {
+	cases := []struct {
+		name             string
+		existing, update []string
+		want             []string
+	}{
+		{"both empty", nil, nil, []string{}},
+		{"existing only", []string{"a", "b"}, nil, []string{"a", "b"}},
+		{"new only", nil, []string{"a", "b"}, []string{"a", "b"}},
+		{"disjoint appends in order", []string{"a"}, []string{"b", "c"}, []string{"a", "b", "c"}},
+		{"dedups overlap, keeps existing order", []string{"a", "b"}, []string{"b", "a", "c"}, []string{"a", "b", "c"}},
+		{"preserves duplicates already in existing", []string{"a", "a"}, []string{"a"}, []string{"a", "a"}},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			got := MergeStrings(c.existing, c.update)
+			if len(got) != len(c.want) {
+				t.Fatalf("MergeStrings(%v, %v) = %v, want %v", c.existing, c.update, got, c.want)
+			}
+			for i := range got {
+				if got[i] != c.want[i] {
+					t.Fatalf("MergeStrings(%v, %v) = %v, want %v", c.existing, c.update, got, c.want)
+				}
+			}
+		})
+	}
+}
+
+func TestMergeStrings_doesNotMutateInputs(t *testing.T) {
+	existing := []string{"a", "b"}
+	update := []string{"c"}
+	_ = MergeStrings(existing, update)
+	if len(existing) != 2 || existing[0] != "a" || existing[1] != "b" {
+		t.Errorf("existing slice was mutated: %v", existing)
+	}
+	if len(update) != 1 || update[0] != "c" {
+		t.Errorf("update slice was mutated: %v", update)
+	}
+}
