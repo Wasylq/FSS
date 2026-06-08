@@ -1,4 +1,4 @@
-package reaganfoxx
+package empirestoreutil
 
 import (
 	"context"
@@ -17,48 +17,43 @@ import (
 	"github.com/Wasylq/FSS/scraper"
 )
 
-const (
-	defaultBase = "https://www.reaganfoxx.com"
-	siteID      = "reaganfoxx"
-)
-
-var matchRe = regexp.MustCompile(`^https?://(?:www\.)?reaganfoxx\.com(?:/|$)`)
+type SiteConfig struct {
+	SiteID     string
+	Domain     string
+	StudioName string
+	ListingURL string
+}
 
 type Scraper struct {
-	client *http.Client
-	base   string
+	cfg    SiteConfig
+	Client *http.Client
 }
 
-func New() *Scraper {
+func New(cfg SiteConfig) *Scraper {
 	return &Scraper{
-		client: httpx.NewClient(30 * time.Second),
-		base:   defaultBase,
+		cfg:    cfg,
+		Client: httpx.NewClient(30 * time.Second),
 	}
 }
 
-var _ scraper.StudioScraper = (*Scraper)(nil)
-
-func init() { scraper.Register(New()) }
-
-func (s *Scraper) ID() string { return siteID }
-func (s *Scraper) Patterns() []string {
-	return []string{"reaganfoxx.com", "reaganfoxx.com/scenes/{id}/{slug}.html"}
-}
-func (s *Scraper) MatchesURL(u string) bool { return matchRe.MatchString(u) }
-
-func (s *Scraper) ListScenes(ctx context.Context, studioURL string, opts scraper.ListOpts) (<-chan scraper.SceneResult, error) {
-	out := make(chan scraper.SceneResult)
-	go s.run(ctx, studioURL, opts, out)
-	return out, nil
+func resolveBase(studioURL, domain string) string {
+	for _, prefix := range []string{"https://www.", "https://", "http://www.", "http://"} {
+		if strings.HasPrefix(studioURL, prefix) {
+			if idx := strings.Index(studioURL[len(prefix):], "/"); idx >= 0 {
+				return studioURL[:len(prefix)+idx]
+			}
+			return studioURL
+		}
+	}
+	return "https://" + domain
 }
 
-func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOpts, out chan<- scraper.SceneResult) {
+func (s *Scraper) Run(ctx context.Context, studioURL string, opts scraper.ListOpts, out chan<- scraper.SceneResult) {
 	defer close(out)
 
-	listingURL := studioURL
-	if !strings.Contains(studioURL, "/scenes/") {
-		listingURL = s.base + "/scenes/673608/reagan-foxx-streaming-pornstar-videos.html"
-	}
+	base := resolveBase(studioURL, s.cfg.Domain)
+	listingURL := resolveListingURL(studioURL, base, s.cfg.ListingURL)
+	scraper.Debugf(1, "%s: listing URL %s", s.cfg.SiteID, listingURL)
 
 	workers := opts.Workers
 	if workers <= 0 {
@@ -72,7 +67,7 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 		go func() {
 			defer wg.Done()
 			for ls := range work {
-				scene, err := s.fetchDetail(ctx, ls, opts.Delay)
+				scene, err := s.fetchDetail(ctx, base, ls, studioURL, opts.Delay)
 				if err != nil {
 					select {
 					case out <- scraper.Error(err):
@@ -92,13 +87,20 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 
 	go func() {
 		defer close(work)
-		s.enqueuePages(ctx, listingURL, opts, out, work)
+		s.enqueuePages(ctx, base, listingURL, opts, out, work)
 	}()
 
 	wg.Wait()
 }
 
-func (s *Scraper) enqueuePages(ctx context.Context, listingURL string, opts scraper.ListOpts, out chan<- scraper.SceneResult, work chan<- listingScene) {
+func resolveListingURL(studioURL, base, defaultListing string) string {
+	if strings.Contains(studioURL, "/scenes/") || strings.Contains(studioURL, "-scene") {
+		return studioURL
+	}
+	return base + defaultListing
+}
+
+func (s *Scraper) enqueuePages(ctx context.Context, base, listingURL string, opts scraper.ListOpts, out chan<- scraper.SceneResult, work chan<- listingScene) {
 	for page := 1; ; page++ {
 		if ctx.Err() != nil {
 			return
@@ -110,7 +112,7 @@ func (s *Scraper) enqueuePages(ctx context.Context, listingURL string, opts scra
 				return
 			}
 		}
-		scraper.Debugf(1, "reaganfoxx: fetching page %d", page)
+		scraper.Debugf(1, "%s: fetching page %d", s.cfg.SiteID, page)
 
 		pageURL := listingURL
 		if page > 1 {
@@ -130,15 +132,15 @@ func (s *Scraper) enqueuePages(ctx context.Context, listingURL string, opts scra
 			return
 		}
 
-		scenes := parseListingPage(body, s.base)
+		scenes := ParseListingPage(body, base)
 		if len(scenes) == 0 {
 			return
 		}
 
 		if page == 1 {
-			total := extractTotal(body)
+			total := ExtractTotal(body)
 			if total > 0 {
-				scraper.Debugf(1, "reaganfoxx: %d total scenes", total)
+				scraper.Debugf(1, "%s: %d total scenes", s.cfg.SiteID, total)
 				select {
 				case out <- scraper.Progress(total):
 				case <-ctx.Done():
@@ -147,13 +149,9 @@ func (s *Scraper) enqueuePages(ctx context.Context, listingURL string, opts scra
 			}
 		}
 
-		if !hasPagination(body) {
-			return
-		}
-
 		for _, ls := range scenes {
-			if opts.KnownIDs[ls.id] {
-				scraper.Debugf(1, "reaganfoxx: hit known ID, stopping early")
+			if opts.KnownIDs[ls.ID] {
+				scraper.Debugf(1, "%s: hit known ID, stopping early", s.cfg.SiteID)
 				select {
 				case out <- scraper.StoppedEarly():
 				case <-ctx.Done():
@@ -167,19 +165,23 @@ func (s *Scraper) enqueuePages(ctx context.Context, listingURL string, opts scra
 			}
 		}
 
-		if !hasNextPage(body, page) {
+		if !HasPagination(body) {
+			return
+		}
+
+		if !HasNextPage(body, page) {
 			return
 		}
 	}
 }
 
 type listingScene struct {
-	id         string
-	url        string
-	title      string
-	performers []string
-	duration   int
-	thumb      string
+	ID         string
+	URL        string
+	Title      string
+	Performers []string
+	Duration   int
+	Thumb      string
 }
 
 var (
@@ -191,16 +193,10 @@ var (
 	thumbRe      = regexp.MustCompile(`data-src="(https://caps1cdn[^"]+)"`)
 	totalRe      = regexp.MustCompile(`<h4>(\d+)\s+Results</h4>`)
 	paginationRe = regexp.MustCompile(`class="pagination`)
-	pageNumRe    = regexp.MustCompile(`\?page=(\d+)`)
-
-	releaseDateRe = regexp.MustCompile(`(?s)Released:</span>\s*(.*?)(?:</div>|<br)`)
-	tagsBlockRe   = regexp.MustCompile(`(?s)Tags:</span>(.*?)</div>`)
-	tagLinkRe     = regexp.MustCompile(`>([^<]+)</a>`)
-	studioRe      = regexp.MustCompile(`(?s)Studio:</span>\s*<span>(.*?)</span>`)
-	scenePriceRe  = regexp.MustCompile(`\$(\d+\.\d+)`)
+	pageNumRe    = regexp.MustCompile(`[?&]page=(\d+)`)
 )
 
-func parseListingPage(body []byte, base string) []listingScene {
+func ParseListingPage(body []byte, base string) []listingScene {
 	matches := widgetRe.FindAllSubmatch(body, -1)
 	scenes := make([]listingScene, 0, len(matches))
 
@@ -208,18 +204,18 @@ func parseListingPage(body []byte, base string) []listingScene {
 		block := string(m[0])
 		id := string(m[1])
 
-		ls := listingScene{id: id}
+		ls := listingScene{ID: id}
 
 		if sm := sceneLinkRe.FindStringSubmatch(block); sm != nil {
 			href := sm[1]
 			if strings.HasPrefix(href, "/") {
 				href = base + href
 			}
-			ls.url = href
+			ls.URL = href
 		}
 
 		if sm := titleRe.FindStringSubmatch(block); sm != nil {
-			ls.title = strings.TrimSpace(html.UnescapeString(sm[1]))
+			ls.Title = strings.TrimSpace(html.UnescapeString(sm[1]))
 		}
 
 		if sm := performerRe.FindStringSubmatch(block); sm != nil {
@@ -227,18 +223,18 @@ func parseListingPage(body []byte, base string) []listingScene {
 			for _, name := range strings.Split(raw, ",") {
 				name = strings.TrimSpace(name)
 				if name != "" {
-					ls.performers = append(ls.performers, name)
+					ls.Performers = append(ls.Performers, name)
 				}
 			}
 		}
 
 		if sm := durationRe.FindStringSubmatch(block); sm != nil {
 			mins, _ := strconv.Atoi(sm[1])
-			ls.duration = mins * 60
+			ls.Duration = mins * 60
 		}
 
 		if sm := thumbRe.FindStringSubmatch(block); sm != nil {
-			ls.thumb = sm[1]
+			ls.Thumb = sm[1]
 		}
 
 		scenes = append(scenes, ls)
@@ -246,7 +242,7 @@ func parseListingPage(body []byte, base string) []listingScene {
 	return scenes
 }
 
-func extractTotal(body []byte) int {
+func ExtractTotal(body []byte) int {
 	if m := totalRe.FindSubmatch(body); m != nil {
 		n, _ := strconv.Atoi(string(m[1]))
 		return n
@@ -254,11 +250,11 @@ func extractTotal(body []byte) int {
 	return 0
 }
 
-func hasPagination(body []byte) bool {
+func HasPagination(body []byte) bool {
 	return paginationRe.Match(body)
 }
 
-func hasNextPage(body []byte, current int) bool {
+func HasNextPage(body []byte, current int) bool {
 	for _, m := range pageNumRe.FindAllSubmatch(body, -1) {
 		n, _ := strconv.Atoi(string(m[1]))
 		if n > current {
@@ -268,20 +264,32 @@ func hasNextPage(body []byte, current int) bool {
 	return false
 }
 
-type detailData struct {
-	date   time.Time
-	tags   []string
-	studio string
-	price  float64
+// ---- detail page parsing ----
+
+var (
+	releaseDateRe = regexp.MustCompile(`(?s)Released:</span>\s*(.*?)(?:</div>|<br)`)
+	tagsBlockRe   = regexp.MustCompile(`(?s)(?:Tags|Attributes):?\s*</(?:span|strong)>\s*(.*?)</div>`)
+	tagLinkRe     = regexp.MustCompile(`>([^<]+)</a>`)
+	studioRe      = regexp.MustCompile(`(?s)Studio:</span>\s*<span>(.*?)</span>`)
+	seriesRe      = regexp.MustCompile(`(?s)Series:</span>\s*<a[^>]*>(.*?)</a>`)
+	scenePriceRe  = regexp.MustCompile(`\$(\d+\.\d+)`)
+)
+
+type DetailData struct {
+	Date   time.Time
+	Tags   []string
+	Studio string
+	Series string
+	Price  float64
 }
 
-func parseDetailPage(body []byte) detailData {
-	var d detailData
+func ParseDetailPage(body []byte) DetailData {
+	var d DetailData
 	page := string(body)
 
 	if m := releaseDateRe.FindStringSubmatch(page); m != nil {
 		if t, err := parseutil.TryParseDate(strings.TrimSpace(m[1]), "January 2, 2006", "Jan 2, 2006"); err == nil {
-			d.date = t.UTC()
+			d.Date = t.UTC()
 		}
 	}
 
@@ -289,13 +297,17 @@ func parseDetailPage(body []byte) detailData {
 		for _, tm := range tagLinkRe.FindAllStringSubmatch(m[1], -1) {
 			tag := strings.TrimSpace(html.UnescapeString(tm[1]))
 			if tag != "" {
-				d.tags = append(d.tags, tag)
+				d.Tags = append(d.Tags, tag)
 			}
 		}
 	}
 
 	if m := studioRe.FindStringSubmatch(page); m != nil {
-		d.studio = strings.TrimSpace(html.UnescapeString(m[1]))
+		d.Studio = strings.TrimSpace(html.UnescapeString(m[1]))
+	}
+
+	if m := seriesRe.FindStringSubmatch(page); m != nil {
+		d.Series = strings.TrimSpace(html.UnescapeString(m[1]))
 	}
 
 	idx := strings.Index(page, "Buy This Scene")
@@ -307,14 +319,14 @@ func parseDetailPage(body []byte) detailData {
 		ctx := page[start:idx]
 		prices := scenePriceRe.FindAllStringSubmatch(ctx, -1)
 		if len(prices) > 0 {
-			d.price, _ = strconv.ParseFloat(prices[len(prices)-1][1], 64)
+			d.Price, _ = strconv.ParseFloat(prices[len(prices)-1][1], 64)
 		}
 	}
 
 	return d
 }
 
-func (s *Scraper) fetchDetail(ctx context.Context, ls listingScene, delay time.Duration) (models.Scene, error) {
+func (s *Scraper) fetchDetail(ctx context.Context, base string, ls listingScene, studioURL string, delay time.Duration) (models.Scene, error) {
 	if delay > 0 {
 		select {
 		case <-time.After(delay):
@@ -325,32 +337,36 @@ func (s *Scraper) fetchDetail(ctx context.Context, ls listingScene, delay time.D
 
 	now := time.Now().UTC()
 	scene := models.Scene{
-		ID:         ls.id,
-		SiteID:     siteID,
-		StudioURL:  s.base,
-		Title:      ls.title,
-		URL:        ls.url,
-		Duration:   ls.duration,
-		Performers: ls.performers,
-		Thumbnail:  ls.thumb,
+		ID:         ls.ID,
+		SiteID:     s.cfg.SiteID,
+		StudioURL:  studioURL,
+		Title:      ls.Title,
+		URL:        ls.URL,
+		Duration:   ls.Duration,
+		Performers: ls.Performers,
+		Thumbnail:  ls.Thumb,
+		Studio:     s.cfg.StudioName,
 		ScrapedAt:  now,
 	}
 
-	if ls.url != "" {
-		body, err := s.fetchPage(ctx, ls.url)
+	if ls.URL != "" {
+		body, err := s.fetchPage(ctx, ls.URL)
 		if err != nil {
-			return models.Scene{}, fmt.Errorf("detail %s: %w", ls.id, err)
+			return models.Scene{}, fmt.Errorf("detail %s: %w", ls.ID, err)
 		}
-		detail := parseDetailPage(body)
-		scene.Date = detail.date
-		scene.Tags = detail.tags
-		if detail.studio != "" {
-			scene.Studio = detail.studio
+		detail := ParseDetailPage(body)
+		scene.Date = detail.Date
+		scene.Tags = detail.Tags
+		if detail.Studio != "" {
+			scene.Studio = detail.Studio
 		}
-		if detail.price > 0 {
+		if detail.Series != "" {
+			scene.Series = detail.Series
+		}
+		if detail.Price > 0 {
 			scene.AddPrice(models.PriceSnapshot{
 				Date:    now,
-				Regular: detail.price,
+				Regular: detail.Price,
 			})
 		}
 	}
@@ -359,7 +375,7 @@ func (s *Scraper) fetchDetail(ctx context.Context, ls listingScene, delay time.D
 }
 
 func (s *Scraper) fetchPage(ctx context.Context, url string) ([]byte, error) {
-	resp, err := httpx.Do(ctx, s.client, httpx.Request{
+	resp, err := httpx.Do(ctx, s.Client, httpx.Request{
 		URL: url,
 		Headers: func() map[string]string {
 			h := httpx.BrowserHeaders(httpx.UserAgentChrome)

@@ -1,6 +1,6 @@
 # Covered Sites — All Domains
 
-1221 scrapers covering 1306 distinct domains. Auto-generated from the scraper registry by `TestSitesMdInSync` — do not hand-edit; instead update the scraper's `Patterns()` and re-run `go test ./internal/scrapers/all/...`. The `stashbox` scraper is omitted here because its covered hosts are config-driven; see [`scrapers.md`](scrapers.md).
+1225 scrapers covering 1310 distinct domains. Auto-generated from the scraper registry by `TestSitesMdInSync` — do not hand-edit; instead update the scraper's `Patterns()` and re-run `go test ./internal/scrapers/all/...`. The `stashbox` scraper is omitted here because its covered hosts are config-driven; see [`scrapers.md`](scrapers.md).
 
 Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scraper ID(s)** column lists every scraper that claims URLs on that domain — most domains have one entry, but table-driven networks (`adultprime`, `tmw`, `nextdoorstudios`, etc.) host many sub-studios on a single root domain. See [`scrapers.md`](scrapers.md) for what each ID covers.
 
@@ -150,6 +150,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | blownbyrone.com | `blownbyrone` |
 | blowpass.com | `blowpass` |
 | bobstgirls.com | `bobstgirls` |
+| bobsvideos.empirestores.co | `bobsvideos` |
 | bolatino.com | `bolatino` |
 | bonedathome.com | `bonedathome` |
 | bonuscontent.puba.com | `pubabonuscontent` |
@@ -590,6 +591,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | joethepervert.com | `joethepervert` |
 | jonnidarkkoxxx.com | `jonnidarkkoxxx` |
 | joymii.com | `joymii` |
+| jsi.empirestores.co | `justinslayer` |
 | julesjordan.com | `julesjordan` |
 | juliaannlive.com | `juliaann` |
 | kanbi-av.com | `prestige` |
@@ -1036,6 +1038,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | spicevids.com | `spicevids` |
 | spizoo.com | `spizoo` |
 | spoiledvirgins.com | `1passforallsites` |
+| spungygunkfilms.empirestores.co | `spungygunkfilms` |
 | spyfam.com | `spyfam` |
 | spypov.com | `spypov` |
 | squirtalicious.com | `squirtalicious` |
@@ -1217,6 +1220,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | vogov.com | `tmw-vogov` |
 | voodooed.com | `voodooed` |
 | vored.com | `vored` |
+| vouyermedia.com | `vouyermedia` |
 | voyeurpapy.com | `voyeurpapy` |
 | vrallure.com | `vrallure` |
 | vrintimacy.com | `vrintimacy` |
