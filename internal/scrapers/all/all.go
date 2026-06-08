@@ -64,6 +64,7 @@ import (
 	_ "github.com/Wasylq/FSS/internal/scrapers/gasm"
 	_ "github.com/Wasylq/FSS/internal/scrapers/ghostpro"
 	_ "github.com/Wasylq/FSS/internal/scrapers/ghostproclassic"
+	_ "github.com/Wasylq/FSS/internal/scrapers/girlsgonehypnotized"
 	_ "github.com/Wasylq/FSS/internal/scrapers/glamose"
 	_ "github.com/Wasylq/FSS/internal/scrapers/glamosetour"
 	_ "github.com/Wasylq/FSS/internal/scrapers/gloryquest"
