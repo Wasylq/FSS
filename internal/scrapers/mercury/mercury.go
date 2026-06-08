@@ -165,7 +165,7 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 
 var (
 	catPageRe     = regexp.MustCompile(`cat_(\d+)\.html`)
-	mercury2005Re = regexp.MustCompile(`(?i)mercury-2005\.com`)
+	mercury2005Re = regexp.MustCompile(`(?i)(?:^https?://(?:www\.)?|://)mercury-2005\.com(?:/|$)`)
 )
 
 func resolveListingBase(studioURL string) string {

@@ -57,7 +57,7 @@ func (s *Scraper) MatchesURL(u string) bool {
 	return matchRe.MatchString(u)
 }
 
-var kinkmenHostRe = regexp.MustCompile(`(?i)kinkmen\.com`)
+var kinkmenHostRe = regexp.MustCompile(`(?i)(?:^https?://(?:www\.)?|://)kinkmen\.com(?:/|$)`)
 
 func resolveSiteIdentity(rawURL string) (siteID, studioBase string) {
 	if kinkmenHostRe.MatchString(rawURL) {
