@@ -1,6 +1,6 @@
 # Covered Sites — All Domains
 
-1239 scrapers covering 1324 distinct domains. Auto-generated from the scraper registry by `TestSitesMdInSync` — do not hand-edit; instead update the scraper's `Patterns()` and re-run `go test ./internal/scrapers/all/...`. The `stashbox` scraper is omitted here because its covered hosts are config-driven; see [`scrapers.md`](scrapers.md).
+1244 scrapers covering 1329 distinct domains. Auto-generated from the scraper registry by `TestSitesMdInSync` — do not hand-edit; instead update the scraper's `Patterns()` and re-run `go test ./internal/scrapers/all/...`. The `stashbox` scraper is omitted here because its covered hosts are config-driven; see [`scrapers.md`](scrapers.md).
 
 Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scraper ID(s)** column lists every scraper that claims URLs on that domain — most domains have one entry, but table-driven networks (`adultprime`, `tmw`, `nextdoorstudios`, etc.) host many sub-studios on a single root domain. See [`scrapers.md`](scrapers.md) for what each ID covers.
 
@@ -108,6 +108,9 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | barebackstudios.com | `barebackstudios` |
 | bbcpie.com | `bbcpie` |
 | bbctitans.com | `bbctitans` |
+| bbwdreams.com | `bbwdreams` |
+| bbwland.com | `bbwland` |
+| bbwsgoneblack.com | `bbwsgoneblack` |
 | beautifulagony.com | `beautifulagony` |
 | beauty-angels.com | `tmw-beauty-angels` |
 | beauty4k.com | `tmw-beauty4k` |
@@ -556,6 +559,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | hotcrazymess.com | `nubiles` |
 | hotgold.xxx | `gasm` |
 | hotpantyfun.com | `hotpantyfun` |
+| hotsexyplumpers.com | `hotsexyplumpers` |
 | hotwifexxx.com | `hotwifexxx` |
 | househumpers.com | `househumpers` |
 | houseofyre.com | `houseofyre` |
@@ -876,6 +880,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | plantsvscunts.com | `plantsvscunts` |
 | playboyplus.com | `playboyplus` |
 | playboytv.com | `playboytv` |
+| plumperpass.com | `plumperpass` |
 | popuporgies.com | `popuporgies` |
 | porkvendors.com | `porkvendors` |
 | porn-uk.com | `porngutter` |

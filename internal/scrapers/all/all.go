@@ -148,6 +148,7 @@ import (
 	_ "github.com/Wasylq/FSS/internal/scrapers/romeromultimedia"
 	_ "github.com/Wasylq/FSS/internal/scrapers/scoregroup"
 	_ "github.com/Wasylq/FSS/internal/scrapers/seemomsuck"
+	_ "github.com/Wasylq/FSS/internal/scrapers/sensationalvideo"
 	_ "github.com/Wasylq/FSS/internal/scrapers/sexlikereal"
 	_ "github.com/Wasylq/FSS/internal/scrapers/sexmexpro"
 	_ "github.com/Wasylq/FSS/internal/scrapers/sindrive"
