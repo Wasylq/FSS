@@ -1,6 +1,6 @@
 # Covered Sites — All Domains
 
-1234 scrapers covering 1319 distinct domains. Auto-generated from the scraper registry by `TestSitesMdInSync` — do not hand-edit; instead update the scraper's `Patterns()` and re-run `go test ./internal/scrapers/all/...`. The `stashbox` scraper is omitted here because its covered hosts are config-driven; see [`scrapers.md`](scrapers.md).
+1237 scrapers covering 1322 distinct domains. Auto-generated from the scraper registry by `TestSitesMdInSync` — do not hand-edit; instead update the scraper's `Patterns()` and re-run `go test ./internal/scrapers/all/...`. The `stashbox` scraper is omitted here because its covered hosts are config-driven; see [`scrapers.md`](scrapers.md).
 
 Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scraper ID(s)** column lists every scraper that claims URLs on that domain — most domains have one entry, but table-driven networks (`adultprime`, `tmw`, `nextdoorstudios`, etc.) host many sub-studios on a single root domain. See [`scrapers.md`](scrapers.md) for what each ID covers.
 
@@ -1235,6 +1235,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | vrporn.com | `vrporn` |
 | vyxensteel.puba.com | `pubavyxensteel` |
 | waap.co.jp | `waap` |
+| wakeupnfuck.com | `wunf` |
 | wankitnow.com | `wankitnow` |
 | wankitnowvr.com | `wankitnowvr` |
 | wankz.com | `wankz` |
@@ -1253,6 +1254,8 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | wildoncam.com | `wildoncam` |
 | williamhiggins.com | `williamhiggins` |
 | womenbyjuliaann.com | `womenbyjuliaann` |
+| woodmancastingx.com | `woodman` |
+| woodmanfilms.com | `woodmanfilms` |
 | worshipjasmine.com | `worshipjasmine` |
 | wow-orgasms.com | `tmw-wow-orgasms` |
 | wowgirls.com | `wowgirls` |
