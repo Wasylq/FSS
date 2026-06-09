@@ -26,12 +26,14 @@ const (
 
 // SiteConfig holds the site-specific constants for a Gamma Entertainment site.
 type SiteConfig struct {
-	SiteID      string // e.g. "puretaboo", "tabooheat"
-	SiteBase    string // e.g. "https://www.puretaboo.com"
-	StudioName  string // e.g. "Pure Taboo"
-	SiteName    string // e.g. "puretaboo" — used in Algolia filter and URL path
-	RefererBase string // override Referer for API key bootstrap (e.g. Dogfart subsites use network domain)
-	AlgoliaHost string // override for testing
+	SiteID          string // e.g. "puretaboo", "tabooheat"
+	SiteBase        string // e.g. "https://www.puretaboo.com"
+	StudioName      string // e.g. "Pure Taboo"
+	SiteName        string // e.g. "puretaboo" — used in Algolia filter and URL path
+	RefererBase     string // override Referer for API key bootstrap (e.g. Dogfart subsites use network domain)
+	BootstrapPage   string // override API key bootstrap page path (default: "/en/videos")
+	ScenePathPrefix string // override scene URL path segment (default: "video"; e.g. "episode" for Playboy TV)
+	AlgoliaHost     string // override for testing
 }
 
 type Scraper struct {
@@ -53,7 +55,7 @@ func New(cfg SiteConfig) *Scraper {
 }
 
 var apiKeyRe = regexp.MustCompile(`"algolia"\s*:\s*\{[^}]*"apiKey"\s*:\s*"([^"]+)"`)
-var actorURLRe = regexp.MustCompile(`/pornstar/view/[^/]+/(\d+)`)
+var actorURLRe = regexp.MustCompile(`/(?:pornstar|model)/view/[^/]+/(\d+)`)
 var serieURLRe = regexp.MustCompile(`/en/serie/(\d+)/`)
 
 func (s *Scraper) refererBase() string {
@@ -63,9 +65,16 @@ func (s *Scraper) refererBase() string {
 	return s.cfg.SiteBase
 }
 
+func (s *Scraper) bootstrapPage() string {
+	if s.cfg.BootstrapPage != "" {
+		return s.cfg.BootstrapPage
+	}
+	return "/en/videos"
+}
+
 func (s *Scraper) FetchAPIKey(ctx context.Context) (string, error) {
 	resp, err := httpx.Do(ctx, s.Client, httpx.Request{
-		URL:     s.refererBase() + "/en/videos",
+		URL:     s.refererBase() + s.bootstrapPage(),
 		Headers: httpx.BrowserHeaders(httpx.UserAgentFirefox),
 	})
 	if err != nil {
@@ -244,7 +253,11 @@ func ToScene(cfg SiteConfig, studioURL string, hit AlgoliaHit, now time.Time) mo
 	if siteName == "" {
 		siteName = hit.SiteName
 	}
-	sceneURL := fmt.Sprintf("%s/en/video/%s/%s/%d", cfg.SiteBase, siteName, hit.URLTitle, hit.ClipID)
+	pathPrefix := cfg.ScenePathPrefix
+	if pathPrefix == "" {
+		pathPrefix = "video"
+	}
+	sceneURL := fmt.Sprintf("%s/en/%s/%s/%s/%d", cfg.SiteBase, pathPrefix, siteName, hit.URLTitle, hit.ClipID)
 
 	studio := cfg.StudioName
 	if studio == "" {

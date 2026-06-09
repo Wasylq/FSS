@@ -27,11 +27,13 @@ func newTestScraper(cfg siteConfig) *siteScraper {
 	}
 
 	gammaCfg := gammautil.SiteConfig{
-		SiteID:      cfg.SiteID,
-		SiteBase:    "https://www." + cfg.Domain,
-		StudioName:  cfg.StudioName,
-		SiteName:    siteName,
-		RefererBase: cfg.RefererBase,
+		SiteID:          cfg.SiteID,
+		SiteBase:        "https://www." + cfg.Domain,
+		StudioName:      cfg.StudioName,
+		SiteName:        siteName,
+		RefererBase:     cfg.RefererBase,
+		BootstrapPage:   cfg.BootstrapPage,
+		ScenePathPrefix: cfg.ScenePathPrefix,
 	}
 
 	return &siteScraper{
@@ -112,4 +114,8 @@ func TestLiveVividClassic(t *testing.T) {
 
 func TestLiveWhereTheBoysArent(t *testing.T) {
 	testutil.RunLiveScrape(t, newTestScraper(findSite("wheretheboysarent")), "https://www.wheretheboysarent.com/", 2)
+}
+
+func TestLivePlayboyTV(t *testing.T) {
+	testutil.RunLiveScrape(t, newTestScraper(findSite("playboytv")), "https://www.playboytv.com/", 2)
 }

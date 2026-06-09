@@ -117,6 +117,7 @@ import (
 	_ "github.com/Wasylq/FSS/internal/scrapers/peatv"
 	_ "github.com/Wasylq/FSS/internal/scrapers/perfectgirlfriend"
 	_ "github.com/Wasylq/FSS/internal/scrapers/pissinghd"
+	_ "github.com/Wasylq/FSS/internal/scrapers/playboyplus"
 	_ "github.com/Wasylq/FSS/internal/scrapers/pornbox"
 	_ "github.com/Wasylq/FSS/internal/scrapers/porncz"
 	_ "github.com/Wasylq/FSS/internal/scrapers/porngutter"

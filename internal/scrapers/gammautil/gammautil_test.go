@@ -337,6 +337,7 @@ func TestActorURLParsing(t *testing.T) {
 	}{
 		{"https://www.lethalhardcore.com/en/pornstar/view/Syren-De-Mer/111676", "111676"},
 		{"https://www.evilangel.com/en/pornstar/view/Angela-White/48859", "48859"},
+		{"https://www.playboytv.com/en/model/view/Alana-Rey/123147", "123147"},
 		{"https://www.lethalhardcore.com/en/videos", ""},
 		{"https://www.lethalhardcore.com", ""},
 	}
