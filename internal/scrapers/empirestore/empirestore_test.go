@@ -7,8 +7,8 @@ import (
 )
 
 func TestSitesTable(t *testing.T) {
-	if len(sites) != 5 {
-		t.Errorf("sites count = %d, want 5", len(sites))
+	if len(sites) != 6 {
+		t.Errorf("sites count = %d, want 6", len(sites))
 	}
 }
 
@@ -19,6 +19,9 @@ func TestMatchesURL(t *testing.T) {
 		url    string
 		siteID string
 	}{
+		{"https://www.elegantangel.com/", "elegantangel"},
+		{"https://elegantangel.com/watch-newest-elegant-angel-clips-and-scenes.html", "elegantangel"},
+		{"https://www.elegantangel.com/93560/studio/club-59-elegant-angel-studios.html", "elegantangel"},
 		{"https://vouyermedia.com/watch-newest-vouyer-media-clips-and-scenes.html", "vouyermedia"},
 		{"https://www.vouyermedia.com/", "vouyermedia"},
 		{"https://vouyermedia.com/157946/vouyer-media-test-streaming-scene-video.html", "vouyermedia"},

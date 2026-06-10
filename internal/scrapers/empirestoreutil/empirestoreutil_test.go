@@ -95,9 +95,44 @@ func TestParseDetailPageTagsLabel(t *testing.T) {
 }
 
 func TestExtractTotal(t *testing.T) {
-	body := []byte(`<h4>825 Results</h4>`)
-	if got := ExtractTotal(body); got != 825 {
-		t.Errorf("ExtractTotal = %d, want 825", got)
+	tests := []struct {
+		name string
+		body string
+		want int
+	}{
+		{"h4 format", `<h4>825 Results</h4>`, 825},
+		{"span format", `<span class="font-weight-bold">825</span> Results`, 825},
+		{"span with commas", `<span class="font-weight-bold">7,510</span> Results`, 7510},
+		{"no match", `<div>no results</div>`, 0},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := ExtractTotal([]byte(tt.body)); got != tt.want {
+				t.Errorf("ExtractTotal = %d, want %d", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestResolveListingURL(t *testing.T) {
+	tests := []struct {
+		name    string
+		studio  string
+		base    string
+		listing string
+		want    string
+	}{
+		{"domain root", "https://www.elegantangel.com/", "https://www.elegantangel.com", "/listing.html", "https://www.elegantangel.com/listing.html"},
+		{"scenes path", "https://www.reaganfoxx.com/scenes/673608/test.html", "https://www.reaganfoxx.com", "/default.html", "https://www.reaganfoxx.com/scenes/673608/test.html"},
+		{"scene suffix", "https://www.elegantangel.com/watch-streaming-video-by-scene.html?studio=94000", "https://www.elegantangel.com", "/default.html", "https://www.elegantangel.com/watch-streaming-video-by-scene.html?studio=94000"},
+		{"studio filter", "https://www.elegantangel.com/93560/studio/club-59-elegant-angel-studios.html", "https://www.elegantangel.com", "/default.html", "https://www.elegantangel.com/93560/studio/club-59-elegant-angel-studios.html"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := resolveListingURL(tt.studio, tt.base, tt.listing); got != tt.want {
+				t.Errorf("resolveListingURL = %q, want %q", got, tt.want)
+			}
+		})
 	}
 }
 

@@ -18,6 +18,7 @@ type siteConfig struct {
 }
 
 var sites = []siteConfig{
+	{"elegantangel", "elegantangel.com", "Elegant Angel", "/watch-newest-elegant-angel-clips-and-scenes.html"},
 	{"vouyermedia", "vouyermedia.com", "Vouyer Media", "/watch-newest-vouyer-media-clips-and-scenes.html"},
 	{"reaganfoxx", "reaganfoxx.com", "Reagan Foxx", "/scenes/673608/reagan-foxx-streaming-pornstar-videos.html"},
 	{"bobsvideos", "bobsvideos.empirestores.co", "Bob's Videos", "/shop-streaming-video-by-scene.html"},

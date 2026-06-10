@@ -94,7 +94,7 @@ func (s *Scraper) Run(ctx context.Context, studioURL string, opts scraper.ListOp
 }
 
 func resolveListingURL(studioURL, base, defaultListing string) string {
-	if strings.Contains(studioURL, "/scenes/") || strings.Contains(studioURL, "-scene") {
+	if strings.Contains(studioURL, "/scenes/") || strings.Contains(studioURL, "-scene") || strings.Contains(studioURL, "/studio/") {
 		return studioURL
 	}
 	return base + defaultListing
@@ -191,7 +191,7 @@ var (
 	performerRe  = regexp.MustCompile(`<p class="scene-performer-names">\s*(.*?)\s*</p>`)
 	durationRe   = regexp.MustCompile(`<p class="scene-length">\s*(\d+)\s*min`)
 	thumbRe      = regexp.MustCompile(`data-src="(https://caps1cdn[^"]+)"`)
-	totalRe      = regexp.MustCompile(`<h4>(\d+)\s+Results</h4>`)
+	totalRe      = regexp.MustCompile(`(?:<h4>|font-weight-bold">)([\d,]+)(?:\s+Results</h4>|</span>\s*Results)`)
 	paginationRe = regexp.MustCompile(`class="pagination`)
 	pageNumRe    = regexp.MustCompile(`[?&]page=(\d+)`)
 )
@@ -244,7 +244,8 @@ func ParseListingPage(body []byte, base string) []listingScene {
 
 func ExtractTotal(body []byte) int {
 	if m := totalRe.FindSubmatch(body); m != nil {
-		n, _ := strconv.Atoi(string(m[1]))
+		s := strings.ReplaceAll(string(m[1]), ",", "")
+		n, _ := strconv.Atoi(s)
 		return n
 	}
 	return 0

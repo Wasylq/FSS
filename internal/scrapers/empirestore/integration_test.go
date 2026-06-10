@@ -26,6 +26,13 @@ func newSiteScraper(cfg siteConfig) *siteScraper {
 	}
 }
 
+func TestLiveElegantAngel(t *testing.T) {
+	const u = "https://www.elegantangel.com/watch-newest-elegant-angel-clips-and-scenes.html"
+	testutil.SkipIfPlaceholder(t, u)
+	cfg := siteConfig{"elegantangel", "elegantangel.com", "Elegant Angel", "/watch-newest-elegant-angel-clips-and-scenes.html"}
+	testutil.RunLiveScrape(t, newSiteScraper(cfg), u, 2)
+}
+
 func TestLiveVouyerMedia(t *testing.T) {
 	const u = "https://vouyermedia.com/watch-newest-vouyer-media-clips-and-scenes.html"
 	testutil.SkipIfPlaceholder(t, u)
