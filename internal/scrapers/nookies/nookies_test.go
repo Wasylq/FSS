@@ -410,10 +410,137 @@ func TestMatchesURL(t *testing.T) {
 		{"https://nookies.com/model/jessica-ryan", true},
 		{"https://nookies.com/tag/handjob", true},
 		{"https://example.com/", false},
+		// New-CMS standalone domains.
+		{"https://www.milfaf.com/", true},
+		{"https://milfaf.com/videos", true},
+		{"https://www.gilfaf.com/", true},
+		{"https://www.breedme.com/tag/creampie", true},
+		{"https://www.shadyspa.com/models/london-river", true},
+		{"https://teentugs.com/", false}, // legacy domain — scraped via nookies hub only
 	}
 	for _, tc := range tests {
 		if got := s.MatchesURL(tc.url); got != tc.want {
 			t.Errorf("MatchesURL(%q) = %v, want %v", tc.url, got, tc.want)
+		}
+	}
+}
+
+// ---- new CMS (own-domain VideoObject) ----
+
+const testNewListingPage = `<!DOCTYPE html><html><body>
+<a href="https://www.milfaf.com/video/3458"><img src="x.jpg"></a>
+<h2><a href="https://www.milfaf.com/video/3458">Title A</a></h2>
+<a href="https://www.milfaf.com/video/3453"><img src="y.jpg"></a>
+<a href="https://www.milfaf.com/video/3453" class="watch">Watch</a>
+<a href="/videos?page=2">2</a>
+<a href="/videos?page=3">3</a>
+</body></html>`
+
+const testNewDetailPage = `<!DOCTYPE html><html><head>
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[]}
+</script>
+<script type="application/ld+json">
+{
+  "@context":"https://schema.org",
+  "@type":"VideoObject",
+  "name":"MILF Ms. Amanda Teaches Young Cub",
+  "description":"A long description here.",
+  "thumbnailUrl":"https://nookies.com/tour-content/milfaf/Amanda-MFAF/main.jpg",
+  "url":"https://www.milfaf.com/video/3458",
+  "uploadDate":"2026-06-16T00:00:00+00:00",
+  "duration":"PT25M21S",
+  "contentUrl":"https://nookies.com/tour-trailers/3458.mp4",
+  "actor":[{"@type":"Person","name":"Ms Amanda"}],
+  "genre":["hardcore","blonde","big tits","milf"]
+}
+</script>
+</head><body></body></html>`
+
+func TestNewListVideoIDs(t *testing.T) {
+	ids := newListVideoIDs([]byte(testNewListingPage))
+	if len(ids) != 2 {
+		t.Fatalf("ids = %v, want 2", ids)
+	}
+	if ids[0] != "3458" || ids[1] != "3453" {
+		t.Errorf("ids = %v, want [3458 3453] in order", ids)
+	}
+}
+
+func TestMaxPageNum(t *testing.T) {
+	if n := maxPageNum([]byte(testNewListingPage)); n != 3 {
+		t.Errorf("maxPageNum = %d, want 3", n)
+	}
+	if n := maxPageNum([]byte(`<html>no pages</html>`)); n != 1 {
+		t.Errorf("maxPageNum = %d, want 1", n)
+	}
+}
+
+func TestParseGenre(t *testing.T) {
+	tags := parseGenre([]byte(testNewDetailPage))
+	want := []string{"hardcore", "blonde", "big tits", "milf"}
+	if len(tags) != len(want) {
+		t.Fatalf("tags = %v, want %v", tags, want)
+	}
+	for i := range want {
+		if tags[i] != want[i] {
+			t.Errorf("tags[%d] = %q, want %q", i, tags[i], want[i])
+		}
+	}
+}
+
+func TestNewScene(t *testing.T) {
+	sc, ok := newScene([]byte(testNewDetailPage), "3458", "milfaf",
+		"https://www.milfaf.com", "https://www.milfaf.com/", time.Now().UTC())
+	if !ok {
+		t.Fatal("newScene returned ok=false")
+	}
+	if sc.ID != "3458" {
+		t.Errorf("ID = %q", sc.ID)
+	}
+	if sc.SiteID != "milfaf" {
+		t.Errorf("SiteID = %q, want milfaf", sc.SiteID)
+	}
+	if sc.Studio != "MilfAF" {
+		t.Errorf("Studio = %q, want MilfAF", sc.Studio)
+	}
+	if sc.Title != "MILF Ms. Amanda Teaches Young Cub" {
+		t.Errorf("Title = %q", sc.Title)
+	}
+	if sc.URL != "https://www.milfaf.com/video/3458" {
+		t.Errorf("URL = %q", sc.URL)
+	}
+	if sc.Duration != 25*60+21 {
+		t.Errorf("Duration = %d, want 1521", sc.Duration)
+	}
+	if sc.Preview != "https://nookies.com/tour-trailers/3458.mp4" {
+		t.Errorf("Preview = %q", sc.Preview)
+	}
+	if len(sc.Performers) != 1 || sc.Performers[0] != "Ms Amanda" {
+		t.Errorf("Performers = %v", sc.Performers)
+	}
+	if len(sc.Tags) != 4 {
+		t.Errorf("Tags = %v, want 4", sc.Tags)
+	}
+	want := time.Date(2026, 6, 16, 0, 0, 0, 0, time.UTC)
+	if !sc.Date.Equal(want) {
+		t.Errorf("Date = %v, want %v", sc.Date, want)
+	}
+}
+
+func TestNewCMSBaseAndPath(t *testing.T) {
+	tests := []struct {
+		url, slug, wantBase, wantPath string
+	}{
+		{"https://www.milfaf.com/", "milfaf", "https://www.milfaf.com", "/videos"},
+		{"https://www.milfaf.com/videos", "milfaf", "https://www.milfaf.com", "/videos"},
+		{"https://www.gilfaf.com/tag/gilf", "gilfaf", "https://www.gilfaf.com", "/tag/gilf"},
+		{"https://www.milfaf.com/models/london-river", "milfaf", "https://www.milfaf.com", "/models/london-river"},
+	}
+	for _, tc := range tests {
+		base, path := newCMSBaseAndPath(tc.url, tc.slug)
+		if base != tc.wantBase || path != tc.wantPath {
+			t.Errorf("newCMSBaseAndPath(%q) = (%q, %q), want (%q, %q)", tc.url, base, path, tc.wantBase, tc.wantPath)
 		}
 	}
 }

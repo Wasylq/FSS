@@ -5,7 +5,9 @@ import (
 	"fmt"
 	"html"
 	"net/http"
+	"net/url"
 	"regexp"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -40,12 +42,28 @@ func (s *Scraper) Patterns() []string {
 		"nookies.com/site/{slug}",
 		"nookies.com/model/{slug}",
 		"nookies.com/tag/{slug}",
+		"milfaf.com, gilfaf.com, breedme.com, shadyspa.com (new CMS)",
 	}
 }
 
 var matchRe = regexp.MustCompile(`^https?://(?:www\.)?nookies\.com(?:/|$)`)
 
-func (s *Scraper) MatchesURL(u string) bool { return matchRe.MatchString(u) }
+// newCMSRe matches the four Nookies brands that run the richer Laravel/Vite
+// CMS on their own standalone domain (schema.org VideoObject detail pages).
+// The captured group is the brand slug, which is also the SiteID.
+var newCMSRe = regexp.MustCompile(`(?i)^https?://(?:www\.)?(milfaf|gilfaf|breedme|shadyspa)\.com\b`)
+
+// studioNames maps a new-CMS brand slug to its display name.
+var studioNames = map[string]string{
+	"milfaf":   "MilfAF",
+	"gilfaf":   "GilfAF",
+	"breedme":  "BreedMe",
+	"shadyspa": "ShadySpa",
+}
+
+func (s *Scraper) MatchesURL(u string) bool {
+	return matchRe.MatchString(u) || newCMSRe.MatchString(u)
+}
 
 func (s *Scraper) ListScenes(ctx context.Context, studioURL string, opts scraper.ListOpts) (<-chan scraper.SceneResult, error) {
 	out := make(chan scraper.SceneResult)
@@ -139,6 +157,16 @@ func parseCard(card []byte) (listItem, bool) {
 
 func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOpts, out chan<- scraper.SceneResult) {
 	defer close(out)
+
+	// New-CMS brands (milfaf.com et al.) on their own domain use the
+	// VideoObject path. nookies.com URLs — including nookies.com/site/milfaf —
+	// fall through to the old-CMS hub logic below.
+	if m := newCMSRe.FindStringSubmatch(studioURL); m != nil {
+		slug := strings.ToLower(m[1])
+		scraper.Debugf(1, "nookies: detected new CMS brand %q", slug)
+		s.runNewCMS(ctx, studioURL, slug, opts, out)
+		return
+	}
 
 	switch {
 	case modelRe.MatchString(studioURL):
@@ -376,4 +404,213 @@ func (s *Scraper) fetchPage(ctx context.Context, url string) ([]byte, error) {
 	}
 	defer func() { _ = resp.Body.Close() }()
 	return httpx.ReadBody(resp.Body)
+}
+
+// ---- new CMS (own-domain VideoObject) ----
+
+var (
+	// newVideoHrefRe matches the slugless `/video/{id}` links the new CMS uses
+	// on listing pages (the old CMS uses `/video/{id}/{slug}`).
+	newVideoHrefRe = regexp.MustCompile(`/video/(\d+)(?:[/"?#]|\\)`)
+	pageNumRe      = regexp.MustCompile(`[?&]page=(\d+)`)
+	// genreBlockRe / quotedRe pull the VideoObject "genre" array (scene tags).
+	// parseutil.VideoObject only carries "keywords", so genre is parsed here.
+	genreBlockRe = regexp.MustCompile(`(?s)"genre"\s*:\s*\[(.*?)\]`)
+	quotedRe     = regexp.MustCompile(`"((?:[^"\\]|\\.)*)"`)
+)
+
+// runNewCMS walks the new-CMS listing on the brand's own domain and enriches
+// each new scene from its `/video/{id}` detail page's VideoObject JSON-LD.
+// The listing path is taken from the studio URL when it is a /tag/ or /models/
+// filter; otherwise the full /videos catalogue is scraped.
+func (s *Scraper) runNewCMS(ctx context.Context, studioURL, slug string, opts scraper.ListOpts, out chan<- scraper.SceneResult) {
+	base, listPath := newCMSBaseAndPath(studioURL, slug)
+	now := time.Now().UTC()
+	firstPage := true
+
+	scraper.Paginate(ctx, opts, "nookies/"+slug, out, func(ctx context.Context, page int) (scraper.PageResult, error) {
+		pageURL := fmt.Sprintf("%s%s?page=%d", base, listPath, page)
+		body, err := s.fetchPage(ctx, pageURL)
+		if err != nil {
+			return scraper.PageResult{}, err
+		}
+
+		ids := newListVideoIDs(body)
+		if len(ids) == 0 {
+			return scraper.PageResult{}, nil
+		}
+
+		total := 0
+		if firstPage {
+			firstPage = false
+			total = maxPageNum(body) * len(ids)
+		}
+
+		scenes := s.fetchNewScenes(ctx, ids, slug, base, studioURL, opts, now)
+		return scraper.PageResult{Scenes: scenes, Total: total}, nil
+	})
+}
+
+// newCMSBaseAndPath returns the origin (e.g. https://www.milfaf.com) and the
+// listing path to paginate. A /tag/ or /models/ path in the studio URL is
+// preserved so those filtered listings can be scraped; anything else defaults
+// to the full /videos catalogue.
+func newCMSBaseAndPath(studioURL, slug string) (base, listPath string) {
+	base = "https://www." + slug + ".com"
+	listPath = "/videos"
+	if u, err := url.Parse(studioURL); err == nil {
+		if u.Scheme != "" && u.Host != "" {
+			base = u.Scheme + "://" + u.Host
+		}
+		p := strings.TrimRight(u.Path, "/")
+		if strings.HasPrefix(p, "/tag/") || strings.HasPrefix(p, "/models/") || strings.HasPrefix(p, "/model/") {
+			listPath = p
+		}
+	}
+	return base, listPath
+}
+
+// newListVideoIDs returns the `/video/{id}` IDs in document order, deduped.
+func newListVideoIDs(body []byte) []string {
+	seen := make(map[string]bool)
+	var ids []string
+	for _, m := range newVideoHrefRe.FindAllSubmatch(body, -1) {
+		id := string(m[1])
+		if !seen[id] {
+			seen[id] = true
+			ids = append(ids, id)
+		}
+	}
+	return ids
+}
+
+func maxPageNum(body []byte) int {
+	max := 1
+	for _, m := range pageNumRe.FindAllSubmatch(body, -1) {
+		if n, err := strconv.Atoi(string(m[1])); err == nil && n > max {
+			max = n
+		}
+	}
+	return max
+}
+
+// fetchNewScenes enriches each listing ID with its VideoObject detail page,
+// using a worker pool. Order is preserved so Paginate's KnownIDs early-stop
+// works: known IDs become lightweight stubs (no detail fetch) that trigger the
+// stop, and detail-fetch failures are dropped.
+func (s *Scraper) fetchNewScenes(ctx context.Context, ids []string, slug, base, studioURL string, opts scraper.ListOpts, now time.Time) []models.Scene {
+	workers := opts.Workers
+	if workers <= 0 {
+		workers = 4
+	}
+	scraper.Debugf(1, "nookies: fetching %d %s details with %d workers", len(ids), slug, workers)
+
+	results := make([]models.Scene, len(ids))
+	var wg sync.WaitGroup
+	sem := make(chan struct{}, workers)
+
+	for i, id := range ids {
+		if ctx.Err() != nil {
+			break
+		}
+		if opts.KnownIDs[id] {
+			results[i] = models.Scene{ID: id, SiteID: slug}
+			continue
+		}
+		wg.Add(1)
+		go func(idx int, id string) {
+			defer wg.Done()
+			sem <- struct{}{}
+			defer func() { <-sem }()
+
+			if opts.Delay > 0 {
+				select {
+				case <-time.After(opts.Delay):
+				case <-ctx.Done():
+					return
+				}
+			}
+
+			body, err := s.fetchPage(ctx, base+"/video/"+id)
+			if err != nil {
+				scraper.Debugf(1, "nookies: %s detail %s failed: %v (skipping)", slug, id, err)
+				return
+			}
+			if sc, ok := newScene(body, id, slug, base, studioURL, now); ok {
+				results[idx] = sc
+			}
+		}(i, id)
+	}
+	wg.Wait()
+
+	scenes := make([]models.Scene, 0, len(results))
+	for _, sc := range results {
+		if sc.ID == "" { // failed fetch
+			continue
+		}
+		scenes = append(scenes, sc)
+	}
+	return scenes
+}
+
+func newScene(body []byte, id, slug, base, studioURL string, now time.Time) (models.Scene, bool) {
+	vo := parseutil.ExtractVideoObject(body)
+	if vo == nil || vo.Name == "" {
+		return models.Scene{}, false
+	}
+	scene := models.Scene{
+		ID:          id,
+		SiteID:      slug,
+		StudioURL:   studioURL,
+		Title:       cleanText(vo.Name),
+		URL:         base + "/video/" + id,
+		Description: cleanText(vo.Description),
+		Thumbnail:   vo.ThumbnailURL,
+		Preview:     vo.ContentURL,
+		Performers:  cleanAll(vo.Actors),
+		Studio:      studioNames[slug],
+		Tags:        parseGenre(body),
+		Duration:    parseutil.ParseDurationISO(vo.Duration),
+		ScrapedAt:   now,
+	}
+	date := strings.TrimSpace(vo.UploadDate)
+	if date == "" {
+		date = strings.TrimSpace(vo.DatePublished)
+	}
+	if t, err := parseutil.TryParseDate(date, time.RFC3339, "2006-01-02T15:04:05Z07:00", "2006-01-02"); err == nil {
+		scene.Date = t.UTC()
+	}
+	return scene, true
+}
+
+// parseGenre pulls the VideoObject "genre" array (scene tags) from the body.
+func parseGenre(body []byte) []string {
+	m := genreBlockRe.FindSubmatch(body)
+	if m == nil {
+		return nil
+	}
+	var tags []string
+	for _, q := range quotedRe.FindAllSubmatch(m[1], -1) {
+		if t := cleanText(string(q[1])); t != "" {
+			tags = append(tags, t)
+		}
+	}
+	return tags
+}
+
+func cleanText(s string) string {
+	return html.UnescapeString(strings.TrimSpace(s))
+}
+
+func cleanAll(in []string) []string {
+	if len(in) == 0 {
+		return nil
+	}
+	out := make([]string, 0, len(in))
+	for _, s := range in {
+		if c := cleanText(s); c != "" {
+			out = append(out, c)
+		}
+	}
+	return out
 }

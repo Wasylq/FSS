@@ -14,3 +14,11 @@ func TestLiveNookies(t *testing.T) {
 	testutil.SkipIfPlaceholder(t, liveStudioURL)
 	testutil.RunLiveScrape(t, New(), liveStudioURL, 2)
 }
+
+// TestLiveNookiesNewCMS exercises the VideoObject path on a brand that runs
+// the new Laravel CMS on its own domain.
+func TestLiveNookiesNewCMS(t *testing.T) {
+	const u = "https://www.milfaf.com/"
+	testutil.SkipIfPlaceholder(t, u)
+	testutil.RunLiveScrape(t, New(), u, 3)
+}
