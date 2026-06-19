@@ -65,11 +65,11 @@ func (s *Scraper) ListScenes(ctx context.Context, studioURL string, opts scraper
 
 // wpPost mirrors the subset of the WordPress REST API post object that we use.
 type wpPost struct {
-	ID      int    `json:"id"`
-	Date    string `json:"date"`
-	Link    string `json:"link"`
-	Type    string `json:"type"`
-	Title   struct {
+	ID    int    `json:"id"`
+	Date  string `json:"date"`
+	Link  string `json:"link"`
+	Type  string `json:"type"`
+	Title struct {
 		Rendered string `json:"rendered"`
 	} `json:"title"`
 	Excerpt struct {

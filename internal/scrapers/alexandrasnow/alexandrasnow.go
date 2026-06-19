@@ -85,7 +85,7 @@ var (
 	cardCatPathRe = regexp.MustCompile(`/vod/categories/`)
 
 	// detail page category tags (skip the empty movies/photos nav links).
-	detailCatRe = regexp.MustCompile(`<a href="https?://[^"]*/vod/categories/[^"]+\.html"\s*>([^<]+)</a>`)
+	detailCatRe  = regexp.MustCompile(`<a href="https?://[^"]*/vod/categories/[^"]+\.html"\s*>([^<]+)</a>`)
 	detailDescRe = regexp.MustCompile(`(?s)<span class="update_description">(.*?)</span>`)
 	durMinRe     = regexp.MustCompile(`(\d+)\s*(?:\x{00a0}|&nbsp;|\s)*min`)
 )

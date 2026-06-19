@@ -184,11 +184,11 @@ func TestScrapeKnownIDsEarlyStop(t *testing.T) {
 func TestMatchesURL(t *testing.T) {
 	s := New()
 	cases := map[string]bool{
-		"https://lustery.com/":              true,
-		"https://www.lustery.com/videos":    true,
-		"http://lustery.com/video/quick":    true,
-		"https://example.com/lustery":       false,
-		"https://notlustery.com/":           false,
+		"https://lustery.com/":           true,
+		"https://www.lustery.com/videos": true,
+		"http://lustery.com/video/quick": true,
+		"https://example.com/lustery":    false,
+		"https://notlustery.com/":        false,
 	}
 	for u, want := range cases {
 		if got := s.MatchesURL(u); got != want {

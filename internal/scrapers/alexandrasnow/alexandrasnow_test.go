@@ -114,10 +114,10 @@ func TestParseDetail(t *testing.T) {
 
 func TestParseDuration(t *testing.T) {
 	cases := map[string]int{
-		"4&nbsp;min&nbsp;of video": 240,
+		"4&nbsp;min&nbsp;of video":   240,
 		"\n5&nbsp;min&nbsp;of video": 300,
-		"12:34":                     754,
-		"":                          0,
+		"12:34":                      754,
+		"":                           0,
 	}
 	for in, want := range cases {
 		if got := parseDuration(in); got != want {
