@@ -1,6 +1,6 @@
 # Covered Sites — All Domains
 
-1258 scrapers covering 1344 distinct domains. Auto-generated from the scraper registry by `TestSitesMdInSync` — do not hand-edit; instead update the scraper's `Patterns()` and re-run `go test ./internal/scrapers/all/...`. The `stashbox` scraper is omitted here because its covered hosts are config-driven; see [`scrapers.md`](scrapers.md).
+1260 scrapers covering 1346 distinct domains. Auto-generated from the scraper registry by `TestSitesMdInSync` — do not hand-edit; instead update the scraper's `Patterns()` and re-run `go test ./internal/scrapers/all/...`. The `stashbox` scraper is omitted here because its covered hosts are config-driven; see [`scrapers.md`](scrapers.md).
 
 Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scraper ID(s)** column lists every scraper that claims URLs on that domain — most domains have one entry, but table-driven networks (`adultprime`, `tmw`, `nextdoorstudios`, etc.) host many sub-studios on a single root domain. See [`scrapers.md`](scrapers.md) for what each ID covers.
 
@@ -249,6 +249,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | clips4sale.com | `clips4sale` |
 | clubamberrayne.com | `clubamberrayne` |
 | clubbdsm.com | `clubbdsm` |
+| clubdom.com | `clubdom` |
 | clubinfernodungeon.com | `clubinfernodungeon` |
 | clubkayden.com | `clubkayden` |
 | cock4stepmom.com | `cock4stepmom` |
@@ -1088,6 +1089,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | studentsexparties.com | `studentsexparties` |
 | stuffintwats.com | `stuffintwats` |
 | stunning18.com | `stunning18` |
+| subbyhubby.com | `subbyhubby` |
 | submissived.com | `submissived` |
 | suggabunny.com | `porngutter` |
 | sukmydick.com | `sukmydick` |
