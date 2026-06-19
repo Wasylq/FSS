@@ -128,6 +128,19 @@ func (s *Scraper) scrapeListing(ctx context.Context, studioURL, base string, opt
 
 		body, err := s.fetchPage(ctx, pageURL)
 		if err != nil {
+			// A sister site can intermittently return a WordPress 500 on its
+			// /work/ listing while the rest of the site is up (observed on
+			// dahlia-av.jp). Fall back to the work links on the homepage so
+			// the scrape degrades gracefully instead of returning nothing.
+			if page == 1 {
+				if home, herr := s.fetchPage(ctx, base+"/"); herr == nil {
+					if urls := parseWorkURLs(home, base); len(urls) > 0 {
+						scraper.Debugf(1, "%s: /work/ listing failed (%v); using %d works from homepage", siteID, err, len(urls))
+						allURLs = append(allURLs, urls...)
+						break
+					}
+				}
+			}
 			sendResult(ctx, out, scraper.Error(err))
 			return
 		}
@@ -224,13 +237,20 @@ func (s *Scraper) fetchDetails(ctx context.Context, studioURL, base string, opts
 }
 
 func (s *Scraper) fetchAndParseDetail(ctx context.Context, detailURL, studioURL, base string, now time.Time) (models.Scene, error) {
-	body, err := s.fetchPage(ctx, detailURL)
+	// dahlia-av.jp intermittently emits a WordPress notice that flips the
+	// HTTP status to 500 while still rendering the full work page (same
+	// pattern as SexMex Pro). Use DoWithStatus so the body is parsed
+	// regardless of status; bail only if no title could be extracted.
+	body, status, err := s.fetchPageAnyStatus(ctx, detailURL)
 	if err != nil {
 		return models.Scene{}, fmt.Errorf("detail %s: %w", detailURL, err)
 	}
 
 	code := codeFromURL(detailURL)
 	d := parseDetailPage(body)
+	if d.title == "" {
+		return models.Scene{}, fmt.Errorf("detail %s: HTTP %d with no parseable content", detailURL, status)
+	}
 
 	sc := models.Scene{
 		ID:          strings.ToUpper(code),
@@ -423,4 +443,20 @@ func (s *Scraper) fetchPage(ctx context.Context, url string) ([]byte, error) {
 	}
 	defer func() { _ = resp.Body.Close() }()
 	return httpx.ReadBody(resp.Body)
+}
+
+// fetchPageAnyStatus fetches a page and returns its body and HTTP status
+// without classifying non-2xx as an error. Used for dahlia-av.jp work pages,
+// which render full content under a WordPress-error HTTP 500.
+func (s *Scraper) fetchPageAnyStatus(ctx context.Context, url string) ([]byte, int, error) {
+	resp, err := httpx.DoWithStatus(ctx, s.client, httpx.Request{
+		URL:     url,
+		Headers: httpx.BrowserHeaders(httpx.UserAgentChrome),
+	})
+	if err != nil {
+		return nil, 0, err
+	}
+	defer func() { _ = resp.Body.Close() }()
+	body, err := httpx.ReadBody(resp.Body)
+	return body, resp.StatusCode, err
 }
