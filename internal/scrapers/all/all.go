@@ -95,6 +95,7 @@ import (
 	_ "github.com/Wasylq/FSS/internal/scrapers/kbproductions"
 	_ "github.com/Wasylq/FSS/internal/scrapers/kingnoirexxx"
 	_ "github.com/Wasylq/FSS/internal/scrapers/kink"
+	_ "github.com/Wasylq/FSS/internal/scrapers/kinkacademy"
 	_ "github.com/Wasylq/FSS/internal/scrapers/kmproduce"
 	_ "github.com/Wasylq/FSS/internal/scrapers/kocompany"
 	_ "github.com/Wasylq/FSS/internal/scrapers/ladyfyre"
