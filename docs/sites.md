@@ -1,6 +1,6 @@
 # Covered Sites — All Domains
 
-1271 scrapers covering 1359 distinct domains. Auto-generated from the scraper registry by `TestSitesMdInSync` — do not hand-edit; instead update the scraper's `Patterns()` and re-run `go test ./internal/scrapers/all/...`. The `stashbox` scraper is omitted here because its covered hosts are config-driven; see [`scrapers.md`](scrapers.md).
+1275 scrapers covering 1363 distinct domains. Auto-generated from the scraper registry by `TestSitesMdInSync` — do not hand-edit; instead update the scraper's `Patterns()` and re-run `go test ./internal/scrapers/all/...`. The `stashbox` scraper is omitted here because its covered hosts are config-driven; see [`scrapers.md`](scrapers.md).
 
 Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scraper ID(s)** column lists every scraper that claims URLs on that domain — most domains have one entry, but table-driven networks (`adultprime`, `tmw`, `nextdoorstudios`, etc.) host many sub-studios on a single root domain. See [`scrapers.md`](scrapers.md) for what each ID covers.
 
@@ -172,6 +172,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | boyforsale.com | `boyforsale` |
 | boyfriendsharing.com | `boyfriendsharing` |
 | boyfriendsharing.comtag | `boyfriendsharing` |
+| boygusher.com | `boygusher` |
 | boys-pissing.com | `boyspissing` |
 | boys-smoking.com | `boyssmoking` |
 | boysfirsttime.com | `realitydudes` |
@@ -195,6 +196,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | britishbratz.com | `britishbratz` |
 | britneyamber.puba.com | `pubabritneyamber` |
 | brokensluts.net | `brokensluts` |
+| brokestraightboys.com | `brokestraightboys` |
 | bromo.com | `bromo` |
 | brookebrand.puba.com | `pubabrookebrand` |
 | brooklynchase.puba.com | `pubabrooklynchase` |
@@ -259,6 +261,8 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | codivorexxx.com | `codivorexxx` |
 | codycummings.com | `codycummings` |
 | college-uniform.com | `collegeuniform` |
+| collegeboyphysicals.com | `collegeboyphysicals` |
+| collegedudes.com | `collegedudes` |
 | collegefuckparties.com | `collegefuckparties` |
 | corbinfisher.com | `corbinfisher` |
 | cosplaybabes.xxx | `gasm` |
