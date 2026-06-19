@@ -138,6 +138,7 @@ import (
 	_ "github.com/Wasylq/FSS/internal/scrapers/pornworld"
 	_ "github.com/Wasylq/FSS/internal/scrapers/portagloryhole"
 	_ "github.com/Wasylq/FSS/internal/scrapers/povr"
+	_ "github.com/Wasylq/FSS/internal/scrapers/premiumbukkake"
 	_ "github.com/Wasylq/FSS/internal/scrapers/prestige"
 	_ "github.com/Wasylq/FSS/internal/scrapers/private"
 	_ "github.com/Wasylq/FSS/internal/scrapers/privateblack"
