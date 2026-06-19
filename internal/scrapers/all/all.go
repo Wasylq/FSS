@@ -35,6 +35,7 @@ import (
 	_ "github.com/Wasylq/FSS/internal/scrapers/chickpass"
 	_ "github.com/Wasylq/FSS/internal/scrapers/clips4sale"
 	_ "github.com/Wasylq/FSS/internal/scrapers/collegeuniform"
+	_ "github.com/Wasylq/FSS/internal/scrapers/corbinfisher"
 	_ "github.com/Wasylq/FSS/internal/scrapers/crunchboy"
 	_ "github.com/Wasylq/FSS/internal/scrapers/crystaleizou"
 	_ "github.com/Wasylq/FSS/internal/scrapers/cumlouder"
