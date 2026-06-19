@@ -1,6 +1,6 @@
 # Covered Sites — All Domains
 
-1279 scrapers covering 1367 distinct domains. Auto-generated from the scraper registry by `TestSitesMdInSync` — do not hand-edit; instead update the scraper's `Patterns()` and re-run `go test ./internal/scrapers/all/...`. The `stashbox` scraper is omitted here because its covered hosts are config-driven; see [`scrapers.md`](scrapers.md).
+1285 scrapers covering 1373 distinct domains. Auto-generated from the scraper registry by `TestSitesMdInSync` — do not hand-edit; instead update the scraper's `Patterns()` and re-run `go test ./internal/scrapers/all/...`. The `stashbox` scraper is omitted here because its covered hosts are config-driven; see [`scrapers.md`](scrapers.md).
 
 Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scraper ID(s)** column lists every scraper that claims URLs on that domain — most domains have one entry, but table-driven networks (`adultprime`, `tmw`, `nextdoorstudios`, etc.) host many sub-studios on a single root domain. See [`scrapers.md`](scrapers.md) for what each ID covers.
 
@@ -42,6 +42,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | alisontyler.puba.com | `pubaalisontyler` |
 | alixlynx.puba.com | `pubaalixlynx` |
 | allanalallthetime.com | `allanalallthetime` |
+| allblackx.com | `allblackx` |
 | allbrookwright.com | `allbrookwright` |
 | allherluv.com | `allherluv` |
 | alphamales.com | `alphamales` |
@@ -339,6 +340,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | danidaniels.puba.com | `pubadanidaniels` |
 | darkroomvr.com | `darkroomvr` |
 | darksodomy.com | `porngutter` |
+| darkx.com | `darkx` |
 | dasdas.jp | `dasdas` |
 | data18.com | `data18` |
 | datingmystepson.com | `nubiles` |
@@ -393,6 +395,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | elegantangel.com | `elegantangel` |
 | elsajean.puba.com | `pubaelsajean` |
 | erito.com | `erito` |
+| eroticax.com | `eroticax` |
 | erotiquetvlive.com | `erotiquetvlive` |
 | errotica-archives.com | `erroticaarchives` |
 | eternaldesire.com | `eternaldesire` |
@@ -550,6 +553,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | hardfucktales.com | `hardfucktales` |
 | hardgonzo.puba.com | `pubahardgonzo` |
 | hardkinks.com | `hardkinks` |
+| hardx.com | `hardx` |
 | harlemsex.com | `harlemsex` |
 | harmonyvision.com | `gasm` |
 | hayleyssecrets.com | `hayleyssecrets` |
@@ -666,6 +670,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | legsemporium.com | `legsemporium` |
 | legsex.com | `legsex` |
 | lesbianfactor.com | `lesbianfactor` |
+| lesbianx.com | `lesbianx` |
 | lethalhardcore.com | `lethalhardcore` |
 | lethallipstick.com | `lethallipstick` |
 | lethalpass.com | `lethalpass` |
@@ -1354,6 +1359,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | www.voyeurpapy.comtour | `voyeurpapy` |
 | x-angels.com | `tmw-x-angels` |
 | x-sensual.com | `xsensual` |
+| xempire.com | `xempire` |
 | xes.pl | `xespl` |
 | xevunleashed.com | `xevbellringer` |
 | xlgirls.com | `xlgirls` |

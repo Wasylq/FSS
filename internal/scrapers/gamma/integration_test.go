@@ -141,3 +141,28 @@ func TestLiveSodomySquad(t *testing.T) {
 func TestLiveASGmax(t *testing.T) {
 	testutil.RunLiveScrape(t, newTestScraper(findSite("asgmax")), "https://www.asgmax.com/", 2)
 }
+
+// XEmpire — shared segment:xempire key, per-brand availableOnSite filter.
+func TestLiveHardX(t *testing.T) {
+	testutil.RunLiveScrape(t, newTestScraper(findSite("hardx")), "https://www.hardx.com/", 2)
+}
+
+func TestLiveDarkX(t *testing.T) {
+	testutil.RunLiveScrape(t, newTestScraper(findSite("darkx")), "https://www.darkx.com/", 2)
+}
+
+func TestLiveEroticaX(t *testing.T) {
+	testutil.RunLiveScrape(t, newTestScraper(findSite("eroticax")), "https://www.eroticax.com/", 2)
+}
+
+func TestLiveAllBlackX(t *testing.T) {
+	testutil.RunLiveScrape(t, newTestScraper(findSite("allblackx")), "https://www.allblackx.com/", 2)
+}
+
+func TestLiveLesbianX(t *testing.T) {
+	testutil.RunLiveScrape(t, newTestScraper(findSite("lesbianx")), "https://www.lesbianx.com/", 2)
+}
+
+func TestLiveXEmpire(t *testing.T) {
+	testutil.RunLiveScrape(t, newTestScraper(findSite("xempire")), "https://www.xempire.com/", 2)
+}

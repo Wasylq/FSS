@@ -246,6 +246,16 @@ var sites = []siteConfig{
 	{"sodomysquad", "sodomysquad.com", "Sodomy Squad", "", "", "", "", ""},
 	{"asgmax", "asgmax.com", "ASGmax Films", "asgmax", "", "", "", ""},
 
+	// XEmpire — own-domain Gamma sites on the shared segment:xempire key.
+	// availableOnSite (defaulting to SiteID) narrows the index to each brand;
+	// xempire.com is the hub (availableOnSite:xempire = the XEmpire originals).
+	{"hardx", "hardx.com", "HardX", "", "", "", "", ""},
+	{"allblackx", "allblackx.com", "AllBlackX", "", "", "", "", ""},
+	{"darkx", "darkx.com", "DarkX", "", "", "", "", ""},
+	{"eroticax", "eroticax.com", "EroticaX", "", "", "", "", ""},
+	{"lesbianx", "lesbianx.com", "LesbianX", "", "", "", "", ""},
+	{"xempire", "xempire.com", "XEmpire", "xempire", "", "", "", ""},
+
 	// Playboy TV segment — uses /en/episodes (not /en/videos) and /en/episode/ scene URLs.
 	{"playboytv", "playboytv.com", "Playboy TV", "playboytv", "", "", "/en/episodes", "episode"},
 }
