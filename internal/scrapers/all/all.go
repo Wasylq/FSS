@@ -86,6 +86,7 @@ import (
 	_ "github.com/Wasylq/FSS/internal/scrapers/innofsin"
 	_ "github.com/Wasylq/FSS/internal/scrapers/ishotmyself"
 	_ "github.com/Wasylq/FSS/internal/scrapers/iwantclips"
+	_ "github.com/Wasylq/FSS/internal/scrapers/jacquieetmichel"
 	_ "github.com/Wasylq/FSS/internal/scrapers/javdatabase"
 	_ "github.com/Wasylq/FSS/internal/scrapers/julesjordan"
 	_ "github.com/Wasylq/FSS/internal/scrapers/karups"
