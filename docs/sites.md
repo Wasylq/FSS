@@ -1,6 +1,6 @@
 # Covered Sites — All Domains
 
-1268 scrapers covering 1355 distinct domains. Auto-generated from the scraper registry by `TestSitesMdInSync` — do not hand-edit; instead update the scraper's `Patterns()` and re-run `go test ./internal/scrapers/all/...`. The `stashbox` scraper is omitted here because its covered hosts are config-driven; see [`scrapers.md`](scrapers.md).
+1271 scrapers covering 1359 distinct domains. Auto-generated from the scraper registry by `TestSitesMdInSync` — do not hand-edit; instead update the scraper's `Patterns()` and re-run `go test ./internal/scrapers/all/...`. The `stashbox` scraper is omitted here because its covered hosts are config-driven; see [`scrapers.md`](scrapers.md).
 
 Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scraper ID(s)** column lists every scraper that claims URLs on that domain — most domains have one entry, but table-driven networks (`adultprime`, `tmw`, `nextdoorstudios`, etc.) host many sub-studios on a single root domain. See [`scrapers.md`](scrapers.md) for what each ID covers.
 
@@ -18,6 +18,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | 50plusmilfs.com | `50plusmilfs` |
 | 60plusmilfs.com | `60plusmilfs` |
 | 65inchhugeasses.com | `65inchhugeasses` |
+| 8teenboy.com | `8teenboy` |
 | abbiemaley.com | `abbiemaley` |
 | abigailmac.puba.com | `pubaabigailmac` |
 | aboutgirlslove.com | `tmw-aboutgirlslove` |
@@ -551,6 +552,8 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | hcjav.com | `porngutter` |
 | hdmassageporn.com | `hdmassageporn` |
 | hdsex18.com | `hdsex18` |
+| helixstudios.com | `8teenboy`, `spankthis` |
+| helixstudios.net | `helixstudios` |
 | hentai.movie | `hentaimovie` |
 | hentaied.com | `hentaied` |
 | hentaied.pro | `twinz` |
@@ -1072,6 +1075,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | spankingglamour.com | `spankingglamour` |
 | spankingteenbrandi.com | `spankingteenbrandi` |
 | spankingteenjessica.com | `spankingteenjessica` |
+| spankthis.com | `spankthis` |
 | spartavideo.com | `spartavideo` |
 | spermsuckers.com | `spermsuckers` |
 | spermswallowers.com | `spermswallowers` |
