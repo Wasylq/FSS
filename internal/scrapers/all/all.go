@@ -95,6 +95,7 @@ import (
 	_ "github.com/Wasylq/FSS/internal/scrapers/legsemporium"
 	_ "github.com/Wasylq/FSS/internal/scrapers/loyalfans"
 	_ "github.com/Wasylq/FSS/internal/scrapers/lucasentertainment"
+	_ "github.com/Wasylq/FSS/internal/scrapers/lustery"
 	_ "github.com/Wasylq/FSS/internal/scrapers/manyvids"
 	_ "github.com/Wasylq/FSS/internal/scrapers/marsmedia"
 	_ "github.com/Wasylq/FSS/internal/scrapers/maturefetish"

@@ -15,6 +15,10 @@ FSS
 *.csv
 *.json
 
+# ...but always keep test fixtures (scraper testdata/ dirs may hold .json/.csv)
+!**/testdata/
+!**/testdata/**
+
 # Test binary, built with `go test -c`
 *.test
 
