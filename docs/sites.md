@@ -1,6 +1,6 @@
 # Covered Sites — All Domains
 
-1285 scrapers covering 1373 distinct domains. Auto-generated from the scraper registry by `TestSitesMdInSync` — do not hand-edit; instead update the scraper's `Patterns()` and re-run `go test ./internal/scrapers/all/...`. The `stashbox` scraper is omitted here because its covered hosts are config-driven; see [`scrapers.md`](scrapers.md).
+1288 scrapers covering 1376 distinct domains. Auto-generated from the scraper registry by `TestSitesMdInSync` — do not hand-edit; instead update the scraper's `Patterns()` and re-run `go test ./internal/scrapers/all/...`. The `stashbox` scraper is omitted here because its covered hosts are config-driven; see [`scrapers.md`](scrapers.md).
 
 Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scraper ID(s)** column lists every scraper that claims URLs on that domain — most domains have one entry, but table-driven networks (`adultprime`, `tmw`, `nextdoorstudios`, etc.) host many sub-studios on a single root domain. See [`scrapers.md`](scrapers.md) for what each ID covers.
 
@@ -423,6 +423,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | fakehuboriginals.com | `fakehub` |
 | faketaxi.com | `fakehub` |
 | fakings.com | `fakings` |
+| falconstudios.com | `falconstudios` |
 | falenogroup.com | `faleno` |
 | famedigital.com | `famedigital` |
 | familyhookups.com | `metro` |
@@ -582,6 +583,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | horrorporn.com | `horrorporn` |
 | hotcrazymess.com | `nubiles` |
 | hotgold.xxx | `gasm` |
+| hothouse.com | `hothouse` |
 | hotpantyfun.com | `hotpantyfun` |
 | hotsexyplumpers.com | `hotsexyplumpers` |
 | hotwifexxx.com | `hotwifexxx` |
@@ -968,6 +970,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | r51.com | `r51` |
 | rachel-steele.com | `rachelsteele` |
 | rachelroxxx.puba.com | `pubarachelroxxx` |
+| ragingstallion.com | `ragingstallion` |
 | rawalphamales.com | `rawalphamales` |
 | rawattack.com | `rawattack` |
 | rawboys.com | `rawboys` |

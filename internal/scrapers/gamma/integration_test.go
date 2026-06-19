@@ -166,3 +166,16 @@ func TestLiveLesbianX(t *testing.T) {
 func TestLiveXEmpire(t *testing.T) {
 	testutil.RunLiveScrape(t, newTestScraper(findSite("xempire")), "https://www.xempire.com/", 2)
 }
+
+// Falcon | NakedSword — shared segment:falconstudios key.
+func TestLiveFalconStudios(t *testing.T) {
+	testutil.RunLiveScrape(t, newTestScraper(findSite("falconstudios")), "https://www.falconstudios.com/", 2)
+}
+
+func TestLiveHotHouse(t *testing.T) {
+	testutil.RunLiveScrape(t, newTestScraper(findSite("hothouse")), "https://www.hothouse.com/", 2)
+}
+
+func TestLiveRagingStallion(t *testing.T) {
+	testutil.RunLiveScrape(t, newTestScraper(findSite("ragingstallion")), "https://www.ragingstallion.com/", 2)
+}

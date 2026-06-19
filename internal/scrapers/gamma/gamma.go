@@ -256,6 +256,12 @@ var sites = []siteConfig{
 	{"lesbianx", "lesbianx.com", "LesbianX", "", "", "", "", ""},
 	{"xempire", "xempire.com", "XEmpire", "xempire", "", "", "", ""},
 
+	// Falcon | NakedSword — gay studios on the shared segment:falconstudios key.
+	// (NakedSword's own domain runs a different CMS and is not covered here.)
+	{"falconstudios", "falconstudios.com", "Falcon Studios", "", "", "", "", ""},
+	{"hothouse", "hothouse.com", "Hot House Entertainment", "", "", "", "", ""},
+	{"ragingstallion", "ragingstallion.com", "Raging Stallion", "", "", "", "", ""},
+
 	// Playboy TV segment — uses /en/episodes (not /en/videos) and /en/episode/ scene URLs.
 	{"playboytv", "playboytv.com", "Playboy TV", "playboytv", "", "", "/en/episodes", "episode"},
 }
