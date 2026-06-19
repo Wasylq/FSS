@@ -158,6 +158,7 @@ import (
 	_ "github.com/Wasylq/FSS/internal/scrapers/realspankings"
 	_ "github.com/Wasylq/FSS/internal/scrapers/rocketinc"
 	_ "github.com/Wasylq/FSS/internal/scrapers/romeromultimedia"
+	_ "github.com/Wasylq/FSS/internal/scrapers/sapphix"
 	_ "github.com/Wasylq/FSS/internal/scrapers/scoregroup"
 	_ "github.com/Wasylq/FSS/internal/scrapers/seemomsuck"
 	_ "github.com/Wasylq/FSS/internal/scrapers/sensationalvideo"

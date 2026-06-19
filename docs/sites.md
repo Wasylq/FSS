@@ -1,6 +1,6 @@
 # Covered Sites — All Domains
 
-1263 scrapers covering 1349 distinct domains. Auto-generated from the scraper registry by `TestSitesMdInSync` — do not hand-edit; instead update the scraper's `Patterns()` and re-run `go test ./internal/scrapers/all/...`. The `stashbox` scraper is omitted here because its covered hosts are config-driven; see [`scrapers.md`](scrapers.md).
+1267 scrapers covering 1353 distinct domains. Auto-generated from the scraper registry by `TestSitesMdInSync` — do not hand-edit; instead update the scraper's `Patterns()` and re-run `go test ./internal/scrapers/all/...`. The `stashbox` scraper is omitted here because its covered hosts are config-driven; see [`scrapers.md`](scrapers.md).
 
 Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scraper ID(s)** column lists every scraper that claims URLs on that domain — most domains have one entry, but table-driven networks (`adultprime`, `tmw`, `nextdoorstudios`, etc.) host many sub-studios on a single root domain. See [`scrapers.md`](scrapers.md) for what each ID covers.
 
@@ -440,6 +440,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | firstanaldate.com | `firstanaldate` |
 | firstbgg.com | `tmw-firstbgg` |
 | firstclasspov.com | `firstclasspov` |
+| fistflush.com | `fistflush` |
 | fistingcentral.com | `fistingcentral` |
 | fistinginferno.com | `fistinginferno` |
 | fitch-av.com | `fitch` |
@@ -506,6 +507,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | girlswhofuckgirls.com | `girlswhofuckgirls` |
 | girlswholie.tube | `girlswholie` |
 | girlswholie.tubetag | `girlswholie` |
+| givemepink.com | `givemepink` |
 | givemeteens.com | `givemeteens` |
 | givingahandjob.com | `givingahandjob` |
 | glamose.com | `glamose` |
@@ -991,6 +993,8 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | samanthafucks.com | `pubasamanthasaint` |
 | samanthasaint.puba.com | `pubasamanthasaint` |
 | samuelotoole.com | `samuelotoole` |
+| sapphicerotica.com | `sapphicerotica` |
+| sapphix.com | `sapphix` |
 | sarahjessie.puba.com | `pubasarahjessie` |
 | sarahvandella.puba.com | `pubasarahvandella` |
 | sarajay.com | `sarajay` |
