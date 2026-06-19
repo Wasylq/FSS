@@ -1,6 +1,6 @@
 # Covered Sites — All Domains
 
-1275 scrapers covering 1363 distinct domains. Auto-generated from the scraper registry by `TestSitesMdInSync` — do not hand-edit; instead update the scraper's `Patterns()` and re-run `go test ./internal/scrapers/all/...`. The `stashbox` scraper is omitted here because its covered hosts are config-driven; see [`scrapers.md`](scrapers.md).
+1279 scrapers covering 1367 distinct domains. Auto-generated from the scraper registry by `TestSitesMdInSync` — do not hand-edit; instead update the scraper's `Patterns()` and re-run `go test ./internal/scrapers/all/...`. The `stashbox` scraper is omitted here because its covered hosts are config-driven; see [`scrapers.md`](scrapers.md).
 
 Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scraper ID(s)** column lists every scraper that claims URLs on that domain — most domains have one entry, but table-driven networks (`adultprime`, `tmw`, `nextdoorstudios`, etc.) host many sub-studios on a single root domain. See [`scrapers.md`](scrapers.md) for what each ID covers.
 
@@ -636,6 +636,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | kikidaire.puba.com | `pubakikidaire` |
 | killergram.com | `killergram` |
 | kimberleelive.com | `kimberlee` |
+| kimholland.com | `kimholland` |
 | kingnoirexxx.com | `kingnoirexxx` |
 | kink.com | `kink` |
 | kink305.com | `kink305` |
@@ -715,6 +716,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | maturefucksteen.com | `porngutter` |
 | meetsuckandfuck.com | `meetsuckandfuck` |
 | megatitsminka.com | `megatitsminka` |
+| meidenvanholland.nl | `meidenvanholland` |
 | melina-may.com | `melinamay` |
 | men.com | `men` |
 | menofuk.com | `men` |
@@ -1018,6 +1020,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | scorevideos.com | `scorevideos` |
 | scoutboys.com | `scoutboys` |
 | seancody.com | `seancody` |
+| secretcircle.com | `secretcircle` |
 | seemomsuck.com | `seemomsuck` |
 | selfiefetish.com | `selfiefetish` |
 | sellyourgf.com | `sellyourgf` |
@@ -1274,6 +1277,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | vrallure.com | `vrallure` |
 | vrintimacy.com | `vrintimacy` |
 | vrporn.com | `vrporn` |
+| vurigvlaanderen.be | `vurigvlaanderen` |
 | vyxensteel.puba.com | `pubavyxensteel` |
 | waap.co.jp | `waap` |
 | wakeupnfuck.com | `wunf` |
