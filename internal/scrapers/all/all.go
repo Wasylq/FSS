@@ -126,6 +126,7 @@ import (
 	_ "github.com/Wasylq/FSS/internal/scrapers/over40handjobs"
 	_ "github.com/Wasylq/FSS/internal/scrapers/paysite"
 	_ "github.com/Wasylq/FSS/internal/scrapers/peatv"
+	_ "github.com/Wasylq/FSS/internal/scrapers/penthousegold"
 	_ "github.com/Wasylq/FSS/internal/scrapers/perfectgirlfriend"
 	_ "github.com/Wasylq/FSS/internal/scrapers/pinupfiles"
 	_ "github.com/Wasylq/FSS/internal/scrapers/pissinghd"
