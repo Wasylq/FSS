@@ -263,7 +263,6 @@ var (
 	detailDescRe  = regexp.MustCompile(`(?s)<h3>Description:</h3>\s*(.*?)\s*</div>`)
 	detailRuntime = regexp.MustCompile(`(?s)<strong>Runtime:</strong>\s*([0-9:]+)`)
 	detailAddedRe = regexp.MustCompile(`(?s)<strong>Added:</strong>\s*([A-Za-z]+ \d{1,2}, \d{4})`)
-	detailScoreRe = regexp.MustCompile(`(?s)<strong>Score:</strong>\s*([0-9.]+)`)
 	detailTagsRe  = regexp.MustCompile(`(?s)<h3>Tags:</h3>\s*<ul class="tags">(.*?)</ul>`)
 	tagLinkRe     = regexp.MustCompile(`<a href="[^"]*">([^<]+)</a>`)
 	tagStripRe    = regexp.MustCompile(`<[^>]+>`)

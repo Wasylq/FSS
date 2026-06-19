@@ -35,15 +35,15 @@ func newTestServer(t *testing.T) *httptest.Server {
 			http.Error(w, "age gate", http.StatusForbidden)
 			return
 		}
-		switch {
-		case r.URL.Path == "/watch-newest-helix-studios-clips-and-scenes.html":
+		switch r.URL.Path {
+		case "/watch-newest-helix-studios-clips-and-scenes.html":
 			if r.URL.Query().Get("page") != "" && r.URL.Query().Get("page") != "1" {
 				_, _ = w.Write(empty)
 				return
 			}
 			_, _ = w.Write(listing)
-		case r.URL.Path == "/1756413/helix-studios-moores-little-whore-streaming-scene-video.html",
-			r.URL.Path == "/1758059/helix-studios-archer-needs-moore-streaming-scene-video.html":
+		case "/1756413/helix-studios-moores-little-whore-streaming-scene-video.html",
+			"/1758059/helix-studios-archer-needs-moore-streaming-scene-video.html":
 			_, _ = w.Write(detail)
 		default:
 			http.NotFound(w, r)
