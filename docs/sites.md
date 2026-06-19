@@ -1,6 +1,6 @@
 # Covered Sites — All Domains
 
-1246 scrapers covering 1332 distinct domains. Auto-generated from the scraper registry by `TestSitesMdInSync` — do not hand-edit; instead update the scraper's `Patterns()` and re-run `go test ./internal/scrapers/all/...`. The `stashbox` scraper is omitted here because its covered hosts are config-driven; see [`scrapers.md`](scrapers.md).
+1251 scrapers covering 1337 distinct domains. Auto-generated from the scraper registry by `TestSitesMdInSync` — do not hand-edit; instead update the scraper's `Patterns()` and re-run `go test ./internal/scrapers/all/...`. The `stashbox` scraper is omitted here because its covered hosts are config-driven; see [`scrapers.md`](scrapers.md).
 
 Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scraper ID(s)** column lists every scraper that claims URLs on that domain — most domains have one entry, but table-driven networks (`adultprime`, `tmw`, `nextdoorstudios`, etc.) host many sub-studios on a single root domain. See [`scrapers.md`](scrapers.md) for what each ID covers.
 
@@ -22,6 +22,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | abigailmac.puba.com | `pubaabigailmac` |
 | aboutgirlslove.com | `tmw-aboutgirlslove` |
 | accidentalgangbang.com | `accidentalgangbang` |
+| activeduty.com | `activeduty` |
 | ad4x.com | `ad4x` |
 | addicted2girls.com | `addicted2girls` |
 | adultdoorway.com | `adultdoorway` |
@@ -75,6 +76,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | apovstory.com | `apovstory` |
 | asaakira.puba.com | `pubaasaakira` |
 | asafucks.com | `pubaasaakira` |
+| asgmax.com | `asgmax` |
 | ashleegraham.puba.com | `pubaashleegraham` |
 | ashleysageellison.com | `ashleysageellison` |
 | asianamericantgirls.com | `asianamericantgirls` |
@@ -225,6 +227,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | cfnmeu.com | `cfnmeu` |
 | cfnmgames.com | `cfnmgames` |
 | cfnmteens.com | `cfnmteens` |
+| chaosmen.com | `chaosmen` |
 | charleechaselive.com | `charleechase` |
 | charleychase.puba.com | `pubacharleychase` |
 | cheatingmommy.com | `nubiles` |
@@ -361,6 +364,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | dirtysarah.com | `dirtysarah` |
 | dirtyscout.com | `bigstr` |
 | disgracethatbitch.com | `disgracethatbitch` |
+| disruptivefilms.com | `disruptivefilms` |
 | dogfartnetwork.com | `dogfartnetwork` |
 | doghousedigital.com | `doghousedigital` |
 | dollsporn.com | `dollsporn` |
@@ -1040,6 +1044,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | smutbuttxxx.com | `smutbuttxxx` |
 | smutmerchants.com | `porngutter` |
 | smutpuppet.com | `porngutter` |
+| sodomysquad.com | `sodomysquad` |
 | sofiemariexxx.com | `sofiemarie` |
 | soloteengirls.net | `tmw-soloteengirls` |
 | somegore.com | `somegore` |

@@ -233,6 +233,19 @@ var sites = []siteConfig{
 	// SiteName empty → no availableOnSite filter → whole asgmax catalog.
 	{"nextdoorstudios", "nextdoorstudios.com", "Next Door Studios", "", "", "", "", ""},
 
+	// Alpha Studio Group — gay studios, each on its own domain bootstrapping
+	// its own Algolia segment key. Standard own-domain Gamma sites: the
+	// /en/videos page yields a segment-scoped apiKey and availableOnSite
+	// (defaulting to SiteID) narrows the index to that brand. asgmax.com is
+	// the network hub; its segment:asgmax key with availableOnSite:asgmax
+	// covers the ASGmax Films originals (the rest of the asgmax network is
+	// the Next Door catalogue already covered above).
+	{"chaosmen", "chaosmen.com", "ChaosMen", "", "", "", "", ""},
+	{"activeduty", "activeduty.com", "Active Duty", "", "", "", "", ""},
+	{"disruptivefilms", "disruptivefilms.com", "Disruptive Films", "", "", "", "", ""},
+	{"sodomysquad", "sodomysquad.com", "Sodomy Squad", "", "", "", "", ""},
+	{"asgmax", "asgmax.com", "ASGmax Films", "asgmax", "", "", "", ""},
+
 	// Playboy TV segment — uses /en/episodes (not /en/videos) and /en/episode/ scene URLs.
 	{"playboytv", "playboytv.com", "Playboy TV", "playboytv", "", "", "/en/episodes", "episode"},
 }

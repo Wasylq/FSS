@@ -119,3 +119,25 @@ func TestLiveWhereTheBoysArent(t *testing.T) {
 func TestLivePlayboyTV(t *testing.T) {
 	testutil.RunLiveScrape(t, newTestScraper(findSite("playboytv")), "https://www.playboytv.com/", 2)
 }
+
+// Alpha Studio Group — own-domain gay studios, each bootstrapping its own
+// Algolia segment key. One smoke per site validates the segment wiring.
+func TestLiveChaosMen(t *testing.T) {
+	testutil.RunLiveScrape(t, newTestScraper(findSite("chaosmen")), "https://www.chaosmen.com/", 2)
+}
+
+func TestLiveActiveDuty(t *testing.T) {
+	testutil.RunLiveScrape(t, newTestScraper(findSite("activeduty")), "https://www.activeduty.com/", 2)
+}
+
+func TestLiveDisruptiveFilms(t *testing.T) {
+	testutil.RunLiveScrape(t, newTestScraper(findSite("disruptivefilms")), "https://www.disruptivefilms.com/", 2)
+}
+
+func TestLiveSodomySquad(t *testing.T) {
+	testutil.RunLiveScrape(t, newTestScraper(findSite("sodomysquad")), "https://www.sodomysquad.com/", 2)
+}
+
+func TestLiveASGmax(t *testing.T) {
+	testutil.RunLiveScrape(t, newTestScraper(findSite("asgmax")), "https://www.asgmax.com/", 2)
+}
