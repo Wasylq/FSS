@@ -11,6 +11,7 @@ import (
 	_ "github.com/Wasylq/FSS/internal/scrapers/africanbucks"
 	_ "github.com/Wasylq/FSS/internal/scrapers/alisonangel"
 	_ "github.com/Wasylq/FSS/internal/scrapers/allover30"
+	_ "github.com/Wasylq/FSS/internal/scrapers/alsangels"
 	_ "github.com/Wasylq/FSS/internal/scrapers/alternadudes"
 	_ "github.com/Wasylq/FSS/internal/scrapers/analacrobats"
 	_ "github.com/Wasylq/FSS/internal/scrapers/analtherapy"
