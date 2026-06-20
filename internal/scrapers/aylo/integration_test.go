@@ -45,3 +45,19 @@ func TestLiveBrazzers(t *testing.T) {
 func TestLiveRealityKings(t *testing.T) {
 	testutil.RunLiveScrape(t, newTestScraper(sites[16]), "https://www.realitykings.com/", 2)
 }
+
+func TestLiveSexyHub(t *testing.T) {
+	for _, id := range []string{"danejones", "lesbea", "fitnessrooms", "massagerooms", "sexyhub"} {
+		id := id
+		t.Run(id, func(t *testing.T) {
+			var cfg siteConfig
+			for _, c := range sites {
+				if c.SiteID == id {
+					cfg = c
+					break
+				}
+			}
+			testutil.RunLiveScrape(t, newTestScraper(cfg), "https://www."+cfg.Domain+"/", 2)
+		})
+	}
+}

@@ -64,6 +64,18 @@ var sites = []siteConfig{
 	{"dancingbear", "dancingbear.com", "Dancing Bear", nil, nil, "scene"},
 	{"sexselector", "sexselector.com", "Sex Selector", nil, nil, "scene"},
 	{"virtualporn", "virtualporn.com", "Virtual Porn", nil, nil, ""},
+
+	// Sexy Hub network (Aylo). Sites with their own working Aylo instance get a
+	// per-brand entry for proper attribution; the sexyhub.com hub covers the
+	// whole network (incl. Mom XXX, Girlfriends, Kissing HD, Orgasms.XXX,
+	// BDSM.xxx — brands whose standalone domains no longer expose their own
+	// instance token). (Mom XXX's own domain collides with the existing
+	// videoelements "momxxx" scraper, so it is covered via the hub instead.)
+	{"danejones", "danejones.com", "Dane Jones", nil, nil, ""},
+	{"lesbea", "lesbea.com", "Lesbea", nil, nil, ""},
+	{"fitnessrooms", "fitnessrooms.com", "Fitness Rooms", nil, nil, ""},
+	{"massagerooms", "massagerooms.com", "Massage Rooms", nil, nil, ""},
+	{"sexyhub", "sexyhub.com", "Sexy Hub", nil, nil, ""},
 }
 
 type siteScraper struct {
