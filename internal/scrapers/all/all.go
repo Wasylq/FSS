@@ -54,6 +54,7 @@ import (
 	_ "github.com/Wasylq/FSS/internal/scrapers/eighteenvideoz"
 	_ "github.com/Wasylq/FSS/internal/scrapers/empirestore"
 	_ "github.com/Wasylq/FSS/internal/scrapers/erosarts"
+	_ "github.com/Wasylq/FSS/internal/scrapers/exploitedx"
 	_ "github.com/Wasylq/FSS/internal/scrapers/extrememoviepass"
 	_ "github.com/Wasylq/FSS/internal/scrapers/fakings"
 	_ "github.com/Wasylq/FSS/internal/scrapers/faleno"

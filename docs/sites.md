@@ -1,6 +1,6 @@
 # Covered Sites — All Domains
 
-1305 scrapers covering 1393 distinct domains. Auto-generated from the scraper registry by `TestSitesMdInSync` — do not hand-edit; instead update the scraper's `Patterns()` and re-run `go test ./internal/scrapers/all/...`. The `stashbox` scraper is omitted here because its covered hosts are config-driven; see [`scrapers.md`](scrapers.md).
+1310 scrapers covering 1398 distinct domains. Auto-generated from the scraper registry by `TestSitesMdInSync` — do not hand-edit; instead update the scraper's `Patterns()` and re-run `go test ./internal/scrapers/all/...`. The `stashbox` scraper is omitted here because its covered hosts are config-driven; see [`scrapers.md`](scrapers.md).
 
 Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scraper ID(s)** column lists every scraper that claims URLs on that domain — most domains have one entry, but table-driven networks (`adultprime`, `tmw`, `nextdoorstudios`, etc.) host many sub-studios on a single root domain. See [`scrapers.md`](scrapers.md) for what each ID covers.
 
@@ -105,6 +105,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | babes.com | `babes` |
 | babevr.com | `babevr` |
 | backalleytoonzonline.com | `backalleytoonz` |
+| backroomcastingcouch.com | `backroomcastingcouch` |
 | badbrotherpov.com | `badbrotherpov` |
 | baddaddypov.com | `baddaddypov` |
 | badfamilypov.com | `badfamilypov` |
@@ -119,6 +120,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | bangmyteenass.com | `bangmyteenass` |
 | barebackstudios.com | `barebackstudios` |
 | bbcpie.com | `bbcpie` |
+| bbcsurprise.com | `bbcsurprise` |
 | bbctitans.com | `bbctitans` |
 | bbwdreams.com | `bbwdreams` |
 | bbwland.com | `bbwland` |
@@ -411,8 +413,10 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | eurocreme.com | `eurocreme` |
 | evanottyvideos.com | `evanottyvideos` |
 | evilangel.com | `evilangel` |
+| excogigirls.com | `excogigirls` |
 | exgfbox.com | `tmw-exgfbox` |
 | exotic4k.com | `exotic4k` |
+| exploitedcollegegirls.com | `exploitedcollegegirls` |
 | exposedlatinas.com | `exposedlatinas` |
 | extremestreets.com | `extremestreets` |
 | exxxtrasmall.com | `exxxtrasmall` |
@@ -594,6 +598,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | hotcrazymess.com | `nubiles` |
 | hotgold.xxx | `gasm` |
 | hothouse.com | `hothouse` |
+| hotmilfsfuck.com | `hotmilfsfuck` |
 | hotpantyfun.com | `hotpantyfun` |
 | hotsexyplumpers.com | `hotsexyplumpers` |
 | hotwifexxx.com | `hotwifexxx` |
