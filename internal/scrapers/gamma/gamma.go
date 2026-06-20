@@ -262,6 +262,17 @@ var sites = []siteConfig{
 	{"hothouse", "hothouse.com", "Hot House Entertainment", "", "", "", "", ""},
 	{"ragingstallion", "ragingstallion.com", "Raging Stallion", "", "", "", "", ""},
 
+	// 21 Sextury — own-domain Gamma sites on the shared segment:21sextury key.
+	// The 21sextury.com hub is scoped to availableOnSite:21sextury so it does
+	// not re-scrape the whole (very large) shared segment.
+	{"21sextury", "21sextury.com", "21 Sextury", "21sextury", "", "", "", ""},
+	{"assholefever", "assholefever.com", "Asshole Fever", "", "", "", "", ""},
+	{"dpfanatics", "dpfanatics.com", "DP Fanatics", "", "", "", "", ""},
+	{"footsiebabes", "footsiebabes.com", "Footsie Babes", "", "", "", "", ""},
+	{"lezcuties", "lezcuties.com", "Lez Cuties", "", "", "", "", ""},
+	{"analteenangels", "analteenangels.com", "Anal Teen Angels", "", "", "", "", ""},
+	{"nudefightclub", "nudefightclub.com", "Nude Fight Club", "", "", "", "", ""},
+
 	// Playboy TV segment — uses /en/episodes (not /en/videos) and /en/episode/ scene URLs.
 	{"playboytv", "playboytv.com", "Playboy TV", "playboytv", "", "", "/en/episodes", "episode"},
 }

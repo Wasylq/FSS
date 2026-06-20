@@ -179,3 +179,32 @@ func TestLiveHotHouse(t *testing.T) {
 func TestLiveRagingStallion(t *testing.T) {
 	testutil.RunLiveScrape(t, newTestScraper(findSite("ragingstallion")), "https://www.ragingstallion.com/", 2)
 }
+
+// 21 Sextury — shared segment:21sextury key, per-brand availableOnSite filter.
+func TestLive21Sextury(t *testing.T) {
+	testutil.RunLiveScrape(t, newTestScraper(findSite("21sextury")), "https://www.21sextury.com/", 2)
+}
+
+func TestLiveAssholeFever(t *testing.T) {
+	testutil.RunLiveScrape(t, newTestScraper(findSite("assholefever")), "https://www.assholefever.com/", 2)
+}
+
+func TestLiveDPFanatics(t *testing.T) {
+	testutil.RunLiveScrape(t, newTestScraper(findSite("dpfanatics")), "https://www.dpfanatics.com/", 2)
+}
+
+func TestLiveFootsieBabes(t *testing.T) {
+	testutil.RunLiveScrape(t, newTestScraper(findSite("footsiebabes")), "https://www.footsiebabes.com/", 2)
+}
+
+func TestLiveLezCuties(t *testing.T) {
+	testutil.RunLiveScrape(t, newTestScraper(findSite("lezcuties")), "https://www.lezcuties.com/", 2)
+}
+
+func TestLiveAnalTeenAngels(t *testing.T) {
+	testutil.RunLiveScrape(t, newTestScraper(findSite("analteenangels")), "https://www.analteenangels.com/", 2)
+}
+
+func TestLiveNudeFightClub(t *testing.T) {
+	testutil.RunLiveScrape(t, newTestScraper(findSite("nudefightclub")), "https://www.nudefightclub.com/", 2)
+}
