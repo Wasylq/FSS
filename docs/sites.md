@@ -1,6 +1,6 @@
 # Covered Sites — All Domains
 
-1300 scrapers covering 1388 distinct domains. Auto-generated from the scraper registry by `TestSitesMdInSync` — do not hand-edit; instead update the scraper's `Patterns()` and re-run `go test ./internal/scrapers/all/...`. The `stashbox` scraper is omitted here because its covered hosts are config-driven; see [`scrapers.md`](scrapers.md).
+1305 scrapers covering 1393 distinct domains. Auto-generated from the scraper registry by `TestSitesMdInSync` — do not hand-edit; instead update the scraper's `Patterns()` and re-run `go test ./internal/scrapers/all/...`. The `stashbox` scraper is omitted here because its covered hosts are config-driven; see [`scrapers.md`](scrapers.md).
 
 Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scraper ID(s)** column lists every scraper that claims URLs on that domain — most domains have one entry, but table-driven networks (`adultprime`, `tmw`, `nextdoorstudios`, etc.) host many sub-studios on a single root domain. See [`scrapers.md`](scrapers.md) for what each ID covers.
 
@@ -10,6 +10,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | 18eighteen.com | `18eighteen` |
 | 18firstsex.com | `tmw-18firstsex` |
 | 18videoz.com | `18videoz` |
+| 18vr.com | `18vr` |
 | 1passforallsites.com | `1passforallsites` |
 | 21sextury.com | `21sextury` |
 | 2poles1hole.com | `2poles1hole` |
@@ -102,12 +103,14 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | aziani.com | `aziani` |
 | babearchives.com | `babearchives` |
 | babes.com | `babes` |
+| babevr.com | `babevr` |
 | backalleytoonzonline.com | `backalleytoonz` |
 | badbrotherpov.com | `badbrotherpov` |
 | baddaddypov.com | `baddaddypov` |
 | badfamilypov.com | `badfamilypov` |
 | badmilfs.com | `badmilfs` |
 | badmommypov.com | `badmommypov` |
+| badoinkvr.com | `badoinkvr` |
 | badteenspunished.com | `nubiles` |
 | bang.com | `bang` |
 | bangbangboys.com | `bangbangboys` |
@@ -998,6 +1001,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | realitysis.com | `nubiles` |
 | realsensual.com | `realsensual` |
 | realtgirls.com | `realtgirls` |
+| realvr.com | `realvr` |
 | redneckjohn.com | `redneckjohn` |
 | reneerossvideos.com | `reneerossvideos` |
 | richardmannevents.com | `richardmannevents` |
@@ -1295,6 +1299,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | vouyermedia.com | `vouyermedia` |
 | voyeurpapy.com | `voyeurpapy` |
 | vrallure.com | `vrallure` |
+| vrcosplayx.com | `vrcosplayx` |
 | vrintimacy.com | `vrintimacy` |
 | vrporn.com | `vrporn` |
 | vurigvlaanderen.be | `vurigvlaanderen` |

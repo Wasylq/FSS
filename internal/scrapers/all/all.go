@@ -22,6 +22,7 @@ import (
 	_ "github.com/Wasylq/FSS/internal/scrapers/auntjudys"
 	_ "github.com/Wasylq/FSS/internal/scrapers/aylo"
 	_ "github.com/Wasylq/FSS/internal/scrapers/aziani"
+	_ "github.com/Wasylq/FSS/internal/scrapers/badoink"
 	_ "github.com/Wasylq/FSS/internal/scrapers/bamvisions"
 	_ "github.com/Wasylq/FSS/internal/scrapers/bang"
 	_ "github.com/Wasylq/FSS/internal/scrapers/bangbros"
