@@ -1,6 +1,6 @@
 # Covered Sites — All Domains
 
-1315 scrapers covering 1403 distinct domains. Auto-generated from the scraper registry by `TestSitesMdInSync` — do not hand-edit; instead update the scraper's `Patterns()` and re-run `go test ./internal/scrapers/all/...`. The `stashbox` scraper is omitted here because its covered hosts are config-driven; see [`scrapers.md`](scrapers.md).
+1319 scrapers covering 1407 distinct domains. Auto-generated from the scraper registry by `TestSitesMdInSync` — do not hand-edit; instead update the scraper's `Patterns()` and re-run `go test ./internal/scrapers/all/...`. The `stashbox` scraper is omitted here because its covered hosts are config-driven; see [`scrapers.md`](scrapers.md).
 
 Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scraper ID(s)** column lists every scraper that claims URLs on that domain — most domains have one entry, but table-driven networks (`adultprime`, `tmw`, `nextdoorstudios`, etc.) host many sub-studios on a single root domain. See [`scrapers.md`](scrapers.md) for what each ID covers.
 
@@ -151,6 +151,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | bigtitterrynova.com | `bigtitterrynova` |
 | bigtittymaserati.com | `bigtittymaserati` |
 | bigtitvenera.com | `bigtitvenera` |
+| biguysfuck.com | `biguysfuck` |
 | biphoria.com | `biphoria` |
 | black-tgirls.com | `blacktgirls` |
 | blackandbig.com | `porngutter` |
@@ -505,6 +506,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | gaycest.com | `gaycest` |
 | gayfrenchkiss.com | `gayfrenchkiss` |
 | gayfrenchkiss.fr | `gayfrenchkiss` |
+| gayhoopla.com | `gayhoopla` |
 | gayrevenge.com | `realitydudes` |
 | genlez.com | `porngutter` |
 | getupclose.com | `getupclose` |
@@ -597,6 +599,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | horrorporn.com | `horrorporn` |
 | hotcrazymess.com | `nubiles` |
 | hotgold.xxx | `gasm` |
+| hotguysfuck.com | `hotguysfuck` |
 | hothouse.com | `hothouse` |
 | hotmilfsfuck.com | `hotmilfsfuck` |
 | hotpantyfun.com | `hotpantyfun` |
@@ -1140,6 +1143,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | stunning18.com | `stunning18` |
 | subbyhubby.com | `subbyhubby` |
 | submissived.com | `submissived` |
+| sugardaddyporn.com | `sugardaddyporn` |
 | suggabunny.com | `porngutter` |
 | sukmydick.com | `sukmydick` |
 | summerbrielle.puba.com | `pubasummerbrielle` |
