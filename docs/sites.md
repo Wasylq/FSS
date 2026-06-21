@@ -1,6 +1,6 @@
 # Covered Sites — All Domains
 
-1319 scrapers covering 1407 distinct domains. Auto-generated from the scraper registry by `TestSitesMdInSync` — do not hand-edit; instead update the scraper's `Patterns()` and re-run `go test ./internal/scrapers/all/...`. The `stashbox` scraper is omitted here because its covered hosts are config-driven; see [`scrapers.md`](scrapers.md).
+1324 scrapers covering 1412 distinct domains. Auto-generated from the scraper registry by `TestSitesMdInSync` — do not hand-edit; instead update the scraper's `Patterns()` and re-run `go test ./internal/scrapers/all/...`. The `stashbox` scraper is omitted here because its covered hosts are config-driven; see [`scrapers.md`](scrapers.md).
 
 Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scraper ID(s)** column lists every scraper that claims URLs on that domain — most domains have one entry, but table-driven networks (`adultprime`, `tmw`, `nextdoorstudios`, etc.) host many sub-studios on a single root domain. See [`scrapers.md`](scrapers.md) for what each ID covers.
 
@@ -714,6 +714,10 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | lollyink.puba.com | `pubalollyink` |
 | londonkeyes.puba.com | `pubalondonkeyes` |
 | lovehairy.com | `lovehairy` |
+| loveherboobs.com | `loveherboobs` |
+| loveherbutt.com | `loveherbutt` |
+| loveherfeet.com | `loveherfeet` |
+| loveherfilms.com | `loveherfilms` |
 | lowartfilms.com | `lowartfilms` |
 | loyalfans.com | `loyalfans` |
 | lubed.com | `lubed` |
@@ -1073,6 +1077,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | sharizelvideos.com | `sharizelvideos` |
 | shehergirls.com | `shehergirls` |
 | sheisnerdy.com | `sheisnerdy` |
+| shelovesblack.com | `shelovesblack` |
 | shesbreedingmaterial.com | `nubiles` |
 | shesnew.com | `shesnew` |
 | shewillcheat.com | `metro` |

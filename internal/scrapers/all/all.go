@@ -107,6 +107,7 @@ import (
 	_ "github.com/Wasylq/FSS/internal/scrapers/kocompany"
 	_ "github.com/Wasylq/FSS/internal/scrapers/ladyfyre"
 	_ "github.com/Wasylq/FSS/internal/scrapers/legsemporium"
+	_ "github.com/Wasylq/FSS/internal/scrapers/loveherfilms"
 	_ "github.com/Wasylq/FSS/internal/scrapers/loyalfans"
 	_ "github.com/Wasylq/FSS/internal/scrapers/lucasentertainment"
 	_ "github.com/Wasylq/FSS/internal/scrapers/lustery"
