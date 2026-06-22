@@ -1,6 +1,6 @@
 # Covered Sites — All Domains
 
-1331 scrapers covering 1419 distinct domains. Auto-generated from the scraper registry by `TestSitesMdInSync` — do not hand-edit; instead update the scraper's `Patterns()` and re-run `go test ./internal/scrapers/all/...`. The `stashbox` scraper is omitted here because its covered hosts are config-driven; see [`scrapers.md`](scrapers.md).
+1335 scrapers covering 1423 distinct domains. Auto-generated from the scraper registry by `TestSitesMdInSync` — do not hand-edit; instead update the scraper's `Patterns()` and re-run `go test ./internal/scrapers/all/...`. The `stashbox` scraper is omitted here because its covered hosts are config-driven; see [`scrapers.md`](scrapers.md).
 
 Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scraper ID(s)** column lists every scraper that claims URLs on that domain — most domains have one entry, but table-driven networks (`adultprime`, `tmw`, `nextdoorstudios`, etc.) host many sub-studios on a single root domain. See [`scrapers.md`](scrapers.md) for what each ID covers.
 
@@ -464,6 +464,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | fetishnetwork.com | `fetishnetwork` |
 | filthyandfisting.com | `gasm` |
 | filthykings.com | `filthykings` |
+| finishesthejob.com | `finishesthejob` |
 | firstanaldate.com | `firstanaldate` |
 | firstbgg.com | `tmw-firstbgg` |
 | firstclasspov.com | `firstclasspov` |
@@ -737,6 +738,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | majorhotwife.com | `majorhotwife` |
 | makehimcuckold.com | `makehimcuckold` |
 | malefeet4u.com | `malefeet4u` |
+| manojob.com | `manojob` |
 | manpuppy.com | `manpuppy` |
 | manuelferrara.com | `manuelferrara` |
 | manyvids.com | `manyvids` |
@@ -823,6 +825,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | mrluckypov.com | `mrluckypov` |
 | mrluckyraw.com | `mrluckyraw` |
 | mrluckyvip.com | `mrluckyvip` |
+| mrpov.com | `mrpov` |
 | mugurporn.com | `mugurporn` |
 | mybabysittersclub.com | `mybabysittersclub` |
 | mybadmilfs.com | `mybadmilfs` |
@@ -1218,6 +1221,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | theassfactory.com | `theassfactory` |
 | theavaaddams.com | `theavaaddams` |
 | thebrats.com | `thebrats` |
+| thedicksuckers.com | `thedicksuckers` |
 | thegayoffice.com | `men` |
 | thehandjobsite.com | `thehandjobsite` |
 | thejerkygirls.com | `thejerkygirls` |
