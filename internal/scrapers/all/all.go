@@ -100,6 +100,7 @@ import (
 	_ "github.com/Wasylq/FSS/internal/scrapers/julesjordan"
 	_ "github.com/Wasylq/FSS/internal/scrapers/karups"
 	_ "github.com/Wasylq/FSS/internal/scrapers/kbproductions"
+	_ "github.com/Wasylq/FSS/internal/scrapers/kellymadison"
 	_ "github.com/Wasylq/FSS/internal/scrapers/kingnoirexxx"
 	_ "github.com/Wasylq/FSS/internal/scrapers/kink"
 	_ "github.com/Wasylq/FSS/internal/scrapers/kinkacademy"

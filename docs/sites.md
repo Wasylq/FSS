@@ -1,6 +1,6 @@
 # Covered Sites — All Domains
 
-1324 scrapers covering 1412 distinct domains. Auto-generated from the scraper registry by `TestSitesMdInSync` — do not hand-edit; instead update the scraper's `Patterns()` and re-run `go test ./internal/scrapers/all/...`. The `stashbox` scraper is omitted here because its covered hosts are config-driven; see [`scrapers.md`](scrapers.md).
+1331 scrapers covering 1419 distinct domains. Auto-generated from the scraper registry by `TestSitesMdInSync` — do not hand-edit; instead update the scraper's `Patterns()` and re-run `go test ./internal/scrapers/all/...`. The `stashbox` scraper is omitted here because its covered hosts are config-driven; see [`scrapers.md`](scrapers.md).
 
 Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scraper ID(s)** column lists every scraper that claims URLs on that domain — most domains have one entry, but table-driven networks (`adultprime`, `tmw`, `nextdoorstudios`, etc.) host many sub-studios on a single root domain. See [`scrapers.md`](scrapers.md) for what each ID covers.
 
@@ -18,8 +18,12 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | 3wayfuck.com | `porngutter` |
 | 40somethingmag.com | `40somethingmag` |
 | 50plusmilfs.com | `50plusmilfs` |
+| 5kporn.com | `5kporn` |
+| 5kteens.com | `5kteens` |
 | 60plusmilfs.com | `60plusmilfs` |
 | 65inchhugeasses.com | `65inchhugeasses` |
+| 8kmilfs.com | `8kmilfs` |
+| 8kteens.com | `8kteens` |
 | 8teenboy.com | `8teenboy` |
 | abbiemaley.com | `abbiemaley` |
 | abigailmac.puba.com | `pubaabigailmac` |
@@ -655,6 +659,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | karupsow.com | `karupsow` |
 | karupspc.com | `karupspc` |
 | katerina-hartlova.com | `katerinahartlova` |
+| kellymadison.com | `kellymadison` |
 | kendallkarson.puba.com | `pubakendallkarson` |
 | kendracole.puba.com | `pubakendracole` |
 | kikidaire.puba.com | `pubakikidaire` |
@@ -949,6 +954,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | porn-uk.com | `porngutter` |
 | pornbox.com | `pornbox` |
 | porncz.com | `porncz` |
+| pornfidelity.com | `pornfidelity` |
 | pornforce.com | `pornforce` |
 | porngoespro.com | `porngoespro` |
 | porngutter.com | `porngutter` |
@@ -1178,6 +1184,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | teencoreclub.com | `teencoreclub` |
 | teencurves.com | `teencurves` |
 | teenerotica.xxx | `porngutter` |
+| teenfidelity.com | `teenfidelity` |
 | teenmegaworld.net | `tmw-18firstsex`, `tmw-aboutgirlslove`, `tmw-anal-angels` (+32 more) |
 | teenpies.com | `teenpies` |
 | teens3some.com | `tmw-teens3some` |
