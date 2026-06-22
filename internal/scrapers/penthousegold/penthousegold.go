@@ -66,8 +66,11 @@ func (s *Scraper) ListScenes(ctx context.Context, studioURL string, opts scraper
 var (
 	// sceneLinkRe matches a public scene detail link (/scenes/{slug}_vids.html)
 	// in either the RSS feed or the homepage HTML. Gallery/extra links use the
-	// _highres.html suffix and are intentionally excluded.
-	sceneLinkRe = regexp.MustCompile(`https?://(?:www\.)?penthousegold\.com/scenes/([A-Za-z0-9][A-Za-z0-9-]*)_vids\.html`)
+	// _highres.html suffix and are intentionally excluded. The leading
+	// delimiter alternation anchors the host to a boundary (start, whitespace,
+	// quote, paren, or angle bracket — the latter covers <loc> in the sitemap)
+	// so the URL cannot be embedded in the path/query of an arbitrary host.
+	sceneLinkRe = regexp.MustCompile(`(?:^|[\s"'(<>])https?://(?:www\.)?penthousegold\.com/scenes/([A-Za-z0-9][A-Za-z0-9-]*)_vids\.html`)
 
 	// relSceneLinkRe matches the same link in relative form (homepage cards).
 	relSceneLinkRe = regexp.MustCompile(`(?:^|["'(])/scenes/([A-Za-z0-9][A-Za-z0-9-]*)_vids\.html`)
