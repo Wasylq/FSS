@@ -48,3 +48,7 @@ func TestLiveHHHGroup(t *testing.T) {
 func TestLiveIdeaPocket(t *testing.T) {
 	testutil.RunLiveScrape(t, newTestScraper(findSite("ideapocket")), "https://ideapocket.com/works/list/release", 2)
 }
+
+func TestLiveHonnaka(t *testing.T) {
+	testutil.RunLiveScrape(t, newTestScraper(findSite("honnaka")), "https://honnaka.jp/works/list/genre/104", 2)
+}

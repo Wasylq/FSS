@@ -20,6 +20,7 @@ var sites = []siteConfig{
 	{"dasdas", "dasdas.jp", "DAS!"},
 	{"fitch", "fitch-av.com", "Fitch"},
 	{"hhhgroup", "hhh-av.com", "HHH Group"},
+	{"honnaka", "honnaka.jp", "Honnaka"},
 	{"ideapocket", "ideapocket.com", "Idea Pocket"},
 	{"madonna", "madonna-av.com", "Madonna"},
 	{"moodyz", "moodyz.com", "MOODYZ"},
