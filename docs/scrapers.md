@@ -40,11 +40,13 @@
 | [Cock 4 Stepmom](https://www.cock4stepmom.com) | `cock4stepmom.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
 | [Codi Vore XXX](https://www.codivorexxx.com) | `codivorexxx.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
 | [Creampie For Granny](https://www.creampieforgranny.com) | `creampieforgranny.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
+| [Cum Countdown](https://www.cumcountdown.com) | `cumcountdown.com`, `cumcountdown.com/main.html` | Reality Studio (clips.js) | No | Static `/js/clips.js` catalog, performers + fetishes, MM/DD/YY dates, uses `realitystudioutil` |
 | [Daylene Rio](https://www.daylenerio.com) | `daylenerio.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
 | [Desirae's World](https://www.desiraesworld.com) | `desiraesworld.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
 | [Ebony Thots](https://www.ebonythots.com) | `ebonythots.com`, `ebonythots.com/black-porn-stars/{name}/{id}` | Score Group | No | Score Group, table-driven `scoregroup` package |
 | [Eva Notty Videos](https://www.evanottyvideos.com) | `evanottyvideos.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
 | [Feed Her Fuck Her](https://www.feedherfuckher.com) | `feedherfuckher.com`, `feedherfuckher.com/bbw-models/{name}/{id}` | Score Group | No | Score Group, table-driven `scoregroup` package |
+| [Female Worship](https://www.femaleworship.com) | `femaleworship.com`, `femaleworship.com/main.html` | Reality Studio (clips.js) | No | Static `/js/clips.js` catalog (~1025), performers + fetishes, uses `realitystudioutil` |
 | [Flat And Fucked MILFs](https://www.flatandfuckedmilfs.com) | `flatandfuckedmilfs.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
 | [Girl Asylum](https://www.girlasylum.com) | `girlasylum.com`, `girlasylum.com/tag/{slug}` | WordPress (REST API) | No | WP REST `posts` (~966), tags=performers; REST content empty so no description, uses `fotoroutil` |
 | [Granny Gets A Facial](https://www.grannygetsafacial.com) | `grannygetsafacial.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
@@ -64,6 +66,7 @@
 | [Leg Sex](https://www.legsex.com) | `legsex.com`, `legsex.com/foot-models/{name}/{id}` | Score Group | No | Score Group, table-driven `scoregroup` package |
 | [Linsey's World](https://www.linseysworld.com) | `linseysworld.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
 | [Mega Tits Minka](https://www.megatitsminka.com) | `megatitsminka.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
+| [Men Are Slaves](https://www.menareslaves.com) | `menareslaves.com`, `menareslaves.com/main.html` | Reality Studio (clips.js) | No | Static `/js/clips.js` catalog (~2214), titles + performers + fetishes, uses `realitystudioutil` |
 | [Metal Bondage](https://www.metalbondage.com) | `metalbondage.com`, `metalbondage.com/tag/{slug}` | WordPress (REST API) | No | WP REST `posts` (~872), tags=performers, thumb from content/jetpack, uses `fotoroutil` |
 | [Micky Bells](https://www.mickybells.com) | `mickybells.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
 | [MILF Bundle](https://www.milfbundle.com) | `milfbundle.com`, `milfbundle.com/milf-models/{name}/{id}` | Score Group | No | Score Group, table-driven `scoregroup` package |
@@ -91,6 +94,7 @@
 | [Shock Challenge](https://www.shockchallenge.com) | `shockchallenge.com`, `shockchallenge.com/tag/{slug}` | WordPress (REST API) | No | WP REST `posts` (~414), tags=performers, uses `fotoroutil` |
 | [Silver Sluts](https://www.silversluts.com) | `silversluts.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
 | [Stacy Vandenberg Boobs](https://www.stacyvandenbergboobs.com) | `stacyvandenbergboobs.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
+| [Subby Girls](https://www.subbygirls.com) | `subbygirls.com`, `subbygirls.com/main.html` | Reality Studio (clips.js) | No | Static `/js/clips.js` catalog (~922), performers + fetishes, uses `realitystudioutil` |
 | [Sybian1](https://www.sybian1.com) | `sybian1.com`, `sybian1.com/tag/{slug}` | WordPress (REST API) | No | WP REST `posts` (~277), tags=performers, thumb from content, uses `fotoroutil` |
 | [Tawny Peaks](https://www.tawny-peaks.com) | `tawny-peaks.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
 | [Tieable](https://www.tieable.com) | `tieable.com`, `tieable.com/tag/{slug}` | WordPress (REST API) | No | WP REST `posts` (~683), tags=performers, uses `fotoroutil` |
@@ -638,6 +642,7 @@ Scrapers that share a platform use common utility packages to avoid duplication:
 | `sexmexutil` | SexMex Pro CMS (HTML scraping). **Quirk:** CMS returns HTTP 500 with valid HTML on some pages. | `sexmexpro` | 3 sites |
 | `railwayutil` | Railway/Express/MongoDB (single JSON API call) | `railway` | 3 sites |
 | `realspankingsutil` | Real Spankings Network (PHP CMS, base64 URL params, per-site parsing) | `realspankings` | 5 sites |
+| `realitystudioutil` | Reality Studio LLC fetish sites (static `/js/clips.js` catalog, no pagination) | `realitystudio` | 4 sites |
 | `tmwutil` | Teen Mega World (HTML listing + OG meta detail pages, date-sorted pagination, hub mode for redirected domains) | `tmw` | 35 sites |
 | `wankitnowutil` | Wank It Now network (Next.js `_next/data` JSON API, buildId bootstrap) | `wankitnow` | 6 sites |
 | `masutil` | MAS (Mansion Automated System) CMS. HTML listing with `<!-- start_link -->` card markers, `index.php?videos&a={pageID}_{page}` pagination. | `sensationalvideo` | 5 sites |

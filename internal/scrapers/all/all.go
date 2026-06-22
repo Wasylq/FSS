@@ -168,6 +168,7 @@ import (
 	_ "github.com/Wasylq/FSS/internal/scrapers/railway"
 	_ "github.com/Wasylq/FSS/internal/scrapers/rawalphamales"
 	_ "github.com/Wasylq/FSS/internal/scrapers/rawfuckclub"
+	_ "github.com/Wasylq/FSS/internal/scrapers/realitystudio"
 	_ "github.com/Wasylq/FSS/internal/scrapers/realspankings"
 	_ "github.com/Wasylq/FSS/internal/scrapers/rocketinc"
 	_ "github.com/Wasylq/FSS/internal/scrapers/romeromultimedia"

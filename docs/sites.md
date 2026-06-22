@@ -1,6 +1,6 @@
 # Covered Sites — All Domains
 
-1346 scrapers covering 1441 distinct domains. Auto-generated from the scraper registry by `TestSitesMdInSync` — do not hand-edit; instead update the scraper's `Patterns()` and re-run `go test ./internal/scrapers/all/...`. The `stashbox` scraper is omitted here because its covered hosts are config-driven; see [`scrapers.md`](scrapers.md).
+1350 scrapers covering 1445 distinct domains. Auto-generated from the scraper registry by `TestSitesMdInSync` — do not hand-edit; instead update the scraper's `Patterns()` and re-run `go test ./internal/scrapers/all/...`. The `stashbox` scraper is omitted here because its covered hosts are config-driven; see [`scrapers.md`](scrapers.md).
 
 Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scraper ID(s)** column lists every scraper that claims URLs on that domain — most domains have one entry, but table-driven networks (`adultprime`, `tmw`, `nextdoorstudios`, etc.) host many sub-studios on a single root domain. See [`scrapers.md`](scrapers.md) for what each ID covers.
 
@@ -294,6 +294,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | crunchboy.com | `crunchboy` |
 | crystal-eizou.jp | `crystaleizou` |
 | cum4k.com | `cum4k` |
+| cumcountdown.com | `cumcountdown` |
 | cumdumpsterteens.com | `cumdumpsterteens` |
 | cumflation.com | `cumflation` |
 | cumlouder.com | `cumlouder` |
@@ -458,6 +459,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | femaleagent.com | `fakehub` |
 | femalefaketaxi.com | `fakehub` |
 | femalesubmission.com | `femalesubmission` |
+| femaleworship.com | `femaleworship` |
 | femboyish.com | `femboyish` |
 | femdomempire.com | `femdomempire` |
 | femmefight.com | `femmefight` |
@@ -764,6 +766,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | meidenvanholland.nl | `meidenvanholland` |
 | melina-may.com | `melinamay` |
 | men.com | `men` |
+| menareslaves.com | `menareslaves` |
 | menofuk.com | `men` |
 | mercury.diary.to | `mercury` |
 | metalbondage.com | `metalbondage` |
@@ -1163,6 +1166,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | studentsexparties.com | `studentsexparties` |
 | stuffintwats.com | `stuffintwats` |
 | stunning18.com | `stunning18` |
+| subbygirls.com | `subbygirls` |
 | subbyhubby.com | `subbyhubby` |
 | submissived.com | `submissived` |
 | sugardaddyporn.com | `sugardaddyporn` |
