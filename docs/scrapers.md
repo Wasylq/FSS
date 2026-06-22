@@ -400,6 +400,7 @@
 | [First Class POV](https://www.firstclasspov.com) | `firstclasspov.com` | Spizoo CMS | No | Uses `spizooutil` |
 | [Goth Girlfriends](https://www.gothgirlfriends.com) | `gothgirlfriends.com` | Spizoo CMS | No | Uses `spizooutil` |
 | [Goth GirlfriendsVIP](https://www.gothgirlfriendsvip.com) | `gothgirlfriendsvip.com` | Spizoo CMS | No | Uses `spizooutil` |
+| [Interracial Pass](https://www.interracialpass.com) | `interracialpass.com`, `interracialpass.com/t1/categories/movies_{N}_d.html` | Elevated X (NATS) | No | Modern Bootstrap-grid template under `/t1` tour prefix, listing-only parse, date-sorted, ~930 scenes, uses `darkreachmodernutil` |
 | [Intimate Lesbians](https://www.intimatelesbians.com) | `intimatelesbians.com` | Spizoo CMS | No | Uses `spizooutil` |
 | [Mr. LuckyLIFE](https://www.mrluckylife.com) | `mrluckylife.com` | Spizoo CMS | No | Uses `spizooutil` |
 | [Mr. LuckyPOV](https://www.mrluckypov.com) | `mrluckypov.com` | Spizoo CMS | No | Uses `spizooutil` |
