@@ -1,6 +1,6 @@
 # Covered Sites — All Domains
 
-1339 scrapers covering 1427 distinct domains. Auto-generated from the scraper registry by `TestSitesMdInSync` — do not hand-edit; instead update the scraper's `Patterns()` and re-run `go test ./internal/scrapers/all/...`. The `stashbox` scraper is omitted here because its covered hosts are config-driven; see [`scrapers.md`](scrapers.md).
+1346 scrapers covering 1441 distinct domains. Auto-generated from the scraper registry by `TestSitesMdInSync` — do not hand-edit; instead update the scraper's `Patterns()` and re-run `go test ./internal/scrapers/all/...`. The `stashbox` scraper is omitted here because its covered hosts are config-driven; see [`scrapers.md`](scrapers.md).
 
 Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scraper ID(s)** column lists every scraper that claims URLs on that domain — most domains have one entry, but table-driven networks (`adultprime`, `tmw`, `nextdoorstudios`, etc.) host many sub-studios on a single root domain. See [`scrapers.md`](scrapers.md) for what each ID covers.
 
@@ -249,6 +249,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | chaosmen.com | `chaosmen` |
 | charleechaselive.com | `charleechase` |
 | charleychase.puba.com | `pubacharleychase` |
+| chastitybabes.com | `chastitybabes` |
 | cheatingmommy.com | `nubiles` |
 | cheatingsis.com | `nubiles` |
 | cherrypimps.com | `cherrypimps` |
@@ -520,6 +521,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | giannamichaels.puba.com | `pubagiannamichaels` |
 | gilfed.com | `milehigh` |
 | gingerpatch.com | `gingerpatch` |
+| girlasylum.com | `girlasylum` |
 | girlcore.com | `girlcore` |
 | girlcum.com | `girlcum` |
 | girlfolio.com | `girlfolio` |
@@ -614,6 +616,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | hotwifexxx.com | `hotwifexxx` |
 | househumpers.com | `househumpers` |
 | houseofyre.com | `houseofyre` |
+| hucows.com | `hucows` |
 | hugecockbreak.com | `hugecockbreak` |
 | hugecockbreak.comtag | `hugecockbreak` |
 | hugerubberdicks.com | `hugerubberdicks` |
@@ -763,6 +766,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | men.com | `men` |
 | menofuk.com | `men` |
 | mercury.diary.to | `mercury` |
+| metalbondage.com | `metalbondage` |
 | metart.com | `metart` |
 | metartnetwork.com | `metartnetwork` |
 | metartx.com | `metartx` |
@@ -1093,6 +1097,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | shesbreedingmaterial.com | `nubiles` |
 | shesnew.com | `shesnew` |
 | shewillcheat.com | `metro` |
+| shockchallenge.com | `shockchallenge` |
 | shoplyfter.com | `shoplyfter` |
 | shyla.puba.com | `pubashylastylez` |
 | silversluts.com | `silversluts` |
@@ -1170,6 +1175,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | sweetheartvideo.com | `sweetheartvideo` |
 | sweetsinner.com | `sweetsinner` |
 | swnude.com | `swnude` |
+| sybian1.com | `sybian1` |
 | t.porn | `tporn` |
 | taboohandjobs.com | `taboohandjobs` |
 | tabooheat.com | `tabooheat` |
@@ -1245,6 +1251,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | throated.com | `throated` |
 | throatwars.com | `throatwars` |
 | thundercock.com | `naughtyamerica` |
+| tieable.com | `tieable` |
 | tiffany-towers.com | `tiffany-towers` |
 | tiffanybrookesxxx.com | `tiffanybrookesxxx` |
 | tightandteen.com | `private` |
@@ -1377,19 +1384,23 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | www.bringmeaboy.com | `bringmeaboy` |
 | www.bukkakeorgy.comtour | `bukkakeorgy` |
 | www.bulldogpit.com | `bulldogpit` |
+| www.chastitybabes.com | `chastitybabes` |
 | www.coozhound.com | `coozhound` |
 | www.daddyontwink.com | `daddyontwink` |
 | www.flexidolls.comtour | `flexidolls` |
 | www.footfetishaffiliates.com | `footfetishaffiliates` |
 | www.footfetishcardates.com | `footfetishcardates` |
 | www.fuckthosemoms.comtour | `fuckthosemoms` |
+| www.girlasylum.com | `girlasylum` |
 | www.goddessbrianna.net | `goddessbrianna` |
 | www.goddessfootdomination.com | `goddessfootdomination` |
 | www.grannyguide.comtour | `grannyguide` |
 | www.hairyandraw.com | `hairyandraw` |
 | www.hardbritlads.com | `hardbritlads` |
+| www.hucows.com | `hucows` |
 | www.hungarianhoneys.com | `hungarianhoneys` |
 | www.jerktomyfeet.com | `jerktomyfeet` |
+| www.metalbondage.com | `metalbondage` |
 | www.mountainfuckfest.comtour | `mountainfuckfest` |
 | www.msnympho.com | `msnympho` |
 | www.mybangvan.comtour | `mybangvan` |
@@ -1401,10 +1412,13 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | www.scandalonstage.comtour | `scandalonstage` |
 | www.sexflexvideo.comtour | `sexflexvideo` |
 | www.sexycuckold.comtour | `sexycuckold` |
+| www.shockchallenge.com | `shockchallenge` |
 | www.slipperymassage.comtour | `slipperymassage` |
 | www.smutbuttxxx.comtour | `smutbuttxxx` |
 | www.southernstrokes.com | `southernstrokes` |
 | www.spandexporn.comtour | `spandexporn` |
+| www.sybian1.com | `sybian1` |
+| www.tieable.com | `tieable` |
 | www.touchthatboy.com | `touchthatboy` |
 | www.twinksinshorts.com | `twinksinshorts` |
 | www.urbanamateurs.net | `urbanamateurs` |

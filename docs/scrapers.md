@@ -33,6 +33,7 @@
 | [Busty Lezzies](https://www.bustylezzies.com) | `bustylezzies.com`, `bustylezzies.com/big-tit-models/{name}/{id}` | Score Group | No | Score Group, table-driven `scoregroup` package |
 | [Busty Merilyn](https://www.bustymerilyn.com) | `bustymerilyn.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
 | [Busty Old Sluts](https://www.bustyoldsluts.com) | `bustyoldsluts.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
+| [Chastity Babes](https://www.chastitybabes.com) | `chastitybabes.com`, `chastitybabes.com/tag/{slug}` | WordPress (REST API) | No | WP REST `posts` (~1263), tags=performers, categories, no duration, uses `fotoroutil` |
 | [Chicks On Black Dicks](https://www.chicksonblackdicks.com) | `chicksonblackdicks.com`, `chicksonblackdicks.com/interracial-porn-stars/{name}/{id}` | Score Group | No | Score Group, table-driven `scoregroup` package |
 | [Chloe's World](https://www.chloesworld.com) | `chloesworld.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
 | [Christy Marks](https://www.christymarks.com) | `christymarks.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
@@ -45,12 +46,14 @@
 | [Eva Notty Videos](https://www.evanottyvideos.com) | `evanottyvideos.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
 | [Feed Her Fuck Her](https://www.feedherfuckher.com) | `feedherfuckher.com`, `feedherfuckher.com/bbw-models/{name}/{id}` | Score Group | No | Score Group, table-driven `scoregroup` package |
 | [Flat And Fucked MILFs](https://www.flatandfuckedmilfs.com) | `flatandfuckedmilfs.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
+| [Girl Asylum](https://www.girlasylum.com) | `girlasylum.com`, `girlasylum.com/tag/{slug}` | WordPress (REST API) | No | WP REST `posts` (~966), tags=performers; REST content empty so no description, uses `fotoroutil` |
 | [Granny Gets A Facial](https://www.grannygetsafacial.com) | `grannygetsafacial.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
 | [Granny Loves BBC](https://www.grannylovesbbc.com) | `grannylovesbbc.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
 | [Granny Loves Young Cock](https://www.grannylovesyoungcock.com) | `grannylovesyoungcock.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
 | [Hairy Coochies](https://www.hairycoochies.com) | `hairycoochies.com`, `hairycoochies.com/hirsute-girls/{name}/{id}` | Score Group | No | Score Group, table-driven `scoregroup` package |
 | [Home Alone MILFs](https://www.homealonemilfs.com) | `homealonemilfs.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
 | [Horny Asian MILFs](https://www.hornyasianmilfs.com) | `hornyasianmilfs.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
+| [HuCows](https://www.hucows.com) | `hucows.com`, `hucows.com/tag/{slug}` | WordPress (REST API) | No | WP REST `posts` (~592), tags=performers, categories, description, uses `fotoroutil` |
 | [I Boned Your Mom](https://www.ibonedyourmom.com) | `ibonedyourmom.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
 | [I Fucked The Boss](https://www.ifuckedtheboss.com) | `ifuckedtheboss.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
 | [Joana Bliss](https://www.joanabliss.com) | `joanabliss.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
@@ -61,6 +64,7 @@
 | [Leg Sex](https://www.legsex.com) | `legsex.com`, `legsex.com/foot-models/{name}/{id}` | Score Group | No | Score Group, table-driven `scoregroup` package |
 | [Linsey's World](https://www.linseysworld.com) | `linseysworld.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
 | [Mega Tits Minka](https://www.megatitsminka.com) | `megatitsminka.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
+| [Metal Bondage](https://www.metalbondage.com) | `metalbondage.com`, `metalbondage.com/tag/{slug}` | WordPress (REST API) | No | WP REST `posts` (~872), tags=performers, thumb from content/jetpack, uses `fotoroutil` |
 | [Micky Bells](https://www.mickybells.com) | `mickybells.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
 | [MILF Bundle](https://www.milfbundle.com) | `milfbundle.com`, `milfbundle.com/milf-models/{name}/{id}` | Score Group | No | Score Group, table-driven `scoregroup` package |
 | [MILF Threesomes](https://www.milfthreesomes.com) | `milfthreesomes.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
@@ -84,9 +88,12 @@
 | [Scoreland 2](https://www.scoreland2.com) | `scoreland2.com`, `scoreland2.com/big-boob-models/{name}/{id}` | Score Group | No | Score Group, table-driven `scoregroup` package |
 | [Score Videos](https://www.scorevideos.com) | `scorevideos.com`, `scorevideos.com/porn-models/{name}/{id}` | Score Group | No | Score Group, table-driven `scoregroup` package |
 | [Sha Rizel Videos](https://www.sharizelvideos.com) | `sharizelvideos.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
+| [Shock Challenge](https://www.shockchallenge.com) | `shockchallenge.com`, `shockchallenge.com/tag/{slug}` | WordPress (REST API) | No | WP REST `posts` (~414), tags=performers, uses `fotoroutil` |
 | [Silver Sluts](https://www.silversluts.com) | `silversluts.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
 | [Stacy Vandenberg Boobs](https://www.stacyvandenbergboobs.com) | `stacyvandenbergboobs.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
+| [Sybian1](https://www.sybian1.com) | `sybian1.com`, `sybian1.com/tag/{slug}` | WordPress (REST API) | No | WP REST `posts` (~277), tags=performers, thumb from content, uses `fotoroutil` |
 | [Tawny Peaks](https://www.tawny-peaks.com) | `tawny-peaks.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
+| [Tieable](https://www.tieable.com) | `tieable.com`, `tieable.com/tag/{slug}` | WordPress (REST API) | No | WP REST `posts` (~683), tags=performers, uses `fotoroutil` |
 | [Tiffany Towers](https://www.tiffany-towers.com) | `tiffany-towers.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
 | [Tits And Tugs](https://www.titsandtugs.com) | `titsandtugs.com`, `titsandtugs.com/big-boob-models/{name}/{id}` | Score Group | No | Score Group, table-driven `scoregroup` package |
 | [TNA Tryouts](https://www.tnatryouts.com) | `tnatryouts.com`, `tnatryouts.com/teen-babes/{name}/{id}` | Score Group | No | Score Group, table-driven `scoregroup` package |
@@ -616,6 +623,7 @@ Scrapers that share a platform use common utility packages to avoid duplication:
 | `cherrypimpsutil` | Cherry Pimps/BLT Innovations (Elevated X CMS, HTML listing) | `cherrypimps` | 2 sites |
 | `gammautil` | Gamma Entertainment (Algolia search API, 9 segments: adulttime, evilangel, evilangelnetwork, dfxtra, openlife, zerotolerancefilms, addicted2girls, biphoria, playboytv) | `gamma` | 94 sites |
 | `flourishutil` | Flourish CMS (NATS platform, HTML listing + detail fetch, YYYY-MM-DD dates, 12/page) | `flourish` | 7 sites |
+| `fotoroutil` | Fotoro network (WordPress REST API, tags=performers, no duration) | `fotoro` | 7 sites |
 | `fycutil` | FYC/PornPros (Nuxt 3 SSR, `__NUXT_DATA__` devalue format, 12/page, model page support) | `fyc` | 20 sites |
 | `groobyutil` | Grooby CMS (HTML listing, NATS platform, `/tour/categories/movies_{page}_d.html` pagination) | `grooby` | 42 sites |
 | `julesjordanutil` | Jules Jordan Network (ElevatedX CMS, 3 template variants: JJ/Classic/Modern) | `julesjordan` | 5 sites |

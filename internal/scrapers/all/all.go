@@ -68,6 +68,7 @@ import (
 	_ "github.com/Wasylq/FSS/internal/scrapers/finishesthejob"
 	_ "github.com/Wasylq/FSS/internal/scrapers/flourish"
 	_ "github.com/Wasylq/FSS/internal/scrapers/flourishuniv"
+	_ "github.com/Wasylq/FSS/internal/scrapers/fotoro"
 	_ "github.com/Wasylq/FSS/internal/scrapers/fpn"
 	_ "github.com/Wasylq/FSS/internal/scrapers/frenchporn"
 	_ "github.com/Wasylq/FSS/internal/scrapers/ftvgirls"
