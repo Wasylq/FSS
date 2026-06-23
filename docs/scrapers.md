@@ -59,9 +59,12 @@
 | [Hairy Coochies](https://www.hairycoochies.com) | `hairycoochies.com`, `hairycoochies.com/hirsute-girls/{name}/{id}` | Score Group | No | Score Group, table-driven `scoregroup` package |
 | [Home Alone MILFs](https://www.homealonemilfs.com) | `homealonemilfs.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
 | [Horny Asian MILFs](https://www.hornyasianmilfs.com) | `hornyasianmilfs.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
+| [Hot and Tatted](https://hotandtatted.com) | `hotandtatted.com`, `hotandtatted.com/categories/movies/{N}/latest/` | povporncash (NATS tour) | No | Listing-only parse, uses `hussieutil` |
 | [HuCows](https://www.hucows.com) | `hucows.com`, `hucows.com/tag/{slug}` | WordPress (REST API) | No | WP REST `posts` (~592), tags=performers, categories, description, uses `fotoroutil` |
+| [Hussie Pass](https://hussiepass.com) | `hussiepass.com`, `hussiepass.com/categories/movies/{N}/latest/` | povporncash (NATS tour) | No | Listing-only parse (title, date, duration, thumb), date-sorted, ~1000 scenes, uses `hussieutil` |
 | [I Boned Your Mom](https://www.ibonedyourmom.com) | `ibonedyourmom.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
 | [I Fucked The Boss](https://www.ifuckedtheboss.com) | `ifuckedtheboss.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
+| [Interracial POVs](https://interracialpovs.com) | `interracialpovs.com`, `interracialpovs.com/categories/movies/{N}/latest/` | povporncash (NATS tour) | No | Listing-only parse, uses `hussieutil` |
 | [Joana Bliss](https://www.joanabliss.com) | `joanabliss.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
 | [Karina Hart](https://www.karinahart.com) | `karinahart.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
 | [Latina Coochies](https://www.latinacoochies.com) | `latinacoochies.com`, `latinacoochies.com/latina-porn-stars/{name}/{id}` | Score Group | No | Score Group, table-driven `scoregroup` package |
@@ -91,6 +94,7 @@
 | [Picking Up Pussy](https://www.pickinguppussy.com) | `pickinguppussy.com`, `pickinguppussy.com/teen-babes/{name}/{id}` | Score Group | No | Score Group, table-driven `scoregroup` package |
 | [Porn Loser](https://www.pornloser.com) | `pornloser.com`, `pornloser.com/amateur-girls/{name}/{id}` | Score Group | No | Score Group, table-driven `scoregroup` package |
 | [Porn Mega Load](https://www.pornmegaload.com) | `pornmegaload.com`, `pornmegaload.com/porn-models/{name}/{id}` | Score Group | No | Score Group, table-driven `scoregroup` package |
+| [POV Pornstars](https://www.povpornstars.com) | `povpornstars.com`, `povpornstars.com/tour/categories/movies/{N}/latest/` | povporncash (NATS tour) | No | `/tour` prefix, listing-only parse, uses `hussieutil` |
 | [Renee Ross Videos](https://www.reneerossvideos.com) | `reneerossvideos.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
 | [Roxi Red](https://www.roxired.com) | `roxired.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
 | [SaRenna's World](https://www.sarennasworld.com) | `sarennasworld.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
@@ -654,6 +658,7 @@ Scrapers that share a platform use common utility packages to avoid duplication:
 | `railwayutil` | Railway/Express/MongoDB (single JSON API call) | `railway` | 3 sites |
 | `realspankingsutil` | Real Spankings Network (PHP CMS, base64 URL params, per-site parsing) | `realspankings` | 5 sites |
 | `bronetworkutil` | Pinstripe Media Group / Bro Network gay paysites (PHP CMS, listing-only HTML parse) | `bronetwork` | 5 sites |
+| `hussieutil` | Hussie Pass / povporncash NATS tour sites (listing-only HTML parse) | `hussiepass` | 4 sites |
 | `dungeoncorputil` | Dungeon Corp BDSM network (one PHP app keyed by site code, listing-only HTML parse) | `dungeoncorp` | 6 sites |
 | `realitystudioutil` | Reality Studio LLC fetish sites (static `/js/clips.js` catalog, no pagination) | `realitystudio` | 4 sites |
 | `tmwutil` | Teen Mega World (HTML listing + OG meta detail pages, date-sorted pagination, hub mode for redirected domains) | `tmw` | 35 sites |

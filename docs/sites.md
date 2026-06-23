@@ -1,6 +1,6 @@
 # Covered Sites — All Domains
 
-1361 scrapers covering 1454 distinct domains. Auto-generated from the scraper registry by `TestSitesMdInSync` — do not hand-edit; instead update the scraper's `Patterns()` and re-run `go test ./internal/scrapers/all/...`. The `stashbox` scraper is omitted here because its covered hosts are config-driven; see [`scrapers.md`](scrapers.md).
+1365 scrapers covering 1458 distinct domains. Auto-generated from the scraper registry by `TestSitesMdInSync` — do not hand-edit; instead update the scraper's `Patterns()` and re-run `go test ./internal/scrapers/all/...`. The `stashbox` scraper is omitted here because its covered hosts are config-driven; see [`scrapers.md`](scrapers.md).
 
 Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scraper ID(s)** column lists every scraper that claims URLs on that domain — most domains have one entry, but table-driven networks (`adultprime`, `tmw`, `nextdoorstudios`, etc.) host many sub-studios on a single root domain. See [`scrapers.md`](scrapers.md) for what each ID covers.
 
@@ -611,6 +611,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | honnaka.jp | `honnaka` |
 | hornyasianmilfs.com | `hornyasianmilfs` |
 | horrorporn.com | `horrorporn` |
+| hotandtatted.com | `hotandtatted` |
 | hotcrazymess.com | `nubiles` |
 | hotgold.xxx | `gasm` |
 | hotguysfuck.com | `hotguysfuck` |
@@ -626,6 +627,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | hugecockbreak.comtag | `hugecockbreak` |
 | hugerubberdicks.com | `hugerubberdicks` |
 | hungarianhoneys.com | `hungarianhoneys` |
+| hussiepass.com | `hussiepass` |
 | ibonedyourmom.com | `ibonedyourmom` |
 | iconfessfiles.com | `private` |
 | iconmale.com | `iconmale` |
@@ -640,6 +642,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | inkedpov.com | `inkedpov` |
 | innocenthigh.com | `innocenthigh` |
 | interracialpass.com | `interracialpass` |
+| interracialpovs.com | `interracialpovs` |
 | intimatelesbians.com | `intimatelesbians` |
 | ishotmyself.com | `ishotmyself` |
 | isthisreal.com | `isthisreal` |
@@ -992,6 +995,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | povhotel.com | `povhotel` |
 | povlife.com | `povlife` |
 | povmania.com | `povmania` |
+| povpornstars.com | `povpornstars` |
 | povthis.com | `povthis` |
 | powerfetish.com | `powerfetish` |
 | premiumbukkake.com | `premiumbukkake` |
