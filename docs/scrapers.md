@@ -42,13 +42,16 @@
 | [Codi Vore XXX](https://www.codivorexxx.com) | `codivorexxx.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
 | [Creampie For Granny](https://www.creampieforgranny.com) | `creampieforgranny.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
 | [Cum Countdown](https://www.cumcountdown.com) | `cumcountdown.com`, `cumcountdown.com/main.html` | Reality Studio (clips.js) | No | Static `/js/clips.js` catalog, performers + fetishes, MM/DD/YY dates, uses `realitystudioutil` |
+| [Cumbots](https://cumbots.com) | `cumbots.com`, `dungeoncorp.com/?page=updates&site=CUM` | Dungeon Corp (PHP CMS) | No | Served via dungeoncorp.com site code, listing-only parse (title, performers, date, duration, thumb), uses `dungeoncorputil` |
 | [Daylene Rio](https://www.daylenerio.com) | `daylenerio.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
 | [Desirae's World](https://www.desiraesworld.com) | `desiraesworld.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
+| [DungeonCorp](https://www.dungeoncorp.com) | `dungeoncorp.com`, `dungeoncorp.com/?page=updates&site=DUN` | Dungeon Corp (PHP CMS) | No | Network site code DUN, listing-only parse, uses `dungeoncorputil` |
 | [Ebony Thots](https://www.ebonythots.com) | `ebonythots.com`, `ebonythots.com/black-porn-stars/{name}/{id}` | Score Group | No | Score Group, table-driven `scoregroup` package |
 | [Eva Notty Videos](https://www.evanottyvideos.com) | `evanottyvideos.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
 | [Feed Her Fuck Her](https://www.feedherfuckher.com) | `feedherfuckher.com`, `feedherfuckher.com/bbw-models/{name}/{id}` | Score Group | No | Score Group, table-driven `scoregroup` package |
 | [Female Worship](https://www.femaleworship.com) | `femaleworship.com`, `femaleworship.com/main.html` | Reality Studio (clips.js) | No | Static `/js/clips.js` catalog (~1025), performers + fetishes, uses `realitystudioutil` |
 | [Flat And Fucked MILFs](https://www.flatandfuckedmilfs.com) | `flatandfuckedmilfs.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
+| [Fucking Dungeon](https://www.dungeoncorp.com/?page=sites&site=FUD) | `dungeoncorp.com/?page=updates&site=FUD` | Dungeon Corp (PHP CMS) | No | Network site code FUD, listing-only parse, uses `dungeoncorputil` |
 | [Girl Asylum](https://www.girlasylum.com) | `girlasylum.com`, `girlasylum.com/tag/{slug}` | WordPress (REST API) | No | WP REST `posts` (~966), tags=performers; REST content empty so no description, uses `fotoroutil` |
 | [Granny Gets A Facial](https://www.grannygetsafacial.com) | `grannygetsafacial.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
 | [Granny Loves BBC](https://www.grannylovesbbc.com) | `grannylovesbbc.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
@@ -84,6 +87,7 @@
 | [Naughty Tugs](https://www.naughtytugs.com) | `naughtytugs.com`, `naughtytugs.com/hand-job-models/{name}/{id}` | Score Group | No | Score Group, table-driven `scoregroup` package |
 | [Nicole Peters](https://www.nicolepeters.com) | `nicolepeters.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
 | [Old Horny MILFs](https://www.oldhornymilfs.com) | `oldhornymilfs.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
+| [PerfectSlave](http://www.perfectslave.com) | `perfectslave.com`, `dungeoncorp.com/?page=updates&site=PER` | Dungeon Corp (PHP CMS) | No | Served via dungeoncorp.com site code PER, listing-only parse, uses `dungeoncorputil` |
 | [Picking Up Pussy](https://www.pickinguppussy.com) | `pickinguppussy.com`, `pickinguppussy.com/teen-babes/{name}/{id}` | Score Group | No | Score Group, table-driven `scoregroup` package |
 | [Porn Loser](https://www.pornloser.com) | `pornloser.com`, `pornloser.com/amateur-girls/{name}/{id}` | Score Group | No | Score Group, table-driven `scoregroup` package |
 | [Porn Mega Load](https://www.pornmegaload.com) | `pornmegaload.com`, `pornmegaload.com/porn-models/{name}/{id}` | Score Group | No | Score Group, table-driven `scoregroup` package |
@@ -97,7 +101,9 @@
 | [Sha Rizel Videos](https://www.sharizelvideos.com) | `sharizelvideos.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
 | [Shock Challenge](https://www.shockchallenge.com) | `shockchallenge.com`, `shockchallenge.com/tag/{slug}` | WordPress (REST API) | No | WP REST `posts` (~414), tags=performers, uses `fotoroutil` |
 | [Silver Sluts](https://www.silversluts.com) | `silversluts.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
+| [SocietySM](https://societysm.com) | `societysm.com`, `dungeoncorp.com/?page=updates&site=SSM` | Dungeon Corp (PHP CMS) | No | Served via dungeoncorp.com site code SSM, listing-only parse (title, performers, date, duration, thumb), uses `dungeoncorputil` |
 | [Stacy Vandenberg Boobs](https://www.stacyvandenbergboobs.com) | `stacyvandenbergboobs.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
+| [Strict Restraint](https://www.dungeoncorp.com/?page=updates&site=STR) | `dungeoncorp.com/?page=updates&site=STR` | Dungeon Corp (PHP CMS) | No | Network site code STR, listing-only parse, uses `dungeoncorputil` |
 | [Subby Girls](https://www.subbygirls.com) | `subbygirls.com`, `subbygirls.com/main.html` | Reality Studio (clips.js) | No | Static `/js/clips.js` catalog (~922), performers + fetishes, uses `realitystudioutil` |
 | [Sybian1](https://www.sybian1.com) | `sybian1.com`, `sybian1.com/tag/{slug}` | WordPress (REST API) | No | WP REST `posts` (~277), tags=performers, thumb from content, uses `fotoroutil` |
 | [Tawny Peaks](https://www.tawny-peaks.com) | `tawny-peaks.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
@@ -648,6 +654,7 @@ Scrapers that share a platform use common utility packages to avoid duplication:
 | `railwayutil` | Railway/Express/MongoDB (single JSON API call) | `railway` | 3 sites |
 | `realspankingsutil` | Real Spankings Network (PHP CMS, base64 URL params, per-site parsing) | `realspankings` | 5 sites |
 | `bronetworkutil` | Pinstripe Media Group / Bro Network gay paysites (PHP CMS, listing-only HTML parse) | `bronetwork` | 5 sites |
+| `dungeoncorputil` | Dungeon Corp BDSM network (one PHP app keyed by site code, listing-only HTML parse) | `dungeoncorp` | 6 sites |
 | `realitystudioutil` | Reality Studio LLC fetish sites (static `/js/clips.js` catalog, no pagination) | `realitystudio` | 4 sites |
 | `tmwutil` | Teen Mega World (HTML listing + OG meta detail pages, date-sorted pagination, hub mode for redirected domains) | `tmw` | 35 sites |
 | `wankitnowutil` | Wank It Now network (Next.js `_next/data` JSON API, buildId bootstrap) | `wankitnow` | 6 sites |

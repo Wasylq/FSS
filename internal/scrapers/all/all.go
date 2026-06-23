@@ -53,6 +53,7 @@ import (
 	_ "github.com/Wasylq/FSS/internal/scrapers/deeps"
 	_ "github.com/Wasylq/FSS/internal/scrapers/dirtyflix"
 	_ "github.com/Wasylq/FSS/internal/scrapers/dorcelclub"
+	_ "github.com/Wasylq/FSS/internal/scrapers/dungeoncorp"
 	_ "github.com/Wasylq/FSS/internal/scrapers/eighteenvideoz"
 	_ "github.com/Wasylq/FSS/internal/scrapers/empirestore"
 	_ "github.com/Wasylq/FSS/internal/scrapers/erosarts"

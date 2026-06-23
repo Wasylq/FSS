@@ -1,6 +1,6 @@
 # Covered Sites — All Domains
 
-1355 scrapers covering 1450 distinct domains. Auto-generated from the scraper registry by `TestSitesMdInSync` — do not hand-edit; instead update the scraper's `Patterns()` and re-run `go test ./internal/scrapers/all/...`. The `stashbox` scraper is omitted here because its covered hosts are config-driven; see [`scrapers.md`](scrapers.md).
+1361 scrapers covering 1454 distinct domains. Auto-generated from the scraper registry by `TestSitesMdInSync` — do not hand-edit; instead update the scraper's `Patterns()` and re-run `go test ./internal/scrapers/all/...`. The `stashbox` scraper is omitted here because its covered hosts are config-driven; see [`scrapers.md`](scrapers.md).
 
 Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scraper ID(s)** column lists every scraper that claims URLs on that domain — most domains have one entry, but table-driven networks (`adultprime`, `tmw`, `nextdoorstudios`, etc.) host many sub-studios on a single root domain. See [`scrapers.md`](scrapers.md) for what each ID covers.
 
@@ -295,6 +295,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | crunchboy.com | `crunchboy` |
 | crystal-eizou.jp | `crystaleizou` |
 | cum4k.com | `cum4k` |
+| cumbots.com | `cumbots` |
 | cumcountdown.com | `cumcountdown` |
 | cumdumpsterteens.com | `cumdumpsterteens` |
 | cumflation.com | `cumflation` |
@@ -408,6 +409,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | driverxxx.com | `nubiles` |
 | dt01.co.jp | `waap` |
 | dtfsluts.com | `dtfsluts` |
+| dungeoncorp.com | `cumbots`, `dungeoncorp`, `fuckingdungeon` (+3 more) |
 | dyked.com | `dyked` |
 | ebonycumdumps.com | `ebonycumdumps` |
 | ebonythots.com | `ebonythots` |
@@ -945,6 +947,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | penthousegold.com | `penthousegold` |
 | pepeporn.com | `fakings` |
 | perfectgirlfriend.com | `perfectgirlfriend` |
+| perfectslave.com | `perfectslave` |
 | pervdoctor.com | `pervdoctor` |
 | perversefamily.com | `perversefamily` |
 | perversefamilylive.com | `perversefamilylive` |
@@ -1132,6 +1135,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | smutbuttxxx.com | `smutbuttxxx` |
 | smutmerchants.com | `porngutter` |
 | smutpuppet.com | `porngutter` |
+| societysm.com | `societysm` |
 | sodomysquad.com | `sodomysquad` |
 | sofiemariexxx.com | `sofiemarie` |
 | soloteengirls.net | `tmw-soloteengirls` |
