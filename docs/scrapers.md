@@ -6,6 +6,7 @@
 | [40 Something Mag](https://www.40somethingmag.com) | `40somethingmag.com`, `40somethingmag.com/xxx-mature-models/{name}/{id}` | Score Group | No | Score Group, table-driven `scoregroup` package |
 | [50 Plus MILFs](https://www.50plusmilfs.com) | `50plusmilfs.com`, `50plusmilfs.com/xxx-milf-models/{name}/{id}` | Score Group | No | Score Group, table-driven `scoregroup` package |
 | [60 Plus MILFs](https://www.60plusmilfs.com) | `60plusmilfs.com`, `60plusmilfs.com/xxx-granny-models/{name}/{id}` | Score Group | No | Score Group, table-driven `scoregroup` package |
+| [Amateur Gay POV](https://amateurgaypov.com) | `amateurgaypov.com`, `amateurgaypov.com/categories/videos_{N}_d.html` | Bro Network (PHP CMS) | No | Listing-only parse (title, performers, date, duration, thumb), date-sorted, uses `bronetworkutil` |
 | [Anal QTs](https://www.analqts.com) | `analqts.com`, `analqts.com/anal-porn-stars/{name}/{id}` | Score Group | No | Score Group, table-driven `scoregroup` package |
 | [Ashley Sage Ellison](https://www.ashleysageellison.com) | `ashleysageellison.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
 | [Asian Coochies](https://www.asiancoochies.com) | `asiancoochies.com`, `asiancoochies.com/asian-porn-stars/{name}/{id}` | Score Group | No | Score Group, table-driven `scoregroup` package |
@@ -65,8 +66,11 @@
 | [Leanne Crow Videos](https://www.leannecrowvideos.com) | `leannecrowvideos.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
 | [Leg Sex](https://www.legsex.com) | `legsex.com`, `legsex.com/foot-models/{name}/{id}` | Score Group | No | Score Group, table-driven `scoregroup` package |
 | [Linsey's World](https://www.linseysworld.com) | `linseysworld.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
+| [MASQULIN](https://masqulin.com) | `masqulin.com`, `thebronetwork.com/categories/masqulin_{N}_d.html` | Bro Network (PHP CMS) | No | Catalog lives as a category on thebronetwork.com, listing-only parse, uses `bronetworkutil` |
 | [Mega Tits Minka](https://www.megatitsminka.com) | `megatitsminka.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
 | [Men Are Slaves](https://www.menareslaves.com) | `menareslaves.com`, `menareslaves.com/main.html` | Reality Studio (clips.js) | No | Static `/js/clips.js` catalog (~2214), titles + performers + fetishes, uses `realitystudioutil` |
+| [Men of Montréal](https://www.menofmontreal.com) | `menofmontreal.com`, `thebronetwork.com/categories/men-of-montreal_{N}_d.html` | Bro Network (PHP CMS) | No | Catalog lives as a category on thebronetwork.com, listing-only parse, uses `bronetworkutil` |
+| [MENatPLAY](https://menatplay.com) | `menatplay.com`, `menatplay.com/categories/movies_{N}_d.html`, `menatplay.com/updates/{slug}.html` | Bro Network (PHP CMS) | No | Listing-only parse (title, performers, date, duration, thumb), ~1900 scenes, date-sorted, uses `bronetworkutil` |
 | [Metal Bondage](https://www.metalbondage.com) | `metalbondage.com`, `metalbondage.com/tag/{slug}` | WordPress (REST API) | No | WP REST `posts` (~872), tags=performers, thumb from content/jetpack, uses `fotoroutil` |
 | [Micky Bells](https://www.mickybells.com) | `mickybells.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
 | [MILF Bundle](https://www.milfbundle.com) | `milfbundle.com`, `milfbundle.com/milf-models/{name}/{id}` | Score Group | No | Score Group, table-driven `scoregroup` package |
@@ -97,6 +101,7 @@
 | [Subby Girls](https://www.subbygirls.com) | `subbygirls.com`, `subbygirls.com/main.html` | Reality Studio (clips.js) | No | Static `/js/clips.js` catalog (~922), performers + fetishes, uses `realitystudioutil` |
 | [Sybian1](https://www.sybian1.com) | `sybian1.com`, `sybian1.com/tag/{slug}` | WordPress (REST API) | No | WP REST `posts` (~277), tags=performers, thumb from content, uses `fotoroutil` |
 | [Tawny Peaks](https://www.tawny-peaks.com) | `tawny-peaks.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
+| [The Bro Network](https://thebronetwork.com) | `thebronetwork.com`, `thebronetwork.com/categories/videos_{N}_d.html` | Bro Network (PHP CMS) | No | Network aggregate listing across all sub-brands, listing-only parse, uses `bronetworkutil` |
 | [Tieable](https://www.tieable.com) | `tieable.com`, `tieable.com/tag/{slug}` | WordPress (REST API) | No | WP REST `posts` (~683), tags=performers, uses `fotoroutil` |
 | [Tiffany Towers](https://www.tiffany-towers.com) | `tiffany-towers.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
 | [Tits And Tugs](https://www.titsandtugs.com) | `titsandtugs.com`, `titsandtugs.com/big-boob-models/{name}/{id}` | Score Group | No | Score Group, table-driven `scoregroup` package |
@@ -642,6 +647,7 @@ Scrapers that share a platform use common utility packages to avoid duplication:
 | `sexmexutil` | SexMex Pro CMS (HTML scraping). **Quirk:** CMS returns HTTP 500 with valid HTML on some pages. | `sexmexpro` | 3 sites |
 | `railwayutil` | Railway/Express/MongoDB (single JSON API call) | `railway` | 3 sites |
 | `realspankingsutil` | Real Spankings Network (PHP CMS, base64 URL params, per-site parsing) | `realspankings` | 5 sites |
+| `bronetworkutil` | Pinstripe Media Group / Bro Network gay paysites (PHP CMS, listing-only HTML parse) | `bronetwork` | 5 sites |
 | `realitystudioutil` | Reality Studio LLC fetish sites (static `/js/clips.js` catalog, no pagination) | `realitystudio` | 4 sites |
 | `tmwutil` | Teen Mega World (HTML listing + OG meta detail pages, date-sorted pagination, hub mode for redirected domains) | `tmw` | 35 sites |
 | `wankitnowutil` | Wank It Now network (Next.js `_next/data` JSON API, buildId bootstrap) | `wankitnow` | 6 sites |

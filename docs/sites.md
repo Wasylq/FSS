@@ -1,6 +1,6 @@
 # Covered Sites — All Domains
 
-1350 scrapers covering 1445 distinct domains. Auto-generated from the scraper registry by `TestSitesMdInSync` — do not hand-edit; instead update the scraper's `Patterns()` and re-run `go test ./internal/scrapers/all/...`. The `stashbox` scraper is omitted here because its covered hosts are config-driven; see [`scrapers.md`](scrapers.md).
+1355 scrapers covering 1450 distinct domains. Auto-generated from the scraper registry by `TestSitesMdInSync` — do not hand-edit; instead update the scraper's `Patterns()` and re-run `go test ./internal/scrapers/all/...`. The `stashbox` scraper is omitted here because its covered hosts are config-driven; see [`scrapers.md`](scrapers.md).
 
 Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scraper ID(s)** column lists every scraper that claims URLs on that domain — most domains have one entry, but table-driven networks (`adultprime`, `tmw`, `nextdoorstudios`, etc.) host many sub-studios on a single root domain. See [`scrapers.md`](scrapers.md) for what each ID covers.
 
@@ -57,6 +57,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | alternadudes.com | `alternadudes` |
 | amateur18.tv | `amateur18` |
 | amateurcfnm.com | `amateurcfnm` |
+| amateurgaypov.com | `amateurgaypov` |
 | amateurthroats.com | `amateurthroats` |
 | ambushmassage.com | `ambushmassage` |
 | americanmusclehunks.com | `americanmusclehunks` |
@@ -756,6 +757,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | masonicboys.com | `masonicboys` |
 | masonmoore.puba.com | `pubamasonmoore` |
 | masonwyler.com | `masonwyler` |
+| masqulin.com | `masqulin` |
 | massage-x.com | `massagex` |
 | massagerooms.com | `massagerooms` |
 | mature.nl | `maturenl` |
@@ -767,6 +769,8 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | melina-may.com | `melinamay` |
 | men.com | `men` |
 | menareslaves.com | `menareslaves` |
+| menatplay.com | `menatplay` |
+| menofmontreal.com | `menofmontreal` |
 | menofuk.com | `men` |
 | mercury.diary.to | `mercury` |
 | metalbondage.com | `metalbondage` |
@@ -1234,6 +1238,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | theassfactory.com | `theassfactory` |
 | theavaaddams.com | `theavaaddams` |
 | thebrats.com | `thebrats` |
+| thebronetwork.com | `masqulin`, `menofmontreal`, `thebronetwork` |
 | thedicksuckers.com | `thedicksuckers` |
 | thegayoffice.com | `men` |
 | thehandjobsite.com | `thehandjobsite` |

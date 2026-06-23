@@ -34,6 +34,7 @@ import (
 	_ "github.com/Wasylq/FSS/internal/scrapers/blumedia"
 	_ "github.com/Wasylq/FSS/internal/scrapers/blurredmedia"
 	_ "github.com/Wasylq/FSS/internal/scrapers/britishbratz"
+	_ "github.com/Wasylq/FSS/internal/scrapers/bronetwork"
 	_ "github.com/Wasylq/FSS/internal/scrapers/carnalplus"
 	_ "github.com/Wasylq/FSS/internal/scrapers/charleechase"
 	_ "github.com/Wasylq/FSS/internal/scrapers/cherrypimps"
