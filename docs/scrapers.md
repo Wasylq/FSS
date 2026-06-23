@@ -61,6 +61,7 @@
 | [Horny Asian MILFs](https://www.hornyasianmilfs.com) | `hornyasianmilfs.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
 | [Hot and Tatted](https://hotandtatted.com) | `hotandtatted.com`, `hotandtatted.com/categories/movies/{N}/latest/` | povporncash (NATS tour) | No | Listing-only parse, uses `hussieutil` |
 | [HuCows](https://www.hucows.com) | `hucows.com`, `hucows.com/tag/{slug}` | WordPress (REST API) | No | WP REST `posts` (~592), tags=performers, categories, description, uses `fotoroutil` |
+| [Humiliation POV](https://www.humiliationpov.com) | `humiliationpov.com`, `humiliationpov.com/blog/tag/{slug}` | WordPress (REST API) | No | WP install under `/blog/` (~4241 posts), findom JOI clips, tags + categories + date, uses `fotoroutil` |
 | [Hussie Pass](https://hussiepass.com) | `hussiepass.com`, `hussiepass.com/categories/movies/{N}/latest/` | povporncash (NATS tour) | No | Listing-only parse (title, date, duration, thumb), date-sorted, ~1000 scenes, uses `hussieutil` |
 | [I Boned Your Mom](https://www.ibonedyourmom.com) | `ibonedyourmom.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
 | [I Fucked The Boss](https://www.ifuckedtheboss.com) | `ifuckedtheboss.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
@@ -69,6 +70,7 @@
 | [Karina Hart](https://www.karinahart.com) | `karinahart.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
 | [Latina Coochies](https://www.latinacoochies.com) | `latinacoochies.com`, `latinacoochies.com/latina-porn-stars/{name}/{id}` | Score Group | No | Score Group, table-driven `scoregroup` package |
 | [Latin Mommas](https://www.latinmommas.com) | `latinmommas.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
+| [LatinBoyz](https://latinboyz.com) | `latinboyz.com`, `latinboyz.com/tag/{slug}` | WordPress (REST API) | No | WP REST `posts` (gay Latino; feed includes occasional text stories), date + description + thumbnail, uses `fotoroutil` |
 | [Leanne Crow Videos](https://www.leannecrowvideos.com) | `leannecrowvideos.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
 | [Leg Sex](https://www.legsex.com) | `legsex.com`, `legsex.com/foot-models/{name}/{id}` | Score Group | No | Score Group, table-driven `scoregroup` package |
 | [Linsey's World](https://www.linseysworld.com) | `linseysworld.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
