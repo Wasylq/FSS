@@ -1,8 +1,10 @@
-// Package fotoroutil scrapes Fotoro-network fetish sites (Chastity Babes,
-// Metal Bondage, HuCows, Shock Challenge, Tieable, Sybian1, Girl Asylum). They
-// all run WordPress with the standard, unauthenticated REST API; scenes are
-// plain `post` objects. Performers come from the post's tags, content
-// categories from its categories. There is no duration field anywhere.
+// Package fotoroutil scrapes WordPress studios that expose the standard,
+// unauthenticated REST API with scenes as plain `post` objects (the Fotoro
+// fetish network — Chastity Babes, Metal Bondage, HuCows, etc. — plus other
+// vanilla-WordPress paysites). Content categories come from the post's
+// categories. Post tags become performers by default (Fotoro tags scenes with
+// model names) or Scene.Tags when TagsAsTags is set. There is no duration
+// field anywhere in the WP REST payload.
 package fotoroutil
 
 import (
@@ -24,9 +26,13 @@ import (
 type SiteConfig struct {
 	ID       string
 	Studio   string
-	SiteBase string // e.g. "https://www.hucows.com" — no trailing slash
-	Patterns []string
-	MatchRe  *regexp.Regexp
+	SiteBase string // e.g. "https://www.hucows.com" — no trailing slash; may include a /blog subpath
+	// TagsAsTags routes WP post tags to Scene.Tags instead of Scene.Performers.
+	// Fotoro sites tag scenes with performer names (default false); generic
+	// WordPress studios tag with keywords, so they set this true.
+	TagsAsTags bool
+	Patterns   []string
+	MatchRe    *regexp.Regexp
 }
 
 type Scraper struct {
@@ -235,10 +241,10 @@ func (s *Scraper) postToScene(studioURL string, p wpPost, tagMap, catMap map[int
 		}
 	}
 
-	var performers []string
+	var tagNames []string
 	for _, tid := range p.Tags {
 		if name, ok := tagMap[tid]; ok {
-			performers = append(performers, name)
+			tagNames = append(tagNames, name)
 		}
 	}
 	var categories []string
@@ -260,7 +266,7 @@ func (s *Scraper) postToScene(studioURL string, p wpPost, tagMap, catMap map[int
 		url = s.cfg.SiteBase + url
 	}
 
-	return models.Scene{
+	scene := models.Scene{
 		ID:          strconv.Itoa(p.ID),
 		SiteID:      s.cfg.ID,
 		StudioURL:   studioURL,
@@ -269,11 +275,16 @@ func (s *Scraper) postToScene(studioURL string, p wpPost, tagMap, catMap map[int
 		Date:        date,
 		Description: cleanText(p.Excerpt.Rendered),
 		Thumbnail:   thumb,
-		Performers:  performers,
 		Categories:  categories,
 		Studio:      s.cfg.Studio,
 		ScrapedAt:   now,
 	}
+	if s.cfg.TagsAsTags {
+		scene.Tags = tagNames
+	} else {
+		scene.Performers = tagNames
+	}
+	return scene
 }
 
 func cleanText(htmlStr string) string {

@@ -1,6 +1,6 @@
 # Covered Sites — All Domains
 
-1365 scrapers covering 1458 distinct domains. Auto-generated from the scraper registry by `TestSitesMdInSync` — do not hand-edit; instead update the scraper's `Patterns()` and re-run `go test ./internal/scrapers/all/...`. The `stashbox` scraper is omitted here because its covered hosts are config-driven; see [`scrapers.md`](scrapers.md).
+1368 scrapers covering 1463 distinct domains. Auto-generated from the scraper registry by `TestSitesMdInSync` — do not hand-edit; instead update the scraper's `Patterns()` and re-run `go test ./internal/scrapers/all/...`. The `stashbox` scraper is omitted here because its covered hosts are config-driven; see [`scrapers.md`](scrapers.md).
 
 Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scraper ID(s)** column lists every scraper that claims URLs on that domain — most domains have one entry, but table-driven networks (`adultprime`, `tmw`, `nextdoorstudios`, etc.) host many sub-studios on a single root domain. See [`scrapers.md`](scrapers.md) for what each ID covers.
 
@@ -626,6 +626,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | hugecockbreak.com | `hugecockbreak` |
 | hugecockbreak.comtag | `hugecockbreak` |
 | hugerubberdicks.com | `hugerubberdicks` |
+| humiliationpov.com | `humiliationpov` |
 | hungarianhoneys.com | `hungarianhoneys` |
 | hussiepass.com | `hussiepass` |
 | ibonedyourmom.com | `ibonedyourmom` |
@@ -705,6 +706,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | latinacasting.com | `africanbucks` |
 | latinacoochies.com | `latinacoochies` |
 | latinafucktour.com | `africanbucks` |
+| latinboyz.com | `latinboyz` |
 | latinmommas.com | `latinmommas` |
 | leannecrowvideos.com | `leannecrowvideos` |
 | legsemporium.com | `legsemporium` |
@@ -945,6 +947,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | passionpov.com | `passionpov` |
 | pea-tv.jp | `peatv` |
 | peccatriciproduzioni.com | `peccatriciproduzioni` |
+| pegasproductions.com | `pegasproductions` |
 | pennybarber.com | `pennybarber` |
 | pennypaxlive.com | `pennypax` |
 | penthousegold.com | `penthousegold` |
@@ -1415,12 +1418,14 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | www.hairyandraw.com | `hairyandraw` |
 | www.hardbritlads.com | `hardbritlads` |
 | www.hucows.com | `hucows` |
+| www.humiliationpov.com | `humiliationpov` |
 | www.hungarianhoneys.com | `hungarianhoneys` |
 | www.jerktomyfeet.com | `jerktomyfeet` |
 | www.metalbondage.com | `metalbondage` |
 | www.mountainfuckfest.comtour | `mountainfuckfest` |
 | www.msnympho.com | `msnympho` |
 | www.mybangvan.comtour | `mybangvan` |
+| www.pegasproductions.com | `pegasproductions` |
 | www.pornonstage.comtour | `pornonstage` |
 | www.priyaraiofficial.com | `pubapriyarai` |
 | www.puba.com | `puba`, `puba1girl1camera`, `pubaabigailmac` (+70 more) |

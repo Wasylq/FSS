@@ -90,6 +90,7 @@
 | [Naughty Tugs](https://www.naughtytugs.com) | `naughtytugs.com`, `naughtytugs.com/hand-job-models/{name}/{id}` | Score Group | No | Score Group, table-driven `scoregroup` package |
 | [Nicole Peters](https://www.nicolepeters.com) | `nicolepeters.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
 | [Old Horny MILFs](https://www.oldhornymilfs.com) | `oldhornymilfs.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
+| [Pegas Productions](https://www.pegasproductions.com) | `pegasproductions.com`, `pegasproductions.com/tag/{slug}` | WordPress (REST API) | No | Quebec studio, WP REST `posts` (~3933), tags + categories + description, no duration, uses `fotoroutil` |
 | [PerfectSlave](http://www.perfectslave.com) | `perfectslave.com`, `dungeoncorp.com/?page=updates&site=PER` | Dungeon Corp (PHP CMS) | No | Served via dungeoncorp.com site code PER, listing-only parse, uses `dungeoncorputil` |
 | [Picking Up Pussy](https://www.pickinguppussy.com) | `pickinguppussy.com`, `pickinguppussy.com/teen-babes/{name}/{id}` | Score Group | No | Score Group, table-driven `scoregroup` package |
 | [Porn Loser](https://www.pornloser.com) | `pornloser.com`, `pornloser.com/amateur-girls/{name}/{id}` | Score Group | No | Score Group, table-driven `scoregroup` package |
@@ -642,7 +643,7 @@ Scrapers that share a platform use common utility packages to avoid duplication:
 | `cherrypimpsutil` | Cherry Pimps/BLT Innovations (Elevated X CMS, HTML listing) | `cherrypimps` | 2 sites |
 | `gammautil` | Gamma Entertainment (Algolia search API, 9 segments: adulttime, evilangel, evilangelnetwork, dfxtra, openlife, zerotolerancefilms, addicted2girls, biphoria, playboytv) | `gamma` | 94 sites |
 | `flourishutil` | Flourish CMS (NATS platform, HTML listing + detail fetch, YYYY-MM-DD dates, 12/page) | `flourish` | 7 sites |
-| `fotoroutil` | Fotoro network (WordPress REST API, tags=performers, no duration) | `fotoro` | 7 sites |
+| `fotoroutil` | WordPress REST API sites (Fotoro fetish network + vanilla-WP studios; tags=performers or Scene.Tags, no duration) | `fotoro`, `pegasproductions`, `latinboyz`, `humiliationpov` | 10 sites |
 | `fycutil` | FYC/PornPros (Nuxt 3 SSR, `__NUXT_DATA__` devalue format, 12/page, model page support) | `fyc` | 20 sites |
 | `groobyutil` | Grooby CMS (HTML listing, NATS platform, `/tour/categories/movies_{page}_d.html` pagination) | `grooby` | 42 sites |
 | `julesjordanutil` | Jules Jordan Network (ElevatedX CMS, 3 template variants: JJ/Classic/Modern) | `julesjordan` | 5 sites |
