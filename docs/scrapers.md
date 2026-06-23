@@ -63,6 +63,7 @@
 | [HuCows](https://www.hucows.com) | `hucows.com`, `hucows.com/tag/{slug}` | WordPress (REST API) | No | WP REST `posts` (~592), tags=performers, categories, description, uses `fotoroutil` |
 | [Humiliation POV](https://www.humiliationpov.com) | `humiliationpov.com`, `humiliationpov.com/blog/tag/{slug}` | WordPress (REST API) | No | WP install under `/blog/` (~4241 posts), findom JOI clips, tags + categories + date, uses `fotoroutil` |
 | [Hussie Pass](https://hussiepass.com) | `hussiepass.com`, `hussiepass.com/categories/movies/{N}/latest/` | povporncash (NATS tour) | No | Listing-only parse (title, date, duration, thumb), date-sorted, ~1000 scenes, uses `hussieutil` |
+| [Hustler](https://hustlerunlimited.com) | `hustlerunlimited.com`, `hustlerunlimited.com/videos/{slug}` | WordPress (custom `videos` CPT) | No | WP REST `videos` (~2038), performers (hu_actors) + tags + channel + studio + director via `_embed`, per_page 25 (embed payloads are large). Covers all sub-brands/channels (Barely Legal, Bossy MILFs, Daddy Gets Lucky) which live on the same platform |
 | [I Boned Your Mom](https://www.ibonedyourmom.com) | `ibonedyourmom.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
 | [I Fucked The Boss](https://www.ifuckedtheboss.com) | `ifuckedtheboss.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
 | [Interracial POVs](https://interracialpovs.com) | `interracialpovs.com`, `interracialpovs.com/categories/movies/{N}/latest/` | povporncash (NATS tour) | No | Listing-only parse, uses `hussieutil` |

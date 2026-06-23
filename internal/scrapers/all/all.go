@@ -93,6 +93,7 @@ import (
 	_ "github.com/Wasylq/FSS/internal/scrapers/hmp"
 	_ "github.com/Wasylq/FSS/internal/scrapers/houseofyre"
 	_ "github.com/Wasylq/FSS/internal/scrapers/humiliationpov"
+	_ "github.com/Wasylq/FSS/internal/scrapers/hustler"
 	_ "github.com/Wasylq/FSS/internal/scrapers/hussiepass"
 	_ "github.com/Wasylq/FSS/internal/scrapers/ifeelmyself"
 	_ "github.com/Wasylq/FSS/internal/scrapers/indiebucks"
