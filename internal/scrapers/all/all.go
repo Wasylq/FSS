@@ -5,6 +5,7 @@
 package all
 
 import (
+	_ "github.com/Wasylq/FSS/internal/scrapers/abbywinters"
 	_ "github.com/Wasylq/FSS/internal/scrapers/ad4x"
 	_ "github.com/Wasylq/FSS/internal/scrapers/adultdoorway"
 	_ "github.com/Wasylq/FSS/internal/scrapers/adultprime"
@@ -13,6 +14,7 @@ import (
 	_ "github.com/Wasylq/FSS/internal/scrapers/alisonangel"
 	_ "github.com/Wasylq/FSS/internal/scrapers/allover30"
 	_ "github.com/Wasylq/FSS/internal/scrapers/alsangels"
+	_ "github.com/Wasylq/FSS/internal/scrapers/amateurallure"
 	_ "github.com/Wasylq/FSS/internal/scrapers/alternadudes"
 	_ "github.com/Wasylq/FSS/internal/scrapers/analacrobats"
 	_ "github.com/Wasylq/FSS/internal/scrapers/analtherapy"
@@ -80,6 +82,7 @@ import (
 	_ "github.com/Wasylq/FSS/internal/scrapers/ftvmilfs"
 	_ "github.com/Wasylq/FSS/internal/scrapers/fyc"
 	_ "github.com/Wasylq/FSS/internal/scrapers/gamma"
+	_ "github.com/Wasylq/FSS/internal/scrapers/gangbangmedia"
 	_ "github.com/Wasylq/FSS/internal/scrapers/gasm"
 	_ "github.com/Wasylq/FSS/internal/scrapers/ghostpro"
 	_ "github.com/Wasylq/FSS/internal/scrapers/ghostproclassic"
@@ -144,6 +147,7 @@ import (
 	_ "github.com/Wasylq/FSS/internal/scrapers/next11"
 	_ "github.com/Wasylq/FSS/internal/scrapers/nookies"
 	_ "github.com/Wasylq/FSS/internal/scrapers/nubiles"
+	_ "github.com/Wasylq/FSS/internal/scrapers/nvg"
 	_ "github.com/Wasylq/FSS/internal/scrapers/onepassforallsites"
 	_ "github.com/Wasylq/FSS/internal/scrapers/oopsfamily"
 	_ "github.com/Wasylq/FSS/internal/scrapers/over40handjobs"
@@ -171,6 +175,7 @@ import (
 	_ "github.com/Wasylq/FSS/internal/scrapers/privatecastings"
 	_ "github.com/Wasylq/FSS/internal/scrapers/privateclassics"
 	_ "github.com/Wasylq/FSS/internal/scrapers/puba"
+	_ "github.com/Wasylq/FSS/internal/scrapers/putalocura"
 	_ "github.com/Wasylq/FSS/internal/scrapers/puremature"
 	_ "github.com/Wasylq/FSS/internal/scrapers/purepass"
 	_ "github.com/Wasylq/FSS/internal/scrapers/queensnake"
@@ -203,6 +208,7 @@ import (
 	_ "github.com/Wasylq/FSS/internal/scrapers/teencoreclub"
 	_ "github.com/Wasylq/FSS/internal/scrapers/timtales"
 	_ "github.com/Wasylq/FSS/internal/scrapers/titanmedia"
+	_ "github.com/Wasylq/FSS/internal/scrapers/tokyohot"
 	_ "github.com/Wasylq/FSS/internal/scrapers/titanmen"
 	_ "github.com/Wasylq/FSS/internal/scrapers/tmw"
 	_ "github.com/Wasylq/FSS/internal/scrapers/uptimely"

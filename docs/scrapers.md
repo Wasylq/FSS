@@ -6,6 +6,8 @@
 | [40 Something Mag](https://www.40somethingmag.com) | `40somethingmag.com`, `40somethingmag.com/xxx-mature-models/{name}/{id}` | Score Group | No | Score Group, table-driven `scoregroup` package |
 | [50 Plus MILFs](https://www.50plusmilfs.com) | `50plusmilfs.com`, `50plusmilfs.com/xxx-milf-models/{name}/{id}` | Score Group | No | Score Group, table-driven `scoregroup` package |
 | [60 Plus MILFs](https://www.60plusmilfs.com) | `60plusmilfs.com`, `60plusmilfs.com/xxx-granny-models/{name}/{id}` | Score Group | No | Score Group, table-driven `scoregroup` package |
+| [Abby Winters](https://www.abbywinters.com) | `abbywinters.com`, `abbywinters.com/amateurs/shoots` | Custom | No | `/amateurs/shoots?page={N}` listing (~5529) + concurrent detail fetch (release date, performers); title/category/thumb from card |
+| [Amateur Allure](https://www.amateurallure.com) | `amateurallure.com`, `amateurallure.com/tour/scenes/{slug}_vids.html` | NATS tour | No | `/tour/updates/page_{N}.html` listing (~919) + concurrent detail fetch (og title/description, performers); date from listing |
 | [Amateur Gay POV](https://amateurgaypov.com) | `amateurgaypov.com`, `amateurgaypov.com/categories/videos_{N}_d.html` | Bro Network (PHP CMS) | No | Listing-only parse (title, performers, date, duration, thumb), date-sorted, uses `bronetworkutil` |
 | [Anal QTs](https://www.analqts.com) | `analqts.com`, `analqts.com/anal-porn-stars/{name}/{id}` | Score Group | No | Score Group, table-driven `scoregroup` package |
 | [Ashley Sage Ellison](https://www.ashleysageellison.com) | `ashleysageellison.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
@@ -34,6 +36,7 @@
 | [Busty Lezzies](https://www.bustylezzies.com) | `bustylezzies.com`, `bustylezzies.com/big-tit-models/{name}/{id}` | Score Group | No | Score Group, table-driven `scoregroup` package |
 | [Busty Merilyn](https://www.bustymerilyn.com) | `bustymerilyn.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
 | [Busty Old Sluts](https://www.bustyoldsluts.com) | `bustyoldsluts.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
+| [Casting Couch-HD](https://www.castingcouch-hd.com) | `castingcouch-hd.com` | NVG Network (Next.js) | No | `__NEXT_DATA__` (latest ~42 public, title/date/duration/models), uses `nvg` package |
 | [Chastity Babes](https://www.chastitybabes.com) | `chastitybabes.com`, `chastitybabes.com/tag/{slug}` | WordPress (REST API) | No | WP REST `posts` (~1263), tags=performers, categories, no duration, uses `fotoroutil` |
 | [Chicks On Black Dicks](https://www.chicksonblackdicks.com) | `chicksonblackdicks.com`, `chicksonblackdicks.com/interracial-porn-stars/{name}/{id}` | Score Group | No | Score Group, table-driven `scoregroup` package |
 | [Chloe's World](https://www.chloesworld.com) | `chloesworld.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
@@ -57,6 +60,7 @@
 | [Femjoy](https://www.femjoy.com) | `femjoy.com`, `femjoy.com/videos`, `femjoy.com/gallery/{id}` | Gamma _xlabs (MetaMaker) | No | Listing-only parse of `/videos` cards (title, model, photographer, date, duration, thumb), ~1176 videos, cookie-jar session bootstrap, scene page `/gallery/{id}` |
 | [Flat And Fucked MILFs](https://www.flatandfuckedmilfs.com) | `flatandfuckedmilfs.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
 | [Fucking Dungeon](https://www.dungeoncorp.com/?page=sites&site=FUD) | `dungeoncorp.com/?page=updates&site=FUD` | Dungeon Corp (PHP CMS) | No | Network site code FUD, listing-only parse, uses `dungeoncorputil` |
+| [Gangbang Media Germany](https://p-p-p.tv) | `p-p-p.tv`, `p-p-p.tv/videos/list` | Custom (German) | No | Listing-only parse (`?page={N}`): title/slug, performers (slug-derived), duration, thumbnail; detail pages login-gated so no dates |
 | [Girl Asylum](https://www.girlasylum.com) | `girlasylum.com`, `girlasylum.com/tag/{slug}` | WordPress (REST API) | No | WP REST `posts` (~966), tags=performers; REST content empty so no description, uses `fotoroutil` |
 | [Gloryhole Swallow](https://gloryholeswallow.com) | `gloryholeswallow.com`, `gloryholeswallow.com/tour/categories/Movies_{N}_d.html` | Elevated X | No | Listing (id/date/thumb) + detail fetch (runtime, description, tags, @handle performers), date-as-title, dup-page stop, uses `titanmediautil` |
 | [Granny Gets A Facial](https://www.grannygetsafacial.com) | `grannygetsafacial.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
@@ -98,6 +102,8 @@
 | [Naughty Footjobs](https://www.naughtyfootjobs.com) | `naughtyfootjobs.com`, `naughtyfootjobs.com/foot-models/{name}/{id}` | Score Group | No | Score Group, table-driven `scoregroup` package |
 | [Naughty Mag](https://www.naughtymag.com) | `naughtymag.com`, `naughtymag.com/amateur-girls/{name}/{id}` | Score Group | No | Score Group, table-driven `scoregroup` package |
 | [Naughty Tugs](https://www.naughtytugs.com) | `naughtytugs.com`, `naughtytugs.com/hand-job-models/{name}/{id}` | Score Group | No | Score Group, table-driven `scoregroup` package |
+| [Net Girl](https://www.netgirl.com) | `netgirl.com` | NVG Network (Next.js) | No | `__NEXT_DATA__` (latest ~42 public, title/date/duration/models), uses `nvg` package |
+| [Net Video Girls](https://netvideogirls.com) | `netvideogirls.com` | NVG Network (Gatsby) | No | `page-data.json` (latest ~43 public scenes; deep catalog members-only), uses `nvg` package |
 | [Nicole Peters](https://www.nicolepeters.com) | `nicolepeters.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
 | [Old Horny MILFs](https://www.oldhornymilfs.com) | `oldhornymilfs.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
 | [Pegas Productions](https://www.pegasproductions.com) | `pegasproductions.com`, `pegasproductions.com/tag/{slug}` | WordPress (REST API) | No | Quebec studio, WP REST `posts` (~3933), tags + categories + description, no duration, uses `fotoroutil` |
@@ -106,6 +112,7 @@
 | [Porn Loser](https://www.pornloser.com) | `pornloser.com`, `pornloser.com/amateur-girls/{name}/{id}` | Score Group | No | Score Group, table-driven `scoregroup` package |
 | [Porn Mega Load](https://www.pornmegaload.com) | `pornmegaload.com`, `pornmegaload.com/porn-models/{name}/{id}` | Score Group | No | Score Group, table-driven `scoregroup` package |
 | [POV Pornstars](https://www.povpornstars.com) | `povpornstars.com`, `povpornstars.com/tour/categories/movies/{N}/latest/` | povporncash (NATS tour) | No | `/tour` prefix, listing-only parse, uses `hussieutil` |
+| [Puta Locura](https://www.putalocura.com) | `putalocura.com`, `putalocura.com/{category}/{slug}` | Custom PHP (Torbe) | No | Sitemap enumeration (~4241, double-www bug fixed) + concurrent detail fetch (title, performer, date, duration, category). Covers Las Pilladas de Torbe |
 | [Renee Ross Videos](https://www.reneerossvideos.com) | `reneerossvideos.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
 | [Roxi Red](https://www.roxired.com) | `roxired.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
 | [SaRenna's World](https://www.sarennasworld.com) | `sarennasworld.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
@@ -130,6 +137,7 @@
 | [Timtales](https://www.timtales.com) | `timtales.com`, `timtales.com/videos/latest/`, `timtales.com/videos/{slug}/` | TYPO3 | No | Listing (`/videos/latest/page-{N}/`) + concurrent detail fetch (h1 title, date + runtime, bodytext description) |
 | [Tits And Tugs](https://www.titsandtugs.com) | `titsandtugs.com`, `titsandtugs.com/big-boob-models/{name}/{id}` | Score Group | No | Score Group, table-driven `scoregroup` package |
 | [TNA Tryouts](https://www.tnatryouts.com) | `tnatryouts.com`, `tnatryouts.com/teen-babes/{name}/{id}` | Score Group | No | Score Group, table-driven `scoregroup` package |
+| [Tokyo-Hot](https://www.tokyo-hot.com) | `tokyo-hot.com`, `tokyo-hot.com/product/{code}` | Custom (JAV catalog) | No | `/product/?page={N}` listing + concurrent detail fetch (title, release date, duration, models, label/series, tags, resolution, thumbnail), ~15k products |
 | [Valory Irene](https://www.valoryirene.com) | `valoryirene.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
 | [XL Girls](https://www.xlgirls.com) | `xlgirls.com`, `xlgirls.com/bbw-models/{name}/{id}` | Score Group | No | Score Group, table-driven `scoregroup` package |
 | [Your Mom Loves Anal](https://www.yourmomlovesanal.com) | `yourmomlovesanal.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
@@ -675,6 +683,7 @@ Scrapers that share a platform use common utility packages to avoid duplication:
 | `hussieutil` | Hussie Pass / povporncash NATS tour sites (listing-only HTML parse) | `hussiepass` | 4 sites |
 | `titanmediautil` | Titan Media gloryhole network (Elevated X, listing + concurrent detail enrichment) | `titanmedia` | 4 sites |
 | `dungeoncorputil` | Dungeon Corp BDSM network (one PHP app keyed by site code, listing-only HTML parse) | `dungeoncorp` | 6 sites |
+| `nvg` (package) | NVG Network: Net Video Girls (Gatsby), Casting Couch-HD + Net Girl (Next.js); latest ~42 public scenes each | `nvg` | 3 sites |
 | `realitystudioutil` | Reality Studio LLC fetish sites (static `/js/clips.js` catalog, no pagination) | `realitystudio` | 4 sites |
 | `tmwutil` | Teen Mega World (HTML listing + OG meta detail pages, date-sorted pagination, hub mode for redirected domains) | `tmw` | 35 sites |
 | `wankitnowutil` | Wank It Now network (Next.js `_next/data` JSON API, buildId bootstrap) | `wankitnow` | 6 sites |

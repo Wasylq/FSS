@@ -1,6 +1,6 @@
 # Covered Sites — All Domains
 
-1379 scrapers covering 1474 distinct domains. Auto-generated from the scraper registry by `TestSitesMdInSync` — do not hand-edit; instead update the scraper's `Patterns()` and re-run `go test ./internal/scrapers/all/...`. The `stashbox` scraper is omitted here because its covered hosts are config-driven; see [`scrapers.md`](scrapers.md).
+1387 scrapers covering 1482 distinct domains. Auto-generated from the scraper registry by `TestSitesMdInSync` — do not hand-edit; instead update the scraper's `Patterns()` and re-run `go test ./internal/scrapers/all/...`. The `stashbox` scraper is omitted here because its covered hosts are config-driven; see [`scrapers.md`](scrapers.md).
 
 Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scraper ID(s)** column lists every scraper that claims URLs on that domain — most domains have one entry, but table-driven networks (`adultprime`, `tmw`, `nextdoorstudios`, etc.) host many sub-studios on a single root domain. See [`scrapers.md`](scrapers.md) for what each ID covers.
 
@@ -26,6 +26,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | 8kteens.com | `8kteens` |
 | 8teenboy.com | `8teenboy` |
 | abbiemaley.com | `abbiemaley` |
+| abbywinters.com | `abbywinters` |
 | abigailmac.puba.com | `pubaabigailmac` |
 | aboutgirlslove.com | `tmw-aboutgirlslove` |
 | accidentalgangbang.com | `accidentalgangbang` |
@@ -56,6 +57,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | alsscan.com | `alsscan` |
 | alternadudes.com | `alternadudes` |
 | amateur18.tv | `amateur18` |
+| amateurallure.com | `amateurallure` |
 | amateurcfnm.com | `amateurcfnm` |
 | amateurgaypov.com | `amateurgaypov` |
 | amateurthroats.com | `amateurthroats` |
@@ -239,6 +241,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | carmenvalentina.com | `carmenvalentina` |
 | carnalplus.com | `baptistboys`, `carnaloriginals`, `carnalplus` |
 | cashforsextape.com | `cashforsextape` |
+| castingcouch-hd.com | `castingcouchhd` |
 | castingcouch-x.com | `castingcouchx` |
 | casualteensex.com | `casualteensex` |
 | catholicboys.com | `catholicboys` |
@@ -893,6 +896,8 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | naughtymag.com | `naughtymag` |
 | naughtytugs.com | `naughtytugs` |
 | nerdsofporn.com | `nerdsofporn` |
+| netgirl.com | `netgirl` |
+| netvideogirls.com | `netvideogirls` |
 | new.allover30.com | `allover30` |
 | newsensations.com | `newsensations` |
 | next11.co.jp | `next11` |
@@ -943,6 +948,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | outofthefamily.com | `outofthefamily` |
 | over40handjobs.com | `over40handjobs` |
 | oyeloca.com | `oyeloca` |
+| p-p-p.tv | `gangbangmedia` |
 | pandafuck.com | `pandafuck` |
 | pansexualx.com | `pansexualx` |
 | pantyamateur.com | `pantyamateur` |
@@ -1031,6 +1037,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | puremature.com | `puremature` |
 | puretaboo.com | `puretaboo` |
 | purexxxfilms.com | `gasm` |
+| putalocura.com | `putalocura` |
 | pvgirls.com | `pvgirls` |
 | queensnake.com | `queensnake` |
 | r18.dev | `r18dev` |
@@ -1294,6 +1301,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | tmwpov.com | `tmw-tmwpov` |
 | tmwvrnet.com | `tmw-tmwvrnet` |
 | tnatryouts.com | `tnatryouts` |
+| tokyo-hot.com | `tokyohot` |
 | tonightsgirlfriend.com | `naughtyamerica` |
 | toptobottom.com | `men` |
 | tour.bamvisions.com | `bamvisions` |
