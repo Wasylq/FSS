@@ -197,6 +197,7 @@ import (
 	_ "github.com/Wasylq/FSS/internal/scrapers/taratainton"
 	_ "github.com/Wasylq/FSS/internal/scrapers/teamskeet"
 	_ "github.com/Wasylq/FSS/internal/scrapers/teencoreclub"
+	_ "github.com/Wasylq/FSS/internal/scrapers/titanmedia"
 	_ "github.com/Wasylq/FSS/internal/scrapers/titanmen"
 	_ "github.com/Wasylq/FSS/internal/scrapers/tmw"
 	_ "github.com/Wasylq/FSS/internal/scrapers/uptimely"

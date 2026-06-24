@@ -1,6 +1,6 @@
 # Covered Sites — All Domains
 
-1370 scrapers covering 1465 distinct domains. Auto-generated from the scraper registry by `TestSitesMdInSync` — do not hand-edit; instead update the scraper's `Patterns()` and re-run `go test ./internal/scrapers/all/...`. The `stashbox` scraper is omitted here because its covered hosts are config-driven; see [`scrapers.md`](scrapers.md).
+1374 scrapers covering 1469 distinct domains. Auto-generated from the scraper registry by `TestSitesMdInSync` — do not hand-edit; instead update the scraper's `Patterns()` and re-run `go test ./internal/scrapers/all/...`. The `stashbox` scraper is omitted here because its covered hosts are config-driven; see [`scrapers.md`](scrapers.md).
 
 Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scraper ID(s)** column lists every scraper that claims URLs on that domain — most domains have one entry, but table-driven networks (`adultprime`, `tmw`, `nextdoorstudios`, etc.) host many sub-studios on a single root domain. See [`scrapers.md`](scrapers.md) for what each ID covers.
 
@@ -296,10 +296,12 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | crystal-eizou.jp | `crystaleizou` |
 | cum4k.com | `cum4k` |
 | cumbots.com | `cumbots` |
+| cumclinic.com | `cumclinic` |
 | cumcountdown.com | `cumcountdown` |
 | cumdumpsterteens.com | `cumdumpsterteens` |
 | cumflation.com | `cumflation` |
 | cumlouder.com | `cumlouder` |
+| cumpsters.com | `cumpsters` |
 | cumshotoasis.com | `cumshotoasis` |
 | cumswappingsis.com | `nubiles` |
 | cumtrainer.com | `cumtrainer` |
@@ -553,6 +555,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | glamose.com | `glamose` |
 | glamourbunnies.com | `glamourbunnies` |
 | gloryholesecrets.com | `gloryholesecrets` |
+| gloryholeswallow.com | `gloryholeswallow` |
 | gloryquest.tv | `gloryquest` |
 | glosstightsglamour.com | `glosstightsglamour` |
 | glowingdesire.com | `nubiles` |
@@ -1166,6 +1169,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | spungygunkfilms.empirestores.co | `spungygunkfilms` |
 | spyfam.com | `spyfam` |
 | spypov.com | `spypov` |
+| spytug.com | `spytug` |
 | squirtalicious.com | `squirtalicious` |
 | squirted.com | `squirted` |
 | squirtinglesbian.com | `squirtinglesbian` |
