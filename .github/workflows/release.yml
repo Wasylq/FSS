@@ -18,7 +18,7 @@ jobs:
     name: Test and build binaries
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
 
@@ -111,7 +111,7 @@ jobs:
       name: manual-smoke-gate
       url: ${{ github.server_url }}/${{ github.repository }}/blob/master/CONTRIBUTING.md#cutting-a-release
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
 
@@ -247,7 +247,7 @@ jobs:
     # from the Actions UI without re-cutting the GitHub release.
     needs: release
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
 
@@ -307,7 +307,7 @@ jobs:
       id-token: write
       attestations: write
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
 
