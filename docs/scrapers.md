@@ -48,6 +48,7 @@
 | [Cumpsters](https://cumpsters.com) | `cumpsters.com`, `cumpsters.com/categories/Movies_{N}_d.html` | Elevated X | No | Root-served tour, listing + detail enrichment, uses `titanmediautil` |
 | [Daylene Rio](https://www.daylenerio.com) | `daylenerio.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
 | [Desirae's World](https://www.desiraesworld.com) | `desiraesworld.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
+| [Dream Tranny](https://dreamtranny.com) | `dreamtranny.com`, `dreamtranny.com/update/{id}/` | RogueBucks (NATS) | No | Sitemap enumeration (~1193) + concurrent detail fetch (title, performers, date, description, thumbnail) |
 | [DungeonCorp](https://www.dungeoncorp.com) | `dungeoncorp.com`, `dungeoncorp.com/?page=updates&site=DUN` | Dungeon Corp (PHP CMS) | No | Network site code DUN, listing-only parse, uses `dungeoncorputil` |
 | [Ebony Thots](https://www.ebonythots.com) | `ebonythots.com`, `ebonythots.com/black-porn-stars/{name}/{id}` | Score Group | No | Score Group, table-driven `scoregroup` package |
 | [Eva Notty Videos](https://www.evanottyvideos.com) | `evanottyvideos.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
@@ -118,6 +119,7 @@
 | [SocietySM](https://societysm.com) | `societysm.com`, `dungeoncorp.com/?page=updates&site=SSM` | Dungeon Corp (PHP CMS) | No | Served via dungeoncorp.com site code SSM, listing-only parse (title, performers, date, duration, thumb), uses `dungeoncorputil` |
 | [SpyTug](https://spytug.com) | `spytug.com`, `spytug.com/categories/Movies_{N}_d.html` | Elevated X | No | Root-served tour, listing + detail enrichment, uses `titanmediautil` |
 | [Stacy Vandenberg Boobs](https://www.stacyvandenbergboobs.com) | `stacyvandenbergboobs.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
+| [Staxus](https://staxus.com) | `staxus.com`, `staxus.com/trial/category.php?id=50` | Custom PHP (trial tour) | No | Listing-only microdata parse (title, performers, date, thumbnail), `&page={N}` pagination, video-only (type=vids), ~2900 scenes |
 | [Strict Restraint](https://www.dungeoncorp.com/?page=updates&site=STR) | `dungeoncorp.com/?page=updates&site=STR` | Dungeon Corp (PHP CMS) | No | Network site code STR, listing-only parse, uses `dungeoncorputil` |
 | [Subby Girls](https://www.subbygirls.com) | `subbygirls.com`, `subbygirls.com/main.html` | Reality Studio (clips.js) | No | Static `/js/clips.js` catalog (~922), performers + fetishes, uses `realitystudioutil` |
 | [Sybian1](https://www.sybian1.com) | `sybian1.com`, `sybian1.com/tag/{slug}` | WordPress (REST API) | No | WP REST `posts` (~277), tags=performers, thumb from content, uses `fotoroutil` |
