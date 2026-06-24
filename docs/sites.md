@@ -1,6 +1,6 @@
 # Covered Sites — All Domains
 
-1374 scrapers covering 1469 distinct domains. Auto-generated from the scraper registry by `TestSitesMdInSync` — do not hand-edit; instead update the scraper's `Patterns()` and re-run `go test ./internal/scrapers/all/...`. The `stashbox` scraper is omitted here because its covered hosts are config-driven; see [`scrapers.md`](scrapers.md).
+1377 scrapers covering 1472 distinct domains. Auto-generated from the scraper registry by `TestSitesMdInSync` — do not hand-edit; instead update the scraper's `Patterns()` and re-run `go test ./internal/scrapers/all/...`. The `stashbox` scraper is omitted here because its covered hosts are config-driven; see [`scrapers.md`](scrapers.md).
 
 Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scraper ID(s)** column lists every scraper that claims URLs on that domain — most domains have one entry, but table-driven networks (`adultprime`, `tmw`, `nextdoorstudios`, etc.) host many sub-studios on a single root domain. See [`scrapers.md`](scrapers.md) for what each ID covers.
 
@@ -274,6 +274,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | clubkayden.com | `clubkayden` |
 | cock4stepmom.com | `cock4stepmom` |
 | cocksuckerprod.com | `cocksuckerprod` |
+| cockyboys.com | `cockyboys` |
 | codivorexxx.com | `codivorexxx` |
 | codycummings.com | `codycummings` |
 | colettevideos.com | `colettevideos` |
@@ -810,6 +811,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | mishamontana.puba.com | `pubamishamontana` |
 | missax.com | `missax` |
 | missionasspossible.com | `private` |
+| mistresst.net | `mistresst` |
 | mixedx.com | `mixedx` |
 | mmvfilms.com | `gasm` |
 | modeltime.com | `modeltime` |
@@ -1281,6 +1283,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | tiffany-towers.com | `tiffany-towers` |
 | tiffanybrookesxxx.com | `tiffanybrookesxxx` |
 | tightandteen.com | `private` |
+| timtales.com | `timtales` |
 | tiny4k.com | `tiny4k` |
 | tinysis.com | `tinysis` |
 | titanmen.com | `titanmen` |

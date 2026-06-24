@@ -39,6 +39,7 @@
 | [Chloe's World](https://www.chloesworld.com) | `chloesworld.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
 | [Christy Marks](https://www.christymarks.com) | `christymarks.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
 | [Cock 4 Stepmom](https://www.cock4stepmom.com) | `cock4stepmom.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
+| [CockyBoys](https://cockyboys.com) | `cockyboys.com`, `cockyboys.com/categories/movies_{N}_d.html`, `cockyboys.com/scenes/{slug}.html` | Custom PHP | No | Listing (`movies_{N}_d.html`) + concurrent detail fetch (title, Released date, performers via movieModels grid, categories, og:image). Covers CockyBoys x RandyBlue series. Dup-page stop |
 | [Codi Vore XXX](https://www.codivorexxx.com) | `codivorexxx.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
 | [Creampie For Granny](https://www.creampieforgranny.com) | `creampieforgranny.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
 | [Cum Countdown](https://www.cumcountdown.com) | `cumcountdown.com`, `cumcountdown.com/main.html` | Reality Studio (clips.js) | No | Static `/js/clips.js` catalog, performers + fetishes, MM/DD/YY dates, uses `realitystudioutil` |
@@ -90,6 +91,7 @@
 | [MILF Threesomes](https://www.milfthreesomes.com) | `milfthreesomes.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
 | [MILF Tugs](https://www.milftugs.com) | `milftugs.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
 | [Milly Marks](https://www.millymarks.com) | `millymarks.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
+| [Mistress T](https://www.mistresst.net) | `mistresst.net`, `mistresst.net/content/{slug}` | Drupal | No | Sitemap enumeration (~2465 `/content/{slug}`) + concurrent detail fetch (og title/desc, post-date, category, keywords/tags, poster) |
 | [Mommy's Toy Time](https://www.mommystoytime.com) | `mommystoytime.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
 | [Natalie Fiore](https://www.nataliefiore.com) | `nataliefiore.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
 | [Naughty Footjobs](https://www.naughtyfootjobs.com) | `naughtyfootjobs.com`, `naughtyfootjobs.com/foot-models/{name}/{id}` | Score Group | No | Score Group, table-driven `scoregroup` package |
@@ -123,6 +125,7 @@
 | [The Bro Network](https://thebronetwork.com) | `thebronetwork.com`, `thebronetwork.com/categories/videos_{N}_d.html` | Bro Network (PHP CMS) | No | Network aggregate listing across all sub-brands, listing-only parse, uses `bronetworkutil` |
 | [Tieable](https://www.tieable.com) | `tieable.com`, `tieable.com/tag/{slug}` | WordPress (REST API) | No | WP REST `posts` (~683), tags=performers, uses `fotoroutil` |
 | [Tiffany Towers](https://www.tiffany-towers.com) | `tiffany-towers.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
+| [Timtales](https://www.timtales.com) | `timtales.com`, `timtales.com/videos/latest/`, `timtales.com/videos/{slug}/` | TYPO3 | No | Listing (`/videos/latest/page-{N}/`) + concurrent detail fetch (h1 title, date + runtime, bodytext description) |
 | [Tits And Tugs](https://www.titsandtugs.com) | `titsandtugs.com`, `titsandtugs.com/big-boob-models/{name}/{id}` | Score Group | No | Score Group, table-driven `scoregroup` package |
 | [TNA Tryouts](https://www.tnatryouts.com) | `tnatryouts.com`, `tnatryouts.com/teen-babes/{name}/{id}` | Score Group | No | Score Group, table-driven `scoregroup` package |
 | [Valory Irene](https://www.valoryirene.com) | `valoryirene.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
