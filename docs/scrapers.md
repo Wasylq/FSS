@@ -50,6 +50,7 @@
 | [Eva Notty Videos](https://www.evanottyvideos.com) | `evanottyvideos.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
 | [Feed Her Fuck Her](https://www.feedherfuckher.com) | `feedherfuckher.com`, `feedherfuckher.com/bbw-models/{name}/{id}` | Score Group | No | Score Group, table-driven `scoregroup` package |
 | [Female Worship](https://www.femaleworship.com) | `femaleworship.com`, `femaleworship.com/main.html` | Reality Studio (clips.js) | No | Static `/js/clips.js` catalog (~1025), performers + fetishes, uses `realitystudioutil` |
+| [Femjoy](https://www.femjoy.com) | `femjoy.com`, `femjoy.com/videos`, `femjoy.com/gallery/{id}` | Gamma _xlabs (MetaMaker) | No | Listing-only parse of `/videos` cards (title, model, photographer, date, duration, thumb), ~1176 videos, cookie-jar session bootstrap, scene page `/gallery/{id}` |
 | [Flat And Fucked MILFs](https://www.flatandfuckedmilfs.com) | `flatandfuckedmilfs.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
 | [Fucking Dungeon](https://www.dungeoncorp.com/?page=sites&site=FUD) | `dungeoncorp.com/?page=updates&site=FUD` | Dungeon Corp (PHP CMS) | No | Network site code FUD, listing-only parse, uses `dungeoncorputil` |
 | [Girl Asylum](https://www.girlasylum.com) | `girlasylum.com`, `girlasylum.com/tag/{slug}` | WordPress (REST API) | No | WP REST `posts` (~966), tags=performers; REST content empty so no description, uses `fotoroutil` |

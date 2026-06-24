@@ -9,7 +9,7 @@ Scrapes all scenes and metadata from a studio URL. Designed to be easily extende
 
 ## Supported sites
 
-**1370 sites** across 30+ platforms — [full list with URL patterns →](docs/scrapers.md) · [searchable A-Z domain list →](docs/sites.md)
+**1371 sites** across 30+ platforms — [full list with URL patterns →](docs/scrapers.md) · [searchable A-Z domain list →](docs/sites.md)
 
 | Platform | Examples |
 |----------|---------|

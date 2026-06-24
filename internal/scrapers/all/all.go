@@ -66,6 +66,7 @@ import (
 	_ "github.com/Wasylq/FSS/internal/scrapers/faphouse"
 	_ "github.com/Wasylq/FSS/internal/scrapers/feetondemand"
 	_ "github.com/Wasylq/FSS/internal/scrapers/femdomempire"
+	_ "github.com/Wasylq/FSS/internal/scrapers/femjoy"
 	_ "github.com/Wasylq/FSS/internal/scrapers/fetishnetwork"
 	_ "github.com/Wasylq/FSS/internal/scrapers/finishesthejob"
 	_ "github.com/Wasylq/FSS/internal/scrapers/flourish"
