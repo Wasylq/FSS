@@ -111,6 +111,8 @@
 | [Net Video Girls](https://netvideogirls.com) | `netvideogirls.com` | NVG Network (Gatsby) | No | `page-data.json` (latest ~43 public scenes; deep catalog members-only), uses `nvg` package |
 | [Nicole Peters](https://www.nicolepeters.com) | `nicolepeters.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
 | [Old Horny MILFs](https://www.oldhornymilfs.com) | `oldhornymilfs.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
+| [Oldje](https://oldje.com) | `oldje.com`, `oldje.com/gallery/{N}` | Class Media | No | `/gallery/{N}` listing (~828 sets): set id, de-slugged title, thumbnail (newest slugs are site-obfuscated; no anon dates), uses `classmedia` package |
+| [Oldje-3some](https://www.oldje-3some.com) | `oldje-3some.com`, `oldje-3some.com/videos/{N}` | Class Media | No | `/videos/{N}` listing: set id, title (obfuscated slugs), thumbnail, uses `classmedia` package |
 | [Pegas Productions](https://www.pegasproductions.com) | `pegasproductions.com`, `pegasproductions.com/tag/{slug}` | WordPress (REST API) | No | Quebec studio, WP REST `posts` (~3933), tags + categories + description, no duration, uses `fotoroutil` |
 | [PerfectSlave](http://www.perfectslave.com) | `perfectslave.com`, `dungeoncorp.com/?page=updates&site=PER` | Dungeon Corp (PHP CMS) | No | Served via dungeoncorp.com site code PER, listing-only parse, uses `dungeoncorputil` |
 | [Picking Up Pussy](https://www.pickinguppussy.com) | `pickinguppussy.com`, `pickinguppussy.com/teen-babes/{name}/{id}` | Score Group | No | Score Group, table-driven `scoregroup` package |
@@ -134,6 +136,7 @@
 | [Staxus](https://staxus.com) | `staxus.com`, `staxus.com/trial/category.php?id=50` | Custom PHP (trial tour) | No | Listing-only microdata parse (title, performers, date, thumbnail), `&page={N}` pagination, video-only (type=vids), ~2900 scenes |
 | [Strict Restraint](https://www.dungeoncorp.com/?page=updates&site=STR) | `dungeoncorp.com/?page=updates&site=STR` | Dungeon Corp (PHP CMS) | No | Network site code STR, listing-only parse, uses `dungeoncorputil` |
 | [Subby Girls](https://www.subbygirls.com) | `subbygirls.com`, `subbygirls.com/main.html` | Reality Studio (clips.js) | No | Static `/js/clips.js` catalog (~922), performers + fetishes, uses `realitystudioutil` |
+| [Subspaceland](https://www.subspaceland.com) | `subspaceland.com`, `subspaceland.com/video/{model}/{slug}` | Class Media | No | Sitemap (~207) + detail fetch (title, release date, model, tags, description, thumbnail), uses `classmedia` package |
 | [Sybian1](https://www.sybian1.com) | `sybian1.com`, `sybian1.com/tag/{slug}` | WordPress (REST API) | No | WP REST `posts` (~277), tags=performers, thumb from content, uses `fotoroutil` |
 | [Tawny Peaks](https://www.tawny-peaks.com) | `tawny-peaks.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
 | [The Bro Network](https://thebronetwork.com) | `thebronetwork.com`, `thebronetwork.com/categories/videos_{N}_d.html` | Bro Network (PHP CMS) | No | Network aggregate listing across all sub-brands, listing-only parse, uses `bronetworkutil` |
