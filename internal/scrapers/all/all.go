@@ -128,6 +128,7 @@ import (
 	_ "github.com/Wasylq/FSS/internal/scrapers/lucasentertainment"
 	_ "github.com/Wasylq/FSS/internal/scrapers/lustery"
 	_ "github.com/Wasylq/FSS/internal/scrapers/malibumedia"
+	_ "github.com/Wasylq/FSS/internal/scrapers/manipulativemedia"
 	_ "github.com/Wasylq/FSS/internal/scrapers/manyvids"
 	_ "github.com/Wasylq/FSS/internal/scrapers/marsmedia"
 	_ "github.com/Wasylq/FSS/internal/scrapers/maturefetish"

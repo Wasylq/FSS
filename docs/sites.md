@@ -1,6 +1,6 @@
 # Covered Sites — All Domains
 
-1387 scrapers covering 1482 distinct domains. Auto-generated from the scraper registry by `TestSitesMdInSync` — do not hand-edit; instead update the scraper's `Patterns()` and re-run `go test ./internal/scrapers/all/...`. The `stashbox` scraper is omitted here because its covered hosts are config-driven; see [`scrapers.md`](scrapers.md).
+1389 scrapers covering 1484 distinct domains. Auto-generated from the scraper registry by `TestSitesMdInSync` — do not hand-edit; instead update the scraper's `Patterns()` and re-run `go test ./internal/scrapers/all/...`. The `stashbox` scraper is omitted here because its covered hosts are config-driven; see [`scrapers.md`](scrapers.md).
 
 Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scraper ID(s)** column lists every scraper that claims URLs on that domain — most domains have one entry, but table-driven networks (`adultprime`, `tmw`, `nextdoorstudios`, etc.) host many sub-studios on a single root domain. See [`scrapers.md`](scrapers.md) for what each ID covers.
 
@@ -874,6 +874,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | mylf.com | `mylf` |
 | mypervmom.com | `mypervmom` |
 | mypervmom.comtag | `mypervmom` |
+| mypervyfamily.com | `mypervyfamily` |
 | mypickupgirls.com | `mypickupgirls` |
 | mysislovesme.com | `mysislovesme` |
 | mysislovesme.comtag | `mysislovesme` |
@@ -1304,6 +1305,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | tokyo-hot.com | `tokyohot` |
 | tonightsgirlfriend.com | `naughtyamerica` |
 | toptobottom.com | `men` |
+| touchmywife.com | `touchmywife` |
 | tour.bamvisions.com | `bamvisions` |
 | tour.curvyculturexxx.com | `curvyculturexxx` |
 | tour.gilfgasms.com | `gilfgasms` |
