@@ -68,6 +68,7 @@
 | [Granny Loves BBC](https://www.grannylovesbbc.com) | `grannylovesbbc.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
 | [Granny Loves Young Cock](https://www.grannylovesyoungcock.com) | `grannylovesyoungcock.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
 | [Hairy Coochies](https://www.hairycoochies.com) | `hairycoochies.com`, `hairycoochies.com/hirsute-girls/{name}/{id}` | Score Group | No | Score Group, table-driven `scoregroup` package |
+| [Hegre](https://www.hegre.com) | `hegre.com`, `hegre.com/models/{slug}`, `hegre.com/films/{slug}` | Custom | No | Models index → model pages → `/films/{slug}` detail (streaming pipeline), og title/description/thumb, performers, runtime; `locale=en;country=US` cookie for English |
 | [Home Alone MILFs](https://www.homealonemilfs.com) | `homealonemilfs.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
 | [Horny Asian MILFs](https://www.hornyasianmilfs.com) | `hornyasianmilfs.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
 | [Hot and Tatted](https://hotandtatted.com) | `hotandtatted.com`, `hotandtatted.com/categories/movies/{N}/latest/` | povporncash (NATS tour) | No | Listing-only parse, uses `hussieutil` |
