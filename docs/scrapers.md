@@ -36,6 +36,7 @@
 | [Busty Lezzies](https://www.bustylezzies.com) | `bustylezzies.com`, `bustylezzies.com/big-tit-models/{name}/{id}` | Score Group | No | Score Group, table-driven `scoregroup` package |
 | [Busty Merilyn](https://www.bustymerilyn.com) | `bustymerilyn.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
 | [Busty Old Sluts](https://www.bustyoldsluts.com) | `bustyoldsluts.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
+| [CaptiveClinic](https://www.captiveclinic.com) | `captiveclinic.com` | PornCMS | No | Same PornCMS as GirlsGoneGyno (paginated `?mb=` listing), full card metadata, uses `girlsgonegyno` package |
 | [Casting Couch-HD](https://www.castingcouch-hd.com) | `castingcouch-hd.com` | NVG Network (Next.js) | No | `__NEXT_DATA__` (latest ~42 public, title/date/duration/models), uses `nvg` package |
 | [Chastity Babes](https://www.chastitybabes.com) | `chastitybabes.com`, `chastitybabes.com/tag/{slug}` | WordPress (REST API) | No | WP REST `posts` (~1263), tags=performers, categories, no duration, uses `fotoroutil` |
 | [Chicks On Black Dicks](https://www.chicksonblackdicks.com) | `chicksonblackdicks.com`, `chicksonblackdicks.com/interracial-porn-stars/{name}/{id}` | Score Group | No | Score Group, table-driven `scoregroup` package |

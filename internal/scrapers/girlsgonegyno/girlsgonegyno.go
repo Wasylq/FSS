@@ -1,5 +1,5 @@
-// Package girlsgonegyno scrapes GirlsGoneGyno (girlsgonegyno.com), a PornCMS.com
-// site served via privatemediacloud.com.
+// Package girlsgonegyno scrapes the PornCMS.com (Doctor Tampa / BuyMyMovies)
+// sites served via privatemediacloud.com: GirlsGoneGyno and CaptiveClinic.
 //
 // The video grid is lazy-loaded: the "Videos" listing page
 // (?mb=VmlkZW9zfHw=, base64 for "Videos||") is a thin wrapper whose
@@ -33,34 +33,59 @@ import (
 	"github.com/Wasylq/FSS/scraper"
 )
 
-const (
-	siteBase = "https://www.girlsgonegyno.com"
-	siteID   = "girlsgonegyno"
-	pageSize = 27
-	// videosMB is base64 for "Videos||", the PornCMS menu token for the
-	// newest-first video listing.
-	videosMB = "VmlkZW9zfHw="
-)
+const pageSize = 27
 
-type Scraper struct{ client *http.Client }
+// videosMB is base64 for "Videos||", the PornCMS menu token for the
+// newest-first video listing.
+const videosMB = "VmlkZW9zfHw="
 
-func New() *Scraper {
-	return &Scraper{client: httpx.NewClient(30 * time.Second)}
+// SiteConfig describes one PornCMS site (Doctor Tampa / BuyMyMovies network).
+type SiteConfig struct {
+	ID       string
+	SiteBase string // e.g. "https://www.girlsgonegyno.com" — no trailing slash
+	Studio   string
+	MatchRe  *regexp.Regexp
+}
+
+var sites = []SiteConfig{
+	{
+		ID:       "girlsgonegyno",
+		SiteBase: "https://www.girlsgonegyno.com",
+		Studio:   "GirlsGoneGyno",
+		MatchRe:  regexp.MustCompile(`^https?://(?:www\.)?girlsgonegyno\.com`),
+	},
+	{
+		ID:       "captiveclinic",
+		SiteBase: "https://www.captiveclinic.com",
+		Studio:   "CaptiveClinic",
+		MatchRe:  regexp.MustCompile(`^https?://(?:www\.)?captiveclinic\.com`),
+	},
+}
+
+type Scraper struct {
+	cfg    SiteConfig
+	client *http.Client
+}
+
+func New(cfg SiteConfig) *Scraper {
+	return &Scraper{cfg: cfg, client: httpx.NewClient(30 * time.Second)}
 }
 
 var _ scraper.StudioScraper = (*Scraper)(nil)
 
-func init() { scraper.Register(New()) }
-
-func (s *Scraper) ID() string { return siteID }
-
-func (s *Scraper) Patterns() []string {
-	return []string{"girlsgonegyno.com"}
+func init() {
+	for _, cfg := range sites {
+		scraper.Register(New(cfg))
+	}
 }
 
-var matchRe = regexp.MustCompile(`^https?://(?:www\.)?girlsgonegyno\.com`)
+func (s *Scraper) ID() string { return s.cfg.ID }
 
-func (s *Scraper) MatchesURL(u string) bool { return matchRe.MatchString(u) }
+func (s *Scraper) Patterns() []string {
+	return []string{strings.TrimPrefix(s.cfg.SiteBase, "https://www.")}
+}
+
+func (s *Scraper) MatchesURL(u string) bool { return s.cfg.MatchRe.MatchString(u) }
 
 func (s *Scraper) ListScenes(ctx context.Context, studioURL string, opts scraper.ListOpts) (<-chan scraper.SceneResult, error) {
 	out := make(chan scraper.SceneResult)
@@ -72,7 +97,7 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 	defer close(out)
 
 	now := time.Now().UTC()
-	scraper.Paginate(ctx, opts, siteID, out, func(ctx context.Context, page int) (scraper.PageResult, error) {
+	scraper.Paginate(ctx, opts, s.cfg.ID, out, func(ctx context.Context, page int) (scraper.PageResult, error) {
 		offset := (page - 1) * pageSize
 		cards, err := s.fetchPage(ctx, offset)
 		if err != nil {
@@ -80,7 +105,7 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 		}
 		scenes := make([]models.Scene, 0, len(cards))
 		for _, c := range cards {
-			if sc, ok := toScene(studioURL, c, now); ok {
+			if sc, ok := s.toScene(studioURL, c, now); ok {
 				scenes = append(scenes, sc)
 			}
 		}
@@ -97,18 +122,18 @@ var (
 // fragment URL, fetches that fragment, and returns the raw per-card HTML
 // chunks.
 func (s *Scraper) fetchPage(ctx context.Context, offset int) ([]string, error) {
-	wrapperURL := fmt.Sprintf("%s/index.php?mb=%s&clearcache=1&p=%d", siteBase, videosMB, offset)
+	wrapperURL := fmt.Sprintf("%s/index.php?mb=%s&clearcache=1&p=%d", s.cfg.SiteBase, videosMB, offset)
 	wrapper, err := s.fetchBody(ctx, wrapperURL)
 	if err != nil {
 		return nil, fmt.Errorf("fetching wrapper: %w", err)
 	}
 	m := loadHashRe.FindStringSubmatch(wrapper)
 	if m == nil {
-		scraper.Debugf(1, "%s: no fragment hash in wrapper for offset %d", siteID, offset)
+		scraper.Debugf(1, "%s: no fragment hash in wrapper for offset %d", s.cfg.ID, offset)
 		return nil, nil
 	}
-	fragURL := siteBase + "/" + m[1]
-	scraper.Debugf(1, "%s: loading fragment %s", siteID, m[1])
+	fragURL := s.cfg.SiteBase + "/" + m[1]
+	scraper.Debugf(1, "%s: loading fragment %s", s.cfg.ID, m[1])
 	frag, err := s.fetchBody(ctx, fragURL)
 	if err != nil {
 		return nil, fmt.Errorf("fetching fragment: %w", err)
@@ -147,7 +172,7 @@ var (
 	viewsRe      = regexp.MustCompile(`<strong>Views:\s*</strong>([0-9,]+)`)
 )
 
-func toScene(studioURL, card string, now time.Time) (models.Scene, bool) {
+func (s *Scraper) toScene(studioURL, card string, now time.Time) (models.Scene, bool) {
 	m := ridRe.FindStringSubmatch(card)
 	if m == nil {
 		return models.Scene{}, false
@@ -155,10 +180,10 @@ func toScene(studioURL, card string, now time.Time) (models.Scene, bool) {
 	id := m[1]
 	scene := models.Scene{
 		ID:        id,
-		SiteID:    siteID,
+		SiteID:    s.cfg.ID,
 		StudioURL: studioURL,
-		URL:       siteBase + "/?mb=" + base64.StdEncoding.EncodeToString([]byte("Trailer||"+id)),
-		Studio:    "GirlsGoneGyno",
+		URL:       s.cfg.SiteBase + "/?mb=" + base64.StdEncoding.EncodeToString([]byte("Trailer||"+id)),
+		Studio:    s.cfg.Studio,
 		ScrapedAt: now,
 	}
 	if t := titleRe.FindStringSubmatch(card); t != nil {
