@@ -87,6 +87,7 @@
 | [LatinBoyz](https://latinboyz.com) | `latinboyz.com`, `latinboyz.com/tag/{slug}` | WordPress (REST API) | No | WP REST `posts` (gay Latino; feed includes occasional text stories), date + description + thumbnail, uses `fotoroutil` |
 | [Leanne Crow Videos](https://www.leannecrowvideos.com) | `leannecrowvideos.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
 | [Leg Sex](https://www.legsex.com) | `legsex.com`, `legsex.com/foot-models/{name}/{id}` | Score Group | No | Score Group, table-driven `scoregroup` package |
+| [LeWood](https://www.lewood.com) | `lewood.com`, `lewood.com/{id}/{slug}-streaming-scene-video.html` | Adult Empire / Ravana (ASP.NET) | No | Browse listing `watch-newest-lewood-clips-and-scenes.html?page={N}` (~1560) + detail fetch (release date, og description); title/performers/thumb from listing; `AgeConfirmed` cookie |
 | [Linsey's World](https://www.linseysworld.com) | `linseysworld.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
 | [MASQULIN](https://masqulin.com) | `masqulin.com`, `thebronetwork.com/categories/masqulin_{N}_d.html` | Bro Network (PHP CMS) | No | Catalog lives as a category on thebronetwork.com, listing-only parse, uses `bronetworkutil` |
 | [Mega Tits Minka](https://www.megatitsminka.com) | `megatitsminka.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
