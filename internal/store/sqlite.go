@@ -172,6 +172,119 @@ CREATE INDEX IF NOT EXISTS idx_scene_tags_tag ON scene_tags(tag_id);
 CREATE INDEX IF NOT EXISTS idx_scene_categories_category ON scene_categories(category_id);
 `
 
+// migration2 qualifies every scene key with studio_url so two studio URLs on
+// the same site can no longer share — and steal — a scene row. It rebuilds the
+// scenes primary key to (id, site_id, studio_url) and adds studio_url to the
+// junction tables and price_history, deriving each child row's studio_url from
+// its parent scene. Run with foreign keys OFF (see applyMigration2). Because
+// the pre-migration scenes PK was (id, site_id), every child joins to exactly
+// one scene, so no rows are duplicated.
+const migration2 = `
+CREATE TABLE scenes_new (
+    id                TEXT NOT NULL,
+    site_id           TEXT NOT NULL,
+    studio_url        TEXT NOT NULL,
+    title             TEXT NOT NULL DEFAULT '',
+    url               TEXT NOT NULL DEFAULT '',
+    date              TEXT,
+    description       TEXT DEFAULT '',
+    thumbnail         TEXT DEFAULT '',
+    preview           TEXT DEFAULT '',
+    performers        TEXT DEFAULT '[]',
+    director          TEXT DEFAULT '',
+    studio            TEXT DEFAULT '',
+    tags              TEXT DEFAULT '[]',
+    categories        TEXT DEFAULT '[]',
+    series            TEXT DEFAULT '',
+    series_part       INTEGER DEFAULT 0,
+    duration          INTEGER DEFAULT 0,
+    resolution        TEXT DEFAULT '',
+    width             INTEGER DEFAULT 0,
+    height            INTEGER DEFAULT 0,
+    format            TEXT DEFAULT '',
+    views             INTEGER DEFAULT 0,
+    likes             INTEGER DEFAULT 0,
+    comments          INTEGER DEFAULT 0,
+    lowest_price      REAL DEFAULT 0,
+    lowest_price_date TEXT,
+    scraped_at        TEXT NOT NULL,
+    deleted_at        TEXT,
+    PRIMARY KEY (id, site_id, studio_url)
+);
+INSERT INTO scenes_new SELECT * FROM scenes;
+DROP TABLE scenes;
+ALTER TABLE scenes_new RENAME TO scenes;
+CREATE INDEX IF NOT EXISTS idx_scenes_studio_url ON scenes(studio_url);
+
+CREATE TABLE scene_performers_new (
+    scene_id     TEXT NOT NULL,
+    site_id      TEXT NOT NULL,
+    studio_url   TEXT NOT NULL,
+    performer_id INTEGER NOT NULL,
+    position     INTEGER NOT NULL DEFAULT 0,
+    PRIMARY KEY (scene_id, site_id, studio_url, performer_id),
+    FOREIGN KEY (scene_id, site_id, studio_url) REFERENCES scenes(id, site_id, studio_url) ON DELETE CASCADE,
+    FOREIGN KEY (performer_id) REFERENCES performers(id)
+);
+INSERT INTO scene_performers_new (scene_id, site_id, studio_url, performer_id, position)
+    SELECT j.scene_id, j.site_id, s.studio_url, j.performer_id, j.position
+    FROM scene_performers j JOIN scenes s ON j.scene_id = s.id AND j.site_id = s.site_id;
+DROP TABLE scene_performers;
+ALTER TABLE scene_performers_new RENAME TO scene_performers;
+CREATE INDEX IF NOT EXISTS idx_scene_performers_performer ON scene_performers(performer_id);
+
+CREATE TABLE scene_tags_new (
+    scene_id   TEXT NOT NULL,
+    site_id    TEXT NOT NULL,
+    studio_url TEXT NOT NULL,
+    tag_id     INTEGER NOT NULL,
+    PRIMARY KEY (scene_id, site_id, studio_url, tag_id),
+    FOREIGN KEY (scene_id, site_id, studio_url) REFERENCES scenes(id, site_id, studio_url) ON DELETE CASCADE,
+    FOREIGN KEY (tag_id) REFERENCES tags(id)
+);
+INSERT INTO scene_tags_new (scene_id, site_id, studio_url, tag_id)
+    SELECT j.scene_id, j.site_id, s.studio_url, j.tag_id
+    FROM scene_tags j JOIN scenes s ON j.scene_id = s.id AND j.site_id = s.site_id;
+DROP TABLE scene_tags;
+ALTER TABLE scene_tags_new RENAME TO scene_tags;
+CREATE INDEX IF NOT EXISTS idx_scene_tags_tag ON scene_tags(tag_id);
+
+CREATE TABLE scene_categories_new (
+    scene_id    TEXT NOT NULL,
+    site_id     TEXT NOT NULL,
+    studio_url  TEXT NOT NULL,
+    category_id INTEGER NOT NULL,
+    PRIMARY KEY (scene_id, site_id, studio_url, category_id),
+    FOREIGN KEY (scene_id, site_id, studio_url) REFERENCES scenes(id, site_id, studio_url) ON DELETE CASCADE,
+    FOREIGN KEY (category_id) REFERENCES categories(id)
+);
+INSERT INTO scene_categories_new (scene_id, site_id, studio_url, category_id)
+    SELECT j.scene_id, j.site_id, s.studio_url, j.category_id
+    FROM scene_categories j JOIN scenes s ON j.scene_id = s.id AND j.site_id = s.site_id;
+DROP TABLE scene_categories;
+ALTER TABLE scene_categories_new RENAME TO scene_categories;
+CREATE INDEX IF NOT EXISTS idx_scene_categories_category ON scene_categories(category_id);
+
+CREATE TABLE price_history_new (
+    id               INTEGER PRIMARY KEY AUTOINCREMENT,
+    scene_id         TEXT NOT NULL,
+    site_id          TEXT NOT NULL,
+    studio_url       TEXT NOT NULL,
+    date             TEXT NOT NULL,
+    regular          REAL NOT NULL DEFAULT 0,
+    discounted       REAL DEFAULT 0,
+    is_free          INTEGER NOT NULL DEFAULT 0,
+    is_on_sale       INTEGER NOT NULL DEFAULT 0,
+    discount_percent INTEGER DEFAULT 0
+);
+INSERT INTO price_history_new (id, scene_id, site_id, studio_url, date, regular, discounted, is_free, is_on_sale, discount_percent)
+    SELECT ph.id, ph.scene_id, ph.site_id, s.studio_url, ph.date, ph.regular, ph.discounted, ph.is_free, ph.is_on_sale, ph.discount_percent
+    FROM price_history ph JOIN scenes s ON ph.scene_id = s.id AND ph.site_id = s.site_id;
+DROP TABLE price_history;
+ALTER TABLE price_history_new RENAME TO price_history;
+CREATE INDEX IF NOT EXISTS idx_price_history_scene ON price_history(scene_id, site_id, studio_url);
+`
+
 func (s *SQLite) migrate() error {
 	if _, err := s.db.Exec(baseSchema); err != nil {
 		return err
@@ -187,7 +300,40 @@ func (s *SQLite) migrate() error {
 			return fmt.Errorf("migration 1: %w", err)
 		}
 	}
+	if version < 2 {
+		if err := s.applyMigration2(); err != nil {
+			return fmt.Errorf("migration 2: %w", err)
+		}
+	}
 	return nil
+}
+
+// applyMigration2 rebuilds the scene tables with studio_url-qualified keys.
+// Foreign keys must be OFF during the rebuild (their toggle cannot live inside
+// a transaction), so we disable them on the single shared connection, run the
+// rebuild in one transaction, then restore them.
+func (s *SQLite) applyMigration2() error {
+	if _, err := s.db.Exec("PRAGMA foreign_keys = OFF"); err != nil {
+		return err
+	}
+	defer func() { _, _ = s.db.Exec("PRAGMA foreign_keys = ON") }()
+
+	tx, err := s.db.Begin()
+	if err != nil {
+		return err
+	}
+	defer func() { _ = tx.Rollback() }()
+
+	if _, err := tx.Exec(migration2); err != nil {
+		return err
+	}
+	if _, err := tx.Exec(`DELETE FROM schema_version`); err != nil {
+		return err
+	}
+	if _, err := tx.Exec(`INSERT INTO schema_version (version) VALUES (2)`); err != nil {
+		return err
+	}
+	return tx.Commit()
 }
 
 // applyMigration1 creates the junction tables and migrates existing JSON data.
@@ -230,7 +376,7 @@ func (s *SQLite) applyMigration1() error {
 		if err != nil {
 			return fmt.Errorf("parsing performers for scene %s: %w", r.id, err)
 		}
-		if err := syncRelation(tx, "performers", "scene_performers", "performer_id", r.id, r.siteID, performers, true); err != nil {
+		if err := syncRelationLegacy(tx, "performers", "scene_performers", "performer_id", r.id, r.siteID, performers, true); err != nil {
 			return err
 		}
 
@@ -238,7 +384,7 @@ func (s *SQLite) applyMigration1() error {
 		if err != nil {
 			return fmt.Errorf("parsing tags for scene %s: %w", r.id, err)
 		}
-		if err := syncRelation(tx, "tags", "scene_tags", "tag_id", r.id, r.siteID, tags, false); err != nil {
+		if err := syncRelationLegacy(tx, "tags", "scene_tags", "tag_id", r.id, r.siteID, tags, false); err != nil {
 			return err
 		}
 
@@ -246,7 +392,7 @@ func (s *SQLite) applyMigration1() error {
 		if err != nil {
 			return fmt.Errorf("parsing categories for scene %s: %w", r.id, err)
 		}
-		if err := syncRelation(tx, "categories", "scene_categories", "category_id", r.id, r.siteID, cats, false); err != nil {
+		if err := syncRelationLegacy(tx, "categories", "scene_categories", "category_id", r.id, r.siteID, cats, false); err != nil {
 			return err
 		}
 	}
@@ -361,8 +507,8 @@ func (s *SQLite) Save(studioURL string, scenes []models.Scene) error {
 	for _, k := range toDelete {
 		// Delete price_history first — no FK CASCADE on that table.
 		if _, err := tx.Exec(
-			`DELETE FROM price_history WHERE scene_id = ? AND site_id = ?`,
-			k.id, k.siteID,
+			`DELETE FROM price_history WHERE scene_id = ? AND site_id = ? AND studio_url = ?`,
+			k.id, k.siteID, studioURL,
 		); err != nil {
 			return fmt.Errorf("deleting price_history for %s/%s: %w", k.siteID, k.id, err)
 		}
@@ -480,8 +626,7 @@ func upsertScene(tx *sql.Tx, sc models.Scene) error {
 		    views, likes, comments,
 		    lowest_price, lowest_price_date, scraped_at, deleted_at
 		) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
-		ON CONFLICT(id, site_id) DO UPDATE SET
-		    studio_url        = excluded.studio_url,
+		ON CONFLICT(id, site_id, studio_url) DO UPDATE SET
 		    title             = excluded.title,
 		    url               = excluded.url,
 		    date              = excluded.date,
@@ -521,13 +666,13 @@ func upsertScene(tx *sql.Tx, sc models.Scene) error {
 		return fmt.Errorf("upserting scene %s: %w", sc.ID, err)
 	}
 
-	if err := syncRelation(tx, "performers", "scene_performers", "performer_id", sc.ID, sc.SiteID, sc.Performers, true); err != nil {
+	if err := syncRelation(tx, "performers", "scene_performers", "performer_id", sc.ID, sc.SiteID, sc.StudioURL, sc.Performers, true); err != nil {
 		return fmt.Errorf("upserting performers for %s: %w", sc.ID, err)
 	}
-	if err := syncRelation(tx, "tags", "scene_tags", "tag_id", sc.ID, sc.SiteID, sc.Tags, false); err != nil {
+	if err := syncRelation(tx, "tags", "scene_tags", "tag_id", sc.ID, sc.SiteID, sc.StudioURL, sc.Tags, false); err != nil {
 		return fmt.Errorf("upserting tags for %s: %w", sc.ID, err)
 	}
-	if err := syncRelation(tx, "categories", "scene_categories", "category_id", sc.ID, sc.SiteID, sc.Categories, false); err != nil {
+	if err := syncRelation(tx, "categories", "scene_categories", "category_id", sc.ID, sc.SiteID, sc.StudioURL, sc.Categories, false); err != nil {
 		return fmt.Errorf("upserting categories for %s: %w", sc.ID, err)
 	}
 
@@ -556,7 +701,10 @@ func validateRelationIDs(names ...string) error {
 	return nil
 }
 
-func syncRelation(tx *sql.Tx, entityTable, junctionTable, fkCol, sceneID, siteID string, names []string, withPosition bool) error {
+// syncRelationLegacy is the pre-studio_url junction sync, FROZEN for use by
+// applyMigration1 only (it populates the v1 two-column junction tables before
+// migration2 rebuilds them). Runtime code uses syncRelation.
+func syncRelationLegacy(tx *sql.Tx, entityTable, junctionTable, fkCol, sceneID, siteID string, names []string, withPosition bool) error {
 	if err := validateRelationIDs(entityTable, junctionTable, fkCol); err != nil {
 		return err
 	}
@@ -673,6 +821,126 @@ func syncRelation(tx *sql.Tx, entityTable, junctionTable, fkCol, sceneID, siteID
 	return nil
 }
 
+// syncRelation reconciles a scene's junction rows (performers/tags/categories)
+// against the desired name list. Rows are keyed by (scene_id, site_id,
+// studio_url) so two studio URLs on the same site keep separate relations.
+func syncRelation(tx *sql.Tx, entityTable, junctionTable, fkCol, sceneID, siteID, studioURL string, names []string, withPosition bool) error {
+	if err := validateRelationIDs(entityTable, junctionTable, fkCol); err != nil {
+		return err
+	}
+	type want struct {
+		name     string
+		position int
+	}
+	seen := make(map[string]struct{}, len(names))
+	desired := make([]want, 0, len(names))
+	for i, name := range names {
+		if name == "" {
+			continue
+		}
+		if _, dup := seen[name]; dup {
+			continue
+		}
+		seen[name] = struct{}{}
+		desired = append(desired, want{name: name, position: i})
+	}
+	desiredSet := make(map[string]int, len(desired))
+	for _, w := range desired {
+		desiredSet[w.name] = w.position
+	}
+
+	type linked struct {
+		id       int64
+		position int
+	}
+	posCol := "0"
+	if withPosition {
+		posCol = "j.position"
+	}
+	rows, err := tx.Query(
+		`SELECT e.name, j.`+fkCol+`, `+posCol+`
+		 FROM `+junctionTable+` j
+		 JOIN `+entityTable+` e ON j.`+fkCol+` = e.id
+		 WHERE j.scene_id = ? AND j.site_id = ? AND j.studio_url = ?`,
+		sceneID, siteID, studioURL,
+	)
+	if err != nil {
+		return err
+	}
+	existing := map[string]linked{}
+	for rows.Next() {
+		var name string
+		var l linked
+		if err := rows.Scan(&name, &l.id, &l.position); err != nil {
+			_ = rows.Close()
+			return err
+		}
+		existing[name] = l
+	}
+	_ = rows.Close()
+	if err := rows.Err(); err != nil {
+		return err
+	}
+
+	// Drop junction rows whose entity is no longer in the desired set.
+	for name, l := range existing {
+		if _, keep := desiredSet[name]; keep {
+			continue
+		}
+		if _, err := tx.Exec(
+			`DELETE FROM `+junctionTable+
+				` WHERE scene_id = ? AND site_id = ? AND studio_url = ? AND `+fkCol+` = ?`,
+			sceneID, siteID, studioURL, l.id,
+		); err != nil {
+			return err
+		}
+		delete(existing, name)
+	}
+
+	// Walk desired in input order so newly inserted rowids reflect that order
+	// (loadRelation has no ORDER BY for tags/categories and relies on this).
+	for _, w := range desired {
+		if l, ok := existing[w.name]; ok {
+			if withPosition && l.position != w.position {
+				if _, err := tx.Exec(
+					`UPDATE `+junctionTable+
+						` SET position = ? WHERE scene_id = ? AND site_id = ? AND studio_url = ? AND `+fkCol+` = ?`,
+					w.position, sceneID, siteID, studioURL, l.id,
+				); err != nil {
+					return err
+				}
+			}
+			continue
+		}
+
+		var id int64
+		if err := tx.QueryRow(
+			`INSERT INTO `+entityTable+` (name) VALUES (?)
+			 ON CONFLICT(name) DO UPDATE SET name = excluded.name
+			 RETURNING id`,
+			w.name,
+		).Scan(&id); err != nil {
+			return err
+		}
+		if withPosition {
+			_, err = tx.Exec(
+				`INSERT INTO `+junctionTable+` (scene_id, site_id, studio_url, `+fkCol+`, position) VALUES (?,?,?,?,?)`,
+				sceneID, siteID, studioURL, id, w.position,
+			)
+		} else {
+			_, err = tx.Exec(
+				`INSERT INTO `+junctionTable+` (scene_id, site_id, studio_url, `+fkCol+`) VALUES (?,?,?,?)`,
+				sceneID, siteID, studioURL, id,
+			)
+		}
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
 // syncPriceHistory diffs the desired snapshot list against price_history rows
 // already stored for this scene, deleting and inserting only the differences.
 // Identity is the full snapshot tuple (date + price fields), so re-saves with
@@ -705,8 +973,8 @@ func syncPriceHistory(tx *sql.Tx, sc models.Scene) error {
 
 	rows, err := tx.Query(`
 		SELECT id, date, regular, discounted, is_free, is_on_sale, discount_percent
-		FROM price_history WHERE scene_id = ? AND site_id = ?`,
-		sc.ID, sc.SiteID,
+		FROM price_history WHERE scene_id = ? AND site_id = ? AND studio_url = ?`,
+		sc.ID, sc.SiteID, sc.StudioURL,
 	)
 	if err != nil {
 		return err
@@ -754,9 +1022,9 @@ func syncPriceHistory(tx *sql.Tx, sc models.Scene) error {
 		}
 		desired[k]--
 		if _, err := tx.Exec(`
-			INSERT INTO price_history (scene_id, site_id, date, regular, discounted, is_free, is_on_sale, discount_percent)
-			VALUES (?,?,?,?,?,?,?,?)`,
-			sc.ID, sc.SiteID, k.date,
+			INSERT INTO price_history (scene_id, site_id, studio_url, date, regular, discounted, is_free, is_on_sale, discount_percent)
+			VALUES (?,?,?,?,?,?,?,?,?)`,
+			sc.ID, sc.SiteID, sc.StudioURL, k.date,
 			k.regular, k.discounted, k.isFree, k.isOnSale, k.discountPercent,
 		); err != nil {
 			return fmt.Errorf("inserting price history for %s: %w", sc.ID, err)
@@ -795,7 +1063,7 @@ func (s *SQLite) loadRelation(studioURL, junctionTable, entityTable, fkCol, orde
 	q := `SELECT j.scene_id, j.site_id, e.name
 		FROM ` + junctionTable + ` j
 		JOIN ` + entityTable + ` e ON j.` + fkCol + ` = e.id
-		JOIN scenes s ON j.scene_id = s.id AND j.site_id = s.site_id
+		JOIN scenes s ON j.scene_id = s.id AND j.site_id = s.site_id AND j.studio_url = s.studio_url
 		WHERE s.studio_url = ?`
 	if orderCol != "" {
 		q += ` ORDER BY j.scene_id, j.site_id, j.` + orderCol
@@ -841,7 +1109,7 @@ func (s *SQLite) loadPriceHistory(studioURL string, scenes []models.Scene) error
 		SELECT ph.scene_id, ph.site_id, ph.date, ph.regular, ph.discounted,
 		       ph.is_free, ph.is_on_sale, ph.discount_percent
 		FROM price_history ph
-		JOIN scenes sc ON ph.scene_id = sc.id AND ph.site_id = sc.site_id
+		JOIN scenes sc ON ph.scene_id = sc.id AND ph.site_id = sc.site_id AND ph.studio_url = sc.studio_url
 		WHERE sc.studio_url = ?
 		ORDER BY ph.date ASC`, studioURL)
 	if err != nil {

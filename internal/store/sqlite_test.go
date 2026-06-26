@@ -1033,6 +1033,12 @@ func TestSQLiteMigration1(t *testing.T) {
 		t.Errorf("schema version = %d, want 1", version)
 	}
 
+	// Load reads the v2 (studio_url-qualified) schema, so apply migration 2;
+	// it carries the migration-1 junction data forward unchanged.
+	if err := s.applyMigration2(); err != nil {
+		t.Fatalf("applyMigration2: %v", err)
+	}
+
 	// Verify junction table data via Load.
 	scenes, err := s.Load(testStudioURL)
 	if err != nil {
@@ -1113,6 +1119,9 @@ func TestSQLiteMigration1NullJSON(t *testing.T) {
 
 	if err := s.applyMigration1(); err != nil {
 		t.Fatalf("applyMigration1 with null JSON: %v", err)
+	}
+	if err := s.applyMigration2(); err != nil {
+		t.Fatalf("applyMigration2: %v", err)
 	}
 
 	scenes, err := s.Load(testStudioURL)
@@ -1257,4 +1266,69 @@ func TestSQLiteForeignKeysCascade(t *testing.T) {
 			t.Errorf("%s has %d orphan rows after DELETE scenes — cascade did not fire", table, n)
 		}
 	}
+}
+
+// TestSQLiteCompositePKNoCrossStudioSteal is the A7 regression: two studio URLs
+// on the same site sharing a scene (id, site_id) must keep independent rows —
+// including performers/tags/categories and price history — so neither studio's
+// authoritative Save deletes or overwrites the other's data.
+func TestSQLiteCompositePKNoCrossStudioSteal(t *testing.T) {
+	s := newTestDB(t)
+	now := time.Now().UTC().Truncate(time.Second)
+	const urlA = "https://example.com/studio-a"
+	const urlB = "https://example.com/studio-b"
+
+	mk := func(studioURL, title, performer, tag string, price float64) models.Scene {
+		sc := models.Scene{
+			ID: "1", SiteID: "shared", StudioURL: studioURL,
+			Title: title, URL: "https://example.com/v/1",
+			Performers: []string{performer}, Tags: []string{tag}, ScrapedAt: now,
+		}
+		sc.AddPrice(models.PriceSnapshot{Date: now, Regular: price})
+		return sc
+	}
+
+	if err := s.Save(urlA, []models.Scene{mk(urlA, "A title", "Alice", "tagA", 9.99)}); err != nil {
+		t.Fatalf("Save A: %v", err)
+	}
+	if err := s.Save(urlB, []models.Scene{mk(urlB, "B title", "Bob", "tagB", 4.99)}); err != nil {
+		t.Fatalf("Save B: %v", err)
+	}
+
+	check := func(url, wantTitle, wantPerformer, wantTag string, wantPrice float64) {
+		t.Helper()
+		got, err := s.Load(url)
+		if err != nil {
+			t.Fatalf("Load %s: %v", url, err)
+		}
+		if len(got) != 1 {
+			t.Fatalf("Load %s: got %d scenes, want 1", url, len(got))
+		}
+		sc := got[0]
+		if sc.Title != wantTitle {
+			t.Errorf("%s title = %q, want %q", url, sc.Title, wantTitle)
+		}
+		if len(sc.Performers) != 1 || sc.Performers[0] != wantPerformer {
+			t.Errorf("%s performers = %v, want [%s]", url, sc.Performers, wantPerformer)
+		}
+		if len(sc.Tags) != 1 || sc.Tags[0] != wantTag {
+			t.Errorf("%s tags = %v, want [%s]", url, sc.Tags, wantTag)
+		}
+		if len(sc.PriceHistory) != 1 || sc.PriceHistory[0].Regular != wantPrice {
+			t.Errorf("%s price = %v, want %v", url, sc.PriceHistory, wantPrice)
+		}
+	}
+
+	// Both studios keep their own row/relations/price despite sharing (id, site_id).
+	check(urlA, "A title", "Alice", "tagA", 9.99)
+	check(urlB, "B title", "Bob", "tagB", 4.99)
+
+	// An authoritative Save that empties studio A must not touch studio B.
+	if err := s.Save(urlA, nil); err != nil {
+		t.Fatalf("Save A empty: %v", err)
+	}
+	if got, _ := s.Load(urlA); len(got) != 0 {
+		t.Errorf("studio A should be empty, got %d", len(got))
+	}
+	check(urlB, "B title", "Bob", "tagB", 4.99)
 }
