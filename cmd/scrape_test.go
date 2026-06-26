@@ -639,3 +639,57 @@ func TestParseFormats_whitespace(t *testing.T) {
 		t.Errorf("got %v, want [json csv]", got)
 	}
 }
+
+// urlStampScraper emits one scene that stamps a StudioURL different from the
+// requested one, and matches only its configured URL.
+type urlStampScraper struct {
+	id       string
+	matchURL string
+	stampURL string
+	sceneID  string
+	siteID   string
+}
+
+func (u *urlStampScraper) ID() string               { return u.id }
+func (u *urlStampScraper) Patterns() []string       { return nil }
+func (u *urlStampScraper) MatchesURL(s string) bool { return s == u.matchURL }
+
+func (u *urlStampScraper) ListScenes(_ context.Context, _ string, _ scraper.ListOpts) (<-chan scraper.SceneResult, error) {
+	ch := make(chan scraper.SceneResult, 2)
+	ch <- scraper.Scene(models.Scene{
+		ID: u.sceneID, SiteID: u.siteID, StudioURL: u.stampURL,
+		Title: "stamped", URL: "https://example.com/v/1", ScrapedAt: time.Now().UTC(),
+	})
+	close(ch)
+	return ch, nil
+}
+
+// TestScrapeOne_normalizesStudioURL is the A3 regression: scrapeOne must store
+// scenes under the requested studioURL even when the scraper stamps a different
+// (canonical/derived) URL on each scene, so the (id, site_id, studio_url) rows
+// stay reachable by Load.
+func TestScrapeOne_normalizesStudioURL(t *testing.T) {
+	const requested = "https://example.com/a3-requested"
+	scraper.Register(&urlStampScraper{
+		id: "a3stamp", matchURL: requested,
+		stampURL: "https://cdn.example.com/canonical-different",
+		sceneID:  "1", siteID: "a3site",
+	})
+
+	st := store.NewFlat(t.TempDir(), []string{"json"})
+	if err := scrapeOne(context.Background(), st, requested, "", "", "", []string{"json"},
+		false, false, 1, 0, nil); err != nil {
+		t.Fatalf("scrapeOne: %v", err)
+	}
+
+	got, err := st.Load(requested)
+	if err != nil {
+		t.Fatalf("Load: %v", err)
+	}
+	if len(got) != 1 {
+		t.Fatalf("got %d scenes, want 1", len(got))
+	}
+	if got[0].StudioURL != requested {
+		t.Errorf("StudioURL = %q, want %q (not the scraper's stamped URL)", got[0].StudioURL, requested)
+	}
+}

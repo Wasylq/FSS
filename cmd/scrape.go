@@ -183,6 +183,15 @@ func scrapeOne(ctx context.Context, st store.Store, studioURL, name, dbPath, out
 		name = scenes[0].Studio
 	}
 
+	// Normalise StudioURL to the URL being saved. Some scrapers stamp a
+	// canonical/derived URL on each scene that differs from the requested
+	// studioURL; the SQLite store keys rows by (id, site_id, studio_url) and
+	// Load/delete filter on the Save parameter, so a mismatch would orphan the
+	// rows. This also keeps the Flat store's stored StudioURL consistent.
+	for i := range scenes {
+		scenes[i].StudioURL = studioURL
+	}
+
 	if err := st.Save(studioURL, scenes); err != nil {
 		return fmt.Errorf("saving results: %w", err)
 	}
