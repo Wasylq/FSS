@@ -19,7 +19,7 @@ import (
 	"github.com/Wasylq/FSS/scraper"
 )
 
-const siteBase = "https://hustlerunlimited.com"
+var siteBase = "https://hustlerunlimited.com"
 
 type Scraper struct {
 	client *http.Client

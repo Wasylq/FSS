@@ -24,9 +24,11 @@ import (
 
 const (
 	siteBase      = "https://dreamtranny.com"
-	sitemapURL    = siteBase + "/sitemap.xml"
 	detailWorkers = 6
 )
+
+// sitemapURL is a var (not const) so tests can point it at a local httptest server.
+var sitemapURL = siteBase + "/sitemap.xml"
 
 type Scraper struct {
 	client *http.Client

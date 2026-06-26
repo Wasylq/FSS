@@ -19,7 +19,8 @@ import (
 	"github.com/Wasylq/FSS/scraper"
 )
 
-const siteBase = "https://staxus.com"
+// siteBase is a var (not const) so tests can point it at an httptest server.
+var siteBase = "https://staxus.com"
 
 type Scraper struct{ client *http.Client }
 

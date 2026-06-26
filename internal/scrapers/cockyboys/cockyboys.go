@@ -24,9 +24,10 @@ import (
 const (
 	siteID        = "cockyboys"
 	studioName    = "CockyBoys"
-	siteBase      = "https://cockyboys.com"
 	detailWorkers = 4
 )
+
+var siteBase = "https://cockyboys.com"
 
 type Scraper struct {
 	Client *http.Client

@@ -26,9 +26,14 @@ import (
 const (
 	siteID        = "amateurallure"
 	studioName    = "Amateur Allure"
-	siteBase      = "https://www.amateurallure.com"
-	listingURL    = siteBase + "/tour/updates/page_%d.html"
 	detailWorkers = 4
+)
+
+// siteBase / listingURL are vars (not consts) so tests can point them at an
+// httptest server.
+var (
+	siteBase   = "https://www.amateurallure.com"
+	listingURL = siteBase + "/tour/updates/page_%d.html"
 )
 
 type Scraper struct {

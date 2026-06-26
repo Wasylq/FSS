@@ -25,9 +25,11 @@ const (
 	siteID        = "mistresst"
 	studioName    = "Mistress T"
 	siteBase      = "https://www.mistresst.net"
-	sitemapURL    = siteBase + "/sitemap.xml"
 	defaultWorker = 6
 )
+
+// sitemapURL is a var (not const) so tests can point it at a local httptest server.
+var sitemapURL = siteBase + "/sitemap.xml"
 
 // Scraper implements scraper.StudioScraper for Mistress T.
 type Scraper struct {

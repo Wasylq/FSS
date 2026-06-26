@@ -40,10 +40,10 @@ import (
 	"github.com/Wasylq/FSS/scraper"
 )
 
-const (
-	siteBase      = "https://www.hegre.com"
-	defaultWorker = 6
-)
+// siteBase is a var (not const) so tests can point it at an httptest server.
+var siteBase = "https://www.hegre.com"
+
+const defaultWorker = 6
 
 // Scraper implements scraper.StudioScraper for hegre.com.
 type Scraper struct {

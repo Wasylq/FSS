@@ -24,9 +24,10 @@ import (
 const (
 	siteID        = "timtales"
 	studioName    = "Timtales"
-	baseURL       = "https://www.timtales.com"
 	detailWorkers = 4
 )
+
+var baseURL = "https://www.timtales.com"
 
 type Scraper struct {
 	client *http.Client

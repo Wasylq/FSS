@@ -22,10 +22,11 @@ import (
 	"github.com/Wasylq/FSS/scraper"
 )
 
-const (
-	siteBase = "https://p-p-p.tv"
-	siteID   = "gangbangmedia"
-)
+const siteID = "gangbangmedia"
+
+// siteBase is a var (not const) only so offline tests can point it at an
+// httptest server; the default is the production host.
+var siteBase = "https://p-p-p.tv"
 
 type Scraper struct{ client *http.Client }
 

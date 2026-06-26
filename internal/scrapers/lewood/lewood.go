@@ -29,10 +29,13 @@ import (
 const (
 	siteID        = "lewood"
 	studioName    = "LeWood"
-	siteBase      = "https://www.lewood.com"
 	browsePath    = "/watch-newest-lewood-clips-and-scenes.html"
 	detailWorkers = 4
 )
+
+// siteBase is a var (not const) only so offline tests can point it at an
+// httptest server; the default is the production host.
+var siteBase = "https://www.lewood.com"
 
 type Scraper struct {
 	client *http.Client

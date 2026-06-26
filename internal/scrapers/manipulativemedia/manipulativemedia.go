@@ -27,10 +27,10 @@ import (
 	"github.com/Wasylq/FSS/scraper"
 )
 
-const (
-	apiBase  = "https://site-api.project1service.com/v2/releases"
-	pageSize = 100
-)
+// apiBase is a var (not const) so tests can point it at an httptest server.
+var apiBase = "https://site-api.project1service.com/v2/releases"
+
+const pageSize = 100
 
 // site holds the per-brand configuration for a single network member.
 type site struct {

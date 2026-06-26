@@ -28,9 +28,11 @@ import (
 )
 
 const (
-	siteBase      = "https://www.putalocura.com"
 	detailWorkers = 6
 )
+
+// siteBase is a var (not const) so tests can point it at a local httptest server.
+var siteBase = "https://www.putalocura.com"
 
 type Scraper struct{ client *http.Client }
 

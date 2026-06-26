@@ -24,10 +24,9 @@ import (
 	"github.com/Wasylq/FSS/scraper"
 )
 
-const (
-	siteBase      = "https://www.tokyo-hot.com"
-	detailWorkers = 4
-)
+var siteBase = "https://www.tokyo-hot.com"
+
+const detailWorkers = 4
 
 type Scraper struct{ client *http.Client }
 

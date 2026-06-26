@@ -24,10 +24,12 @@ import (
 )
 
 const (
-	siteBase      = "https://www.abbywinters.com"
 	listPath      = "/amateurs/shoots"
 	detailWorkers = 4
 )
+
+// siteBase is a var (not const) so tests can point it at an httptest server.
+var siteBase = "https://www.abbywinters.com"
 
 type Scraper struct{ client *http.Client }
 
