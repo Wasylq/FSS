@@ -347,6 +347,13 @@ func (s *SQLite) Save(studioURL string, scenes []models.Scene) error {
 			toDelete = append(toDelete, k)
 		}
 	}
+	// A truncated iteration (driver error mid-scan) would yield an incomplete
+	// delete-candidate list; abort rather than commit a partial authoritative
+	// Save. The deferred Rollback unwinds the transaction.
+	if err := rows.Err(); err != nil {
+		_ = rows.Close()
+		return fmt.Errorf("iterating existing scene keys: %w", err)
+	}
 	if err := rows.Close(); err != nil {
 		return fmt.Errorf("closing scene-keys cursor: %w", err)
 	}
