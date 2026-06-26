@@ -28,6 +28,16 @@ func (f *Flat) jsonPath(studioURL string) string {
 	return filepath.Join(f.dir, Slugify(studioURL)+".json")
 }
 
+// legacyJSONPath is the pre-hash filename for a studio URL, used to migrate
+// files written before Slugify gained its hash suffix.
+func (f *Flat) legacyJSONPath(studioURL string) string {
+	legacy := output.LegacySlugify(studioURL)
+	if legacy == "" {
+		return ""
+	}
+	return filepath.Join(f.dir, legacy+".json")
+}
+
 func (f *Flat) csvPath(studioURL string) string {
 	return filepath.Join(f.dir, Slugify(studioURL)+".csv")
 }
@@ -56,7 +66,16 @@ func (f *Flat) loadStudioFile(studioURL string) (*models.StudioFile, error) {
 	path := f.jsonPath(studioURL)
 	data, err := os.ReadFile(path)
 	if os.IsNotExist(err) {
-		return nil, nil
+		// Migrate a pre-hash (legacy) file to the new hashed name, if one
+		// exists and belongs to this studio, so existing incremental state
+		// (price history, soft-deletes) survives the Slugify change.
+		if migrated, mErr := f.migrateLegacy(studioURL, path); mErr != nil {
+			return nil, mErr
+		} else if migrated {
+			data, err = os.ReadFile(path)
+		} else {
+			return nil, nil
+		}
 	}
 	if err != nil {
 		return nil, fmt.Errorf("reading store: %w", err)
@@ -72,6 +91,35 @@ func (f *Flat) loadStudioFile(studioURL string) (*models.StudioFile, error) {
 		)
 	}
 	return &sf, nil
+}
+
+// migrateLegacy renames a pre-hash studio file to the new hashed name when one
+// exists and belongs to studioURL. Returns whether a migration happened. A
+// legacy file recording a different StudioURL is left untouched (the studios
+// no longer collide once both are hashed).
+func (f *Flat) migrateLegacy(studioURL, newPath string) (bool, error) {
+	legacy := f.legacyJSONPath(studioURL)
+	if legacy == "" || legacy == newPath {
+		return false, nil
+	}
+	data, err := os.ReadFile(legacy)
+	if os.IsNotExist(err) {
+		return false, nil
+	}
+	if err != nil {
+		return false, fmt.Errorf("reading legacy store: %w", err)
+	}
+	var sf models.StudioFile
+	if err := json.Unmarshal(data, &sf); err != nil {
+		return false, fmt.Errorf("parsing legacy store: %w", err)
+	}
+	if sf.StudioURL != "" && sf.StudioURL != studioURL {
+		return false, nil
+	}
+	if err := os.Rename(legacy, newPath); err != nil {
+		return false, fmt.Errorf("migrating legacy store %s: %w", legacy, err)
+	}
+	return true, nil
 }
 
 func (f *Flat) Save(studioURL string, scenes []models.Scene) error {

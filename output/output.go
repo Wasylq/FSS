@@ -1,7 +1,9 @@
 package output
 
 import (
+	"crypto/sha256"
 	"encoding/csv"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -61,11 +63,32 @@ func WriteCSV(scenes []models.Scene, path string) error {
 	})
 }
 
-// Slugify turns a studio URL into a safe, human-readable filename stem.
-// e.g. "https://www.manyvids.com/Profile/590705/bettie-bondage/Store/Videos"
+// Slugify converts a studio URL to a safe filename stem. It appends a short
+// hash of the raw URL so that distinct URLs never collide on the same slug —
+// e.g. "anna_b" and "anna-b" both sanitize to "anna-b" but get different
+// hashes — and so that URLs whose host+path sanitize to the empty string
+// (e.g. purely non-ASCII paths) still produce a unique, non-empty stem.
 //
-//	→ "www-manyvids-com-profile-590705-bettie-bondage-store-videos"
+// Changing this output renames Flat-store files; the Flat store migrates the
+// legacy (un-hashed) filename on read — see LegacySlugify.
 func Slugify(rawURL string) string {
+	base := slugBase(rawURL)
+	sum := sha256.Sum256([]byte(rawURL))
+	hash := hex.EncodeToString(sum[:])[:8]
+	if base == "" {
+		return hash
+	}
+	return base + "-" + hash
+}
+
+// LegacySlugify reproduces the pre-hash Slugify output. The Flat store uses it
+// to find and migrate files written before the hash suffix was introduced.
+func LegacySlugify(rawURL string) string {
+	return slugBase(rawURL)
+}
+
+// slugBase sanitizes the host+path of a URL (the human-readable slug prefix).
+func slugBase(rawURL string) string {
 	u, err := url.Parse(rawURL)
 	if err != nil {
 		return sanitize(rawURL)

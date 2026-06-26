@@ -4,32 +4,40 @@ import (
 	"encoding/json"
 	"os"
 	"path/filepath"
+	"regexp"
+	"strings"
 	"testing"
 	"time"
 
 	"github.com/Wasylq/FSS/models"
+	"github.com/Wasylq/FSS/output"
 )
 
+var slugHashSuffixRe = regexp.MustCompile(`^[0-9a-f]{8}$`)
+
+// assertSlugBase checks Slugify(input) == wantBase + "-" + <8 hex hash>.
+// Slugify appends a short hash of the raw URL so distinct URLs never collide.
+func assertSlugBase(t *testing.T, input, wantBase string) {
+	t.Helper()
+	got := Slugify(input)
+	prefix := wantBase + "-"
+	if !strings.HasPrefix(got, prefix) {
+		t.Errorf("Slugify(%q) = %q, want prefix %q", input, got, prefix)
+		return
+	}
+	if suf := got[len(prefix):]; !slugHashSuffixRe.MatchString(suf) {
+		t.Errorf("Slugify(%q) = %q, suffix %q is not an 8-hex hash", input, got, suf)
+	}
+}
+
 func TestSlugify(t *testing.T) {
-	tests := []struct {
-		input string
-		want  string
-	}{
-		{"https://www.manyvids.com/Profile/590705/bettie-bondage/Store/Videos", "www-manyvids-com-profile-590705-bettie-bondage-store-videos"},
-		{"https://www.kink.com/channel/hogtied", "www-kink-com-channel-hogtied"},
-		{"https://tour.pissinghd.com/videos", "tour-pissinghd-com-videos"},
-		{"https://www.karupsow.com/videos/", "www-karupsow-com-videos"},
-		{"https://example.com", "example-com"},
-		{"https://example.com/", "example-com"},
-		{"https://www.example.com/path/to/thing", "www-example-com-path-to-thing"},
-		{"not-a-url", "not-a-url"},
-	}
-	for _, tt := range tests {
-		got := Slugify(tt.input)
-		if got != tt.want {
-			t.Errorf("Slugify(%q) = %q, want %q", tt.input, got, tt.want)
-		}
-	}
+	assertSlugBase(t, "https://www.manyvids.com/Profile/590705/bettie-bondage/Store/Videos", "www-manyvids-com-profile-590705-bettie-bondage-store-videos")
+	assertSlugBase(t, "https://www.kink.com/channel/hogtied", "www-kink-com-channel-hogtied")
+	assertSlugBase(t, "https://tour.pissinghd.com/videos", "tour-pissinghd-com-videos")
+	assertSlugBase(t, "https://www.karupsow.com/videos/", "www-karupsow-com-videos")
+	assertSlugBase(t, "https://example.com", "example-com")
+	assertSlugBase(t, "https://www.example.com/path/to/thing", "www-example-com-path-to-thing")
+	assertSlugBase(t, "not-a-url", "not-a-url")
 }
 
 func TestSlugifySpecialChars(t *testing.T) {
@@ -48,24 +56,23 @@ func TestSlugifySpecialChars(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := Slugify(tt.input)
-			if got != tt.want {
-				t.Errorf("Slugify(%q) = %q, want %q", tt.input, got, tt.want)
-			}
+			assertSlugBase(t, tt.input, tt.want)
 		})
 	}
 }
 
 func TestSlugifyEmpty(t *testing.T) {
+	// Empty input has no base, so the slug is the bare 8-hex hash — non-empty.
 	got := Slugify("")
-	if got != "" {
-		t.Errorf("Slugify('') = %q, want empty", got)
+	if !slugHashSuffixRe.MatchString(got) {
+		t.Errorf("Slugify('') = %q, want bare 8-hex hash", got)
 	}
 }
 
 func TestSlugifyPathTraversal(t *testing.T) {
 	got := Slugify("https://evil.com/../../etc/passwd")
-	if got != "evil-com-etc-passwd" {
+	assertSlugBase(t, "https://evil.com/../../etc/passwd", "evil-com-etc-passwd")
+	if strings.ContainsAny(got, "./\\") {
 		t.Errorf("Slugify path traversal = %q, want no dots/slashes", got)
 	}
 }
@@ -488,51 +495,53 @@ func TestFlatExportNoop(t *testing.T) {
 // studio's data with the other on Save and silently returned the wrong
 // scenes on Load. The fix detects the mismatch via the stored StudioURL
 // and errors out — non-breaking for users with non-colliding URLs.
+// TestFlatSlugCollision is the A4 regression: URL pairs that share an identical
+// sanitized base used to collide on one file (and the collision guard rejected
+// the second). The hash suffix now gives each a distinct slug, so both studios
+// save and load independently with no error and no clobbering.
 func TestFlatSlugCollision(t *testing.T) {
-	collisionPairs := [][2]string{
-		// hyphen vs slash
-		{"https://example.com/foo-bar", "https://example.com/foo/bar"},
-		// case difference
-		{"https://example.com/Foo", "https://example.com/foo"},
-		// query string ignored by Slugify
-		{"https://example.com/videos?page=1", "https://example.com/videos?page=2"},
+	pairs := [][2]string{
+		{"https://example.com/foo-bar", "https://example.com/foo/bar"},             // hyphen vs slash
+		{"https://example.com/Foo", "https://example.com/foo"},                     // case difference
+		{"https://example.com/videos?page=1", "https://example.com/videos?page=2"}, // query ignored by base
 	}
 
-	for _, pair := range collisionPairs {
+	for _, pair := range pairs {
 		urlA, urlB := pair[0], pair[1]
 		t.Run(urlA+"_vs_"+urlB, func(t *testing.T) {
-			// Sanity: confirm these still collide under the current Slugify.
-			if Slugify(urlA) != Slugify(urlB) {
-				t.Fatalf("test fixture no longer collides: %q vs %q", urlA, urlB)
+			// Same sanitized base, but distinct slugs thanks to the hash.
+			if output.LegacySlugify(urlA) != output.LegacySlugify(urlB) {
+				t.Fatalf("test fixture no longer shares a base: %q vs %q", urlA, urlB)
+			}
+			if Slugify(urlA) == Slugify(urlB) {
+				t.Fatalf("hashed slugs still collide: %q vs %q", urlA, urlB)
 			}
 
 			f := newTestFlat(t)
 			now := time.Now().UTC().Truncate(time.Second)
 
-			// First studio saves cleanly.
 			scenesA := []models.Scene{{ID: "A", SiteID: "a", StudioURL: urlA, Title: "from A", ScrapedAt: now}}
 			if err := f.Save(urlA, scenesA); err != nil {
-				t.Fatalf("first Save: %v", err)
+				t.Fatalf("Save(urlA): %v", err)
 			}
-
-			// Second studio attempts to write to the same slug — must error.
 			scenesB := []models.Scene{{ID: "B", SiteID: "b", StudioURL: urlB, Title: "from B", ScrapedAt: now}}
-			if err := f.Save(urlB, scenesB); err == nil {
-				t.Fatal("Save with colliding URL should error, got nil")
+			if err := f.Save(urlB, scenesB); err != nil {
+				t.Fatalf("Save(urlB) should succeed now, got: %v", err)
 			}
 
-			// First studio's data must survive.
-			got, err := f.Load(urlA)
+			gotA, err := f.Load(urlA)
 			if err != nil {
 				t.Fatalf("Load(urlA): %v", err)
 			}
-			if len(got) != 1 || got[0].ID != "A" {
-				t.Errorf("urlA data clobbered: got %+v", got)
+			if len(gotA) != 1 || gotA[0].ID != "A" {
+				t.Errorf("urlA data wrong: got %+v", gotA)
 			}
-
-			// Load from the colliding URL must also error.
-			if _, err := f.Load(urlB); err == nil {
-				t.Error("Load with colliding URL should error, got nil")
+			gotB, err := f.Load(urlB)
+			if err != nil {
+				t.Fatalf("Load(urlB): %v", err)
+			}
+			if len(gotB) != 1 || gotB[0].ID != "B" {
+				t.Errorf("urlB data wrong: got %+v", gotB)
 			}
 		})
 	}
@@ -558,5 +567,40 @@ func TestFlatSaveSameURLOverwrites(t *testing.T) {
 	}
 	if len(got) != 1 || got[0].Title != "v2" {
 		t.Errorf("expected v2 after overwrite, got %+v", got)
+	}
+}
+
+// TestFlatMigratesLegacyFile covers the A4 backward-compat path: a file written
+// under the pre-hash (legacy) slug is renamed to the new hashed name on Load,
+// so existing incremental state survives the Slugify change.
+func TestFlatMigratesLegacyFile(t *testing.T) {
+	dir := t.TempDir()
+	f := NewFlat(dir, []string{"json"})
+	url := "https://www.example.com/videos"
+	now := time.Now().UTC().Truncate(time.Second)
+
+	// Write a file under the legacy (un-hashed) name directly.
+	legacyPath := filepath.Join(dir, output.LegacySlugify(url)+".json")
+	sf := models.StudioFile{StudioURL: url, ScrapedAt: now, SceneCount: 1,
+		Scenes: []models.Scene{{ID: "1", SiteID: "x", StudioURL: url, Title: "legacy", ScrapedAt: now}}}
+	data, _ := json.Marshal(sf)
+	if err := os.WriteFile(legacyPath, data, 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	got, err := f.Load(url)
+	if err != nil {
+		t.Fatalf("Load: %v", err)
+	}
+	if len(got) != 1 || got[0].Title != "legacy" {
+		t.Fatalf("legacy data not loaded: %+v", got)
+	}
+	// The legacy file is gone and the hashed file now exists.
+	if _, err := os.Stat(legacyPath); !os.IsNotExist(err) {
+		t.Errorf("legacy file should have been renamed away")
+	}
+	newPath := filepath.Join(dir, Slugify(url)+".json")
+	if _, err := os.Stat(newPath); err != nil {
+		t.Errorf("hashed file missing after migration: %v", err)
 	}
 }

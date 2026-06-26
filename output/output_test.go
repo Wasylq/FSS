@@ -7,6 +7,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"testing"
 	"time"
@@ -288,44 +289,60 @@ func TestSceneToRow(t *testing.T) {
 	}
 }
 
-func TestSlugify(t *testing.T) {
-	tests := []struct {
-		input string
-		want  string
-	}{
-		{testURL, "www-manyvids-com-profile-590705-bettie-bondage-store-videos"},
-		{"https://www.clips4sale.com/studio/12345/some-store", "www-clips4sale-com-studio-12345-some-store"},
-	}
-	for _, tt := range tests {
-		got := Slugify(tt.input)
-		if got != tt.want {
-			t.Errorf("Slugify(%q) = %q, want %q", tt.input, got, tt.want)
+var hashSuffixRe = regexp.MustCompile(`^[0-9a-f]{8}$`)
+
+// assertSlug checks Slugify(input) == wantBase + "-" + <8 hex> (or just the
+// hash when wantBase is empty).
+func assertSlug(t *testing.T, input, wantBase string) {
+	t.Helper()
+	got := Slugify(input)
+	if wantBase == "" {
+		if !hashSuffixRe.MatchString(got) {
+			t.Errorf("Slugify(%q) = %q, want bare 8-hex hash", input, got)
 		}
+		return
 	}
+	prefix := wantBase + "-"
+	if !strings.HasPrefix(got, prefix) {
+		t.Errorf("Slugify(%q) = %q, want prefix %q", input, got, prefix)
+		return
+	}
+	if suf := got[len(prefix):]; !hashSuffixRe.MatchString(suf) {
+		t.Errorf("Slugify(%q) = %q, suffix %q is not an 8-hex hash", input, got, suf)
+	}
+}
+
+func TestSlugify(t *testing.T) {
+	assertSlug(t, testURL, "www-manyvids-com-profile-590705-bettie-bondage-store-videos")
+	assertSlug(t, "https://www.clips4sale.com/studio/12345/some-store", "www-clips4sale-com-studio-12345-some-store")
 }
 
 func TestSlugifySpecialChars(t *testing.T) {
-	tests := []struct {
-		input string
-		want  string
-	}{
-		{"https://example.com/path/with spaces/", "example-com-path-with-spaces"},
-		{"https://example.com/UPPER/Case", "example-com-upper-case"},
-		{"https://example.com/path///multiple///slashes", "example-com-path-multiple-slashes"},
-		{"https://example.com/special!@#$%chars", "https-example-com-special-chars"},
-	}
-	for _, tt := range tests {
-		got := Slugify(tt.input)
-		if got != tt.want {
-			t.Errorf("Slugify(%q) = %q, want %q", tt.input, got, tt.want)
-		}
-	}
+	assertSlug(t, "https://example.com/path/with spaces/", "example-com-path-with-spaces")
+	assertSlug(t, "https://example.com/UPPER/Case", "example-com-upper-case")
+	assertSlug(t, "https://example.com/path///multiple///slashes", "example-com-path-multiple-slashes")
+	assertSlug(t, "https://example.com/special!@#$%chars", "https-example-com-special-chars")
 }
 
 func TestSlugifyEmpty(t *testing.T) {
-	got := Slugify("")
-	if got != "" {
-		t.Errorf("Slugify('') = %q, want empty", got)
+	// Empty input has an empty base, so the slug is the bare hash — non-empty
+	// and stable.
+	assertSlug(t, "", "")
+}
+
+// TestSlugifyNoCollision is the A4 regression: distinct URLs whose sanitized
+// base is identical must produce different slugs.
+func TestSlugifyNoCollision(t *testing.T) {
+	a := Slugify("https://example.com/anna_b")
+	b := Slugify("https://example.com/anna-b")
+	if a == b {
+		t.Errorf("Slugify collision: anna_b and anna-b both → %q", a)
+	}
+	// Non-ASCII paths sanitize to an empty base but must stay distinct.
+	c := Slugify("https://example.com/日本")
+	d := Slugify("https://example.com/한국")
+	if c == d || c == "" || d == "" {
+		t.Errorf("non-ASCII slugs collided or empty: %q vs %q", c, d)
 	}
 }
 
