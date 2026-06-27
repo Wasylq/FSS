@@ -229,14 +229,21 @@ func scrapeOne(ctx context.Context, st store.Store, studioURL, name, dbPath, out
 // carries forward existing price history so the historical pricing record is
 // preserved across --full re-scrapes. Unlike --refresh, scenes that no longer
 // appear on the site are dropped rather than soft-deleted.
+// sceneKey identifies a scene within a studio. A studio URL can hold scenes
+// from more than one site_id (aggregators, multi-brand scrapers), so merge and
+// dedup must key on (id, site_id) — id alone collides across sites.
+type sceneKey struct{ id, siteID string }
+
+func keyOf(s models.Scene) sceneKey { return sceneKey{id: s.ID, siteID: s.SiteID} }
+
 func scrapeAll(ctx context.Context, sc scraper.StudioScraper, st store.Store, studioURL string, workers int, delay time.Duration) ([]models.Scene, error) {
 	existing, err := st.Load(studioURL)
 	if err != nil {
 		return nil, fmt.Errorf("loading existing scenes: %w", err)
 	}
-	existingByID := make(map[string]models.Scene, len(existing))
+	existingByKey := make(map[sceneKey]models.Scene, len(existing))
 	for _, s := range existing {
-		existingByID[s.ID] = s
+		existingByKey[keyOf(s)] = s
 	}
 
 	fresh, err := collectScenes(ctx, sc, studioURL, scraper.ListOpts{Workers: workers, Delay: delay})
@@ -245,8 +252,14 @@ func scrapeAll(ctx context.Context, sc scraper.StudioScraper, st store.Store, st
 	}
 
 	result := make([]models.Scene, 0, len(fresh))
+	seen := make(map[sceneKey]bool, len(fresh))
 	for _, s := range fresh {
-		if prev, ok := existingByID[s.ID]; ok {
+		k := keyOf(s)
+		if seen[k] {
+			continue // drop duplicate (id, site_id) from pagination overlap
+		}
+		seen[k] = true
+		if prev, ok := existingByKey[k]; ok {
 			s = carryOverPriceHistory(s, prev)
 		}
 		result = append(result, s)
@@ -267,10 +280,10 @@ func scrapeIncremental(ctx context.Context, sc scraper.StudioScraper, st store.S
 	}
 
 	knownIDs := make(map[string]bool, len(existing))
-	existingByID := make(map[string]models.Scene, len(existing))
+	existingByKey := make(map[sceneKey]models.Scene, len(existing))
 	for _, s := range existing {
 		knownIDs[s.ID] = true
-		existingByID[s.ID] = s
+		existingByKey[keyOf(s)] = s
 	}
 
 	fresh, err := collectScenes(ctx, sc, studioURL, scraper.ListOpts{Workers: workers, KnownIDs: knownIDs, Delay: delay})
@@ -282,12 +295,16 @@ func scrapeIncremental(ctx context.Context, sc scraper.StudioScraper, st store.S
 	// history when a fresh scene was already stored (happens when a scraper
 	// re-emits known IDs rather than skipping them). Append any existing scenes
 	// that were not re-emitted (older entries on date-sorted sites).
-	freshIDs := make(map[string]bool, len(fresh))
+	freshKeys := make(map[sceneKey]bool, len(fresh))
 	result := make([]models.Scene, 0, len(fresh)+len(existing))
 	newCount := 0
 	for _, s := range fresh {
-		freshIDs[s.ID] = true
-		if prev, ok := existingByID[s.ID]; ok {
+		k := keyOf(s)
+		if freshKeys[k] {
+			continue // drop duplicate (id, site_id) from pagination overlap
+		}
+		freshKeys[k] = true
+		if prev, ok := existingByKey[k]; ok {
 			s = carryOverPriceHistory(s, prev)
 		} else {
 			newCount++
@@ -295,7 +312,7 @@ func scrapeIncremental(ctx context.Context, sc scraper.StudioScraper, st store.S
 		result = append(result, s)
 	}
 	for _, s := range existing {
-		if !freshIDs[s.ID] {
+		if !freshKeys[keyOf(s)] {
 			result = append(result, s)
 		}
 	}
@@ -311,9 +328,9 @@ func scrapeRefresh(ctx context.Context, sc scraper.StudioScraper, st store.Store
 	if err != nil {
 		return nil, fmt.Errorf("loading existing scenes: %w", err)
 	}
-	existingByID := make(map[string]models.Scene, len(existing))
+	existingByKey := make(map[sceneKey]models.Scene, len(existing))
 	for _, s := range existing {
-		existingByID[s.ID] = s
+		existingByKey[keyOf(s)] = s
 	}
 
 	// Full traversal — no KnownIDs
@@ -323,11 +340,15 @@ func scrapeRefresh(ctx context.Context, sc scraper.StudioScraper, st store.Store
 	}
 
 	// Build result: fresh scenes with accumulated price history.
-	scrapedIDs := make(map[string]bool, len(fresh))
+	scrapedKeys := make(map[sceneKey]bool, len(fresh))
 	result := make([]models.Scene, 0, len(existing))
 	for _, s := range fresh {
-		scrapedIDs[s.ID] = true
-		if prev, ok := existingByID[s.ID]; ok {
+		k := keyOf(s)
+		if scrapedKeys[k] {
+			continue // drop duplicate (id, site_id) from pagination overlap
+		}
+		scrapedKeys[k] = true
+		if prev, ok := existingByKey[k]; ok {
 			s = carryOverPriceHistory(s, prev)
 		}
 		result = append(result, s)
@@ -337,7 +358,7 @@ func scrapeRefresh(ctx context.Context, sc scraper.StudioScraper, st store.Store
 	now := time.Now().UTC()
 	newlyDeleted := 0
 	for _, s := range existing {
-		if scrapedIDs[s.ID] {
+		if scrapedKeys[keyOf(s)] {
 			continue
 		}
 		if s.DeletedAt == nil {

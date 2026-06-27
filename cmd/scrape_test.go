@@ -693,3 +693,43 @@ func TestScrapeOne_normalizesStudioURL(t *testing.T) {
 		t.Errorf("StudioURL = %q, want %q (not the scraper's stamped URL)", got[0].StudioURL, requested)
 	}
 }
+
+// TestScrapeAll_multiSiteKeyAndDedup is the A6 regression: scenes that share an
+// id but differ in site_id must NOT collide in the merge maps, and duplicate
+// (id, site_id) entries from pagination overlap must be deduped.
+func TestScrapeAll_multiSiteKeyAndDedup(t *testing.T) {
+	const studioURL = "https://example.com/a6"
+	now := time.Now().UTC().Truncate(time.Second)
+	mk := func(id, site, title string) models.Scene {
+		return models.Scene{ID: id, SiteID: site, StudioURL: studioURL,
+			Title: title, URL: "https://example.com/v/" + id + "-" + site, ScrapedAt: now}
+	}
+
+	sc := &fakeScraper{
+		id: "a6",
+		batches: [][]models.Scene{{
+			mk("1", "siteA", "A-one"),
+			mk("1", "siteB", "B-one"),     // same id, different site → must be kept
+			mk("1", "siteA", "A-one-dup"), // duplicate (id, site) → must be dropped
+		}},
+	}
+
+	st := store.NewFlat(t.TempDir(), []string{"json"})
+	scenes, err := scrapeAll(context.Background(), sc, st, studioURL, 1, 0)
+	if err != nil {
+		t.Fatalf("scrapeAll: %v", err)
+	}
+	if len(scenes) != 2 {
+		t.Fatalf("got %d scenes, want 2 (one per site_id, dup dropped): %+v", len(scenes), scenes)
+	}
+	got := map[sceneKey]string{}
+	for _, s := range scenes {
+		got[keyOf(s)] = s.Title
+	}
+	if got[sceneKey{"1", "siteA"}] != "A-one" {
+		t.Errorf("siteA title = %q, want first occurrence A-one", got[sceneKey{"1", "siteA"}])
+	}
+	if got[sceneKey{"1", "siteB"}] != "B-one" {
+		t.Errorf("siteB scene missing/wrong: %q", got[sceneKey{"1", "siteB"}])
+	}
+}
