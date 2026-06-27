@@ -470,12 +470,15 @@ func TestCollectScenes_errorsWithSomeScenes(t *testing.T) {
 		},
 		errors: 2,
 	}
-	scenes, err := collectScenes(context.Background(), sc, "https://example.com", scraper.ListOpts{})
+	scenes, incomplete, err := collectScenes(context.Background(), sc, "https://example.com", scraper.ListOpts{})
 	if err != nil {
 		t.Fatalf("expected no error when some scenes succeed, got: %v", err)
 	}
 	if len(scenes) != 1 {
 		t.Errorf("got %d scenes, want 1", len(scenes))
+	}
+	if !incomplete {
+		t.Error("expected incomplete=true when fetch errors occurred")
 	}
 }
 
@@ -484,7 +487,7 @@ func TestCollectScenes_allErrorsNoScenes(t *testing.T) {
 		id:     "mix",
 		errors: 3,
 	}
-	_, err := collectScenes(context.Background(), sc, "https://example.com", scraper.ListOpts{})
+	_, _, err := collectScenes(context.Background(), sc, "https://example.com", scraper.ListOpts{})
 	if err == nil {
 		t.Fatal("expected error when all attempts fail with 0 scenes")
 	}
@@ -495,12 +498,15 @@ func TestCollectScenes_allErrorsNoScenes(t *testing.T) {
 
 func TestCollectScenes_noErrorsNoScenes(t *testing.T) {
 	sc := &mixedScraper{id: "mix"}
-	scenes, err := collectScenes(context.Background(), sc, "https://example.com", scraper.ListOpts{})
+	scenes, incomplete, err := collectScenes(context.Background(), sc, "https://example.com", scraper.ListOpts{})
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 	if len(scenes) != 0 {
 		t.Errorf("got %d scenes, want 0", len(scenes))
+	}
+	if incomplete {
+		t.Error("expected incomplete=false for a clean empty traversal")
 	}
 }
 
@@ -731,5 +737,94 @@ func TestScrapeAll_multiSiteKeyAndDedup(t *testing.T) {
 	}
 	if got[sceneKey{"1", "siteB"}] != "B-one" {
 		t.Errorf("siteB scene missing/wrong: %q", got[sceneKey{"1", "siteB"}])
+	}
+}
+
+// TestScrapeAll_incompletePreservesExisting is the A1 regression: when --full's
+// traversal is incomplete (a fetch error), scenes not re-collected must be
+// merged forward rather than hard-deleted by the authoritative Save.
+func TestScrapeAll_incompletePreservesExisting(t *testing.T) {
+	const studioURL = "https://example.com/a1"
+	now := time.Now().UTC().Truncate(time.Second)
+	mk := func(id string) models.Scene {
+		return models.Scene{ID: id, SiteID: "a1", StudioURL: studioURL,
+			Title: "Scene " + id, URL: "https://example.com/v/" + id, ScrapedAt: now}
+	}
+
+	st := store.NewFlat(t.TempDir(), []string{"json"})
+	// Seed three existing scenes.
+	if err := st.Save(studioURL, []models.Scene{mk("1"), mk("2"), mk("3")}); err != nil {
+		t.Fatalf("seed: %v", err)
+	}
+
+	// A run that re-collects only scene 1 but reports a fetch error (incomplete).
+	sc := &mixedScraper{id: "a1", scenes: []models.Scene{mk("1")}, errors: 1}
+	scenes, err := scrapeAll(context.Background(), sc, st, studioURL, 1, 0)
+	if err != nil {
+		t.Fatalf("scrapeAll: %v", err)
+	}
+	if len(scenes) != 3 {
+		t.Fatalf("got %d scenes, want 3 (existing preserved on incomplete run)", len(scenes))
+	}
+	if err := st.Save(studioURL, scenes); err != nil {
+		t.Fatalf("save: %v", err)
+	}
+	got, err := st.Load(studioURL)
+	if err != nil {
+		t.Fatalf("load: %v", err)
+	}
+	if len(got) != 3 {
+		t.Errorf("after incomplete --full, %d scenes survive, want 3", len(got))
+	}
+}
+
+// TestScrapeAll_completeDropsMissing confirms a *complete* --full still hard-
+// deletes scenes that genuinely disappeared (no merge fallback).
+func TestScrapeAll_completeDropsMissing(t *testing.T) {
+	const studioURL = "https://example.com/a1-complete"
+	now := time.Now().UTC().Truncate(time.Second)
+	mk := func(id string) models.Scene {
+		return models.Scene{ID: id, SiteID: "a1c", StudioURL: studioURL,
+			Title: "Scene " + id, URL: "https://example.com/v/" + id, ScrapedAt: now}
+	}
+	st := store.NewFlat(t.TempDir(), []string{"json"})
+	if err := st.Save(studioURL, []models.Scene{mk("1"), mk("2"), mk("3")}); err != nil {
+		t.Fatalf("seed: %v", err)
+	}
+	sc := &fakeScraper{id: "a1c", batches: [][]models.Scene{{mk("1")}}} // clean, only scene 1
+	scenes, err := scrapeAll(context.Background(), sc, st, studioURL, 1, 0)
+	if err != nil {
+		t.Fatalf("scrapeAll: %v", err)
+	}
+	if len(scenes) != 1 {
+		t.Errorf("complete --full should keep only the 1 re-collected scene, got %d", len(scenes))
+	}
+}
+
+// TestScrapeRefresh_incompleteSkipsSoftDelete is the A1 regression for
+// --refresh: an incomplete traversal must NOT soft-delete scenes that simply
+// weren't reached this run.
+func TestScrapeRefresh_incompleteSkipsSoftDelete(t *testing.T) {
+	const studioURL = "https://example.com/a1-refresh"
+	now := time.Now().UTC().Truncate(time.Second)
+	mk := func(id string) models.Scene {
+		return models.Scene{ID: id, SiteID: "a1r", StudioURL: studioURL,
+			Title: "Scene " + id, URL: "https://example.com/v/" + id, ScrapedAt: now}
+	}
+	st := store.NewFlat(t.TempDir(), []string{"json"})
+	if err := st.Save(studioURL, []models.Scene{mk("1"), mk("2")}); err != nil {
+		t.Fatalf("seed: %v", err)
+	}
+
+	// Re-collect only scene 1, with an error (incomplete).
+	sc := &mixedScraper{id: "a1r", scenes: []models.Scene{mk("1")}, errors: 1}
+	scenes, err := scrapeRefresh(context.Background(), sc, st, studioURL, 1, 0)
+	if err != nil {
+		t.Fatalf("scrapeRefresh: %v", err)
+	}
+	for _, s := range scenes {
+		if s.DeletedAt != nil {
+			t.Errorf("scene %s soft-deleted on incomplete refresh", s.ID)
+		}
 	}
 }

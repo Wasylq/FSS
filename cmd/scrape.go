@@ -246,7 +246,7 @@ func scrapeAll(ctx context.Context, sc scraper.StudioScraper, st store.Store, st
 		existingByKey[keyOf(s)] = s
 	}
 
-	fresh, err := collectScenes(ctx, sc, studioURL, scraper.ListOpts{Workers: workers, Delay: delay})
+	fresh, incomplete, err := collectScenes(ctx, sc, studioURL, scraper.ListOpts{Workers: workers, Delay: delay})
 	if err != nil {
 		return nil, err
 	}
@@ -263,6 +263,20 @@ func scrapeAll(ctx context.Context, sc scraper.StudioScraper, st store.Store, st
 			s = carryOverPriceHistory(s, prev)
 		}
 		result = append(result, s)
+	}
+
+	// A1: an incomplete traversal (fetch errors / interrupted) must not let the
+	// authoritative Save hard-delete scenes that simply weren't reached. Fall
+	// back to merge semantics — carry forward existing scenes not re-collected.
+	if incomplete {
+		carried := 0
+		for _, s := range existing {
+			if !seen[keyOf(s)] {
+				result = append(result, s)
+				carried++
+			}
+		}
+		fmt.Fprintf(os.Stderr, "warning: traversal incomplete — preserving %d existing scene(s) and skipping destructive --full delete\n", carried)
 	}
 	return result, nil
 }
@@ -286,7 +300,9 @@ func scrapeIncremental(ctx context.Context, sc scraper.StudioScraper, st store.S
 		existingByKey[keyOf(s)] = s
 	}
 
-	fresh, err := collectScenes(ctx, sc, studioURL, scraper.ListOpts{Workers: workers, KnownIDs: knownIDs, Delay: delay})
+	// Incremental already merges fresh with existing, so a partial traversal is
+	// inherently non-destructive — the incomplete flag needs no special handling.
+	fresh, _, err := collectScenes(ctx, sc, studioURL, scraper.ListOpts{Workers: workers, KnownIDs: knownIDs, Delay: delay})
 	if err != nil {
 		return nil, err
 	}
@@ -334,7 +350,7 @@ func scrapeRefresh(ctx context.Context, sc scraper.StudioScraper, st store.Store
 	}
 
 	// Full traversal — no KnownIDs
-	fresh, err := collectScenes(ctx, sc, studioURL, scraper.ListOpts{Workers: workers, Delay: delay})
+	fresh, incomplete, err := collectScenes(ctx, sc, studioURL, scraper.ListOpts{Workers: workers, Delay: delay})
 	if err != nil {
 		return nil, err
 	}
@@ -354,18 +370,24 @@ func scrapeRefresh(ctx context.Context, sc scraper.StudioScraper, st store.Store
 		result = append(result, s)
 	}
 
-	// Carry forward previously-deleted scenes; mark newly-missing ones as deleted.
+	// Carry forward previously-deleted scenes; mark newly-missing ones as
+	// deleted. A1: when the traversal was incomplete, an unreached scene may
+	// simply not have been fetched, so do NOT soft-delete on a partial run —
+	// carry every existing scene forward with its current DeletedAt intact.
 	now := time.Now().UTC()
 	newlyDeleted := 0
 	for _, s := range existing {
 		if scrapedKeys[keyOf(s)] {
 			continue
 		}
-		if s.DeletedAt == nil {
+		if !incomplete && s.DeletedAt == nil {
 			s.DeletedAt = &now
 			newlyDeleted++
 		}
 		result = append(result, s)
+	}
+	if incomplete {
+		fmt.Fprintln(os.Stderr, "warning: traversal incomplete — skipping --refresh soft-delete of unreached scenes")
 	}
 
 	if newlyDeleted > 0 {
@@ -376,10 +398,14 @@ func scrapeRefresh(ctx context.Context, sc scraper.StudioScraper, st store.Store
 }
 
 // collectScenes drains the scraper channel, printing a live count and warnings.
-func collectScenes(ctx context.Context, sc scraper.StudioScraper, studioURL string, opts scraper.ListOpts) ([]models.Scene, error) {
+// The second return value reports whether the traversal was *incomplete* — any
+// fetch error or a cancelled context — so authoritative-Save callers (--full /
+// --refresh) can fall back to non-destructive merge semantics instead of
+// treating a partial run as the studio's full state.
+func collectScenes(ctx context.Context, sc scraper.StudioScraper, studioURL string, opts scraper.ListOpts) ([]models.Scene, bool, error) {
 	ch, err := sc.ListScenes(ctx, studioURL, opts)
 	if err != nil {
-		return nil, fmt.Errorf("starting scrape: %w", err)
+		return nil, true, fmt.Errorf("starting scrape: %w", err)
 	}
 	var scenes []models.Scene
 	errCount := 0
@@ -417,9 +443,10 @@ func collectScenes(ctx context.Context, sc scraper.StudioScraper, studioURL stri
 		fmt.Printf("Interrupted — saving %d partial results...\n", len(scenes))
 	}
 	if errCount > 0 && len(scenes) == 0 {
-		return nil, fmt.Errorf("scrape failed with %d error(s) and 0 scenes", errCount)
+		return nil, true, fmt.Errorf("scrape failed with %d error(s) and 0 scenes", errCount)
 	}
-	return scenes, nil
+	incomplete := errCount > 0 || ctx.Err() != nil
+	return scenes, incomplete, nil
 }
 
 // carryOverPriceHistory replays the existing scene's price history plus every
