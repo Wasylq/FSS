@@ -30,6 +30,7 @@ For NFO sidecar file generation, see [identify.md](identify.md).
 | `--workers`, `-w` | int | 3 | Max parallel metadata fetchers |
 | `--full` | bool | false | Full traversal (no early-stop); preserves price history; drops scenes no longer on the site |
 | `--refresh` | bool | false | Re-fetch metadata for all known scenes; soft-delete missing ones |
+| `--force` | bool | false | Allow a `--full`/`--refresh` that returns 0 scenes to wipe a previously-populated studio (otherwise the destructive save is refused) |
 | `--output`, `-o` | string | `json` | Export format(s): `json`, `csv`, or `json,csv` |
 | `--out-dir` | string | `.` | Output directory |
 | `--db` | string | _(disabled)_ | Enable SQLite store (`--db` alone uses `~/.local/share/fss/fss.db`; `--db /path` uses a custom path) |

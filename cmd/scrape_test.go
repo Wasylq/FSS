@@ -684,7 +684,7 @@ func TestScrapeOne_normalizesStudioURL(t *testing.T) {
 
 	st := store.NewFlat(t.TempDir(), []string{"json"})
 	if err := scrapeOne(context.Background(), st, requested, "", "", "", []string{"json"},
-		false, false, 1, 0, nil); err != nil {
+		false, false, false, 1, 0, nil); err != nil {
 		t.Fatalf("scrapeOne: %v", err)
 	}
 
@@ -827,4 +827,55 @@ func TestScrapeRefresh_incompleteSkipsSoftDelete(t *testing.T) {
 			t.Errorf("scene %s soft-deleted on incomplete refresh", s.ID)
 		}
 	}
+}
+
+// TestScrapeOne_emptyWipeGuard is the A2 regression: a clean 0-scene --full for
+// a populated studio must refuse the destructive save; --force overrides it.
+func TestScrapeOne_emptyWipeGuard(t *testing.T) {
+	const url = "https://example.com/a2-guard"
+	now := time.Now().UTC().Truncate(time.Second)
+	seed := models.Scene{ID: "1", SiteID: "a2", StudioURL: url,
+		Title: "Seed", URL: "https://example.com/v/1", ScrapedAt: now}
+
+	scraper.Register(&fakeRegistered{id: "a2empty", url: url}) // emits 0 scenes
+
+	st := store.NewFlat(t.TempDir(), []string{"json"})
+	if err := st.Save(url, []models.Scene{seed}); err != nil {
+		t.Fatalf("seed: %v", err)
+	}
+
+	// --full, no --force: must refuse and keep the existing scene.
+	if err := scrapeOne(context.Background(), st, url, "", "", "", []string{"json"},
+		true, false, false, 1, 0, nil); err != nil {
+		t.Fatalf("scrapeOne (guard): %v", err)
+	}
+	got, _ := st.Load(url)
+	if len(got) != 1 {
+		t.Fatalf("guard failed: %d scenes after 0-scene --full, want 1 preserved", len(got))
+	}
+
+	// --force: the wipe is allowed.
+	if err := scrapeOne(context.Background(), st, url, "", "", "", []string{"json"},
+		true, false, true, 1, 0, nil); err != nil {
+		t.Fatalf("scrapeOne (force): %v", err)
+	}
+	got, _ = st.Load(url)
+	if len(got) != 0 {
+		t.Errorf("--force should wipe, got %d scenes", len(got))
+	}
+}
+
+// fakeRegistered emits zero scenes and matches a single URL.
+type fakeRegistered struct {
+	id  string
+	url string
+}
+
+func (f *fakeRegistered) ID() string               { return f.id }
+func (f *fakeRegistered) Patterns() []string       { return nil }
+func (f *fakeRegistered) MatchesURL(s string) bool { return s == f.url }
+func (f *fakeRegistered) ListScenes(_ context.Context, _ string, _ scraper.ListOpts) (<-chan scraper.SceneResult, error) {
+	ch := make(chan scraper.SceneResult)
+	close(ch)
+	return ch, nil
 }

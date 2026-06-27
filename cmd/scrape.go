@@ -33,6 +33,7 @@ func init() {
 	scrapeCmd.Flags().IntP("workers", "w", 0, "max parallel fetchers (0 = use config/default)")
 	scrapeCmd.Flags().Bool("full", false, "ignore existing data, scrape everything from scratch")
 	scrapeCmd.Flags().Bool("refresh", false, "re-fetch metadata for all known scenes, soft-delete missing")
+	scrapeCmd.Flags().Bool("force", false, "allow a 0-scene --full/--refresh to wipe a previously-populated studio")
 	scrapeCmd.Flags().StringP("output", "o", "", "export formats: json, csv, or json,csv (default from config)")
 	scrapeCmd.Flags().String("out-dir", "", "output directory (default from config)")
 	scrapeCmd.Flags().String("db", "", "enable SQLite store (no value = ~/.local/share/fss/fss.db; or pass a path)")
@@ -46,6 +47,7 @@ func runScrape(cmd *cobra.Command, args []string) error {
 	// --- resolve flags against config ---
 	full, _ := cmd.Flags().GetBool("full")
 	refresh, _ := cmd.Flags().GetBool("refresh")
+	force, _ := cmd.Flags().GetBool("force")
 	if full && refresh {
 		return fmt.Errorf("--full and --refresh are mutually exclusive")
 	}
@@ -135,7 +137,7 @@ func runScrape(cmd *cobra.Command, args []string) error {
 		if i > 0 {
 			fmt.Println()
 		}
-		if err := scrapeOne(ctx, st, studioURL, name, dbPath, outDir, formats, full, refresh, workers, defaultDelay, siteDelays); err != nil {
+		if err := scrapeOne(ctx, st, studioURL, name, dbPath, outDir, formats, full, refresh, force, workers, defaultDelay, siteDelays); err != nil {
 			fmt.Fprintf(os.Stderr, "error scraping %s: %v\n", studioURL, err)
 			if firstErr == nil {
 				firstErr = err
@@ -148,7 +150,7 @@ func runScrape(cmd *cobra.Command, args []string) error {
 	return firstErr
 }
 
-func scrapeOne(ctx context.Context, st store.Store, studioURL, name, dbPath, outDir string, formats []string, full, refresh bool, workers int, defaultDelay time.Duration, siteDelays map[string]int) error {
+func scrapeOne(ctx context.Context, st store.Store, studioURL, name, dbPath, outDir string, formats []string, full, refresh, force bool, workers int, defaultDelay time.Duration, siteDelays map[string]int) error {
 	sc, err := scraper.ForURL(studioURL)
 	if err != nil {
 		return err
@@ -181,6 +183,20 @@ func scrapeOne(ctx context.Context, st store.Store, studioURL, name, dbPath, out
 
 	if name == "" && len(scenes) > 0 && scenes[0].Studio != "" {
 		name = scenes[0].Studio
+	}
+
+	// A2: a clean 0-scene --full/--refresh would hard-delete (or soft-delete)
+	// every stored scene — almost always an HTML/JSON drift, not a real empty
+	// studio. Refuse the destructive Save when the studio already has data,
+	// unless --force is given. (Incremental merges, so it is never destructive.)
+	if len(scenes) == 0 && (full || refresh) && !force {
+		existing, lerr := st.Load(studioURL)
+		if lerr == nil && len(existing) > 0 {
+			fmt.Fprintf(os.Stderr,
+				"warning: scrape returned 0 scenes but %d are already stored for %s — refusing destructive save (use --force to override)\n",
+				len(existing), studioURL)
+			return nil
+		}
 	}
 
 	// Normalise StudioURL to the URL being saved. Some scrapers stamp a
