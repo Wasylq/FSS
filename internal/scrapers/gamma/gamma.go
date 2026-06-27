@@ -142,6 +142,7 @@ var sites = []siteConfig{
 	{"girlfriendsfilms", "girlfriendsfilms.com", "Girlfriends Films", "", "", "", "", ""},
 	{"gloryholesecrets", "gloryholesecrets.com", "Gloryhole Secrets", "", "", "", "", ""},
 	{"lethalhardcore", "lethalhardcore.com", "Lethal Hardcore", "", "", "", "", ""},
+	{"lethalhardcorevr", "lethalhardcorevr.com", "Lethal Hardcore VR", "", "", "", "", ""},
 	{"mommyblowsbest", "mommyblowsbest.com", "Mommy Blows Best", "", "", "", "", ""},
 	{"puretaboo", "puretaboo.com", "Pure Taboo", "", "", "", "", ""},
 	{"roccosiffredi", "roccosiffredi.com", "Rocco Siffredi", "", "", "", "", ""},
@@ -160,6 +161,15 @@ var sites = []siteConfig{
 	// Zero Tolerance Films segment — individual sites with own domains
 	{"3rddegreefilms", "3rddegreefilms.com", "3rd Degree Films", "3rddegreefilms", "", "", "", ""},
 	{"diabolic", "diabolic.com", "Diabolic", "diabolic", "", "", "", ""},
+
+	// 21 Sextreme (Network) — Gamma/Algolia, hub at 21sextreme.com (filtered by availableOnSite)
+	{"lustygrandmas", "21sextreme.com", "Lusty Grandmas", "lustygrandmas", "", `^https?://(?:www\.)?lustygrandmas\.21sextreme\.com|^https?://(?:www\.)?21sextreme\.com/en/videos/sites/lustygrandmas`, "", ""},
+	{"oldyounglesbianlove", "21sextreme.com", "Old Young Lesbian Love", "oldyounglesbianlove", "", `^https?://(?:www\.)?oldyounglesbianlove\.21sextreme\.com|^https?://(?:www\.)?21sextreme\.com/en/videos/sites/oldyounglesbianlove`, "", ""},
+
+	// 21 Naturals (Network) — Gamma/Algolia, hub at 21naturals.com (filtered by availableOnSite)
+	{"21naturals", "21naturals.com", "21 Naturals", "21naturals", "", `^https?://(?:www\.)?21naturals\.com/?(?:$|\?|#|en/?$)`, "", ""},
+	{"21eroticanal", "21naturals.com", "21 Erotic Anal", "21eroticanal", "", `^https?://(?:www\.)?21eroticanal\.21naturals\.com|^https?://(?:www\.)?21naturals\.com/en/videos/sites/21eroticanal`, "", ""},
+	{"21footart", "21naturals.com", "21 Foot Art", "21footart", "", `^https?://(?:www\.)?21footart\.21naturals\.com|^https?://(?:www\.)?21naturals\.com/en/videos/sites/21footart`, "", ""},
 
 	// Fantasy Massage (Network) — Fame Dollars sites on the Gamma/Algolia platform
 	{"nurumassage", "nurumassage.com", "Nuru Massage", "", "", "", "", ""},
