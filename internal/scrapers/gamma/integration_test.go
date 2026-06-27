@@ -208,3 +208,11 @@ func TestLiveAnalTeenAngels(t *testing.T) {
 func TestLiveNudeFightClub(t *testing.T) {
 	testutil.RunLiveScrape(t, newTestScraper(findSite("nudefightclub")), "https://www.nudefightclub.com/", 2)
 }
+
+func TestLiveNuruMassage(t *testing.T) {
+	testutil.RunLiveScrape(t, newTestScraper(findSite("nurumassage")), "https://www.nurumassage.com/", 2)
+}
+
+func TestLiveAllGirlMassage(t *testing.T) {
+	testutil.RunLiveScrape(t, newTestScraper(findSite("allgirlmassage")), "https://www.allgirlmassage.com/", 2)
+}

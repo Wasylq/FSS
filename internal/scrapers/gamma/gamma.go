@@ -161,6 +161,14 @@ var sites = []siteConfig{
 	{"3rddegreefilms", "3rddegreefilms.com", "3rd Degree Films", "3rddegreefilms", "", "", "", ""},
 	{"diabolic", "diabolic.com", "Diabolic", "diabolic", "", "", "", ""},
 
+	// Fantasy Massage (Network) — Fame Dollars sites on the Gamma/Algolia platform
+	{"nurumassage", "nurumassage.com", "Nuru Massage", "", "", "", "", ""},
+	{"allgirlmassage", "allgirlmassage.com", "All Girl Massage", "", "", "", "", ""},
+	{"massageparlor", "massage-parlor.com", "Massage Parlor", "massage-parlor", "", "", "", ""},
+	{"soapymassage", "soapymassage.com", "Soapy Massage", "", "", "", "", ""},
+	{"milkingtable", "milkingtable.com", "Milking Table", "", "", "", "", ""},
+	{"trickyspa", "trickyspa.com", "Tricky Spa", "", "", "", "", ""},
+
 	// Fisting Inferno segment — network hub (all content in the segment)
 	{"fistinginferno", "fistinginferno.com", "", "", "", "", "", ""},
 

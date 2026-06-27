@@ -1,6 +1,6 @@
 # Covered Sites — All Domains
 
-1396 scrapers covering 1491 distinct domains. Auto-generated from the scraper registry by `TestSitesMdInSync` — do not hand-edit; instead update the scraper's `Patterns()` and re-run `go test ./internal/scrapers/all/...`. The `stashbox` scraper is omitted here because its covered hosts are config-driven; see [`scrapers.md`](scrapers.md).
+1402 scrapers covering 1497 distinct domains. Auto-generated from the scraper registry by `TestSitesMdInSync` — do not hand-edit; instead update the scraper's `Patterns()` and re-run `go test ./internal/scrapers/all/...`. The `stashbox` scraper is omitted here because its covered hosts are config-driven; see [`scrapers.md`](scrapers.md).
 
 Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scraper ID(s)** column lists every scraper that claims URLs on that domain — most domains have one entry, but table-driven networks (`adultprime`, `tmw`, `nextdoorstudios`, etc.) host many sub-studios on a single root domain. See [`scrapers.md`](scrapers.md) for what each ID covers.
 
@@ -51,6 +51,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | allanalallthetime.com | `allanalallthetime` |
 | allblackx.com | `allblackx` |
 | allbrookwright.com | `allbrookwright` |
+| allgirlmassage.com | `allgirlmassage` |
 | allherluv.com | `allherluv` |
 | alphamales.com | `alphamales` |
 | alsangels.com | `alsangels` |
@@ -779,6 +780,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | masonmoore.puba.com | `pubamasonmoore` |
 | masonwyler.com | `masonwyler` |
 | masqulin.com | `masqulin` |
+| massage-parlor.com | `massageparlor` |
 | massage-x.com | `massagex` |
 | massagerooms.com | `massagerooms` |
 | mature.nl | `maturenl` |
@@ -814,6 +816,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | milfvr.com | `milfvr` |
 | milfy.com | `milfy` |
 | militarygayxxx.com | `militarygayxxx` |
+| milkingtable.com | `milkingtable` |
 | millymarks.com | `millymarks` |
 | minimuff.com | `minimuff` |
 | mishamontana.puba.com | `pubamishamontana` |
@@ -936,6 +939,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | nubileset.com | `nubiles` |
 | nubilesunscripted.com | `nubiles` |
 | nudefightclub.com | `nudefightclub` |
+| nurumassage.com | `nurumassage` |
 | nylonsx.com | `tmw-nylonsx` |
 | ohmyholes.com | `tmw-ohmyholes` |
 | old-n-young.com | `tmw-old-n-young` |
@@ -1164,6 +1168,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | smutbuttxxx.com | `smutbuttxxx` |
 | smutmerchants.com | `porngutter` |
 | smutpuppet.com | `porngutter` |
+| soapymassage.com | `soapymassage` |
 | societysm.com | `societysm` |
 | sodomysquad.com | `sodomysquad` |
 | sofiemariexxx.com | `sofiemarie` |
@@ -1337,6 +1342,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | trickymasseur.com | `tmw-trickymasseur` |
 | trickyoldteacher.com | `1passforallsites` |
 | trickyourgf.com | `trickyourgf` |
+| trickyspa.com | `trickyspa` |
 | trueamateurs.com | `trueamateurs` |
 | truelesbian.com | `truelesbian` |
 | trystanbull.com | `trystanbull` |
