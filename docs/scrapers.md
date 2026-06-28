@@ -82,6 +82,7 @@
 | [Interracial POVs](https://interracialpovs.com) | `interracialpovs.com`, `interracialpovs.com/categories/movies/{N}/latest/` | povporncash (NATS tour) | No | Listing-only parse, uses `hussieutil` |
 | [Joana Bliss](https://www.joanabliss.com) | `joanabliss.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
 | [Karina Hart](https://www.karinahart.com) | `karinahart.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
+| [Kawaii](https://kawaiikawaii.jp) | `kawaiikawaii.jp/works/list/release`, `kawaiikawaii.jp/works/detail/{code}`, `kawaiikawaii.jp/actress/detail/{id}` | Up-Timely CMS | No | Thin wrapper around `uptimelyutil`. ~589 products. |
 | [Latina Coochies](https://www.latinacoochies.com) | `latinacoochies.com`, `latinacoochies.com/latina-porn-stars/{name}/{id}` | Score Group | No | Score Group, table-driven `scoregroup` package |
 | [Latin Mommas](https://www.latinmommas.com) | `latinmommas.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
 | [LatinBoyz](https://latinboyz.com) | `latinboyz.com`, `latinboyz.com/tag/{slug}` | WordPress (REST API) | No | WP REST `posts` (gay Latino; feed includes occasional text stories), date + description + thumbnail, uses `fotoroutil` |
@@ -149,6 +150,7 @@
 | [Tokyo-Hot](https://www.tokyo-hot.com) | `tokyo-hot.com`, `tokyo-hot.com/product/{code}` | Custom (JAV catalog) | No | `/product/?page={N}` listing + concurrent detail fetch (title, release date, duration, models, label/series, tags, resolution, thumbnail), ~15k products |
 | [Touch My Wife](https://www.touchmywife.com) | `touchmywife.com` | DTI / project1service (site-api) | No | `site-api` releases (~315), full metadata, uses `manipulativemedia` package |
 | [Valory Irene](https://www.valoryirene.com) | `valoryirene.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
+| [Wanz Factory](https://wanz-factory.com) | `wanz-factory.com/works/list/release`, `wanz-factory.com/works/detail/{code}`, `wanz-factory.com/actress/detail/{id}` | Up-Timely CMS | No | Thin wrapper around `uptimelyutil`. ~619 products. |
 | [XL Girls](https://www.xlgirls.com) | `xlgirls.com`, `xlgirls.com/bbw-models/{name}/{id}` | Score Group | No | Score Group, table-driven `scoregroup` package |
 | [Your Mom Loves Anal](https://www.yourmomlovesanal.com) | `yourmomlovesanal.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
 | [Your Mom's Got Big Tits](https://www.yourmomsgotbigtits.com) | `yourmomsgotbigtits.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
@@ -688,7 +690,7 @@ Scrapers that share a platform use common utility packages to avoid duplication:
 | `scoregrouputil` | Score Group (HTML listing + detail pages) | `scoregroup` | 93 sites |
 | `modelcentroutil` | ModelCentro/AdultCentro (JSON API at `/api/content.load`) | `modelcentro` | 30 sites |
 | `povrutil` | POVR/WankzVR (export JSON + HTML listing) | `povr` | 4 sites |
-| `uptimelyutil` | Up-Timely CMS (HTML listing + detail, Japanese metadata) | `uptimely` | 9 sites |
+| `uptimelyutil` | Up-Timely CMS (HTML listing + detail, Japanese metadata) | `uptimely` | 11 sites |
 | `utgutil` | UTG Networks CMS (two template variants: new Tailwind `<article>` + legacy Bootstrap 3, CDN slug IDs, model page support) | `glamose` | 10 sites |
 | `sexmexutil` | SexMex Pro CMS (HTML scraping). **Quirk:** CMS returns HTTP 500 with valid HTML on some pages. | `sexmexpro` | 3 sites |
 | `railwayutil` | Railway/Express/MongoDB (single JSON API call) | `railway` | 3 sites |

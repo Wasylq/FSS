@@ -22,9 +22,11 @@ var sites = []siteConfig{
 	{"hhhgroup", "hhh-av.com", "HHH Group"},
 	{"honnaka", "honnaka.jp", "Honnaka"},
 	{"ideapocket", "ideapocket.com", "Idea Pocket"},
+	{"kawaii", "kawaiikawaii.jp", "Kawaii"},
 	{"madonna", "madonna-av.com", "Madonna"},
 	{"moodyz", "moodyz.com", "MOODYZ"},
 	{"s1no1style", "s1s1s1.com", "S1 NO.1 STYLE"},
+	{"wanzfactory", "wanz-factory.com", "Wanz Factory"},
 }
 
 func init() {

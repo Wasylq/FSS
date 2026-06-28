@@ -52,3 +52,11 @@ func TestLiveIdeaPocket(t *testing.T) {
 func TestLiveHonnaka(t *testing.T) {
 	testutil.RunLiveScrape(t, newTestScraper(findSite("honnaka")), "https://honnaka.jp/works/list/genre/104", 2)
 }
+
+func TestLiveKawaii(t *testing.T) {
+	testutil.RunLiveScrape(t, newTestScraper(findSite("kawaii")), "https://kawaiikawaii.jp/works/list/genre/104", 2)
+}
+
+func TestLiveWanzFactory(t *testing.T) {
+	testutil.RunLiveScrape(t, newTestScraper(findSite("wanzfactory")), "https://wanz-factory.com/works/list/release", 2)
+}
