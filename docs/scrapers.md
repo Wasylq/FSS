@@ -27,6 +27,7 @@
 | [Big Tit Venera](https://www.bigtitvenera.com) | `bigtitvenera.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
 | [Boned At Home](https://www.bonedathome.com) | `bonedathome.com`, `bonedathome.com/amateur-girls/{name}/{id}` | Score Group | No | Score Group, table-driven `scoregroup` package |
 | [Bootylicious Mag](https://www.bootyliciousmag.com) | `bootyliciousmag.com`, `bootyliciousmag.com/big-booty-girls/{name}/{id}` | Score Group | No | Score Group, table-driven `scoregroup` package |
+| [Brutal Master](https://brutalmaster.com) | `brutalmaster.com`, `brutalmaster.com/tag/{slug}` | WordPress (REST API) | No | WP REST `posts` (~799), titles encode date+model+scene, uses `fotoroutil` |
 | [Busty Angelique](https://www.bustyangelique.com) | `bustyangelique.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
 | [Busty Arianna](https://www.bustyarianna.com) | `bustyarianna.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
 | [Busty Dusty Stash](https://www.bustydustystash.com) | `bustydustystash.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
@@ -91,6 +92,7 @@
 | [LeWood](https://www.lewood.com) | `lewood.com`, `lewood.com/{id}/{slug}-streaming-scene-video.html` | Adult Empire / Ravana (ASP.NET) | No | Browse listing `watch-newest-lewood-clips-and-scenes.html?page={N}` (~1560) + detail fetch (release date, og description); title/performers/thumb from listing; `AgeConfirmed` cookie |
 | [Linsey's World](https://www.linseysworld.com) | `linseysworld.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
 | [MASQULIN](https://masqulin.com) | `masqulin.com`, `thebronetwork.com/categories/masqulin_{N}_d.html` | Bro Network (PHP CMS) | No | Catalog lives as a category on thebronetwork.com, listing-only parse, uses `bronetworkutil` |
+| [May Contain Girl](https://maycontaingirl.com) | `maycontaingirl.com`, `maycontaingirl.com/tag/{slug}` | WordPress (REST API) | No | WP REST `posts` (~115, art-nude/Pony Magazine), uses `fotoroutil` |
 | [Mega Tits Minka](https://www.megatitsminka.com) | `megatitsminka.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
 | [Men Are Slaves](https://www.menareslaves.com) | `menareslaves.com`, `menareslaves.com/main.html` | Reality Studio (clips.js) | No | Static `/js/clips.js` catalog (~2214), titles + performers + fetishes, uses `realitystudioutil` |
 | [Men of Montréal](https://www.menofmontreal.com) | `menofmontreal.com`, `thebronetwork.com/categories/men-of-montreal_{N}_d.html` | Bro Network (PHP CMS) | No | Catalog lives as a category on thebronetwork.com, listing-only parse, uses `bronetworkutil` |
