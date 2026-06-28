@@ -1,6 +1,6 @@
 # Covered Sites — All Domains
 
-1408 scrapers covering 1500 distinct domains. Auto-generated from the scraper registry by `TestSitesMdInSync` — do not hand-edit; instead update the scraper's `Patterns()` and re-run `go test ./internal/scrapers/all/...`. The `stashbox` scraper is omitted here because its covered hosts are config-driven; see [`scrapers.md`](scrapers.md).
+1416 scrapers covering 1508 distinct domains. Auto-generated from the scraper registry by `TestSitesMdInSync` — do not hand-edit; instead update the scraper's `Patterns()` and re-run `go test ./internal/scrapers/all/...`. The `stashbox` scraper is omitted here because its covered hosts are config-driven; see [`scrapers.md`](scrapers.md).
 
 Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scraper ID(s)** column lists every scraper that claims URLs on that domain — most domains have one entry, but table-driven networks (`adultprime`, `tmw`, `nextdoorstudios`, etc.) host many sub-studios on a single root domain. See [`scrapers.md`](scrapers.md) for what each ID covers.
 
@@ -55,6 +55,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | allbrookwright.com | `allbrookwright` |
 | allgirlmassage.com | `allgirlmassage` |
 | allherluv.com | `allherluv` |
+| allinternal.com | `allinternal` |
 | alphamales.com | `alphamales` |
 | alsangels.com | `alsangels` |
 | alsscan.com | `alsscan` |
@@ -103,6 +104,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | asiantgirl.com | `asiantgirl` |
 | asmrfantasy.com | `asmrfantasy` |
 | assholefever.com | `assholefever` |
+| asstraffic.com | `asstraffic` |
 | atmovs.com | `tmw-atmovs` |
 | attackboys.com | `attackboys` |
 | attackers.net | `attackers` |
@@ -308,6 +310,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | cumcountdown.com | `cumcountdown` |
 | cumdumpsterteens.com | `cumdumpsterteens` |
 | cumflation.com | `cumflation` |
+| cumforcover.com | `cumforcover` |
 | cumlouder.com | `cumlouder` |
 | cumpsters.com | `cumpsters` |
 | cumshotoasis.com | `cumshotoasis` |
@@ -814,6 +817,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | milfed.com | `milehigh` |
 | milflicious.com | `milflicious` |
 | milfsodomy.com | `porngutter` |
+| milfthing.com | `milfthing` |
 | milfthreesomes.com | `milfthreesomes` |
 | milftugs.com | `milftugs` |
 | milfvr.com | `milfvr` |
@@ -1032,6 +1036,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | premiumbukkake.com | `premiumbukkake` |
 | prestige-av.com | `prestige` |
 | prettydirty.com | `prettydirty` |
+| primecups.com | `primecups` |
 | princesscum.com | `nubiles` |
 | private.com | `private` |
 | privateblack.com | `privateblack` |
@@ -1049,6 +1054,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | punishteens.com | `punishteens` |
 | purecfnm.com | `purecfnm` |
 | puremature.com | `puremature` |
+| purepov.com | `purepov` |
 | puretaboo.com | `puretaboo` |
 | purexxxfilms.com | `gasm` |
 | putalocura.com | `putalocura` |
@@ -1188,6 +1194,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | spartavideo.com | `spartavideo` |
 | spermsuckers.com | `spermsuckers` |
 | spermswallowers.com | `spermswallowers` |
+| spermswap.com | `spermswap` |
 | spicevids.com | `spicevids` |
 | spizoo.com | `spizoo` |
 | spoiledvirgins.com | `1passforallsites` |
@@ -1236,6 +1243,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | tailynn.com | `tailynn` |
 | tainster.com | `tainster` |
 | takara-tv.jp | `takaratv` |
+| tamedteens.com | `tamedteens` |
 | taratainton.com | `taratainton` |
 | tawny-peaks.com | `tawny-peaks` |
 | taylorvixen.puba.com | `pubataylorvixen` |

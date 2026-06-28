@@ -159,6 +159,7 @@ import (
 	_ "github.com/Wasylq/FSS/internal/scrapers/paysite"
 	_ "github.com/Wasylq/FSS/internal/scrapers/peatv"
 	_ "github.com/Wasylq/FSS/internal/scrapers/pegasproductions"
+	_ "github.com/Wasylq/FSS/internal/scrapers/perfectgonzo"
 	_ "github.com/Wasylq/FSS/internal/scrapers/penthousegold"
 	_ "github.com/Wasylq/FSS/internal/scrapers/perfectgirlfriend"
 	_ "github.com/Wasylq/FSS/internal/scrapers/pinupfiles"

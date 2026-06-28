@@ -114,6 +114,7 @@
 | [Oldje](https://oldje.com) | `oldje.com`, `oldje.com/gallery/{N}` | Class Media | No | `/gallery/{N}` listing (~828 sets): set id, de-slugged title, thumbnail (newest slugs are site-obfuscated; no anon dates), uses `classmedia` package |
 | [Oldje-3some](https://www.oldje-3some.com) | `oldje-3some.com`, `oldje-3some.com/videos/{N}` | Class Media | No | `/videos/{N}` listing: set id, title (obfuscated slugs), thumbnail, uses `classmedia` package |
 | [Pegas Productions](https://www.pegasproductions.com) | `pegasproductions.com`, `pegasproductions.com/tag/{slug}` | WordPress (REST API) | No | Quebec studio, WP REST `posts` (~3933), tags + categories + description, no duration, uses `fotoroutil` |
+| Perfect Gonzo (8 sites) | `allinternal.com`, `asstraffic.com`, `spermswap.com`, `primecups.com`, `tamedteens.com`, `cumforcover.com`, `milfthing.com`, `purepov.com` | Perfect Gonzo (custom PHP) | No | Shared `/movies` listing + concurrent detail fetch (title, date, duration, performers, tags), uses `perfectgonzoutil` |
 | [PerfectSlave](http://www.perfectslave.com) | `perfectslave.com`, `dungeoncorp.com/?page=updates&site=PER` | Dungeon Corp (PHP CMS) | No | Served via dungeoncorp.com site code PER, listing-only parse, uses `dungeoncorputil` |
 | [Picking Up Pussy](https://www.pickinguppussy.com) | `pickinguppussy.com`, `pickinguppussy.com/teen-babes/{name}/{id}` | Score Group | No | Score Group, table-driven `scoregroup` package |
 | [Porn Loser](https://www.pornloser.com) | `pornloser.com`, `pornloser.com/amateur-girls/{name}/{id}` | Score Group | No | Score Group, table-driven `scoregroup` package |
@@ -697,6 +698,7 @@ Scrapers that share a platform use common utility packages to avoid duplication:
 | `titanmediautil` | Titan Media gloryhole network (Elevated X, listing + concurrent detail enrichment) | `titanmedia` | 4 sites |
 | `dungeoncorputil` | Dungeon Corp BDSM network (one PHP app keyed by site code, listing-only HTML parse) | `dungeoncorp` | 6 sites |
 | `nvg` (package) | NVG Network: Net Video Girls (Gatsby), Casting Couch-HD + Net Girl (Next.js); latest ~42 public scenes each | `nvg` | 3 sites |
+| `perfectgonzoutil` | Perfect Gonzo network (custom PHP, `/movies` listing + concurrent detail) | `perfectgonzo` | 8 sites |
 | `realitystudioutil` | Reality Studio LLC fetish sites (static `/js/clips.js` catalog, no pagination) | `realitystudio` | 4 sites |
 | `tmwutil` | Teen Mega World (HTML listing + OG meta detail pages, date-sorted pagination, hub mode for redirected domains) | `tmw` | 35 sites |
 | `wankitnowutil` | Wank It Now network (Next.js `_next/data` JSON API, buildId bootstrap) | `wankitnow` | 6 sites |
