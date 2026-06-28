@@ -1,6 +1,6 @@
 # Covered Sites — All Domains
 
-1420 scrapers covering 1512 distinct domains. Auto-generated from the scraper registry by `TestSitesMdInSync` — do not hand-edit; instead update the scraper's `Patterns()` and re-run `go test ./internal/scrapers/all/...`. The `stashbox` scraper is omitted here because its covered hosts are config-driven; see [`scrapers.md`](scrapers.md).
+1427 scrapers covering 1520 distinct domains. Auto-generated from the scraper registry by `TestSitesMdInSync` — do not hand-edit; instead update the scraper's `Patterns()` and re-run `go test ./internal/scrapers/all/...`. The `stashbox` scraper is omitted here because its covered hosts are config-driven; see [`scrapers.md`](scrapers.md).
 
 Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scraper ID(s)** column lists every scraper that claims URLs on that domain — most domains have one entry, but table-driven networks (`adultprime`, `tmw`, `nextdoorstudios`, etc.) host many sub-studios on a single root domain. See [`scrapers.md`](scrapers.md) for what each ID covers.
 
@@ -140,6 +140,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | beautifulagony.com | `beautifulagony` |
 | beauty-angels.com | `tmw-beauty-angels` |
 | beauty4k.com | `tmw-beauty4k` |
+| becomingfemme.com | `becomingfemme` |
 | belamionline.com | `belamionline` |
 | berryboys.fr | `berryboys` |
 | bethecuck.com | `bethecuck` |
@@ -1055,6 +1056,9 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | publicsexadventures.com | `publicsexadventures` |
 | publicsexdate.com | `publicsexdate` |
 | punishteens.com | `punishteens` |
+| pure-bbw.com | `purebbw` |
+| pure-ts.com | `purets` |
+| pure-xxx.com | `purexxx` |
 | purecfnm.com | `purecfnm` |
 | puremature.com | `puremature` |
 | purepov.com | `purepov` |
@@ -1163,6 +1167,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | siripornstar.com | `siripornstar` |
 | sislovesme.com | `sislovesme` |
 | sisswap.com | `sisswap` |
+| sissypov.com | `sissypov` |
 | sistertrick.com | `sistertrick` |
 | skindiamond.puba.com | `pubaskindiamond` |
 | skintightglamour.com | `skintightglamour` |
@@ -1352,6 +1357,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | transsexualangel.com | `transsexualangel` |
 | transsexualroadtrip.com | `transsexualroadtrip` |
 | tranzvr.com | `tranzvr` |
+| treasureislandmedia.com | `treasureislandmedia` |
 | trickyagent.com | `trickyagent` |
 | trickymasseur.com | `tmw-trickymasseur` |
 | trickyoldteacher.com | `1passforallsites` |
@@ -1362,6 +1368,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | trystanbull.com | `trystanbull` |
 | ts-castingcouch.com | `tscastingcouch` |
 | tsfactor.com | `tsfactor` |
+| tspov.com | `tspov` |
 | tushy.com | `tushy` |
 | tushyraw.com | `tushyraw` |
 | tussinee.com | `tussinee` |
@@ -1518,3 +1525,4 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | yummygirl.com | `yummygirl` |
 | yungdumbsluts.com | `yungdumbsluts` |
 | zerotolerancefilms.com | `zerotolerancefilms` |
+| {subdomain}.treasureislandmedia.com | `treasureislandmedia` |
