@@ -127,6 +127,7 @@
 | [POV Pornstars](https://www.povpornstars.com) | `povpornstars.com`, `povpornstars.com/tour/categories/movies/{N}/latest/` | povporncash (NATS tour) | No | `/tour` prefix, listing-only parse, uses `hussieutil` |
 | [Puta Locura](https://www.putalocura.com) | `putalocura.com`, `putalocura.com/{category}/{slug}` | Custom PHP (Torbe) | No | Sitemap enumeration (~4241, double-www bug fixed) + concurrent detail fetch (title, performer, date, duration, category). Covers Las Pilladas de Torbe |
 | [Randy Blue](https://www.randyblue.com) | `randyblue.com`, `randyblue.com/scenes/{slug}_vids.html` | Elevated X | No | `categories/videos_{N}_d.html` listing + concurrent detail fetch (schema.org microdata: title, date, performers, tags, description) |
+| [RealJamVR](https://realjamvr.com) | `realjamvr.com`, `realjamvr.com/scene/{slug}/` | Django (HTML) | No | Scene sitemaps + concurrent detail fetch (title, date, duration, performers, description) |
 | [Renee Ross Videos](https://www.reneerossvideos.com) | `reneerossvideos.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
 | [Roxi Red](https://www.roxired.com) | `roxired.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
 | [SaRenna's World](https://www.sarennasworld.com) | `sarennasworld.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
@@ -134,6 +135,7 @@
 | [Scoreland](https://www.scoreland.com) | `scoreland.com`, `scoreland.com/big-boob-models/{name}/{id}` | Score Group | No | Score Group, table-driven `scoregroup` package |
 | [Scoreland 2](https://www.scoreland2.com) | `scoreland2.com`, `scoreland2.com/big-boob-models/{name}/{id}` | Score Group | No | Score Group, table-driven `scoregroup` package |
 | [Score Videos](https://www.scorevideos.com) | `scorevideos.com`, `scorevideos.com/porn-models/{name}/{id}` | Score Group | No | Score Group, table-driven `scoregroup` package |
+| [SexBabesVR](https://sexbabesvr.com) | `sexbabesvr.com`, `sexbabesvr.com/video/{slug}/` | Custom | No | Video sitemaps + JSON-LD VideoObject (title, uploadDate, ISO duration, performers) |
 | [Sha Rizel Videos](https://www.sharizelvideos.com) | `sharizelvideos.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
 | [Shock Challenge](https://www.shockchallenge.com) | `shockchallenge.com`, `shockchallenge.com/tag/{slug}` | WordPress (REST API) | No | WP REST `posts` (~414), tags=performers, uses `fotoroutil` |
 | [Silver Sluts](https://www.silversluts.com) | `silversluts.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
@@ -156,6 +158,7 @@
 | [Tokyo-Hot](https://www.tokyo-hot.com) | `tokyo-hot.com`, `tokyo-hot.com/product/{code}` | Custom (JAV catalog) | No | `/product/?page={N}` listing + concurrent detail fetch (title, release date, duration, models, label/series, tags, resolution, thumbnail), ~15k products |
 | [Touch My Wife](https://www.touchmywife.com) | `touchmywife.com` | DTI / project1service (site-api) | No | `site-api` releases (~315), full metadata, uses `manipulativemedia` package |
 | [Valory Irene](https://www.valoryirene.com) | `valoryirene.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
+| [VRHush](https://vrhush.com) | `vrhush.com`, `vrhush.com/scenes/{slug}` | Next.js | No | `_next/data/{buildId}/scenes.json` JSON (title, date, duration, performers, tags, description) |
 | [Wanz Factory](https://wanz-factory.com) | `wanz-factory.com/works/list/release`, `wanz-factory.com/works/detail/{code}`, `wanz-factory.com/actress/detail/{id}` | Up-Timely CMS | No | Thin wrapper around `uptimelyutil`. ~619 products. |
 | [XL Girls](https://www.xlgirls.com) | `xlgirls.com`, `xlgirls.com/bbw-models/{name}/{id}` | Score Group | No | Score Group, table-driven `scoregroup` package |
 | [Your Mom Loves Anal](https://www.yourmomlovesanal.com) | `yourmomlovesanal.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
@@ -674,6 +677,7 @@
 | Glamose tour sites (12 sites) | `{domain}/` | Glamose refstat.php CMS | No | Table-driven `glamosetour` package. Single-page tour listings (~20-24 recent entries per site, no pagination). Performer, date, duration, tags, thumbnail per entry. Sites: Damsels In Peril, Demure Fun, Down Blouse Wow, Femme Fight, Hot Panty Fun, Lethal Lipstick, Panty Amateur, Panty Maniacs, Ripping 4 Fun, Satin Silk Fun, Skirts Up Girls, UK Upskirts |
 | [British Bratz](https://www.britishbratz.com) | `britishbratz.com/` | UTG-like (Bootstrap 3) | No | Standalone scraper with POST-based age gate (`/accessSite/accept`). Paginated `/updates/videos/{page}`, ~1100 videos across 56 pages. BunnyCDN thumbnails, UUID scene IDs. |
 | [Gloss Tights Glamour](https://www.glosstightsglamour.com) | `glosstightsglamour.com/` | ElevatedX | No | Standalone scraper, HTML listing with `page_N.html` pagination, model names, DD/MM/YYYY dates. |
+| Swearl / VR Bangers (6 sites) | `vrbangers.com`, `vrbtrans.com`, `blowvr.com`, `arporn.com`, `vrbgay.com`, `dezyred.com` | Nuxt + JSON API | No | `content.{domain}/api/content/v1/videos` JSON (5 sites via `swearlutil`); Dezyred (`/api/games`) a separate scraper |
 | Strokies / Mack Kensington (3 sites) | `strokies.com`, `tugcasting.com`, `publichandjobs.com` | ElevatedX (v-thumb) | No | `/page{N}/` listing + concurrent detail fetch (title, description, performers, tags), uses `strokiesutil` |
 | Coed Productions (3 sites) | `tour.nebraskacoeds.com`, `misspussycat.com`, `afterhoursexposed.com` | NATS tour (updateItem) | No | `categories/updates_{N}_d.html` listing-only (title, date, performers, thumb), date-sorted, uses `coedutil` |
 | Pure Media (6 sites) | `pure-ts.com`, `pure-bbw.com`, `tspov.com`, `pure-xxx.com`, `becomingfemme.com`, `sissypov.com` | Pure Media (static tour) | No | Model-page enumeration + concurrent detail fetch (title, date, description, performers, thumb), uses `puremediautil` |
@@ -713,6 +717,7 @@ Scrapers that share a platform use common utility packages to avoid duplication:
 | `puremediautil` | Pure Media Enterprises (static tour CMS, model-page enumeration) | `puremedia` | 6 sites |
 | `strokiesutil` | Mack Kensington ElevatedX v-thumb tour (listing + concurrent detail) | `strokies` | 3 sites |
 | `coedutil` | Coed Productions NATS updateItem tour (listing-only) | `coedproductions` | 3 sites |
+| `swearlutil` | Swearl / VR Bangers network (Nuxt + JSON content API) | `swearl` | 5 sites |
 | `perfectgonzoutil` | Perfect Gonzo network (custom PHP, `/movies` listing + concurrent detail) | `perfectgonzo` | 8 sites |
 | `realitystudioutil` | Reality Studio LLC fetish sites (static `/js/clips.js` catalog, no pagination) | `realitystudio` | 4 sites |
 | `tmwutil` | Teen Mega World (HTML listing + OG meta detail pages, date-sorted pagination, hub mode for redirected domains) | `tmw` | 35 sites |
