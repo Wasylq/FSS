@@ -25,9 +25,12 @@
 | [Big Tit Terry Nova](https://www.bigtitterrynova.com) | `bigtitterrynova.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
 | [Big Titty Maserati](https://www.bigtittymaserati.com) | `bigtittymaserati.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
 | [Big Tit Venera](https://www.bigtitvenera.com) | `bigtitvenera.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
+| [Bondage Cafe](https://www.bondagecafe.com) | `bondagecafe.com`, `bondagecafe.com/updates/page_{N}.html` | Custom tour | No | Listing-only (id, title, performers, thumbnail) |
+| [Bondage Junkies](https://bondagejunkies.com) | `bondagejunkies.com`, `bondagejunkies.com/updates?page={N}` | Custom PHP | No | Listing-only with rich anon metadata (title, date, duration, tags, description, poster) |
 | [Boned At Home](https://www.bonedathome.com) | `bonedathome.com`, `bonedathome.com/amateur-girls/{name}/{id}` | Score Group | No | Score Group, table-driven `scoregroup` package |
 | [Bootylicious Mag](https://www.bootyliciousmag.com) | `bootyliciousmag.com`, `bootyliciousmag.com/big-booty-girls/{name}/{id}` | Score Group | No | Score Group, table-driven `scoregroup` package |
 | [BoyFun](https://www.boyfun.com) | `boyfun.com`, `boyfun.com/video/{slug}-{id}.html` | Custom (boyfuncom_2018) | No | Listing (`/videos/page{N}.html`, needs `warningHidden=hide` cookie) + concurrent detail fetch (title, date, performers, description, poster) |
+| [Brat Princess](https://www.bratprincess.us) | `bratprincess.us`, `bratprincess.us/content/{slug}` | Drupal | No | `/video-list?page={N}` listing (title, slug, thumbnail, description); no date/duration anon |
 | [Brutal Master](https://brutalmaster.com) | `brutalmaster.com`, `brutalmaster.com/tag/{slug}` | WordPress (REST API) | No | WP REST `posts` (~799), titles encode date+model+scene, uses `fotoroutil` |
 | [Busty Angelique](https://www.bustyangelique.com) | `bustyangelique.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
 | [Busty Arianna](https://www.bustyarianna.com) | `bustyarianna.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
@@ -82,6 +85,7 @@
 | [Hustler](https://hustlerunlimited.com) | `hustlerunlimited.com`, `hustlerunlimited.com/videos/{slug}` | WordPress (custom `videos` CPT) | No | WP REST `videos` (~2038), performers (hu_actors) + tags + channel + studio + director via `_embed`, per_page 25 (embed payloads are large). Covers all sub-brands/channels (Barely Legal, Bossy MILFs, Daddy Gets Lucky) which live on the same platform |
 | [I Boned Your Mom](https://www.ibonedyourmom.com) | `ibonedyourmom.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
 | [I Fucked The Boss](https://www.ifuckedtheboss.com) | `ifuckedtheboss.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
+| [Insex (1997-2005)](http://www.insexarchives.com) | `insexarchives.com` | Legacy PHP | No | `updates_new.php?start={N}` (~76 shoots; title, duration, description, thumbnail) |
 | [Interracial POVs](https://interracialpovs.com) | `interracialpovs.com`, `interracialpovs.com/categories/movies/{N}/latest/` | povporncash (NATS tour) | No | Listing-only parse, uses `hussieutil` |
 | [Joana Bliss](https://www.joanabliss.com) | `joanabliss.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
 | [Karina Hart](https://www.karinahart.com) | `karinahart.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
@@ -135,6 +139,7 @@
 | [Scoreland](https://www.scoreland.com) | `scoreland.com`, `scoreland.com/big-boob-models/{name}/{id}` | Score Group | No | Score Group, table-driven `scoregroup` package |
 | [Scoreland 2](https://www.scoreland2.com) | `scoreland2.com`, `scoreland2.com/big-boob-models/{name}/{id}` | Score Group | No | Score Group, table-driven `scoregroup` package |
 | [Score Videos](https://www.scorevideos.com) | `scorevideos.com`, `scorevideos.com/porn-models/{name}/{id}` | Score Group | No | Score Group, table-driven `scoregroup` package |
+| [Sex Underwater](https://sexunderwater.com) | `sexunderwater.com`, `sexunderwater.com/categories/SexUnderwater_{N}_d.html` | Elevated X | No | Listing parse (title, performers, date, thumbnail); covers the Underwater Glamour category |
 | [SexBabesVR](https://sexbabesvr.com) | `sexbabesvr.com`, `sexbabesvr.com/video/{slug}/` | Custom | No | Video sitemaps + JSON-LD VideoObject (title, uploadDate, ISO duration, performers) |
 | [Sha Rizel Videos](https://www.sharizelvideos.com) | `sharizelvideos.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
 | [Shock Challenge](https://www.shockchallenge.com) | `shockchallenge.com`, `shockchallenge.com/tag/{slug}` | WordPress (REST API) | No | WP REST `posts` (~414), tags=performers, uses `fotoroutil` |
@@ -149,7 +154,9 @@
 | [Subspaceland](https://www.subspaceland.com) | `subspaceland.com`, `subspaceland.com/video/{model}/{slug}` | Class Media | No | Sitemap (~207) + detail fetch (title, release date, model, tags, description, thumbnail), uses `classmedia` package |
 | [Sybian1](https://www.sybian1.com) | `sybian1.com`, `sybian1.com/tag/{slug}` | WordPress (REST API) | No | WP REST `posts` (~277), tags=performers, thumb from content, uses `fotoroutil` |
 | [Tawny Peaks](https://www.tawny-peaks.com) | `tawny-peaks.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
+| [That Fetish Girl](https://thatfetishgirl.com) | `thatfetishgirl.com`, `thatfetishgirl.com/updates/page_{N}.html` | Elevated X | No | Listing parse (~130 pages; title, date, thumbnail) |
 | [The Bro Network](https://thebronetwork.com) | `thebronetwork.com`, `thebronetwork.com/categories/videos_{N}_d.html` | Bro Network (PHP CMS) | No | Network aggregate listing across all sub-brands, listing-only parse, uses `bronetworkutil` |
+| [The English Mansion](https://www.theenglishmansion.com) | `theenglishmansion.com` | Custom (tem) | No | `updates_ajax.html?type=recent-movies&offset={N}` (title, performer, duration, synopsis, thumb), dedup-terminate |
 | [Tieable](https://www.tieable.com) | `tieable.com`, `tieable.com/tag/{slug}` | WordPress (REST API) | No | WP REST `posts` (~683), tags=performers, uses `fotoroutil` |
 | [Tiffany Towers](https://www.tiffany-towers.com) | `tiffany-towers.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
 | [Timtales](https://www.timtales.com) | `timtales.com`, `timtales.com/videos/latest/`, `timtales.com/videos/{slug}/` | TYPO3 | No | Listing (`/videos/latest/page-{N}/`) + concurrent detail fetch (h1 title, date + runtime, bodytext description) |
