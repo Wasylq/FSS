@@ -1,6 +1,6 @@
 # Covered Sites — All Domains
 
-1433 scrapers covering 1527 distinct domains. Auto-generated from the scraper registry by `TestSitesMdInSync` — do not hand-edit; instead update the scraper's `Patterns()` and re-run `go test ./internal/scrapers/all/...`. The `stashbox` scraper is omitted here because its covered hosts are config-driven; see [`scrapers.md`](scrapers.md).
+1437 scrapers covering 1531 distinct domains. Auto-generated from the scraper registry by `TestSitesMdInSync` — do not hand-edit; instead update the scraper's `Patterns()` and re-run `go test ./internal/scrapers/all/...`. The `stashbox` scraper is omitted here because its covered hosts are config-driven; see [`scrapers.md`](scrapers.md).
 
 Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scraper ID(s)** column lists every scraper that claims URLs on that domain — most domains have one entry, but table-driven networks (`adultprime`, `tmw`, `nextdoorstudios`, etc.) host many sub-studios on a single root domain. See [`scrapers.md`](scrapers.md) for what each ID covers.
 
@@ -196,6 +196,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | boyforsale.com | `boyforsale` |
 | boyfriendsharing.com | `boyfriendsharing` |
 | boyfriendsharing.comtag | `boyfriendsharing` |
+| boyfun.com | `boyfun` |
 | boygusher.com | `boygusher` |
 | boys-pissing.com | `boyspissing` |
 | boys-smoking.com | `boyssmoking` |
@@ -289,6 +290,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | cockyboys.com | `cockyboys` |
 | codivorexxx.com | `codivorexxx` |
 | codycummings.com | `codycummings` |
+| colbyknox.com | `colbyknox` |
 | colettevideos.com | `colettevideos` |
 | college-uniform.com | `collegeuniform` |
 | collegeboyphysicals.com | `collegeboyphysicals` |
@@ -1076,6 +1078,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | rachel-steele.com | `rachelsteele` |
 | rachelroxxx.puba.com | `pubarachelroxxx` |
 | ragingstallion.com | `ragingstallion` |
+| randyblue.com | `randyblue` |
 | rawalphamales.com | `rawalphamales` |
 | rawattack.com | `rawattack` |
 | rawboys.com | `rawboys` |
@@ -1211,6 +1214,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | spizoo.com | `spizoo` |
 | spoiledvirgins.com | `1passforallsites` |
 | spungygunkfilms.empirestores.co | `spungygunkfilms` |
+| spunkworthy.com | `spunkworthy` |
 | spyfam.com | `spyfam` |
 | spypov.com | `spypov` |
 | spytug.com | `spytug` |
