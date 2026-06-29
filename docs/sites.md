@@ -1,6 +1,6 @@
 # Covered Sites — All Domains
 
-1437 scrapers covering 1531 distinct domains. Auto-generated from the scraper registry by `TestSitesMdInSync` — do not hand-edit; instead update the scraper's `Patterns()` and re-run `go test ./internal/scrapers/all/...`. The `stashbox` scraper is omitted here because its covered hosts are config-driven; see [`scrapers.md`](scrapers.md).
+1446 scrapers covering 1540 distinct domains. Auto-generated from the scraper registry by `TestSitesMdInSync` — do not hand-edit; instead update the scraper's `Patterns()` and re-run `go test ./internal/scrapers/all/...`. The `stashbox` scraper is omitted here because its covered hosts are config-driven; see [`scrapers.md`](scrapers.md).
 
 Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scraper ID(s)** column lists every scraper that claims URLs on that domain — most domains have one entry, but table-driven networks (`adultprime`, `tmw`, `nextdoorstudios`, etc.) host many sub-studios on a single root domain. See [`scrapers.md`](scrapers.md) for what each ID covers.
 
@@ -93,6 +93,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | any-pornstarplatinum-network-sister-site | `pornstarplatinum` |
 | apclips.com | `apclips` |
 | apovstory.com | `apovstory` |
+| arporn.com | `arporn` |
 | asaakira.puba.com | `pubaasaakira` |
 | asafucks.com | `pubaasaakira` |
 | asgmax.com | `asgmax` |
@@ -182,6 +183,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | blondeslovedick.com | `porngutter` |
 | blownbyrone.com | `blownbyrone` |
 | blowpass.com | `blowpass` |
+| blowvr.com | `blowvr` |
 | bobstgirls.com | `bobstgirls` |
 | bobsvideos.empirestores.co | `bobsvideos` |
 | bolatino.com | `bolatino` |
@@ -400,6 +402,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | devilsfilmparodies.com | `devilsfilmparodies` |
 | devilsgangbangs.com | `devilsgangbangs` |
 | devilstgirls.com | `devilstgirls` |
+| dezyred.com | `dezyred` |
 | diabolic.com | `diabolic` |
 | diamondkitty.puba.com | `pubadiamondkitty` |
 | dickdorm.com | `realitydudes` |
@@ -1093,6 +1096,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | realityjunkies.com | `realityjunkies` |
 | realitykings.com | `realitykings` |
 | realitysis.com | `nubiles` |
+| realjamvr.com | `realjamvr` |
 | realsensual.com | `realsensual` |
 | realtgirls.com | `realtgirls` |
 | realvr.com | `realvr` |
@@ -1143,6 +1147,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | sellyourgf.com | `sellyourgf` |
 | sensual.love | `sensuallove` |
 | sexart.com | `sexart` |
+| sexbabesvr.com | `sexbabesvr` |
 | sexflexvideo.com | `sexflexvideo` |
 | sexlikereal.com | `sexlikereal` |
 | sexmex.xxx | `sexmex` |
@@ -1425,7 +1430,11 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | vouyermedia.com | `vouyermedia` |
 | voyeurpapy.com | `voyeurpapy` |
 | vrallure.com | `vrallure` |
+| vrbangers.com | `vrbangers` |
+| vrbgay.com | `vrbgay` |
+| vrbtrans.com | `vrbtrans` |
 | vrcosplayx.com | `vrcosplayx` |
+| vrhush.com | `vrhush` |
 | vrintimacy.com | `vrintimacy` |
 | vrporn.com | `vrporn` |
 | vurigvlaanderen.be | `vurigvlaanderen` |
