@@ -670,6 +670,8 @@
 | Glamose tour sites (12 sites) | `{domain}/` | Glamose refstat.php CMS | No | Table-driven `glamosetour` package. Single-page tour listings (~20-24 recent entries per site, no pagination). Performer, date, duration, tags, thumbnail per entry. Sites: Damsels In Peril, Demure Fun, Down Blouse Wow, Femme Fight, Hot Panty Fun, Lethal Lipstick, Panty Amateur, Panty Maniacs, Ripping 4 Fun, Satin Silk Fun, Skirts Up Girls, UK Upskirts |
 | [British Bratz](https://www.britishbratz.com) | `britishbratz.com/` | UTG-like (Bootstrap 3) | No | Standalone scraper with POST-based age gate (`/accessSite/accept`). Paginated `/updates/videos/{page}`, ~1100 videos across 56 pages. BunnyCDN thumbnails, UUID scene IDs. |
 | [Gloss Tights Glamour](https://www.glosstightsglamour.com) | `glosstightsglamour.com/` | ElevatedX | No | Standalone scraper, HTML listing with `page_N.html` pagination, model names, DD/MM/YYYY dates. |
+| Strokies / Mack Kensington (3 sites) | `strokies.com`, `tugcasting.com`, `publichandjobs.com` | ElevatedX (v-thumb) | No | `/page{N}/` listing + concurrent detail fetch (title, description, performers, tags), uses `strokiesutil` |
+| Coed Productions (3 sites) | `tour.nebraskacoeds.com`, `misspussycat.com`, `afterhoursexposed.com` | NATS tour (updateItem) | No | `categories/updates_{N}_d.html` listing-only (title, date, performers, thumb), date-sorted, uses `coedutil` |
 | Pure Media (6 sites) | `pure-ts.com`, `pure-bbw.com`, `tspov.com`, `pure-xxx.com`, `becomingfemme.com`, `sissypov.com` | Pure Media (static tour) | No | Model-page enumeration + concurrent detail fetch (title, date, description, performers, thumb), uses `puremediautil` |
 | Treasure Island Media (7 sub-brands) | `treasureislandmedia.com`, `*.treasureislandmedia.com` | Drupal | No | One Drupal catalog `/scenes?channel=All&page=N` + concurrent og/detail fetch; sub-brand (TIM Suck/Fuck/Jack/Classics, Bruthaload, Grindhouse Raw, Latin Loads) derived from og:url host |
 
@@ -705,6 +707,8 @@ Scrapers that share a platform use common utility packages to avoid duplication:
 | `dungeoncorputil` | Dungeon Corp BDSM network (one PHP app keyed by site code, listing-only HTML parse) | `dungeoncorp` | 6 sites |
 | `nvg` (package) | NVG Network: Net Video Girls (Gatsby), Casting Couch-HD + Net Girl (Next.js); latest ~42 public scenes each | `nvg` | 3 sites |
 | `puremediautil` | Pure Media Enterprises (static tour CMS, model-page enumeration) | `puremedia` | 6 sites |
+| `strokiesutil` | Mack Kensington ElevatedX v-thumb tour (listing + concurrent detail) | `strokies` | 3 sites |
+| `coedutil` | Coed Productions NATS updateItem tour (listing-only) | `coedproductions` | 3 sites |
 | `perfectgonzoutil` | Perfect Gonzo network (custom PHP, `/movies` listing + concurrent detail) | `perfectgonzo` | 8 sites |
 | `realitystudioutil` | Reality Studio LLC fetish sites (static `/js/clips.js` catalog, no pagination) | `realitystudio` | 4 sites |
 | `tmwutil` | Teen Mega World (HTML listing + OG meta detail pages, date-sorted pagination, hub mode for redirected domains) | `tmw` | 35 sites |
