@@ -27,6 +27,7 @@
 | [Big Tit Venera](https://www.bigtitvenera.com) | `bigtitvenera.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
 | [Boned At Home](https://www.bonedathome.com) | `bonedathome.com`, `bonedathome.com/amateur-girls/{name}/{id}` | Score Group | No | Score Group, table-driven `scoregroup` package |
 | [Bootylicious Mag](https://www.bootyliciousmag.com) | `bootyliciousmag.com`, `bootyliciousmag.com/big-booty-girls/{name}/{id}` | Score Group | No | Score Group, table-driven `scoregroup` package |
+| [BoyFun](https://www.boyfun.com) | `boyfun.com`, `boyfun.com/video/{slug}-{id}.html` | Custom (boyfuncom_2018) | No | Listing (`/videos/page{N}.html`, needs `warningHidden=hide` cookie) + concurrent detail fetch (title, date, performers, description, poster) |
 | [Brutal Master](https://brutalmaster.com) | `brutalmaster.com`, `brutalmaster.com/tag/{slug}` | WordPress (REST API) | No | WP REST `posts` (~799), titles encode date+model+scene, uses `fotoroutil` |
 | [Busty Angelique](https://www.bustyangelique.com) | `bustyangelique.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
 | [Busty Arianna](https://www.bustyarianna.com) | `bustyarianna.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
@@ -46,6 +47,7 @@
 | [Cock 4 Stepmom](https://www.cock4stepmom.com) | `cock4stepmom.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
 | [CockyBoys](https://cockyboys.com) | `cockyboys.com`, `cockyboys.com/categories/movies_{N}_d.html`, `cockyboys.com/scenes/{slug}.html` | Custom PHP | No | Listing (`movies_{N}_d.html`) + concurrent detail fetch (title, Released date, performers via movieModels grid, categories, og:image). Covers CockyBoys x RandyBlue series. Dup-page stop |
 | [Codi Vore XXX](https://www.codivorexxx.com) | `codivorexxx.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
+| [Colby Knox](https://www.colbyknox.com) | `colbyknox.com`, `colbyknox.com/videos/{slug}` | Symfony | No | AJAX `?page=N` (X-Requested-With JSON) listing + detail fetch (title, duration, performers, description); no date |
 | [Creampie For Granny](https://www.creampieforgranny.com) | `creampieforgranny.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
 | [Cum Countdown](https://www.cumcountdown.com) | `cumcountdown.com`, `cumcountdown.com/main.html` | Reality Studio (clips.js) | No | Static `/js/clips.js` catalog, performers + fetishes, MM/DD/YY dates, uses `realitystudioutil` |
 | [Cumbots](https://cumbots.com) | `cumbots.com`, `dungeoncorp.com/?page=updates&site=CUM` | Dungeon Corp (PHP CMS) | No | Served via dungeoncorp.com site code, listing-only parse (title, performers, date, duration, thumb), uses `dungeoncorputil` |
@@ -124,6 +126,7 @@
 | [Porn Mega Load](https://www.pornmegaload.com) | `pornmegaload.com`, `pornmegaload.com/porn-models/{name}/{id}` | Score Group | No | Score Group, table-driven `scoregroup` package |
 | [POV Pornstars](https://www.povpornstars.com) | `povpornstars.com`, `povpornstars.com/tour/categories/movies/{N}/latest/` | povporncash (NATS tour) | No | `/tour` prefix, listing-only parse, uses `hussieutil` |
 | [Puta Locura](https://www.putalocura.com) | `putalocura.com`, `putalocura.com/{category}/{slug}` | Custom PHP (Torbe) | No | Sitemap enumeration (~4241, double-www bug fixed) + concurrent detail fetch (title, performer, date, duration, category). Covers Las Pilladas de Torbe |
+| [Randy Blue](https://www.randyblue.com) | `randyblue.com`, `randyblue.com/scenes/{slug}_vids.html` | Elevated X | No | `categories/videos_{N}_d.html` listing + concurrent detail fetch (schema.org microdata: title, date, performers, tags, description) |
 | [Renee Ross Videos](https://www.reneerossvideos.com) | `reneerossvideos.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
 | [Roxi Red](https://www.roxired.com) | `roxired.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
 | [SaRenna's World](https://www.sarennasworld.com) | `sarennasworld.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
@@ -135,6 +138,7 @@
 | [Shock Challenge](https://www.shockchallenge.com) | `shockchallenge.com`, `shockchallenge.com/tag/{slug}` | WordPress (REST API) | No | WP REST `posts` (~414), tags=performers, uses `fotoroutil` |
 | [Silver Sluts](https://www.silversluts.com) | `silversluts.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
 | [SocietySM](https://societysm.com) | `societysm.com`, `dungeoncorp.com/?page=updates&site=SSM` | Dungeon Corp (PHP CMS) | No | Served via dungeoncorp.com site code SSM, listing-only parse (title, performers, date, duration, thumb), uses `dungeoncorputil` |
+| [SpunkWorthy](https://www.spunkworthy.com) | `spunkworthy.com`, `spunkworthy.com/preview/view_video/{id}` | Legacy custom | No | `/preview/videos?page=N` listing + detail fetch (title, date from HTML comment, performers, description) |
 | [SpyTug](https://spytug.com) | `spytug.com`, `spytug.com/categories/Movies_{N}_d.html` | Elevated X | No | Root-served tour, listing + detail enrichment, uses `titanmediautil` |
 | [Stacy Vandenberg Boobs](https://www.stacyvandenbergboobs.com) | `stacyvandenbergboobs.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
 | [Staxus](https://staxus.com) | `staxus.com`, `staxus.com/trial/category.php?id=50` | Custom PHP (trial tour) | No | Listing-only microdata parse (title, performers, date, thumbnail), `&page={N}` pagination, video-only (type=vids), ~2900 scenes |
