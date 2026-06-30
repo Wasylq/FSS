@@ -684,6 +684,10 @@
 | Glamose tour sites (12 sites) | `{domain}/` | Glamose refstat.php CMS | No | Table-driven `glamosetour` package. Single-page tour listings (~20-24 recent entries per site, no pagination). Performer, date, duration, tags, thumbnail per entry. Sites: Damsels In Peril, Demure Fun, Down Blouse Wow, Femme Fight, Hot Panty Fun, Lethal Lipstick, Panty Amateur, Panty Maniacs, Ripping 4 Fun, Satin Silk Fun, Skirts Up Girls, UK Upskirts |
 | [British Bratz](https://www.britishbratz.com) | `britishbratz.com/` | UTG-like (Bootstrap 3) | No | Standalone scraper with POST-based age gate (`/accessSite/accept`). Paginated `/updates/videos/{page}`, ~1100 videos across 56 pages. BunnyCDN thumbnails, UUID scene IDs. |
 | [Gloss Tights Glamour](https://www.glosstightsglamour.com) | `glosstightsglamour.com/` | ElevatedX | No | Standalone scraper, HTML listing with `page_N.html` pagination, model names, DD/MM/YYYY dates. |
+| Puffy Network (4 sites) | `wetandpuffy.com`, `wetandpissy.com`, `weliketosuck.com`, `simplyanal.com` | Custom PHP | No | `/{videos|updates}/page-{N}/` listing + concurrent detail (title, date, duration, performers, thumb), uses `puffyutil` |
+| VIPissy Cash (4 sites) | `vipissy.com`, `fistertwister.com`, `peeonher.com`, `virtualpee.com` | Custom PHP | No | Same `puffyutil` CMS family |
+| Digital J Media (10 sites) | `fellatiojapan.com`, `cospuri.com`, `legsjapan.com`, `spermmania.com`, `transexjapan.com`, `tokyofacefuck.com`, `cutebutts.com`, `uralesbian.com`, `cumbuffet.com`, `handjobjapan.com` | Custom (JapanHDV) | No | `/samples?page=N` listing + per-site parsers + optional detail (model, duration, tags, date), uses `digitaljmediautil` |
+| [Reflective Desire](https://reflectivedesire.com) | `reflectivedesire.com`, `reflectivedesire.com/videos/{slug}/` | Custom | No | Sitemap + JSON-LD VideoObject (title, date, duration, performers, description) |
 | Swearl / VR Bangers (6 sites) | `vrbangers.com`, `vrbtrans.com`, `blowvr.com`, `arporn.com`, `vrbgay.com`, `dezyred.com` | Nuxt + JSON API | No | `content.{domain}/api/content/v1/videos` JSON (5 sites via `swearlutil`); Dezyred (`/api/games`) a separate scraper |
 | Strokies / Mack Kensington (3 sites) | `strokies.com`, `tugcasting.com`, `publichandjobs.com` | ElevatedX (v-thumb) | No | `/page{N}/` listing + concurrent detail fetch (title, description, performers, tags), uses `strokiesutil` |
 | Coed Productions (3 sites) | `tour.nebraskacoeds.com`, `misspussycat.com`, `afterhoursexposed.com` | NATS tour (updateItem) | No | `categories/updates_{N}_d.html` listing-only (title, date, performers, thumb), date-sorted, uses `coedutil` |
@@ -725,6 +729,8 @@ Scrapers that share a platform use common utility packages to avoid duplication:
 | `strokiesutil` | Mack Kensington ElevatedX v-thumb tour (listing + concurrent detail) | `strokies` | 3 sites |
 | `coedutil` | Coed Productions NATS updateItem tour (listing-only) | `coedproductions` | 3 sites |
 | `swearlutil` | Swearl / VR Bangers network (Nuxt + JSON content API) | `swearl` | 5 sites |
+| `puffyutil` | Puffy + VIPissy networks (bespoke PHP CMS, slug-driven) | `puffy` | 8 sites |
+| `digitaljmediautil` | Digital J Media / JapanHDV network (per-site parsers) | `digitaljmedia` | 10 sites |
 | `perfectgonzoutil` | Perfect Gonzo network (custom PHP, `/movies` listing + concurrent detail) | `perfectgonzo` | 8 sites |
 | `realitystudioutil` | Reality Studio LLC fetish sites (static `/js/clips.js` catalog, no pagination) | `realitystudio` | 4 sites |
 | `tmwutil` | Teen Mega World (HTML listing + OG meta detail pages, date-sorted pagination, hub mode for redirected domains) | `tmw` | 35 sites |
