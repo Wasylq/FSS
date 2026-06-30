@@ -1,6 +1,6 @@
 # Covered Sites — All Domains
 
-1446 scrapers covering 1540 distinct domains. Auto-generated from the scraper registry by `TestSitesMdInSync` — do not hand-edit; instead update the scraper's `Patterns()` and re-run `go test ./internal/scrapers/all/...`. The `stashbox` scraper is omitted here because its covered hosts are config-driven; see [`scrapers.md`](scrapers.md).
+1453 scrapers covering 1547 distinct domains. Auto-generated from the scraper registry by `TestSitesMdInSync` — do not hand-edit; instead update the scraper's `Patterns()` and re-run `go test ./internal/scrapers/all/...`. The `stashbox` scraper is omitted here because its covered hosts are config-driven; see [`scrapers.md`](scrapers.md).
 
 Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scraper ID(s)** column lists every scraper that claims URLs on that domain — most domains have one entry, but table-driven networks (`adultprime`, `tmw`, `nextdoorstudios`, etc.) host many sub-studios on a single root domain. See [`scrapers.md`](scrapers.md) for what each ID covers.
 
@@ -187,6 +187,8 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | bobstgirls.com | `bobstgirls` |
 | bobsvideos.empirestores.co | `bobsvideos` |
 | bolatino.com | `bolatino` |
+| bondagecafe.com | `bondagecafe` |
+| bondagejunkies.com | `bondagejunkies` |
 | bonedathome.com | `bonedathome` |
 | bonuscontent.puba.com | `pubabonuscontent` |
 | bootyliciousmag.com | `bootyliciousmag` |
@@ -206,6 +208,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | bracefaced.com | `bracefaced` |
 | brandnewfaces.com | `brandnewfaces` |
 | brasilvr.com | `brasilvr` |
+| bratprincess.us | `bratprincess` |
 | brattyfamily.com | `brattyfamily` |
 | brattyfamily.comtag | `brattyfamily` |
 | brattymilf.com | `nubiles` |
@@ -669,6 +672,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | inflagranti.com | `gasm` |
 | inkedpov.com | `inkedpov` |
 | innocenthigh.com | `innocenthigh` |
+| insexarchives.com | `insexarchives` |
 | interracialpass.com | `interracialpass` |
 | interracialpovs.com | `interracialpovs` |
 | intimatelesbians.com | `intimatelesbians` |
@@ -1155,6 +1159,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | sexpov.com | `sexpov` |
 | sexselector.com | `sexselector` |
 | sextapelesbians.com | `sextapelesbians` |
+| sexunderwater.com | `sexunderwater` |
 | sexycuckold.com | `sexycuckold` |
 | sexyhub.com | `sexyhub` |
 | sexyninarivera.com | `sexyninarivera` |
@@ -1307,6 +1312,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | tgirlx.com | `tgirlx` |
 | thaigirlswild.com | `thaigirlswild` |
 | thaipussymassage.com | `thaipussymassage` |
+| thatfetishgirl.com | `thatfetishgirl` |
 | thatsitcomshow.com | `nubiles` |
 | theartporn.com | `theartporn` |
 | theassfactory.com | `theassfactory` |
@@ -1314,6 +1320,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | thebrats.com | `thebrats` |
 | thebronetwork.com | `masqulin`, `menofmontreal`, `thebronetwork` |
 | thedicksuckers.com | `thedicksuckers` |
+| theenglishmansion.com | `englishmansion` |
 | thegayoffice.com | `men` |
 | thehandjobsite.com | `thehandjobsite` |
 | thejerkygirls.com | `thejerkygirls` |
