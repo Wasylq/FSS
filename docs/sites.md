@@ -1,6 +1,6 @@
 # Covered Sites — All Domains
 
-1472 scrapers covering 1566 distinct domains. Auto-generated from the scraper registry by `TestSitesMdInSync` — do not hand-edit; instead update the scraper's `Patterns()` and re-run `go test ./internal/scrapers/all/...`. The `stashbox` scraper is omitted here because its covered hosts are config-driven; see [`scrapers.md`](scrapers.md).
+1479 scrapers covering 1573 distinct domains. Auto-generated from the scraper registry by `TestSitesMdInSync` — do not hand-edit; instead update the scraper's `Patterns()` and re-run `go test ./internal/scrapers/all/...`. The `stashbox` scraper is omitted here because its covered hosts are config-driven; see [`scrapers.md`](scrapers.md).
 
 Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scraper ID(s)** column lists every scraper that claims URLs on that domain — most domains have one entry, but table-driven networks (`adultprime`, `tmw`, `nextdoorstudios`, etc.) host many sub-studios on a single root domain. See [`scrapers.md`](scrapers.md) for what each ID covers.
 
@@ -400,6 +400,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | deeps.net | `deeps` |
 | defeated.xxx | `defeated` |
 | defeatedsexfight.com | `defeatedsexfight` |
+| defloration.com | `defloration` |
 | demurefun.com | `demurefun` |
 | desiraesworld.com | `desiraesworld` |
 | detentiongirls.com | `nubiles` |
@@ -428,6 +429,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | dorcelclub.com | `dorcelclub` |
 | dothewife.com | `porngutter` |
 | doublepies.com | `nubiles` |
+| doubleviewcasting.com | `doubleviewcasting` |
 | downblousejerk.com | `downblousejerk` |
 | downblousewow.com | `downblousewow` |
 | dpfanatics.com | `dpfanatics` |
@@ -503,6 +505,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | filthykings.com | `filthykings` |
 | finishesthejob.com | `finishesthejob` |
 | firstanaldate.com | `firstanaldate` |
+| firstanalquest.com | `firstanalquest` |
 | firstbgg.com | `tmw-firstbgg` |
 | firstclasspov.com | `firstclasspov` |
 | fistertwister.com | `fistertwister` |
@@ -640,10 +643,12 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | hijabhookup.com | `hijabhookup` |
 | hmp.jp | `hmp` |
 | holed.com | `holed` |
+| hollyrandall.com | `hollyrandall` |
 | homealonemilfs.com | `homealonemilfs` |
 | hometeenvids.com | `tmw-hometeenvids` |
 | hometoyteens.com | `tmw-hometoyteens` |
 | honnaka.jp | `honnaka` |
+| hookuphotshot.com | `hookuphotshot` |
 | hornyasianmilfs.com | `hornyasianmilfs` |
 | horrorporn.com | `horrorporn` |
 | hotandtatted.com | `hotandtatted` |
@@ -693,6 +698,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | javdatabase.com | `javdatabase` |
 | jaydencole.puba.com | `pubajaydencole` |
 | jaydenjaymes.puba.com | `pubajaydenjaymes` |
+| jeffsmodels.com | `jeffsmodels` |
 | jelenajensen.com | `jelenajensen` |
 | jenhexxx.puba.com | `pubajenhexxx` |
 | jerk-buddies.com | `jerkbuddies` |
@@ -1483,6 +1489,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | whynotbi.com | `whynotbi` |
 | wicked.com | `wicked` |
 | wifey.com | `wifey` |
+| wifeysworld.com | `wifeysworld` |
 | wildoncam.com | `wildoncam` |
 | williamhiggins.com | `williamhiggins` |
 | womenbyjuliaann.com | `womenbyjuliaann` |
