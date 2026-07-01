@@ -57,7 +57,9 @@
 | [CumClinic](https://cumclinic.com) | `cumclinic.com`, `cumclinic.com/tour/categories/Movies_{N}_d.html` | Elevated X | No | `/tour` prefix, listing + detail enrichment, uses `titanmediautil` |
 | [Cumpsters](https://cumpsters.com) | `cumpsters.com`, `cumpsters.com/categories/Movies_{N}_d.html` | Elevated X | No | Root-served tour, listing + detail enrichment, uses `titanmediautil` |
 | [Daylene Rio](https://www.daylenerio.com) | `daylenerio.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
+| [Defloration](https://www.defloration.com) | `defloration.com` | Custom (PWA feed) | No | Single-page `freetour.php` feed (~101 cards: id, title, description, thumbnail); no dates |
 | [Desirae's World](https://www.desiraesworld.com) | `desiraesworld.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
+| [Double View Casting](http://doubleviewcasting.com) | `doubleviewcasting.com`, `doubleviewcasting.com/scene/id/{N}` | Custom PHP | No | `/scenes/page/{N}` listing + detail (title, description, performers, duration, tags) |
 | [Dream Tranny](https://dreamtranny.com) | `dreamtranny.com`, `dreamtranny.com/update/{id}/` | RogueBucks (NATS) | No | Sitemap enumeration (~1193) + concurrent detail fetch (title, performers, date, description, thumbnail) |
 | [DungeonCorp](https://www.dungeoncorp.com) | `dungeoncorp.com`, `dungeoncorp.com/?page=updates&site=DUN` | Dungeon Corp (PHP CMS) | No | Network site code DUN, listing-only parse, uses `dungeoncorputil` |
 | [Ebony Thots](https://www.ebonythots.com) | `ebonythots.com`, `ebonythots.com/black-porn-stars/{name}/{id}` | Score Group | No | Score Group, table-driven `scoregroup` package |
@@ -65,6 +67,7 @@
 | [Feed Her Fuck Her](https://www.feedherfuckher.com) | `feedherfuckher.com`, `feedherfuckher.com/bbw-models/{name}/{id}` | Score Group | No | Score Group, table-driven `scoregroup` package |
 | [Female Worship](https://www.femaleworship.com) | `femaleworship.com`, `femaleworship.com/main.html` | Reality Studio (clips.js) | No | Static `/js/clips.js` catalog (~1025), performers + fetishes, uses `realitystudioutil` |
 | [Femjoy](https://www.femjoy.com) | `femjoy.com`, `femjoy.com/videos`, `femjoy.com/gallery/{id}` | Gamma _xlabs (MetaMaker) | No | Listing-only parse of `/videos` cards (title, model, photographer, date, duration, thumb), ~1176 videos, cookie-jar session bootstrap, scene page `/gallery/{id}` |
+| [First Anal Quest](https://www.firstanalquest.com) | `firstanalquest.com`, `firstanalquest.com/videos/{slug}-{id}/` | Custom PHP | No | `/latest-updates/{N}/` listing (title, date, duration, performers, thumb), date-sorted |
 | [Flat And Fucked MILFs](https://www.flatandfuckedmilfs.com) | `flatandfuckedmilfs.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
 | [Fucking Dungeon](https://www.dungeoncorp.com/?page=sites&site=FUD) | `dungeoncorp.com/?page=updates&site=FUD` | Dungeon Corp (PHP CMS) | No | Network site code FUD, listing-only parse, uses `dungeoncorputil` |
 | [Gangbang Media Germany](https://p-p-p.tv) | `p-p-p.tv`, `p-p-p.tv/videos/list` | Custom (German) | No | Listing-only parse (`?page={N}`): title/slug, performers (slug-derived), duration, thumbnail; detail pages login-gated so no dates |
@@ -76,7 +79,9 @@
 | [Granny Loves Young Cock](https://www.grannylovesyoungcock.com) | `grannylovesyoungcock.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
 | [Hairy Coochies](https://www.hairycoochies.com) | `hairycoochies.com`, `hairycoochies.com/hirsute-girls/{name}/{id}` | Score Group | No | Score Group, table-driven `scoregroup` package |
 | [Hegre](https://www.hegre.com) | `hegre.com`, `hegre.com/models/{slug}`, `hegre.com/films/{slug}` | Custom | No | Models index → model pages → `/films/{slug}` detail (streaming pipeline), og title/description/thumb, performers, runtime; `locale=en;country=US` cookie for English |
+| [Holly Randall](https://hollyrandall.com) | `hollyrandall.com`, `hollyrandall.com/scenes/{slug}_vids.html` | Custom affiliate CMS | No | `categories/updates_{N}_p.html` listing + detail (title, date, performers, thumb) |
 | [Home Alone MILFs](https://www.homealonemilfs.com) | `homealonemilfs.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
+| [Hookup Hotshot](https://hookuphotshot.com) | `hookuphotshot.com`, `hookuphotshot.com/trailers/{slug}.html` | NATS tour | No | `categories/movies/{N}/latest/` listing + detail (title, date, performers, thumb) |
 | [Horny Asian MILFs](https://www.hornyasianmilfs.com) | `hornyasianmilfs.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
 | [Hot and Tatted](https://hotandtatted.com) | `hotandtatted.com`, `hotandtatted.com/categories/movies/{N}/latest/` | povporncash (NATS tour) | No | Listing-only parse, uses `hussieutil` |
 | [HuCows](https://www.hucows.com) | `hucows.com`, `hucows.com/tag/{slug}` | WordPress (REST API) | No | WP REST `posts` (~592), tags=performers, categories, description, uses `fotoroutil` |
@@ -87,6 +92,7 @@
 | [I Fucked The Boss](https://www.ifuckedtheboss.com) | `ifuckedtheboss.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
 | [Insex (1997-2005)](http://www.insexarchives.com) | `insexarchives.com` | Legacy PHP | No | `updates_new.php?start={N}` (~76 shoots; title, duration, description, thumbnail) |
 | [Interracial POVs](https://interracialpovs.com) | `interracialpovs.com`, `interracialpovs.com/categories/movies/{N}/latest/` | povporncash (NATS tour) | No | Listing-only parse, uses `hussieutil` |
+| [Jeff's Models](https://jeffsmodels.com) | `jeffsmodels.com`, `jeffsmodels.com/update/{id}/` | NATS tour | No | Sitemap (~1407) + concurrent detail (title, date, performers, og:image) |
 | [Joana Bliss](https://www.joanabliss.com) | `joanabliss.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
 | [Karina Hart](https://www.karinahart.com) | `karinahart.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
 | [Kawaii](https://kawaiikawaii.jp) | `kawaiikawaii.jp/works/list/release`, `kawaiikawaii.jp/works/detail/{code}`, `kawaiikawaii.jp/actress/detail/{id}` | Up-Timely CMS | No | Thin wrapper around `uptimelyutil`. ~589 products. |
@@ -167,6 +173,7 @@
 | [Valory Irene](https://www.valoryirene.com) | `valoryirene.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
 | [VRHush](https://vrhush.com) | `vrhush.com`, `vrhush.com/scenes/{slug}` | Next.js | No | `_next/data/{buildId}/scenes.json` JSON (title, date, duration, performers, tags, description) |
 | [Wanz Factory](https://wanz-factory.com) | `wanz-factory.com/works/list/release`, `wanz-factory.com/works/detail/{code}`, `wanz-factory.com/actress/detail/{id}` | Up-Timely CMS | No | Thin wrapper around `uptimelyutil`. ~619 products. |
+| [Wifey's World](https://wifeysworld.com) | `wifeysworld.com`, `wifeysworld.com/v3/tour/` | NATS tour | No | `/v3/tour/categories/updates_{N}_d.html` listing-only (id, title, date, thumb) |
 | [XL Girls](https://www.xlgirls.com) | `xlgirls.com`, `xlgirls.com/bbw-models/{name}/{id}` | Score Group | No | Score Group, table-driven `scoregroup` package |
 | [Your Mom Loves Anal](https://www.yourmomlovesanal.com) | `yourmomlovesanal.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
 | [Your Mom's Got Big Tits](https://www.yourmomsgotbigtits.com) | `yourmomsgotbigtits.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
