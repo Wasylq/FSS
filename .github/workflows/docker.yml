@@ -113,7 +113,7 @@ jobs:
         # index clean. Verify with:
         #   gh attestation verify oci://ghcr.io/<owner>/<repo>@<digest> --owner <owner>
         if: github.event_name != 'pull_request'
-        uses: actions/attest-build-provenance@v4.1.0
+        uses: actions/attest-build-provenance@v4.1.1
         with:
           subject-name: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           subject-digest: ${{ steps.build.outputs.digest }}
