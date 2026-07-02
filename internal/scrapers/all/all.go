@@ -213,6 +213,7 @@ import (
 	_ "github.com/Wasylq/FSS/internal/scrapers/rawfuckclub"
 	_ "github.com/Wasylq/FSS/internal/scrapers/realitystudio"
 	_ "github.com/Wasylq/FSS/internal/scrapers/realjamvr"
+	_ "github.com/Wasylq/FSS/internal/scrapers/realgirlsgonebad"
 	_ "github.com/Wasylq/FSS/internal/scrapers/realspankings"
 	_ "github.com/Wasylq/FSS/internal/scrapers/reflectivedesire"
 	_ "github.com/Wasylq/FSS/internal/scrapers/rocketinc"

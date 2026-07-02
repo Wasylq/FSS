@@ -137,6 +137,7 @@
 | [POV Pornstars](https://www.povpornstars.com) | `povpornstars.com`, `povpornstars.com/tour/categories/movies/{N}/latest/` | povporncash (NATS tour) | No | `/tour` prefix, listing-only parse, uses `hussieutil` |
 | [Puta Locura](https://www.putalocura.com) | `putalocura.com`, `putalocura.com/{category}/{slug}` | Custom PHP (Torbe) | No | Sitemap enumeration (~4241, double-www bug fixed) + concurrent detail fetch (title, performer, date, duration, category). Covers Las Pilladas de Torbe |
 | [Randy Blue](https://www.randyblue.com) | `randyblue.com`, `randyblue.com/scenes/{slug}_vids.html` | Elevated X | No | `categories/videos_{N}_d.html` listing + concurrent detail fetch (schema.org microdata: title, date, performers, tags, description) |
+| [Real Girls Gone Bad](https://www.realgirlsgonebad.com) | `realgirlsgonebad.com`, `realgirlsgonebad.com/tour/trailers/{slug}.html` | NATS tour | No | `categories/videos_{N}_d.html` (302-body listing) + concurrent detail (title, date, duration, description, thumb) |
 | [RealJamVR](https://realjamvr.com) | `realjamvr.com`, `realjamvr.com/scene/{slug}/` | Django (HTML) | No | Scene sitemaps + concurrent detail fetch (title, date, duration, performers, description) |
 | [Renee Ross Videos](https://www.reneerossvideos.com) | `reneerossvideos.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
 | [Roxi Red](https://www.roxired.com) | `roxired.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
