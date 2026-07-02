@@ -26,13 +26,6 @@ const sitemap1 = `<?xml version="1.0" encoding="UTF-8"?>
   </url>
 </urlset>`
 
-const sitemap2 = `<?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  <url>
-    <loc>https://sexbabesvr.com/video/third-video/</loc>
-  </url>
-</urlset>`
-
 const detailHTML = `<html><head>
 <meta property="og:title" content="The Fitting Room - VR PORN">
 <meta property="og:image" content="https://sexbabesvr.com/contents/og.jpg">

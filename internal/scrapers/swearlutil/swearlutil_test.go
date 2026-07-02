@@ -68,14 +68,14 @@ func testConfig() SiteConfig {
 
 func newTestServer() *httptest.Server {
 	return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		switch {
-		case r.URL.Path == "/api/content/v1/videos":
+		switch r.URL.Path {
+		case "/api/content/v1/videos":
 			if r.URL.Query().Get("page") == "1" {
 				_, _ = fmt.Fprint(w, listJSON)
 				return
 			}
 			_, _ = fmt.Fprint(w, `{"data":{"pages":1,"items":[]}}`)
-		case r.URL.Path == "/api/content/v1/videos/nymph-boutique":
+		case "/api/content/v1/videos/nymph-boutique":
 			_, _ = fmt.Fprint(w, detailJSON)
 		default:
 			http.NotFound(w, r)
