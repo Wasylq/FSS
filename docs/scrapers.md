@@ -42,6 +42,7 @@
 | [Busty Merilyn](https://www.bustymerilyn.com) | `bustymerilyn.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
 | [Busty Old Sluts](https://www.bustyoldsluts.com) | `bustyoldsluts.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
 | [CaptiveClinic](https://www.captiveclinic.com) | `captiveclinic.com` | PornCMS | No | Same PornCMS as GirlsGoneGyno (paginated `?mb=` listing), full card metadata, uses `girlsgonegyno` package |
+| [Caribbeancom](https://www.caribbeancom.com) | `caribbeancom.com`, `caribbeancom.com/moviepages/{id}/index.html` | Custom (JAV, EUC-JP) | No | `/listpages/all{N}.htm` listing + schema.org microdata detail (title, date, duration, performers) |
 | [Casting Couch-HD](https://www.castingcouch-hd.com) | `castingcouch-hd.com` | NVG Network (Next.js) | No | `__NEXT_DATA__` (latest ~42 public, title/date/duration/models), uses `nvg` package |
 | [Chastity Babes](https://www.chastitybabes.com) | `chastitybabes.com`, `chastitybabes.com/tag/{slug}` | WordPress (REST API) | No | WP REST `posts` (~1263), tags=performers, categories, no duration, uses `fotoroutil` |
 | [Chicks On Black Dicks](https://www.chicksonblackdicks.com) | `chicksonblackdicks.com`, `chicksonblackdicks.com/interracial-porn-stars/{name}/{id}` | Score Group | No | Score Group, table-driven `scoregroup` package |
@@ -64,6 +65,7 @@
 | [DungeonCorp](https://www.dungeoncorp.com) | `dungeoncorp.com`, `dungeoncorp.com/?page=updates&site=DUN` | Dungeon Corp (PHP CMS) | No | Network site code DUN, listing-only parse, uses `dungeoncorputil` |
 | [Ebony Thots](https://www.ebonythots.com) | `ebonythots.com`, `ebonythots.com/black-porn-stars/{name}/{id}` | Score Group | No | Score Group, table-driven `scoregroup` package |
 | [Eva Notty Videos](https://www.evanottyvideos.com) | `evanottyvideos.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
+| [Exploited Teens](https://www.exploitedteens.com) | `exploitedteens.com`, `exploitedteens.com/page{N}.html` | Custom (full-in-list) | No | Listing-only with inline metadata (id, title, date from id, duration, description, preview mp4) |
 | [Feed Her Fuck Her](https://www.feedherfuckher.com) | `feedherfuckher.com`, `feedherfuckher.com/bbw-models/{name}/{id}` | Score Group | No | Score Group, table-driven `scoregroup` package |
 | [Female Worship](https://www.femaleworship.com) | `femaleworship.com`, `femaleworship.com/main.html` | Reality Studio (clips.js) | No | Static `/js/clips.js` catalog (~1025), performers + fetishes, uses `realitystudioutil` |
 | [Femjoy](https://www.femjoy.com) | `femjoy.com`, `femjoy.com/videos`, `femjoy.com/gallery/{id}` | Gamma _xlabs (MetaMaker) | No | Listing-only parse of `/videos` cards (title, model, photographer, date, duration, thumb), ~1176 videos, cookie-jar session bootstrap, scene page `/gallery/{id}` |
@@ -125,6 +127,7 @@
 | [Net Girl](https://www.netgirl.com) | `netgirl.com` | NVG Network (Next.js) | No | `__NEXT_DATA__` (latest ~42 public, title/date/duration/models), uses `nvg` package |
 | [Net Video Girls](https://netvideogirls.com) | `netvideogirls.com` | NVG Network (Gatsby) | No | `page-data.json` (latest ~43 public scenes; deep catalog members-only), uses `nvg` package |
 | [Nicole Peters](https://www.nicolepeters.com) | `nicolepeters.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
+| [NuDolls](https://nudolls.com) | `nudolls.com`, `nudolls.com/videos.html` | Custom | No | `/videos.html?page=N` listing + detail (title, model, duration, thumbnail); no date anon |
 | [Old Horny MILFs](https://www.oldhornymilfs.com) | `oldhornymilfs.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
 | [Oldje](https://oldje.com) | `oldje.com`, `oldje.com/gallery/{N}` | Class Media | No | `/gallery/{N}` listing (~828 sets): set id, de-slugged title, thumbnail (newest slugs are site-obfuscated; no anon dates), uses `classmedia` package |
 | [Oldje-3some](https://www.oldje-3some.com) | `oldje-3some.com`, `oldje-3some.com/videos/{N}` | Class Media | No | `/videos/{N}` listing: set id, title (obfuscated slugs), thumbnail, uses `classmedia` package |
