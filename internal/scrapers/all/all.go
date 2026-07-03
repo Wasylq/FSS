@@ -16,6 +16,7 @@ import (
 	_ "github.com/Wasylq/FSS/internal/scrapers/alsangels"
 	_ "github.com/Wasylq/FSS/internal/scrapers/alternadudes"
 	_ "github.com/Wasylq/FSS/internal/scrapers/amateurallure"
+	_ "github.com/Wasylq/FSS/internal/scrapers/amourangels"
 	_ "github.com/Wasylq/FSS/internal/scrapers/analacrobats"
 	_ "github.com/Wasylq/FSS/internal/scrapers/analtherapy"
 	_ "github.com/Wasylq/FSS/internal/scrapers/analvids"
