@@ -147,6 +147,7 @@ import (
 	_ "github.com/Wasylq/FSS/internal/scrapers/latinboyz"
 	_ "github.com/Wasylq/FSS/internal/scrapers/legsemporium"
 	_ "github.com/Wasylq/FSS/internal/scrapers/lewood"
+	_ "github.com/Wasylq/FSS/internal/scrapers/lifeselector"
 	_ "github.com/Wasylq/FSS/internal/scrapers/loveherfilms"
 	_ "github.com/Wasylq/FSS/internal/scrapers/loyalfans"
 	_ "github.com/Wasylq/FSS/internal/scrapers/lucasentertainment"

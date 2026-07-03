@@ -13,6 +13,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | 18vr.com | `18vr` |
 | 1passforallsites.com | `1passforallsites` |
 | 21naturals.com | `21eroticanal`, `21footart`, `21naturals` |
+| 21roles.com | `lifeselector` |
 | 21sextreme.com | `lustygrandmas`, `oldyounglesbianlove` |
 | 21sextury.com | `21sextury` |
 | 2poles1hole.com | `2poles1hole` |
@@ -772,6 +773,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | lezbebad.com | `lezbebad` |
 | lezcuties.com | `lezcuties` |
 | lifepornstories.com | `lifepornstories` |
+| lifeselector.com | `lifeselector` |
 | lilsis.com | `nubiles` |
 | lilycarter.puba.com | `pubalilycarter` |
 | lingerietales.com | `lingerietales` |
