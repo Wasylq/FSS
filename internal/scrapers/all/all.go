@@ -269,6 +269,7 @@ import (
 	_ "github.com/Wasylq/FSS/internal/scrapers/wankitnowvr"
 	_ "github.com/Wasylq/FSS/internal/scrapers/wankz"
 	_ "github.com/Wasylq/FSS/internal/scrapers/watch4beauty"
+	_ "github.com/Wasylq/FSS/internal/scrapers/wearehairy"
 	_ "github.com/Wasylq/FSS/internal/scrapers/wifeysworld"
 	_ "github.com/Wasylq/FSS/internal/scrapers/williamhiggins"
 	_ "github.com/Wasylq/FSS/internal/scrapers/woodman"
