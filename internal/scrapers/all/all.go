@@ -134,6 +134,7 @@ import (
 	_ "github.com/Wasylq/FSS/internal/scrapers/japanhdv"
 	_ "github.com/Wasylq/FSS/internal/scrapers/javdatabase"
 	_ "github.com/Wasylq/FSS/internal/scrapers/jeffsmodels"
+	_ "github.com/Wasylq/FSS/internal/scrapers/jizzonteens"
 	_ "github.com/Wasylq/FSS/internal/scrapers/julesjordan"
 	_ "github.com/Wasylq/FSS/internal/scrapers/karups"
 	_ "github.com/Wasylq/FSS/internal/scrapers/kbproductions"
