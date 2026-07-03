@@ -1,6 +1,6 @@
 # Covered Sites — All Domains
 
-1480 scrapers covering 1574 distinct domains. Auto-generated from the scraper registry by `TestSitesMdInSync` — do not hand-edit; instead update the scraper's `Patterns()` and re-run `go test ./internal/scrapers/all/...`. The `stashbox` scraper is omitted here because its covered hosts are config-driven; see [`scrapers.md`](scrapers.md).
+1483 scrapers covering 1577 distinct domains. Auto-generated from the scraper registry by `TestSitesMdInSync` — do not hand-edit; instead update the scraper's `Patterns()` and re-run `go test ./internal/scrapers/all/...`. The `stashbox` scraper is omitted here because its covered hosts are config-driven; see [`scrapers.md`](scrapers.md).
 
 Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scraper ID(s)** column lists every scraper that claims URLs on that domain — most domains have one entry, but table-driven networks (`adultprime`, `tmw`, `nextdoorstudios`, etc.) host many sub-studios on a single root domain. See [`scrapers.md`](scrapers.md) for what each ID covers.
 
@@ -253,6 +253,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | canada-tgirl.com | `canadatgirl` |
 | capricavanni.puba.com | `pubacapricavanni` |
 | captiveclinic.com | `captiveclinic` |
+| caribbeancom.com | `caribbeancom` |
 | carmenvalentina.com | `carmenvalentina` |
 | carnalplus.com | `baptistboys`, `carnaloriginals`, `carnalplus` |
 | cashforsextape.com | `cashforsextape` |
@@ -458,6 +459,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | exgfbox.com | `tmw-exgfbox` |
 | exotic4k.com | `exotic4k` |
 | exploitedcollegegirls.com | `exploitedcollegegirls` |
+| exploitedteens.com | `exploitedteens` |
 | exposedlatinas.com | `exposedlatinas` |
 | extremestreets.com | `extremestreets` |
 | exxxtrasmall.com | `exxxtrasmall` |
@@ -975,6 +977,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | nubileset.com | `nubiles` |
 | nubilesunscripted.com | `nubiles` |
 | nudefightclub.com | `nudefightclub` |
+| nudolls.com | `nudolls` |
 | nurumassage.com | `nurumassage` |
 | nylonsx.com | `tmw-nylonsx` |
 | ohmyholes.com | `tmw-ohmyholes` |
