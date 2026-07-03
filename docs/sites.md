@@ -1,6 +1,6 @@
 # Covered Sites — All Domains
 
-1486 scrapers covering 1581 distinct domains. Auto-generated from the scraper registry by `TestSitesMdInSync` — do not hand-edit; instead update the scraper's `Patterns()` and re-run `go test ./internal/scrapers/all/...`. The `stashbox` scraper is omitted here because its covered hosts are config-driven; see [`scrapers.md`](scrapers.md).
+1489 scrapers covering 1584 distinct domains. Auto-generated from the scraper registry by `TestSitesMdInSync` — do not hand-edit; instead update the scraper's `Patterns()` and re-run `go test ./internal/scrapers/all/...`. The `stashbox` scraper is omitted here because its covered hosts are config-driven; see [`scrapers.md`](scrapers.md).
 
 Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scraper ID(s)** column lists every scraper that claims URLs on that domain — most domains have one entry, but table-driven networks (`adultprime`, `tmw`, `nextdoorstudios`, etc.) host many sub-studios on a single root domain. See [`scrapers.md`](scrapers.md) for what each ID covers.
 
@@ -72,6 +72,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | amourangels.com | `amourangels` |
 | anal-angels.com | `tmw-anal-angels` |
 | anal-beauty.com | `tmw-anal-beauty` |
+| anal-coach.com | `analcoach` |
 | anal4k.com | `anal4k` |
 | analacrobats.com | `analacrobats` |
 | analamateur.com | `analamateur` |
@@ -1432,6 +1433,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | uktickling.com | `uktickling` |
 | ukupskirts.com | `ukupskirts` |
 | ultrafilms.com | `ultrafilms` |
+| underwatershow.com | `underwatershow` |
 | universblack.com | `universblack` |
 | unrealporn.com | `unrealporn` |
 | unusualpeople.com | `unusualpeople` |

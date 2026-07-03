@@ -152,6 +152,7 @@
 | [Scoreland 2](https://www.scoreland2.com) | `scoreland2.com`, `scoreland2.com/big-boob-models/{name}/{id}` | Score Group | No | Score Group, table-driven `scoregroup` package |
 | [Score Videos](https://www.scorevideos.com) | `scorevideos.com`, `scorevideos.com/porn-models/{name}/{id}` | Score Group | No | Score Group, table-driven `scoregroup` package |
 | [Sex Underwater](https://sexunderwater.com) | `sexunderwater.com`, `sexunderwater.com/categories/SexUnderwater_{N}_d.html` | Elevated X | No | Listing parse (title, performers, date, thumbnail); covers the Underwater Glamour category |
+| Underwater Show / Anal-Coach | `underwatershow.com`, `anal-coach.com` | RevshareCash jscroll tour | No | Table-driven `underwatershow` package via `underwatershowutil`; `load_pics.php` AJAX feed (title, performers, thumbnail). 2 sites. |
 | [SexBabesVR](https://sexbabesvr.com) | `sexbabesvr.com`, `sexbabesvr.com/video/{slug}/` | Custom | No | Video sitemaps + JSON-LD VideoObject (title, uploadDate, ISO duration, performers) |
 | [Sha Rizel Videos](https://www.sharizelvideos.com) | `sharizelvideos.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
 | [Shock Challenge](https://www.shockchallenge.com) | `shockchallenge.com`, `shockchallenge.com/tag/{slug}` | WordPress (REST API) | No | WP REST `posts` (~414), tags=performers, uses `fotoroutil` |
