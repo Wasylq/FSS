@@ -3,10 +3,27 @@ package scraper
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/Wasylq/FSS/models"
 )
+
+// pageKey builds a stable signature from a page's ordered scene IDs, used to
+// detect a CMS echoing the same page (see Paginate's repeat-page guard).
+func pageKey(scenes []models.Scene) string {
+	ids := make([]string, len(scenes))
+	for i, sc := range scenes {
+		ids[i] = sc.ID
+	}
+	return strings.Join(ids, "\x00")
+}
+
+// paginateSafetyCap is the maximum number of pages Paginate will fetch before
+// stopping unconditionally. It is a backstop against a CMS that never reports
+// an end (or a callback that forgets to set Done); set far above any real
+// listing so it never trips in normal operation.
+const paginateSafetyCap = 100000
 
 // PageResult is returned by a FetchPage callback to the pagination loop.
 type PageResult struct {
@@ -41,12 +58,23 @@ type PageResult struct {
 // Paginate does NOT call defer close(out) — the caller's run() must
 // still do that, since some scrapers do additional work after the
 // pagination loop returns (e.g. worker pool teardown).
+//
+// Two guards bound the loop against CMSes that never report an end: a hard
+// page cap (paginateSafetyCap) and repeat-page detection (a page whose first
+// scene ID matches the previous page is the CMS echoing its last page, so the
+// loop stops). Both prevent an unbounded --full crawl when a callback forgets
+// to set Done.
 func Paginate(ctx context.Context, opts ListOpts, siteID string, out chan<- SceneResult,
 	fetchPage func(ctx context.Context, page int) (PageResult, error),
 ) {
 	progressSent := false
+	prevPageKey := ""
 	for page := 1; ; page++ {
 		if ctx.Err() != nil {
+			return
+		}
+		if page > paginateSafetyCap {
+			Debugf(1, "%s: reached %d-page safety cap, stopping", siteID, paginateSafetyCap)
 			return
 		}
 		if page > 1 && opts.Delay > 0 {
@@ -72,6 +100,21 @@ func Paginate(ctx context.Context, opts ListOpts, siteID string, out chan<- Scen
 		// empty element). Such callbacks signal the true end via Done.
 		if len(result.Scenes) == 0 && !result.Continue {
 			return
+		}
+
+		// Repeat-page detection: a CMS that ignores the page parameter echoes
+		// the same scenes forever. If this page's ordered scene IDs match the
+		// previous page's exactly, stop rather than loop. Comparing the whole
+		// set (not just the first ID) avoids a false stop on listings that pin
+		// one scene at the top of every page. (Skipped for empty Continue
+		// pages, which carry no IDs to compare.)
+		if len(result.Scenes) > 0 {
+			key := pageKey(result.Scenes)
+			if key != "" && key == prevPageKey {
+				Debugf(1, "%s: page %d repeats the previous page's scenes, stopping", siteID, page)
+				return
+			}
+			prevPageKey = key
 		}
 
 		if !progressSent && result.Total > 0 {

@@ -131,6 +131,67 @@ func TestPaginate_continueDoneStops(t *testing.T) {
 	}
 }
 
+// A CMS that echoes the same page forever (ignores the page param) must be
+// stopped by repeat-page detection instead of looping until the safety cap.
+func TestPaginate_repeatPageStops(t *testing.T) {
+	out := make(chan SceneResult, 100)
+	calls := 0
+	fetchPage := func(_ context.Context, page int) (PageResult, error) {
+		calls++
+		// Same two scenes on every page, regardless of page number.
+		return PageResult{Scenes: []models.Scene{scene("x"), scene("y")}}, nil
+	}
+
+	Paginate(context.Background(), ListOpts{}, "test", out, fetchPage)
+	close(out)
+
+	if calls != 2 {
+		t.Errorf("fetched %d pages, want 2 (page 2 echoes page 1 → stop)", calls)
+	}
+	var scenes []string
+	for _, r := range collectResults(out) {
+		if r.Kind == KindScene {
+			scenes = append(scenes, r.Scene.ID)
+		}
+	}
+	if len(scenes) != 2 {
+		t.Errorf("emitted %d scenes, want 2 (only page 1): %v", len(scenes), scenes)
+	}
+}
+
+// A listing that pins one scene at the top of every page but otherwise advances
+// must NOT be mistaken for an echoed page — only a full repeat stops the loop.
+func TestPaginate_pinnedFirstSceneDoesNotStop(t *testing.T) {
+	out := make(chan SceneResult, 100)
+	fetchPage := func(_ context.Context, page int) (PageResult, error) {
+		switch page {
+		case 1:
+			return PageResult{Scenes: []models.Scene{scene("pin"), scene("a")}}, nil
+		case 2:
+			return PageResult{Scenes: []models.Scene{scene("pin"), scene("b")}}, nil
+		case 3:
+			return PageResult{Done: true, Scenes: []models.Scene{scene("pin"), scene("c")}}, nil
+		default:
+			t.Fatalf("unexpected page %d", page)
+			return PageResult{}, nil
+		}
+	}
+
+	Paginate(context.Background(), ListOpts{}, "test", out, fetchPage)
+	close(out)
+
+	var scenes []string
+	for _, r := range collectResults(out) {
+		if r.Kind == KindScene {
+			scenes = append(scenes, r.Scene.ID)
+		}
+	}
+	// All three pages processed (pinned "pin" repeats but the rest advances).
+	if len(scenes) != 6 {
+		t.Errorf("emitted %d scenes, want 6 across 3 pages: %v", len(scenes), scenes)
+	}
+}
+
 func TestPaginate_knownIDsStopsEarly(t *testing.T) {
 	out := make(chan SceneResult, 100)
 	fetchPage := func(_ context.Context, page int) (PageResult, error) {
