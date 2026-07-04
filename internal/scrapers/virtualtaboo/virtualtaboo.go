@@ -52,7 +52,7 @@ func (s *Scraper) ID() string { return s.cfg.siteID }
 func (s *Scraper) Patterns() []string {
 	return []string{
 		s.cfg.domain + s.cfg.listPath,
-		s.cfg.domain + "/model/{slug}",
+		s.cfg.domain + "/pornstars/{slug}",
 	}
 }
 
@@ -85,11 +85,14 @@ type listEntry struct {
 func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOpts, out chan<- scraper.SceneResult) {
 	defer close(out)
 
-	if strings.Contains(studioURL, "/model/") {
-		scraper.Debugf(1, "%s: scraping model page", s.cfg.siteID)
+	// The live site uses /pornstars/{slug} for performer pages; /model/ is kept
+	// for backward compatibility with older stored URLs.
+	if strings.Contains(studioURL, "/pornstars/") || strings.Contains(studioURL, "/model/") {
+		scraper.Debugf(1, "%s: scraping performer page", s.cfg.siteID)
 		s.runModelPage(ctx, studioURL, opts, out)
 		return
 	}
+	scraper.WarnURLFallthrough(s.cfg.siteID, studioURL)
 	s.runPaginated(ctx, opts, out)
 }
 

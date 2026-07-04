@@ -379,7 +379,7 @@ func TestModelPage(t *testing.T) {
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/html")
 		switch {
-		case strings.HasPrefix(r.URL.Path, "/model/"):
+		case strings.HasPrefix(r.URL.Path, "/pornstars/"), strings.HasPrefix(r.URL.Path, "/model/"):
 			_, _ = fmt.Fprint(w, listingHTML)
 		case strings.HasPrefix(r.URL.Path, "/video/"):
 			_, _ = fmt.Fprint(w, detailHTML)
@@ -389,28 +389,31 @@ func TestModelPage(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	s := &Scraper{
-		cfg:          sites[2],
-		client:       ts.Client(),
-		baseOverride: ts.URL,
-		matchRe:      newMatchRe(sites[2].domain),
-	}
-
-	ch, err := s.ListScenes(context.Background(), ts.URL+"/model/jane-doe", scraper.ListOpts{Workers: 1})
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	var scenes int
-	for r := range ch {
-		switch r.Kind {
-		case scraper.KindScene:
-			scenes++
-		case scraper.KindError:
-			t.Errorf("unexpected error: %v", r.Err)
+	// The live site uses /pornstars/{slug}; /model/ is kept for backward compat.
+	for _, performerURL := range []string{"/pornstars/jane-doe", "/model/jane-doe"} {
+		s := &Scraper{
+			cfg:          sites[2],
+			client:       ts.Client(),
+			baseOverride: ts.URL,
+			matchRe:      newMatchRe(sites[2].domain),
 		}
-	}
-	if scenes != 2 {
-		t.Errorf("got %d scenes, want 2", scenes)
+
+		ch, err := s.ListScenes(context.Background(), ts.URL+performerURL, scraper.ListOpts{Workers: 1})
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		var scenes int
+		for r := range ch {
+			switch r.Kind {
+			case scraper.KindScene:
+				scenes++
+			case scraper.KindError:
+				t.Errorf("unexpected error: %v", r.Err)
+			}
+		}
+		if scenes != 2 {
+			t.Errorf("%s: got %d scenes, want 2", performerURL, scenes)
+		}
 	}
 }
