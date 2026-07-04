@@ -2,7 +2,9 @@ package scraper
 
 import (
 	"fmt"
+	"net/url"
 	"os"
+	"strings"
 	"sync"
 	"time"
 )
@@ -50,4 +52,67 @@ func ResetWarnDelayBelow() {
 	warnedDelaysMu.Lock()
 	warnedDelays = map[string]bool{}
 	warnedDelaysMu.Unlock()
+}
+
+// warnedFallthrough remembers which (siteID, path) pairs have already warned,
+// so the message is logged at most once per scraper-process lifetime.
+var (
+	warnedFallthroughMu sync.Mutex
+	warnedFallthrough   = map[string]bool{}
+)
+
+// URLHasNonRootPath reports whether rawURL carries a path (or query) component
+// beyond the bare site root — i.e. it looks like a filtered view (model,
+// channel, category, tag, DVD) rather than the studio's front page. A trailing
+// "/" and the common root files ("/", "/en/", "/tour/") count as root.
+//
+// Scrapers whose run() dispatches on URL shape can use this in their default
+// (full-catalogue) branch to detect a filtered URL that fell through to
+// scraping the entire site — see WarnURLFallthrough.
+func URLHasNonRootPath(rawURL string) bool {
+	u, err := url.Parse(rawURL)
+	if err != nil {
+		return false
+	}
+	if u.RawQuery != "" {
+		return true
+	}
+	p := strings.Trim(u.Path, "/")
+	switch p {
+	case "", "en", "tour", "trial":
+		return false
+	}
+	return true
+}
+
+// WarnURLFallthrough prints a one-shot stderr warning that a filtered URL (one
+// with a non-root path) fell through to the default full-catalogue scrape for
+// siteID. This is the loud signal for AUDIT_PLAN S3/B3: a model/channel/tag URL
+// that the scraper did not recognise would otherwise silently scrape the whole
+// site under that URL's store key. It is a no-op for root URLs. Prints at most
+// once per (siteID, path) per process.
+func WarnURLFallthrough(siteID, rawURL string) {
+	if !URLHasNonRootPath(rawURL) {
+		return
+	}
+	key := siteID + "\x00" + rawURL
+	warnedFallthroughMu.Lock()
+	if warnedFallthrough[key] {
+		warnedFallthroughMu.Unlock()
+		return
+	}
+	warnedFallthrough[key] = true
+	warnedFallthroughMu.Unlock()
+	fmt.Fprintf(os.Stderr,
+		"[warn] %s: URL %q has a non-root path but was not recognised as a "+
+			"filtered view; falling through to a full-catalogue scrape. The result "+
+			"will be stored under this URL's key and may not match the filter.\n",
+		siteID, rawURL)
+}
+
+// ResetWarnURLFallthrough clears the once-per-key memoisation. For tests.
+func ResetWarnURLFallthrough() {
+	warnedFallthroughMu.Lock()
+	warnedFallthrough = map[string]bool{}
+	warnedFallthroughMu.Unlock()
 }

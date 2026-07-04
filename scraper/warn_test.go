@@ -120,3 +120,61 @@ func TestWarnDelayBelow_concurrent(t *testing.T) {
 		t.Errorf("expected exactly 1 warning under concurrent calls, got %d: %q", c, out)
 	}
 }
+
+func TestURLHasNonRootPath(t *testing.T) {
+	cases := []struct {
+		url  string
+		want bool
+	}{
+		{"https://site.com", false},
+		{"https://site.com/", false},
+		{"https://www.site.com/en/", false},
+		{"https://site.com/tour/", false},
+		{"https://site.com/trial/", false},
+		{"https://site.com/models/jane.html", true},
+		{"https://site.com/channel/foo", true},
+		{"https://site.com/tag/bar", true},
+		{"https://site.com/videos?o=mr", true},
+		{"https://site.com/?performer=jane", true},
+		{"not a url ::::", false},
+	}
+	for _, c := range cases {
+		if got := URLHasNonRootPath(c.url); got != c.want {
+			t.Errorf("URLHasNonRootPath(%q) = %v, want %v", c.url, got, c.want)
+		}
+	}
+}
+
+func TestWarnURLFallthrough_emitsForFilteredURL(t *testing.T) {
+	ResetWarnURLFallthrough()
+	out := captureStderr(t, func() {
+		WarnURLFallthrough("mysite", "https://mysite.com/models/jane.html")
+	})
+	if !strings.Contains(out, "mysite") || !strings.Contains(out, "/models/jane.html") {
+		t.Errorf("warning should mention site and URL: %q", out)
+	}
+	if !strings.Contains(out, "[warn]") {
+		t.Errorf("warning should be a [warn] line: %q", out)
+	}
+}
+
+func TestWarnURLFallthrough_noopForRoot(t *testing.T) {
+	ResetWarnURLFallthrough()
+	out := captureStderr(t, func() {
+		WarnURLFallthrough("mysite", "https://mysite.com/")
+	})
+	if out != "" {
+		t.Errorf("root URL must not warn, got %q", out)
+	}
+}
+
+func TestWarnURLFallthrough_onceOnly(t *testing.T) {
+	ResetWarnURLFallthrough()
+	out := captureStderr(t, func() {
+		WarnURLFallthrough("mysite", "https://mysite.com/models/jane.html")
+		WarnURLFallthrough("mysite", "https://mysite.com/models/jane.html")
+	})
+	if c := strings.Count(out, "[warn]"); c != 1 {
+		t.Errorf("expected exactly 1 warning for the same URL, got %d: %q", c, out)
+	}
+}
