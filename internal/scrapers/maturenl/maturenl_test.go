@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 	"time"
 
@@ -342,6 +343,48 @@ func TestKnownIDsStopsEarly(t *testing.T) {
 	}
 	if !stoppedEarly {
 		t.Error("expected StoppedEarly")
+	}
+}
+
+// TestRunModelKnownIDsNoDeadlock regresses AUDIT_PLAN B1b: a model page whose
+// updates are all already known makes every worker early-stop on its first
+// item. The producer must notice the workers have stopped and quit enqueuing
+// instead of blocking forever on a full work buffer that nobody drains.
+func TestRunModelKnownIDsNoDeadlock(t *testing.T) {
+	var links strings.Builder
+	known := map[string]bool{}
+	for i := 0; i < 30; i++ {
+		id := fmt.Sprintf("%d", 20000+i)
+		fmt.Fprintf(&links, "<a href=\"/en/update/%s/slug-%d\"></a>\n", id, i)
+		known[id] = true
+	}
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		_, _ = fmt.Fprintf(w, "<html><body>%s</body></html>", links.String())
+	}))
+	defer ts.Close()
+
+	old := siteBase
+	siteBase = ts.URL
+	defer func() { siteBase = old }()
+
+	s := &Scraper{client: ts.Client()}
+	out := make(chan scraper.SceneResult, 64)
+	done := make(chan struct{})
+	go func() {
+		defer close(out)
+		defer close(done)
+		// Small worker count so the buffer (== Workers) fills well before the
+		// 30 ids are enqueued.
+		s.runModel(context.Background(), siteBase+"/en/model/9071", "9071",
+			scraper.ListOpts{Workers: 2, KnownIDs: known}, out)
+	}()
+
+	select {
+	case <-done:
+	case <-time.After(5 * time.Second):
+		t.Fatal("runModel deadlocked on an all-known model page")
+	}
+	for range out {
 	}
 }
 

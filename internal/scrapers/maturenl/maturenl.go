@@ -17,7 +17,8 @@ import (
 	"github.com/Wasylq/FSS/scraper"
 )
 
-const siteBase = "https://www.mature.nl"
+// siteBase is a var (not const) so tests can point it at a local httptest server.
+var siteBase = "https://www.mature.nl"
 
 type Scraper struct {
 	client *http.Client
@@ -204,6 +205,15 @@ func (s *Scraper) runModel(ctx context.Context, studioURL string, modelID string
 	work := make(chan string, opts.Workers)
 	var wg sync.WaitGroup
 
+	// stopped is closed by the first worker that hits a known ID. The producer
+	// loop below selects on it so it stops enqueuing once the workers have
+	// early-stopped — otherwise it blocks forever on a full work buffer that no
+	// worker is draining (ctx is not cancelled on a normal early-stop), hanging
+	// the scrape while it holds the store flock. See AUDIT_PLAN B1b.
+	stopped := make(chan struct{})
+	var stopOnce sync.Once
+	signalStop := func() { stopOnce.Do(func() { close(stopped) }) }
+
 	for i := 0; i < opts.Workers; i++ {
 		wg.Add(1)
 		go func() {
@@ -223,6 +233,7 @@ func (s *Scraper) runModel(ctx context.Context, studioURL string, modelID string
 					case out <- scraper.StoppedEarly():
 					case <-ctx.Done():
 					}
+					signalStop()
 					return
 				}
 
@@ -244,11 +255,14 @@ func (s *Scraper) runModel(ctx context.Context, studioURL string, modelID string
 		}()
 	}
 
+enqueue:
 	for _, uid := range ids {
 		select {
 		case work <- uid:
+		case <-stopped:
+			break enqueue
 		case <-ctx.Done():
-			return
+			break enqueue
 		}
 	}
 
