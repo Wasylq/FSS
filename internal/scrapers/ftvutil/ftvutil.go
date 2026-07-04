@@ -252,7 +252,9 @@ func (s *Scraper) Run(ctx context.Context, studioURL string, opts scraper.ListOp
 		}()
 	}
 
+	wg.Add(1)
 	go func() {
+		defer wg.Done()
 		defer close(work)
 		for id := latestID; id >= 1; id-- {
 			idStr := strconv.Itoa(id)

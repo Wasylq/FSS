@@ -112,7 +112,9 @@ func (s *Scraper) runListing(ctx context.Context, studioURL string, opts scraper
 		}()
 	}
 
+	wg.Add(1)
 	go func() {
+		defer wg.Done()
 		defer close(work)
 		s.enqueuePages(ctx, studioURL, opts, out, work)
 	}()

@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"strings"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -481,6 +482,59 @@ func TestListScenesDVDMode(t *testing.T) {
 	if results[0].Series != "Test DVD" {
 		t.Errorf("series = %q", results[0].Series)
 	}
+}
+
+// TestListScenesCancelRace exercises the B1 worker-pool cancellation path: the
+// producer goroutine sends to out (errors) and feeds the work channel while the
+// caller cancels mid-stream. If the producer were not part of the WaitGroup,
+// run() could close(out) while the producer is still selecting on a send to it,
+// panicking on a closed channel. Run with -race to surface the data race too.
+func TestListScenesCancelRace(t *testing.T) {
+	// The server serves a full page 1 (so workers start sending to out), then
+	// errors on every later page so the producer repeatedly takes its
+	// `out <- scraper.Error(...)` branch — the exact send that races close(out)
+	// when the producer is not in the WaitGroup.
+	var hits int32
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/html")
+		if strings.HasPrefix(r.URL.Path, "/scenes/") {
+			_, _ = fmt.Fprint(w, detailTpl)
+			return
+		}
+		page := 1
+		_, _ = fmt.Sscanf(r.URL.Path, "/categories/movies_%d_d.html", &page)
+		if page <= 1 {
+			_, _ = w.Write(buildListingPage("", []int{1, 2, 3, 4, 5, 6, 7, 8}))
+			return
+		}
+		atomic.AddInt32(&hits, 1)
+		http.Error(w, "boom", http.StatusInternalServerError)
+	}))
+	defer ts.Close()
+
+	for i := 0; i < 100; i++ {
+		s := newTestScraper(ts)
+		ctx, cancel := context.WithCancel(context.Background())
+		ch, err := s.ListScenes(ctx, ts.URL+"/categories/movies.html", scraper.ListOpts{
+			Workers: 4,
+		})
+		if err != nil {
+			cancel()
+			t.Fatal(err)
+		}
+		// Read one result, then cancel while the producer is still walking pages
+		// and taking its out<- error branch. With the producer outside the
+		// WaitGroup this races close(out); the producer must be joined first.
+		for range ch {
+			cancel()
+			break
+		}
+		// Drain to completion; the channel must close without panicking.
+		for range ch {
+		}
+		cancel()
+	}
+	_ = atomic.LoadInt32(&hits)
 }
 
 func TestMatchesURL(t *testing.T) {
