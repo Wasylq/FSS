@@ -155,7 +155,9 @@ func (s *Scraper) runModel(ctx context.Context, studioURL, slug string, opts scr
 		for i, a := range videos {
 			scenes[i] = a.toScene(s.cfg, studioURL, now)
 		}
-		return scraper.PageResult{Scenes: scenes, Total: total, Done: len(articles) < perPage}, nil
+		// A page of photo-only articles filters to zero videos but the listing
+		// continues; keep paginating until the page is short.
+		return scraper.PageResult{Scenes: scenes, Total: total, Continue: len(articles) > 0, Done: len(articles) < perPage}, nil
 	})
 }
 
@@ -296,7 +298,9 @@ func (s *Scraper) runLegacyYears(ctx context.Context, studioURL string, opts scr
 		for i, a := range articles {
 			scenes[i] = a.toScene(s.cfg, studioURL, now)
 		}
-		return scraper.PageResult{Scenes: scenes, Done: page >= len(years)}, nil
+		// Fixed walk over the year list: a year with no video articles must not
+		// stop the walk — only exhausting the year list (Done) ends it.
+		return scraper.PageResult{Scenes: scenes, Continue: true, Done: page >= len(years)}, nil
 	})
 }
 

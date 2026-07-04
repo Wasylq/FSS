@@ -13,6 +13,15 @@ type PageResult struct {
 	Scenes []models.Scene
 	Total  int
 	Done   bool
+	// Continue tells the loop not to treat an empty Scenes slice as
+	// end-of-listing. Set it when a page legitimately yields zero Scenes but
+	// more pages may still follow — either because the page's raw items all
+	// filtered out (videos-only, dedup, details that failed to fetch), or
+	// because pagination walks a fixed list (DVDs, years) where an empty
+	// element is not the end. Callbacks that set Continue MUST also set Done at
+	// the true end, or the loop will not terminate. Leave it false for the
+	// common case where an empty page means the listing is exhausted.
+	Continue bool
 }
 
 // Paginate runs a page-numbered pagination loop, handling delay, context
@@ -24,7 +33,8 @@ type PageResult struct {
 // Set PageResult.Total on the first page for progress display. Set
 // PageResult.Done to true when there are no more pages (e.g. items <
 // pageSize, page >= totalPages). An empty Scenes slice also stops the
-// loop.
+// loop, unless PageResult.Continue is set — see PageResult.Continue for
+// pages that yield zero scenes but are not the end of the listing.
 //
 // The siteID string is used only for debug log messages.
 //
@@ -57,7 +67,10 @@ func Paginate(ctx context.Context, opts ListOpts, siteID string, out chan<- Scen
 			return
 		}
 
-		if len(result.Scenes) == 0 {
+		// An empty Scenes slice ends the loop unless the callback asked to keep
+		// going (a page that filtered to zero, or a fixed-list walk with an
+		// empty element). Such callbacks signal the true end via Done.
+		if len(result.Scenes) == 0 && !result.Continue {
 			return
 		}
 

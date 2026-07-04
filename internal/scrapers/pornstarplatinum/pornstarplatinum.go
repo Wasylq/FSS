@@ -758,7 +758,10 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 		return scraper.PageResult{
 			Scenes: scenes,
 			Total:  total,
-			Done:   maxPage > 0 && page >= maxPage,
+			// In performer mode a page with no matching cards filters to zero
+			// scenes; keep walking the catalogue until the last page.
+			Continue: len(cards) > 0,
+			Done:     maxPage > 0 && page >= maxPage,
 		}, nil
 	})
 }

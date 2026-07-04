@@ -106,7 +106,10 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 		return scraper.PageResult{
 			Scenes: scenes,
 			Total:  resp.Total,
-			Done:   len(resp.Galleries) < pageSize,
+			// A page of non-MOVIE galleries filters to zero scenes but the
+			// listing continues; keep paginating until the page is short.
+			Continue: len(resp.Galleries) > 0,
+			Done:     len(resp.Galleries) < pageSize,
 		}, nil
 	})
 }

@@ -423,7 +423,10 @@ func (s *Scraper) scrapeDVDListing(ctx context.Context, opts scraper.ListOpts, o
 		return scraper.PageResult{
 			Scenes: scenes,
 			Total:  total,
-			Done:   idx >= len(allDVDs)-1,
+			// Fixed walk over the DVD list: an empty or photo-only DVD must not
+			// abort the walk — only exhausting the list (Done) ends it.
+			Continue: true,
+			Done:     idx >= len(allDVDs)-1,
 		}, nil
 	})
 }

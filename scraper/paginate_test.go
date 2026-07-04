@@ -78,6 +78,59 @@ func TestPaginate_emptyFirstPage(t *testing.T) {
 	}
 }
 
+// A page that filtered all its items out (Continue set, no Scenes) must not
+// end the traversal — later pages still have scenes.
+func TestPaginate_continuePastEmptyPage(t *testing.T) {
+	out := make(chan SceneResult, 100)
+	fetchPage := func(_ context.Context, page int) (PageResult, error) {
+		switch page {
+		case 1:
+			return PageResult{Scenes: []models.Scene{scene("a")}, Total: 3}, nil
+		case 2:
+			// Page had items (e.g. photo-only) that filtered to zero scenes.
+			return PageResult{Continue: true}, nil
+		case 3:
+			return PageResult{Scenes: []models.Scene{scene("b")}, Done: true}, nil
+		default:
+			t.Fatalf("unexpected page %d", page)
+			return PageResult{}, nil
+		}
+	}
+
+	Paginate(context.Background(), ListOpts{}, "test", out, fetchPage)
+	close(out)
+
+	var scenes []string
+	for _, r := range collectResults(out) {
+		if r.Kind == KindScene {
+			scenes = append(scenes, r.Scene.ID)
+		}
+	}
+	if len(scenes) != 2 || scenes[0] != "a" || scenes[1] != "b" {
+		t.Errorf("scenes = %v, want [a b] (page 2 filtered-empty must not stop)", scenes)
+	}
+}
+
+// Continue with Done true stops the loop after the empty page.
+func TestPaginate_continueDoneStops(t *testing.T) {
+	out := make(chan SceneResult, 100)
+	calls := 0
+	fetchPage := func(_ context.Context, page int) (PageResult, error) {
+		calls++
+		if page == 1 {
+			return PageResult{Scenes: []models.Scene{scene("a")}}, nil
+		}
+		return PageResult{Continue: true, Done: true}, nil
+	}
+
+	Paginate(context.Background(), ListOpts{}, "test", out, fetchPage)
+	close(out)
+
+	if calls != 2 {
+		t.Errorf("fetched %d pages, want 2 (Done must stop)", calls)
+	}
+}
+
 func TestPaginate_knownIDsStopsEarly(t *testing.T) {
 	out := make(chan SceneResult, 100)
 	fetchPage := func(_ context.Context, page int) (PageResult, error) {

@@ -246,7 +246,10 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 			}
 			scenes = append(scenes, sc.Scene)
 		}
-		return scraper.PageResult{Scenes: scenes}, nil
+		// If every detail fetch on this page failed, scenes is empty while the
+		// page genuinely had entries; keep paginating (the terminal page is the
+		// empty/all-seen early return above).
+		return scraper.PageResult{Scenes: scenes, Continue: len(work) > 0}, nil
 	})
 }
 

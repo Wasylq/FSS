@@ -251,7 +251,10 @@ func (s *Scraper) scrapePaginated(ctx context.Context, baseURL string, opts scra
 		return scraper.PageResult{
 			Scenes: scenes,
 			Total:  total,
-			Done:   !hasNextPage(body),
+			// If every detail fetch failed, scenes is empty while the page had
+			// items; keep going until hasNextPage reports the end.
+			Continue: len(items) > 0,
+			Done:     !hasNextPage(body),
 		}, nil
 	})
 }
@@ -447,7 +450,9 @@ func (s *Scraper) runNewCMS(ctx context.Context, studioURL, slug string, opts sc
 		}
 
 		scenes := s.fetchNewScenes(ctx, ids, slug, base, studioURL, opts, now)
-		return scraper.PageResult{Scenes: scenes, Total: total}, nil
+		// If every detail fetch failed, scenes is empty while the page had ids;
+		// keep going (the terminal page is the empty-ids early return above).
+		return scraper.PageResult{Scenes: scenes, Total: total, Continue: len(ids) > 0}, nil
 	})
 }
 
