@@ -214,6 +214,30 @@ func TestSitesTable(t *testing.T) {
 	}
 }
 
+// TestGroupURLResolvesToSubSite guards the B5 fix: a `?group=N` URL is matched
+// by both the parent network regex and the specific sub-site regex, so the
+// sub-sites must be registered first for first-match-wins to pick the pornstar
+// rather than the whole 2846-scene catalogue.
+func TestGroupURLResolvesToSubSite(t *testing.T) {
+	const groupURL = "https://www.puba.com/pornstarnetwork/index.php?section=538&group=79"
+	s, err := scraper.ForURL(groupURL)
+	if err != nil {
+		t.Fatalf("ForURL(group=79): %v", err)
+	}
+	if s.ID() != "pubaabigailmac" {
+		t.Errorf("group=79 URL resolved to %q, want pubaabigailmac (parent is shadowing sub-sites)", s.ID())
+	}
+
+	// The no-group index URL must still resolve to the whole-catalogue parent.
+	p, err := scraper.ForURL("https://www.puba.com/pornstarnetwork/index.php?section=538")
+	if err != nil {
+		t.Fatalf("ForURL(no group): %v", err)
+	}
+	if p.ID() != "puba" {
+		t.Errorf("no-group URL resolved to %q, want puba", p.ID())
+	}
+}
+
 // TestListScenes_endToEnd serves a single page of fake API JSON (with
 // leading whitespace mimicking the real PHP response) and verifies the
 // scraper drains it into scene results.

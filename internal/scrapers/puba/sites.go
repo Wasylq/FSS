@@ -533,7 +533,21 @@ var sites = []SiteConfig{
 }
 
 func init() {
+	// Register the per-pornstar sub-sites (Group != 0) BEFORE the parent
+	// network (Group == 0). The parent's MatchRe also matches the sub-sites'
+	// `…/index.php?…&group=N` URLs, and RE2 has no negative lookahead to
+	// exclude them, so first-match-wins resolution must encounter the specific
+	// sub-site first. Otherwise a `group=N` URL would resolve to the
+	// whole-catalogue parent (2846 scenes) instead of the one pornstar. See
+	// AUDIT_PLAN B5.
 	for _, cfg := range sites {
-		scraper.Register(New(cfg))
+		if cfg.Group != 0 {
+			scraper.Register(New(cfg))
+		}
+	}
+	for _, cfg := range sites {
+		if cfg.Group == 0 {
+			scraper.Register(New(cfg))
+		}
 	}
 }
