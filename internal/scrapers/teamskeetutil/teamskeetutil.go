@@ -27,6 +27,12 @@ type SiteConfig struct {
 	SiteBase  string
 	Index     string // ES index name (e.g. "ts_network", "mylf_bundle")
 	ScenePath string // URL path prefix for scenes (default: "/videos/")
+	// NickName is the site's `site.nickName` value in the shared ES index. When
+	// set, a bare sub-site domain (no /models|/series|/categories path) filters
+	// the shared index to just this site instead of scraping the whole network.
+	// Leave empty for the network-hub configs that intentionally cover the whole
+	// index (e.g. teamskeet, mylf).
+	NickName string
 }
 
 type Scraper struct {
@@ -45,6 +51,13 @@ func (s *Scraper) Run(ctx context.Context, studioURL string, opts scraper.ListOp
 	defer close(out)
 
 	kind, value := classifyURL(studioURL)
+	// A bare sub-site domain classifies as filterAll, which would scrape the
+	// entire shared ES index (the whole network). Constrain it to the
+	// configured site via its nickName so it returns only that site's scenes.
+	if kind == filterAll && s.cfg.NickName != "" {
+		scraper.Debugf(1, "%s: bare domain, filtering to nickName %q", s.cfg.SiteID, s.cfg.NickName)
+		kind, value = filterSeries, s.cfg.NickName
+	}
 	baseQuery := buildQuery(kind, value)
 	baseQuery["size"] = pageSize
 	now := time.Now().UTC()

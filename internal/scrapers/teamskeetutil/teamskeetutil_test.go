@@ -263,6 +263,83 @@ func TestRunUsesSearchAfter(t *testing.T) {
 	}
 }
 
+// A bare sub-site domain (filterAll) with a configured NickName must constrain
+// the search to that site's nickName rather than scraping the whole index.
+func TestRunBareDomainFiltersByNickName(t *testing.T) {
+	var firstQuery map[string]any
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if firstQuery == nil {
+			var body map[string]any
+			_ = json.NewDecoder(r.Body).Decode(&body)
+			firstQuery = body
+		}
+		_, _ = w.Write(fakeESResponse(nil, 0))
+	}))
+	defer ts.Close()
+
+	s := &Scraper{
+		client:    ts.Client(),
+		cfg:       SiteConfig{Index: "ts_network", SiteBase: ts.URL, Domain: "teenpies.com", SiteID: "teenpies", NickName: "teenpies"},
+		esBaseURL: ts.URL,
+	}
+
+	out := make(chan scraper.SceneResult, 10)
+	s.Run(context.Background(), "https://www.teenpies.com/", scraper.ListOpts{}, out)
+
+	must, _ := firstQuery["query"].(map[string]any)
+	b, _ := must["bool"].(map[string]any)
+	clauses, _ := b["must"].([]any)
+	found := false
+	for _, c := range clauses {
+		cm, _ := c.(map[string]any)
+		term, _ := cm["term"].(map[string]any)
+		if v, ok := term["site.nickName.keyword"]; ok {
+			if v != "teenpies" {
+				t.Errorf("nickName filter = %v, want teenpies", v)
+			}
+			found = true
+		}
+	}
+	if !found {
+		t.Errorf("bare domain query did not filter by site.nickName.keyword: %v", firstQuery)
+	}
+}
+
+// A network-hub config (no NickName) must NOT add a nickName filter — it covers
+// the whole index by design.
+func TestRunHubNoNickNameFilter(t *testing.T) {
+	var firstQuery map[string]any
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if firstQuery == nil {
+			var body map[string]any
+			_ = json.NewDecoder(r.Body).Decode(&body)
+			firstQuery = body
+		}
+		_, _ = w.Write(fakeESResponse(nil, 0))
+	}))
+	defer ts.Close()
+
+	s := &Scraper{
+		client:    ts.Client(),
+		cfg:       SiteConfig{Index: "ts_network", SiteBase: ts.URL, Domain: "teamskeet.com", SiteID: "teamskeet"},
+		esBaseURL: ts.URL,
+	}
+
+	out := make(chan scraper.SceneResult, 10)
+	s.Run(context.Background(), "https://www.teamskeet.com/", scraper.ListOpts{}, out)
+
+	must, _ := firstQuery["query"].(map[string]any)
+	b, _ := must["bool"].(map[string]any)
+	clauses, _ := b["must"].([]any)
+	for _, c := range clauses {
+		cm, _ := c.(map[string]any)
+		term, _ := cm["term"].(map[string]any)
+		if _, ok := term["site.nickName.keyword"]; ok {
+			t.Errorf("hub config must not add a nickName filter: %v", firstQuery)
+		}
+	}
+}
+
 func TestSearchParsesResponse(t *testing.T) {
 	page1 := fakeESResponse([]esScene{makeScene(100, "Scene A"), makeScene(101, "Scene B")}, 2)
 
