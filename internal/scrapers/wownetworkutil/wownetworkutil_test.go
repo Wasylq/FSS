@@ -328,6 +328,45 @@ func TestKnownIDsEarlyStop(t *testing.T) {
 	}
 }
 
+// A non-root studioURL (e.g. /tour/whats-new) must still find the sitemap at
+// the site root rather than appending /sitemap.xml to the path (which 404s).
+func TestRunNonRootURLUsesRootSitemap(t *testing.T) {
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case "/sitemap.xml":
+			sm := `<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"><url><loc>` + "http://" + r.Host + `/tour/trailer/trailers/test-scene</loc></url></urlset>`
+			w.Header().Set("Content-Type", "application/xml")
+			_, _ = fmt.Fprint(w, sm)
+		case "/tour/trailer/trailers/test-scene":
+			_, _ = fmt.Fprint(w, detailPage(testJSONLDWithPerformers("Test Scene", "2025-01-01", "PT30M0S", []string{"Performer"})))
+		default:
+			http.NotFound(w, r)
+		}
+	}))
+	defer ts.Close()
+
+	domain := strings.TrimPrefix(ts.URL, "http://")
+	s := New(SiteConfig{SiteID: "test", Domain: domain, StudioName: "Test"})
+
+	ch, err := s.ListScenes(context.Background(), ts.URL+"/tour/whats-new", scraper.ListOpts{Delay: time.Millisecond})
+	if err != nil {
+		t.Fatalf("ListScenes: %v", err)
+	}
+
+	var scenes int
+	for res := range ch {
+		switch res.Kind {
+		case scraper.KindScene:
+			scenes++
+		case scraper.KindError:
+			t.Fatalf("unexpected error (sitemap should resolve at root): %v", res.Err)
+		}
+	}
+	if scenes != 1 {
+		t.Errorf("got %d scenes, want 1", scenes)
+	}
+}
+
 func TestSceneValidation(t *testing.T) {
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {

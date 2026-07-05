@@ -5,6 +5,7 @@ import (
 	"encoding/xml"
 	"fmt"
 	"net/http"
+	"net/url"
 	"regexp"
 	"strings"
 	"time"
@@ -73,6 +74,15 @@ type sitemapURL struct {
 
 var trailerPathRe = regexp.MustCompile(`/tour/trailer/[^/]+/([a-z0-9-]+)$`)
 
+// siteRoot returns the scheme://host origin of rawURL, dropping any path so the
+// root sitemap can be located regardless of which sub-URL was supplied.
+func siteRoot(rawURL string) string {
+	if u, err := url.Parse(rawURL); err == nil && u.Scheme != "" && u.Host != "" {
+		return u.Scheme + "://" + u.Host
+	}
+	return strings.TrimRight(rawURL, "/")
+}
+
 func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOpts, out chan<- scraper.SceneResult) {
 	defer close(out)
 
@@ -81,7 +91,11 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 		delay = defaultDelay
 	}
 
-	base := strings.TrimRight(studioURL, "/")
+	// The sitemap lives at the site root. A studioURL with a path (e.g.
+	// /tour/whats-new, /tour/trailer/{slug}) must not have "/sitemap.xml"
+	// appended to the full path — that 404s. Derive the origin instead; every
+	// supported URL resolves to the same full-catalogue sitemap.
+	base := siteRoot(studioURL)
 
 	scraper.Debugf(1, "%s: fetching sitemap", s.cfg.SiteID)
 	urls, err := s.fetchSitemap(ctx, base+"/sitemap.xml")
