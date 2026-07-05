@@ -394,6 +394,34 @@ func TestRun(t *testing.T) {
 	}
 }
 
+// The site-canonical model URL has no tour prefix (newsensations.com/models/x);
+// it must route to the model page, not fall through to the full catalogue.
+func TestRunPrefixlessModelPage(t *testing.T) {
+	var base string
+	ts := newTestServer(&base, []int{100, 200})
+	defer ts.Close()
+
+	cfg := testCfg
+	cfg.SiteBase = ts.URL
+	s := New(cfg)
+	s.client = ts.Client()
+
+	if !s.modelRe.MatchString(ts.URL + "/models/test-model.html") {
+		t.Fatal("prefix-less /models/ URL should be recognised as a model page")
+	}
+
+	ch, err := s.ListScenes(context.Background(), ts.URL+"/models/test-model.html", scraper.ListOpts{
+		Delay:   time.Millisecond,
+		Workers: 1,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := testutil.CollectScenes(t, ch); len(got) != 2 {
+		t.Fatalf("got %d scenes, want 2 (prefix-less model page)", len(got))
+	}
+}
+
 func TestKnownIDs(t *testing.T) {
 	var base string
 	ts := newTestServer(&base, []int{100, 200, 300})

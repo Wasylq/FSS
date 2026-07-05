@@ -45,7 +45,11 @@ func New(cfg SiteConfig) *Scraper {
 	}
 	re := regexp.MustCompile(`^https?://(?:www\.)?(?:` + pattern + `)(?:/|$)`)
 
-	modelRe := regexp.MustCompile(`/` + regexp.QuoteMeta(cfg.TourPrefix) + `/models/`)
+	// Model pages appear both prefixed (sister sites: /tour_x/models/) and
+	// prefix-less (site-canonical, e.g. newsensations.com/models/jane.html,
+	// live-verified). Match either so the canonical form isn't mistaken for the
+	// full catalogue.
+	modelRe := regexp.MustCompile(`/(?:` + regexp.QuoteMeta(cfg.TourPrefix) + `/)?models/`)
 
 	return &Scraper{
 		cfg:     cfg,
@@ -144,6 +148,7 @@ func (s *Scraper) produceListing(ctx context.Context, studioURL string, opts scr
 		return
 	}
 
+	scraper.WarnURLFallthrough(s.cfg.SiteID, studioURL)
 	s.paginateCategory(ctx, "movies", "d", opts, out, work, delay)
 }
 
