@@ -468,7 +468,7 @@ func TestFieldAllowed_absentField(t *testing.T) {
 func TestBuildChanges_titleChange(t *testing.T) {
 	ss := stash.StashScene{ID: "1", Title: "Old Title"}
 	merged := match.MergedScene{Title: "New Title"}
-	changes := buildChanges(ss, merged, nil, nil, false)
+	changes := buildChanges(ss, merged, nil, nil, false, false)
 	diff, ok := changes["title"]
 	if !ok {
 		t.Fatal("expected title change")
@@ -485,7 +485,7 @@ func TestBuildChanges_noChanges(t *testing.T) {
 		Description: "Desc",
 		Date:        time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC),
 	}
-	changes := buildChanges(ss, merged, nil, nil, false)
+	changes := buildChanges(ss, merged, nil, nil, false, false)
 	if len(changes) != 0 {
 		t.Errorf("expected no changes, got %v", changes)
 	}
@@ -494,7 +494,7 @@ func TestBuildChanges_noChanges(t *testing.T) {
 func TestBuildChanges_coverEnabled(t *testing.T) {
 	ss := stash.StashScene{ID: "1"}
 	merged := match.MergedScene{Thumbnail: "https://example.com/thumb.jpg"}
-	changes := buildChanges(ss, merged, nil, nil, true)
+	changes := buildChanges(ss, merged, nil, nil, true, false)
 	diff, ok := changes["cover"]
 	if !ok {
 		t.Fatal("expected cover change")
@@ -504,13 +504,41 @@ func TestBuildChanges_coverEnabled(t *testing.T) {
 	}
 }
 
+func TestBuildChanges_organizedEmitsChange(t *testing.T) {
+	ss := stash.StashScene{ID: "1", Title: "Same", Organized: false}
+	merged := match.MergedScene{Title: "Same"}
+
+	// Without --organized, no change is emitted.
+	if changes := buildChanges(ss, merged, nil, nil, false, false); len(changes) != 0 {
+		t.Errorf("organized=false should emit nothing, got %v", changes)
+	}
+
+	// With --organized on an unorganized scene, emit the change so applyScene runs.
+	changes := buildChanges(ss, merged, nil, nil, false, true)
+	diff, ok := changes["organized"]
+	if !ok {
+		t.Fatal("expected organized change")
+	}
+	if diff.From != false || diff.To != true {
+		t.Errorf("got from=%v to=%v", diff.From, diff.To)
+	}
+}
+
+func TestBuildChanges_organizedAlreadySetNoChange(t *testing.T) {
+	ss := stash.StashScene{ID: "1", Title: "Same", Organized: true}
+	merged := match.MergedScene{Title: "Same"}
+	if changes := buildChanges(ss, merged, nil, nil, false, true); len(changes) != 0 {
+		t.Errorf("already-organized scene should emit nothing, got %v", changes)
+	}
+}
+
 func TestBuildChanges_addedTags(t *testing.T) {
 	ss := stash.StashScene{
 		ID:   "1",
 		Tags: []stash.StashTag{{ID: "10", Name: "POV"}},
 	}
 	merged := match.MergedScene{}
-	changes := buildChanges(ss, merged, nil, []string{"POV", "MILF", "Threesome"}, false)
+	changes := buildChanges(ss, merged, nil, []string{"POV", "MILF", "Threesome"}, false, false)
 	diff, ok := changes["tags"]
 	if !ok {
 		t.Fatal("expected tags change")

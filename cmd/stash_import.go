@@ -213,7 +213,7 @@ func diffScene(ss stash.StashScene, merged match.MergedScene, o importOpts) (map
 
 	mergedURLs := match.MergeStrings(ss.URLs, merged.URLs)
 
-	changes := buildChanges(ss, merged, mergedURLs, allTags, o.setCover)
+	changes := buildChanges(ss, merged, mergedURLs, allTags, o.setCover, o.organized)
 	if o.allowedFields != nil {
 		for field := range changes {
 			if !o.allowedFields[field] {
@@ -618,8 +618,16 @@ func printFailureSummary(failures []importFailure) {
 	}
 }
 
-func buildChanges(ss stash.StashScene, merged match.MergedScene, mergedURLs []string, newTags []string, setCover bool) map[string]changelogFieldDiff {
+func buildChanges(ss stash.StashScene, merged match.MergedScene, mergedURLs []string, newTags []string, setCover, organized bool) map[string]changelogFieldDiff {
 	changes := map[string]changelogFieldDiff{}
+
+	// Emit an "organized" change only when --organized is set and the scene
+	// isn't already organized — otherwise an already-up-to-date scene has an
+	// empty diff and applyScene (the only place input.Organized is set) is
+	// skipped, making the flag a silent no-op.
+	if organized && !ss.Organized {
+		changes["organized"] = changelogFieldDiff{From: ss.Organized, To: true}
+	}
 
 	if merged.Title != "" && merged.Title != ss.Title {
 		changes["title"] = changelogFieldDiff{From: ss.Title, To: merged.Title}
