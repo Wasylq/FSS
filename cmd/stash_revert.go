@@ -91,10 +91,8 @@ func runStashRevert(cmd *cobra.Command, args []string) error {
 			fmt.Fprintf(os.Stderr, "warning: no changelog entries for scene %s\n", sceneID)
 			continue
 		}
-		if !all {
-			matches = matches[len(matches)-1:] // most recent only
-		}
-		anyMatched += len(matches)
+		ordered := revertOrder(matches, all)
+		anyMatched += len(ordered)
 
 		current, found, err := client.FindSceneByID(ctx, sceneID)
 		if err != nil {
@@ -105,10 +103,9 @@ func runStashRevert(cmd *cobra.Command, args []string) error {
 			continue
 		}
 
-		// Apply the entries oldest-first so multi-entry reverts compose correctly.
-		// Each entry is computed against the current (possibly already partially
-		// reverted) state.
-		for _, entry := range matches {
+		// revertOrder applies the entries newest-first. Each entry is computed
+		// against the current (possibly already partially reverted) state.
+		for _, entry := range ordered {
 			input, plan, skipped := computeRevert(entry, *current, allowed)
 			fmt.Printf("scene %s (%s) [entry %s]:\n", sceneID, entry.Filename, entry.Timestamp.Format("2006-01-02T15:04:05Z"))
 			if len(plan) == 0 && len(skipped) == 0 {
@@ -208,6 +205,27 @@ func loadChangelog(dir string) ([]changelogEntry, error) {
 		return nil, fmt.Errorf("parsing changelog %s: %w", path, err)
 	}
 	return entries, nil
+}
+
+// revertOrder returns the changelog entries to apply for a scene, in the order
+// they must be applied. The changelog is stored oldest-first; scalar reverts
+// (title/date) write each entry's `From` value, so the OLDEST entry's From must
+// be applied LAST to win — i.e. iterate newest-first. Two imports (title A→B,
+// then B→C) reverted with --all must end at A, not the intermediate B. Additive
+// subtractions (urls/tags/performers) are order-independent, so newest-first is
+// correct for them too. When `all` is false only the most recent entry applies.
+func revertOrder(matches []changelogEntry, all bool) []changelogEntry {
+	if len(matches) == 0 {
+		return nil
+	}
+	if !all {
+		return matches[len(matches)-1:]
+	}
+	out := make([]changelogEntry, len(matches))
+	for i, e := range matches {
+		out[len(matches)-1-i] = e
+	}
+	return out
 }
 
 func entriesForScene(entries []changelogEntry, sceneID string) []changelogEntry {

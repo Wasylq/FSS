@@ -93,6 +93,38 @@ func TestEntriesForScene(t *testing.T) {
 	}
 }
 
+func TestRevertOrder(t *testing.T) {
+	matches := []changelogEntry{
+		{Filename: "oldest"},
+		{Filename: "middle"},
+		{Filename: "newest"},
+	}
+
+	t.Run("all reverses to newest-first", func(t *testing.T) {
+		got := revertOrder(matches, true)
+		if len(got) != 3 || got[0].Filename != "newest" || got[1].Filename != "middle" || got[2].Filename != "oldest" {
+			t.Errorf("got %+v", got)
+		}
+		// Source slice must not be mutated.
+		if matches[0].Filename != "oldest" {
+			t.Errorf("revertOrder mutated input: %+v", matches)
+		}
+	})
+
+	t.Run("not-all returns only most recent", func(t *testing.T) {
+		got := revertOrder(matches, false)
+		if len(got) != 1 || got[0].Filename != "newest" {
+			t.Errorf("got %+v", got)
+		}
+	})
+
+	t.Run("empty returns nil", func(t *testing.T) {
+		if got := revertOrder(nil, true); got != nil {
+			t.Errorf("got %+v, want nil", got)
+		}
+	})
+}
+
 func TestComputeRevert_titleAndDate(t *testing.T) {
 	entry := changelogEntry{
 		StashSceneID: "42",
