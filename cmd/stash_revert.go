@@ -84,7 +84,7 @@ func runStashRevert(cmd *cobra.Command, args []string) error {
 		fmt.Print("\n--- DRY RUN (pass --apply to write changes) ---\n\n")
 	}
 
-	var anyApplied, anyMatched int
+	var anyApplied, anyMatched, anyFailed int
 	for _, sceneID := range args {
 		matches := entriesForScene(entries, sceneID)
 		if len(matches) == 0 {
@@ -92,7 +92,6 @@ func runStashRevert(cmd *cobra.Command, args []string) error {
 			continue
 		}
 		ordered := revertOrder(matches, all)
-		anyMatched += len(ordered)
 
 		current, found, err := client.FindSceneByID(ctx, sceneID)
 		if err != nil {
@@ -102,6 +101,7 @@ func runStashRevert(cmd *cobra.Command, args []string) error {
 			fmt.Fprintf(os.Stderr, "warning: scene %s not found in Stash, skipping\n", sceneID)
 			continue
 		}
+		anyMatched += len(ordered)
 
 		// revertOrder applies the entries newest-first. Each entry is computed
 		// against the current (possibly already partially reverted) state.
@@ -141,8 +141,13 @@ func runStashRevert(cmd *cobra.Command, args []string) error {
 			}
 
 			if err := client.UpdateScene(ctx, input.scene); err != nil {
+				// Subsequent entries for this scene compose on top of this one
+				// (newest-first unwinding), so a failure here leaves stale state
+				// — stop this scene rather than revert against it, and surface a
+				// non-zero exit at the end. Other scenes are independent.
 				fmt.Fprintf(os.Stderr, "error reverting scene %s: %v\n", sceneID, err)
-				continue
+				anyFailed++
+				break
 			}
 			anyApplied++
 
@@ -156,7 +161,10 @@ func runStashRevert(cmd *cobra.Command, args []string) error {
 
 	fmt.Println()
 	if apply {
-		fmt.Printf("Done: %d entries matched, %d applied\n", anyMatched, anyApplied)
+		fmt.Printf("Done: %d entries matched, %d applied, %d failed\n", anyMatched, anyApplied, anyFailed)
+		if anyFailed > 0 {
+			return fmt.Errorf("%d scene(s) failed to revert", anyFailed)
+		}
 	} else {
 		fmt.Printf("Dry-run: %d entries would be reverted\n", anyMatched)
 	}
