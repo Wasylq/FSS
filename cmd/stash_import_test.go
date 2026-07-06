@@ -336,6 +336,57 @@ func TestPrintFailureSummary_preservesInsertionOrder(t *testing.T) {
 	}
 }
 
+func TestReconcileChanges_noFailuresPassThrough(t *testing.T) {
+	changes := map[string]changelogFieldDiff{
+		"tags": {Added: []string{"POV", "MILF"}},
+	}
+	got := reconcileChanges(changes, nil)
+	if !reflect.DeepEqual(got, changes) {
+		t.Errorf("with no failures the map should pass through unchanged, got %v", got)
+	}
+}
+
+func TestReconcileChanges_prunesFailedTagsAndPerfs(t *testing.T) {
+	changes := map[string]changelogFieldDiff{
+		"title":      {From: "old", To: "new"},
+		"tags":       {Added: []string{"POV", "MILF", "Anal"}},
+		"performers": {Added: []string{"Alice", "Bob"}},
+		"urls":       {Added: []string{"https://x"}},
+	}
+	failures := []importFailure{
+		{Op: "tag", Name: "MILF"},
+		{Op: "tag (stashbox)", Name: "POV"},
+		{Op: "performer", Name: "Bob"},
+	}
+	got := reconcileChanges(changes, failures)
+
+	if !reflect.DeepEqual(got["tags"].Added, []string{"Anal"}) {
+		t.Errorf("tags = %v, want [Anal]", got["tags"].Added)
+	}
+	if !reflect.DeepEqual(got["performers"].Added, []string{"Alice"}) {
+		t.Errorf("performers = %v, want [Alice]", got["performers"].Added)
+	}
+	// Scalars/urls untouched.
+	if got["title"].To != "new" || !reflect.DeepEqual(got["urls"].Added, []string{"https://x"}) {
+		t.Errorf("scalars/urls altered: %+v", got)
+	}
+	// Original map not mutated.
+	if len(changes["tags"].Added) != 3 {
+		t.Errorf("input map mutated: %v", changes["tags"].Added)
+	}
+}
+
+func TestReconcileChanges_dropsEmptiedField(t *testing.T) {
+	changes := map[string]changelogFieldDiff{
+		"tags": {Added: []string{"POV"}},
+	}
+	failures := []importFailure{{Op: "tag", Name: "POV"}}
+	got := reconcileChanges(changes, failures)
+	if _, ok := got["tags"]; ok {
+		t.Errorf("fully-failed tags field should be dropped, got %v", got)
+	}
+}
+
 func TestDiffStrings(t *testing.T) {
 	got := diffStrings([]string{"a", "b", "c"}, []string{"b", "c", "d", "e"})
 	want := []string{"d", "e"}

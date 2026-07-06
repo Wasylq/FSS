@@ -449,13 +449,19 @@ func runStashImport(cmd *cobra.Command, _ []string) error {
 		}
 
 		if len(ss.StashIDs) > 0 {
-			changelog = append(changelog, changelogEntry{
-				StashSceneID: ss.ID,
-				Timestamp:    time.Now().UTC(),
-				Filename:     filename,
-				MatchedTo:    merged.Title,
-				Changes:      changes,
-			})
+			// Record what actually landed, not the planned diff: prune tag /
+			// performer names whose Ensure* failed so a later revert doesn't
+			// strip entities that were never imported.
+			recorded := reconcileChanges(changes, sceneFailures)
+			if len(recorded) > 0 {
+				changelog = append(changelog, changelogEntry{
+					StashSceneID: ss.ID,
+					Timestamp:    time.Now().UTC(),
+					Filename:     filename,
+					MatchedTo:    merged.Title,
+					Changes:      recorded,
+				})
+			}
 		}
 
 		stats.updated++
@@ -691,6 +697,60 @@ func buildChanges(ss stash.StashScene, merged match.MergedScene, mergedURLs []st
 	}
 
 	return changes
+}
+
+// reconcileChanges returns the changelog diff that reflects what was actually
+// written. Tag/performer names whose Ensure* call failed (captured in failures)
+// are dropped from their Added lists, and a field whose Added list empties is
+// removed entirely. Scalars and URLs are written atomically by UpdateScene, so
+// they pass through unchanged. The input map is not mutated.
+func reconcileChanges(changes map[string]changelogFieldDiff, failures []importFailure) map[string]changelogFieldDiff {
+	failedTags := map[string]bool{}
+	failedPerfs := map[string]bool{}
+	for _, f := range failures {
+		switch {
+		case strings.HasPrefix(f.Op, "tag"): // "tag" and "tag (stashbox)"
+			failedTags[f.Name] = true
+		case f.Op == "performer":
+			failedPerfs[f.Name] = true
+		}
+	}
+	if len(failedTags) == 0 && len(failedPerfs) == 0 {
+		return changes
+	}
+
+	out := make(map[string]changelogFieldDiff, len(changes))
+	for field, diff := range changes {
+		switch field {
+		case "tags":
+			diff.Added = dropNames(diff.Added, failedTags)
+			if len(diff.Added) == 0 {
+				continue
+			}
+		case "performers":
+			diff.Added = dropNames(diff.Added, failedPerfs)
+			if len(diff.Added) == 0 {
+				continue
+			}
+		}
+		out[field] = diff
+	}
+	return out
+}
+
+// dropNames returns names with any element present in drop filtered out,
+// preserving order. The input slice is not mutated.
+func dropNames(names []string, drop map[string]bool) []string {
+	if len(drop) == 0 {
+		return names
+	}
+	out := make([]string, 0, len(names))
+	for _, n := range names {
+		if !drop[n] {
+			out = append(out, n)
+		}
+	}
+	return out
 }
 
 func diffStrings(existing, merged []string) []string {
