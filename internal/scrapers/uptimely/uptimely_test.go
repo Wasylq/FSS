@@ -10,8 +10,8 @@ import (
 )
 
 func TestSiteCount(t *testing.T) {
-	if len(sites) != 12 {
-		t.Errorf("expected 12 sites, got %d", len(sites))
+	if len(sites) != 13 {
+		t.Errorf("expected 13 sites, got %d", len(sites))
 	}
 }
 
@@ -33,6 +33,10 @@ func TestNewSitesMatchURLs(t *testing.T) {
 		"oppai": {
 			"https://oppai-av.com/works/list/release",
 			"https://oppai-av.com/actress/detail/123",
+		},
+		"ebody": {
+			"https://av-e-body.com/works/list/release",
+			"https://www.av-e-body.com/actress/detail/45",
 		},
 	}
 	for id, urls := range cases {

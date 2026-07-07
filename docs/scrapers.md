@@ -64,6 +64,7 @@
 | [Double View Casting](http://doubleviewcasting.com) | `doubleviewcasting.com`, `doubleviewcasting.com/scene/id/{N}` | Custom PHP | No | `/scenes/page/{N}` listing + detail (title, description, performers, duration, tags) |
 | [Dream Tranny](https://dreamtranny.com) | `dreamtranny.com`, `dreamtranny.com/update/{id}/` | RogueBucks (NATS) | No | Sitemap enumeration (~1193) + concurrent detail fetch (title, performers, date, description, thumbnail) |
 | [DungeonCorp](https://www.dungeoncorp.com) | `dungeoncorp.com`, `dungeoncorp.com/?page=updates&site=DUN` | Dungeon Corp (PHP CMS) | No | Network site code DUN, listing-only parse, uses `dungeoncorputil` |
+| [E-body](https://av-e-body.com) | `av-e-body.com`, `av-e-body.com/works/list/release`, `av-e-body.com/actress/detail/{id}` | Up-Timely CMS | No | JAV maker, `/works/detail/{code}` detail fetch (title, actress, genre, date), uses `uptimely` package |
 | [Ebony Thots](https://www.ebonythots.com) | `ebonythots.com`, `ebonythots.com/black-porn-stars/{name}/{id}` | Score Group | No | Score Group, table-driven `scoregroup` package |
 | [Eva Notty Videos](https://www.evanottyvideos.com) | `evanottyvideos.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
 | [Exploited Teens](https://www.exploitedteens.com) | `exploitedteens.com`, `exploitedteens.com/page{N}.html` | Custom (full-in-list) | No | Listing-only with inline metadata (id, title, date from id, duration, description, preview mp4) |
