@@ -75,6 +75,7 @@
 | [Flat And Fucked MILFs](https://www.flatandfuckedmilfs.com) | `flatandfuckedmilfs.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
 | [Fucking Dungeon](https://www.dungeoncorp.com/?page=sites&site=FUD) | `dungeoncorp.com/?page=updates&site=FUD` | Dungeon Corp (PHP CMS) | No | Network site code FUD, listing-only parse, uses `dungeoncorputil` |
 | [Gangbang Media Germany](https://p-p-p.tv) | `p-p-p.tv`, `p-p-p.tv/videos/list` | Custom (German) | No | Listing-only parse (`?page={N}`): title/slug, performers (slug-derived), duration, thumbnail; detail pages login-gated so no dates |
+| [GenderXFilms](https://www.genderxfilms.com) | `genderxfilms.com` | Gamma/Algolia | No | Algolia search API (new `genderxfilms` segment), full metadata + 4K, uses `gammautil` |
 | [Girl Asylum](https://www.girlasylum.com) | `girlasylum.com`, `girlasylum.com/tag/{slug}` | WordPress (REST API) | No | WP REST `posts` (~966), tags=performers; REST content empty so no description, uses `fotoroutil` |
 | [GirlsGoneGyno](https://www.girlsgonegyno.com) | `girlsgonegyno.com` | PornCMS | No | Paginated base64 `?mb=` listing fragment (~908 scenes), full card metadata (title, performers, date, duration, views, thumbnail) |
 | [Gloryhole Swallow](https://gloryholeswallow.com) | `gloryholeswallow.com`, `gloryholeswallow.com/tour/categories/Movies_{N}_d.html` | Elevated X | No | Listing (id/date/thumb) + detail fetch (runtime, description, tags, @handle performers), date-as-title, dup-page stop, uses `titanmediautil` |

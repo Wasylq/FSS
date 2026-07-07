@@ -232,3 +232,7 @@ func TestLive21FootArt(t *testing.T) {
 func TestLiveLethalHardcoreVR(t *testing.T) {
 	testutil.RunLiveScrape(t, newTestScraper(findSite("lethalhardcorevr")), "https://www.lethalhardcorevr.com/", 2)
 }
+
+func TestLiveGenderXFilms(t *testing.T) {
+	testutil.RunLiveScrape(t, newTestScraper(findSite("genderxfilms")), "https://www.genderxfilms.com/", 2)
+}

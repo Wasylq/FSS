@@ -293,6 +293,10 @@ var sites = []siteConfig{
 
 	// Playboy TV segment — uses /en/episodes (not /en/videos) and /en/episode/ scene URLs.
 	{"playboytv", "playboytv.com", "Playboy TV", "playboytv", "", "", "/en/episodes", "episode"},
+
+	// GenderXFilms — own segment:genderxfilms key from /en/videos.
+	// SiteName empty → no availableOnSite filter → whole segment catalog.
+	{"genderxfilms", "genderxfilms.com", "GenderXFilms", "", "", "", "", ""},
 }
 
 type siteScraper struct {
