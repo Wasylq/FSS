@@ -204,6 +204,65 @@ func TestMatchCrossSiteSameTitle(t *testing.T) {
 	}
 }
 
+func sceneWithDate(id, siteID, title string, date time.Time) models.Scene {
+	s := scene(id, siteID, title)
+	s.Date = date
+	return s
+}
+
+func TestMatchSameTitleDifferentDatesIsAmbiguous(t *testing.T) {
+	// Two genuinely different scenes that share a title (a yearly special).
+	// Without a file duration to disambiguate, merging them would union both
+	// casts/URLs onto one Stash scene — so report ambiguous instead.
+	idx := BuildIndex([]models.Scene{
+		sceneWithDate("1", "manyvids", "Christmas Special", time.Date(2022, 12, 24, 0, 0, 0, 0, time.UTC)),
+		sceneWithDate("2", "manyvids", "Christmas Special", time.Date(2023, 12, 24, 0, 0, 0, 0, time.UTC)),
+	})
+
+	r := idx.Match("Christmas Special.mp4", 0)
+	if r.Confidence != MatchAmbiguous {
+		t.Errorf("confidence = %v, want AMBIGUOUS (different-date same-title scenes)", r.Confidence)
+	}
+}
+
+func TestMatchSameTitleDurationDisambiguates(t *testing.T) {
+	// Same setup but the file duration matches exactly one — the duration filter
+	// leaves a single scene, so it's a clean exact match.
+	idx := BuildIndex([]models.Scene{
+		mustScene(sceneWithDate("1", "manyvids", "Christmas Special", time.Date(2022, 12, 24, 0, 0, 0, 0, time.UTC)), 600),
+		mustScene(sceneWithDate("2", "manyvids", "Christmas Special", time.Date(2023, 12, 24, 0, 0, 0, 0, time.UTC)), 1800),
+	})
+
+	r := idx.Match("Christmas Special.mp4", 600)
+	if r.Confidence != MatchExact {
+		t.Errorf("confidence = %v, want EXACT", r.Confidence)
+	}
+	if len(r.Scenes) != 1 || r.Scenes[0].ID != "1" {
+		t.Errorf("scenes = %+v, want single scene id=1", r.Scenes)
+	}
+}
+
+func TestMatchSameTitleAgreeingDatesStillMerges(t *testing.T) {
+	// Cross-site same scene: same title, dates within tolerance — still merge.
+	idx := BuildIndex([]models.Scene{
+		sceneWithDate("1", "manyvids", "Fostering the Bully", time.Date(2023, 6, 1, 0, 0, 0, 0, time.UTC)),
+		sceneWithDate("2", "clips4sale", "Fostering the Bully", time.Date(2023, 6, 1, 12, 0, 0, 0, time.UTC)),
+	})
+
+	r := idx.Match("Fostering the Bully.mp4", 0)
+	if r.Confidence != MatchExact {
+		t.Errorf("confidence = %v, want EXACT (agreeing dates)", r.Confidence)
+	}
+	if len(r.Scenes) != 2 {
+		t.Errorf("scenes len = %d, want 2 (cross-site merge)", len(r.Scenes))
+	}
+}
+
+func mustScene(s models.Scene, duration int) models.Scene {
+	s.Duration = duration
+	return s
+}
+
 func TestMatchStepStripped(t *testing.T) {
 	idx := BuildIndex([]models.Scene{
 		scene("1", "manyvids", "Step-Sister Blackmail Custom Video"),

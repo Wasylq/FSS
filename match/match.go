@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
+	"time"
 
 	"github.com/Wasylq/FSS/models"
 )
@@ -317,7 +318,16 @@ func matchAgainst(titleMap map[string][]models.Scene, si *substringIndex, norm s
 	if scenes, ok := titleMap[norm]; ok {
 		filtered := filterByDuration(scenes, fileDurationSec)
 		if len(filtered) > 0 {
-			return MatchResult{Confidence: MatchExact, Scenes: filtered}
+			// Multiple scenes share this normalized title. Only merge them
+			// (MergeScenes unions casts/URLs onto one Stash scene) when they
+			// plausibly are the same scene across sites — i.e. they don't
+			// conflict on date or duration. Two genuinely different scenes that
+			// happen to share a title (e.g. a yearly "Christmas Special") must
+			// not be merged; report ambiguous so the import skips them.
+			if exactScenesAgree(filtered) {
+				return MatchResult{Confidence: MatchExact, Scenes: filtered}
+			}
+			return MatchResult{Confidence: MatchAmbiguous, Candidates: len(filtered)}
 		}
 		if fileDurationSec > 0 {
 			return MatchResult{Confidence: MatchNone}
@@ -387,6 +397,46 @@ func matchAgainst(titleMap map[string][]models.Scene, si *substringIndex, norm s
 		}
 	}
 	return MatchResult{Confidence: MatchSubstring, Scenes: best.scenes}
+}
+
+// sceneDateTolerance is how far two scenes' dates may differ and still be
+// treated as the same scene across sites. Cross-site release dates can lag by a
+// day; a larger gap signals genuinely different scenes.
+const sceneDateTolerance = 36 * time.Hour
+
+// exactScenesAgree reports whether every pair of scenes sharing one normalized
+// title is mutually compatible (could be the same scene on different sites). A
+// single conflicting pair makes the whole set ambiguous — conservative, but it
+// prevents unrelated same-title scenes from being merged.
+func exactScenesAgree(scenes []models.Scene) bool {
+	for i := 0; i < len(scenes); i++ {
+		for j := i + 1; j < len(scenes); j++ {
+			if !scenesCompatible(scenes[i], scenes[j]) {
+				return false
+			}
+		}
+	}
+	return true
+}
+
+// scenesCompatible reports whether two scenes could be the same underlying
+// scene. Known durations that aren't close, or known dates more than
+// sceneDateTolerance apart, mark them as different. Missing data can't
+// disagree, so it never blocks a legitimate cross-site merge.
+func scenesCompatible(a, b models.Scene) bool {
+	if a.Duration > 0 && b.Duration > 0 && !durationClose(a.Duration, float64(b.Duration)) {
+		return false
+	}
+	if !a.Date.IsZero() && !b.Date.IsZero() {
+		gap := a.Date.Sub(b.Date)
+		if gap < 0 {
+			gap = -gap
+		}
+		if gap > sceneDateTolerance {
+			return false
+		}
+	}
+	return true
 }
 
 const durationTolerancePct = 0.10
