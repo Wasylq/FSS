@@ -185,6 +185,7 @@
 | [Wanz Factory](https://wanz-factory.com) | `wanz-factory.com/works/list/release`, `wanz-factory.com/works/detail/{code}`, `wanz-factory.com/actress/detail/{id}` | Up-Timely CMS | No | Thin wrapper around `uptimelyutil`. ~619 products. |
 | [Wifey's World](https://wifeysworld.com) | `wifeysworld.com`, `wifeysworld.com/v3/tour/` | NATS tour | No | `/v3/tour/categories/updates_{N}_d.html` listing-only (id, title, date, thumb) |
 | [XL Girls](https://www.xlgirls.com) | `xlgirls.com`, `xlgirls.com/bbw-models/{name}/{id}` | Score Group | No | Score Group, table-driven `scoregroup` package |
+| [YouthLust](https://youthlust.club) | `youthlust.club`, `youthlust.club/products/{handle}` | Shopify | Yes | Shopify `products.json` API (full catalogue), `Videos` product_type filter, title/date/description/tags/price/thumbnail |
 | [Your Mom Loves Anal](https://www.yourmomlovesanal.com) | `yourmomlovesanal.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
 | [Your Mom's Got Big Tits](https://www.yourmomsgotbigtits.com) | `yourmomsgotbigtits.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
 | [Your Wife My Meat](https://www.yourwifemymeat.com) | `yourwifemymeat.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
