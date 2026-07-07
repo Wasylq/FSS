@@ -203,6 +203,11 @@ var accentFold = transform.Chain(norm.NFD, runes.Remove(runes.In(unicode.Mn)), n
 // titles survive instead of normalizing to an empty string.
 func Normalize(s string) string {
 	s = stripFormatSuffix(s)
+	// Drop invalid UTF-8 up front. Otherwise transform.String errors on the bad
+	// bytes, the accentFold below is skipped, and accented letters survive
+	// unfolded — making Normalize non-idempotent (the second pass, on now-valid
+	// input, would fold them). collapseToWords discards these bytes anyway.
+	s = strings.ToValidUTF8(s, "")
 	if folded, _, err := transform.String(accentFold, s); err == nil {
 		s = folded
 	}
