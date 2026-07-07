@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync/atomic"
 	"testing"
 
 	"github.com/Wasylq/FSS/scraper"
@@ -156,12 +157,14 @@ func TestRunEndToEnd(t *testing.T) {
 
 func TestKnownIDsEarlyStop(t *testing.T) {
 	listing := readFixture(t, "listing.html")
-	detailHits := 0
+	// detailHits is incremented from concurrent worker requests, so it must be
+	// accessed atomically to stay race-free under -race.
+	var detailHits atomic.Int64
 
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch {
 		case strings.Contains(r.URL.Path, "/tour/trailers/"):
-			detailHits++
+			detailHits.Add(1)
 			_, _ = w.Write(readFixture(t, "detail.html"))
 		case strings.Contains(r.URL.Path, "/tour/categories/movies/1/"):
 			_, _ = w.Write(listing)
@@ -205,8 +208,8 @@ func TestKnownIDsEarlyStop(t *testing.T) {
 	}
 	// The known first ID skips its own detail fetch; the remaining items on the
 	// page are fetched concurrently before Paginate reaches the known one.
-	if detailHits >= len(items) {
-		t.Errorf("known first ID should skip its detail fetch, hits=%d items=%d", detailHits, len(items))
+	if int(detailHits.Load()) >= len(items) {
+		t.Errorf("known first ID should skip its detail fetch, hits=%d items=%d", detailHits.Load(), len(items))
 	}
 }
 
