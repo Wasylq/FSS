@@ -10,8 +10,8 @@ import (
 )
 
 func TestSiteCount(t *testing.T) {
-	if len(sites) != 30 {
-		t.Errorf("expected 30 sites, got %d", len(sites))
+	if len(sites) != 31 {
+		t.Errorf("expected 31 sites, got %d", len(sites))
 	}
 }
 
@@ -48,6 +48,8 @@ func TestMatchesURL(t *testing.T) {
 		{"scene page no match", "thejerkygirls", "https://thejerkygirls.com/scene/123/slug", false},
 		{"wrong domain", "thejerkygirls", "https://example.com/videos", false},
 		{".tv domain", "ricporter", "https://ricporter.tv/videos", true},
+		{"www kinkyrubberworld", "kinkyrubberworld", "https://www.kinkyrubberworld.com/videos", true},
+		{"kinkyrubberworld base", "kinkyrubberworld", "https://kinkyrubberworld.com", true},
 	}
 
 	lookup := map[string]*siteScraper{}

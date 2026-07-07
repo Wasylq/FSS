@@ -47,6 +47,7 @@ var sites = []siteConfig{
 	{"yungdumbsluts", "yungdumbsluts.com", "Yung Dumb Sluts", nil},
 	{"rosellaextrem", "rosella-extrem.com", "RosellaExtrem", nil},
 	{"thelionxxx", "thelionxxx.com", "The Lion XXX", nil},
+	{"kinkyrubberworld", "kinkyrubberworld.com", "Kinky Rubber World", []string{"Latex Lara"}},
 }
 
 type siteScraper struct {
