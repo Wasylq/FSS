@@ -42,9 +42,14 @@ func TestNormalize(t *testing.T) {
 		{"Test\u200cTitle", "test title"},   // U+200C zero-width non-joiner
 		{"Scene\u200dName", "scene name"},   // U+200D zero-width joiner
 		{"Video\ufeffClip", "video clip"},   // U+FEFF byte order mark
-		// Non-ASCII letters are stripped by the [^a-z0-9]+ regex.
-		{"Café Scene", "caf scene"},
-		{"Ñoño Video", "o o video"},
+		// Accented Latin letters fold to their base form instead of being stripped.
+		{"Café Scene", "cafe scene"},
+		{"Ñoño Video", "nono video"},
+		{"Renée Pornélé", "renee pornele"},
+		// Non-Latin scripts are preserved (letters/digits of any script survive)
+		// rather than normalizing to an empty string.
+		{"日本語 Title", "日本語 title"},
+		{"Привет Мир", "привет мир"},
 	}
 	for _, c := range cases {
 		got := Normalize(c.input)
@@ -261,6 +266,28 @@ func TestMatchSameTitleAgreeingDatesStillMerges(t *testing.T) {
 func mustScene(s models.Scene, duration int) models.Scene {
 	s.Duration = duration
 	return s
+}
+
+func TestMatchNonASCIITitle(t *testing.T) {
+	// A CJK title used to normalize to "" and be dropped from the index entirely.
+	idx := BuildIndex([]models.Scene{
+		scene("1", "site", "日本語 Scene"),
+	})
+	r := idx.Match("日本語 Scene.mp4", 0)
+	if r.Confidence != MatchExact {
+		t.Errorf("confidence = %v, want EXACT for CJK title", r.Confidence)
+	}
+}
+
+func TestMatchAccentInsensitive(t *testing.T) {
+	// Accented title, unaccented filename (common in rip naming) should match.
+	idx := BuildIndex([]models.Scene{
+		scene("1", "site", "Renée Café Visit"),
+	})
+	r := idx.Match("Renee Cafe Visit.mp4", 0)
+	if r.Confidence != MatchExact {
+		t.Errorf("confidence = %v, want EXACT (accent-folded)", r.Confidence)
+	}
 }
 
 func TestMatchStepStripped(t *testing.T) {

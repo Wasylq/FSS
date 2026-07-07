@@ -9,6 +9,11 @@ import (
 	"regexp"
 	"strings"
 	"time"
+	"unicode"
+
+	"golang.org/x/text/runes"
+	"golang.org/x/text/transform"
+	"golang.org/x/text/unicode/norm"
 
 	"github.com/Wasylq/FSS/models"
 )
@@ -134,20 +139,48 @@ type MatchResult struct {
 }
 
 var (
-	nonAlphanumeric  = regexp.MustCompile(`[^a-z0-9]+`)
 	camelLowerUpper  = regexp.MustCompile(`([a-z])([A-Z])`)
 	camelUpperSeries = regexp.MustCompile(`([A-Z]+)([A-Z][a-z])`)
 	formatSuffixRe   = regexp.MustCompile(`(?i)\s*\(\s*(?:full\s+hd|4k|hd|mp4|mov|wmv|avi|mkv|1080p|720p|480p|sd)\s*\)\s*$`)
 )
 
-// Normalize lowercases, splits camelCase, and collapses non-alphanumeric runs into spaces.
+// accentFold strips combining marks after NFD decomposition, folding accented
+// Latin letters to their base form (é→e, ñ→n) so accented and unaccented
+// spellings of the same title match.
+var accentFold = transform.Chain(norm.NFD, runes.Remove(runes.In(unicode.Mn)), norm.NFC)
+
+// Normalize lowercases, folds accents, splits camelCase, and collapses runs of
+// non-letter/non-digit characters into single spaces. Unlike a plain [a-z0-9]
+// strip it preserves letters and digits of every script, so Cyrillic and CJK
+// titles survive instead of normalizing to an empty string.
 func Normalize(s string) string {
 	s = stripFormatSuffix(s)
+	if folded, _, err := transform.String(accentFold, s); err == nil {
+		s = folded
+	}
 	s = camelLowerUpper.ReplaceAllString(s, "${1} ${2}")
 	s = camelUpperSeries.ReplaceAllString(s, "${1} ${2}")
-	lower := strings.ToLower(s)
-	clean := nonAlphanumeric.ReplaceAllString(lower, " ")
-	return strings.TrimSpace(clean)
+	return collapseToWords(strings.ToLower(s))
+}
+
+// collapseToWords keeps Unicode letters and digits, replacing every other run
+// of characters with a single space and trimming the ends.
+func collapseToWords(s string) string {
+	var b strings.Builder
+	b.Grow(len(s))
+	pendingSpace := false
+	for _, r := range s {
+		if unicode.IsLetter(r) || unicode.IsDigit(r) {
+			if pendingSpace && b.Len() > 0 {
+				b.WriteByte(' ')
+			}
+			pendingSpace = false
+			b.WriteRune(r)
+		} else {
+			pendingSpace = true
+		}
+	}
+	return b.String()
 }
 
 // stripFormatSuffix removes a single trailing format-tag suffix like " (4K)"
