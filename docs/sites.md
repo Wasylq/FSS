@@ -1,6 +1,6 @@
 # Covered Sites — All Domains
 
-1494 scrapers covering 1589 distinct domains. Auto-generated from the scraper registry by `TestSitesMdInSync` — do not hand-edit; instead update the scraper's `Patterns()` and re-run `go test ./internal/scrapers/all/...`. The `stashbox` scraper is omitted here because its covered hosts are config-driven; see [`scrapers.md`](scrapers.md).
+1495 scrapers covering 1590 distinct domains. Auto-generated from the scraper registry by `TestSitesMdInSync` — do not hand-edit; instead update the scraper's `Patterns()` and re-run `go test ./internal/scrapers/all/...`. The `stashbox` scraper is omitted here because its covered hosts are config-driven; see [`scrapers.md`](scrapers.md).
 
 Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scraper ID(s)** column lists every scraper that claims URLs on that domain — most domains have one entry, but table-driven networks (`adultprime`, `tmw`, `nextdoorstudios`, etc.) host many sub-studios on a single root domain. See [`scrapers.md`](scrapers.md) for what each ID covers.
 
@@ -1534,6 +1534,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | www.flexidolls.comtour | `flexidolls` |
 | www.footfetishaffiliates.com | `footfetishaffiliates` |
 | www.footfetishcardates.com | `footfetishcardates` |
+| www.freakmobmedia.com | `freakmob` |
 | www.fuckthosemoms.comtour | `fuckthosemoms` |
 | www.girlasylum.com | `girlasylum` |
 | www.goddessbrianna.net | `goddessbrianna` |

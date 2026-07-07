@@ -173,6 +173,7 @@ import (
 	_ "github.com/Wasylq/FSS/internal/scrapers/naughtyamerica"
 	_ "github.com/Wasylq/FSS/internal/scrapers/newsensations"
 	_ "github.com/Wasylq/FSS/internal/scrapers/next11"
+	_ "github.com/Wasylq/FSS/internal/scrapers/nextcontents"
 	_ "github.com/Wasylq/FSS/internal/scrapers/nookies"
 	_ "github.com/Wasylq/FSS/internal/scrapers/nubiles"
 	_ "github.com/Wasylq/FSS/internal/scrapers/nudolls"
