@@ -171,6 +171,65 @@ func TestMatchNone(t *testing.T) {
 	}
 }
 
+func TestMatchReleaseStyleFilenameWithDate(t *testing.T) {
+	// Dominant rip naming Site.YY.MM.DD.Performer.Title.1080p: the date's three
+	// components used to inflate the word count and push the real title below
+	// the 50% ratio. Stripping the date run from the denominator lets it match.
+	idx := BuildIndex([]models.Scene{
+		scene("1", "site", "Alice Gets Her Revenge"),
+	})
+
+	r := idx.Match("studio.23.06.01.alice.gets.her.revenge.1080p.mp4", 0)
+	if r.Confidence != MatchSubstring {
+		t.Errorf("confidence = %v, want SUBSTR (date tokens excluded from ratio)", r.Confidence)
+	}
+	if len(r.Scenes) != 1 || r.Scenes[0].ID != "1" {
+		t.Errorf("scenes = %+v, want single scene id=1", r.Scenes)
+	}
+}
+
+func TestTitleWordCount(t *testing.T) {
+	cases := []struct {
+		words []string
+		want  int
+	}{
+		{strings.Fields("studio 23 06 01 alice gets her revenge 1080p mp4"), 7}, // 10 - 3 date
+		{strings.Fields("studio 2023 06 01 alice scene"), 3},                    // 6 - 3 date (YYYY)
+		{strings.Fields("01 06 2023 alice scene"), 2},                           // DD MM YYYY
+		{strings.Fields("no date here just words"), 5},                          // no date run
+		{strings.Fields("scene 99 bonus"), 3},                                   // 99 not a date component alone
+	}
+	for _, c := range cases {
+		if got := titleWordCount(c.words); got != c.want {
+			t.Errorf("titleWordCount(%v) = %d, want %d", c.words, got, c.want)
+		}
+	}
+}
+
+func TestIsDateRun(t *testing.T) {
+	yes := [][3]string{
+		{"23", "06", "01"},   // YY MM DD
+		{"2023", "12", "24"}, // YYYY MM DD
+		{"01", "06", "2023"}, // DD MM YYYY
+	}
+	for _, c := range yes {
+		if !isDateRun(c[0], c[1], c[2]) {
+			t.Errorf("isDateRun%v = false, want true", c)
+		}
+	}
+	no := [][3]string{
+		{"23", "13", "01"},    // month out of range
+		{"23", "06", "40"},    // day out of range
+		{"alice", "06", "01"}, // non-numeric
+		{"99", "99", "99"},    // not a date
+	}
+	for _, c := range no {
+		if isDateRun(c[0], c[1], c[2]) {
+			t.Errorf("isDateRun%v = true, want false", c)
+		}
+	}
+}
+
 func TestMatchShortTitleRejectsLongFilename(t *testing.T) {
 	idx := BuildIndex([]models.Scene{
 		scene("1", "manyvids", "JOI Custom Video"),

@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"strconv"
 	"strings"
 	"time"
 	"unicode"
@@ -81,7 +82,12 @@ func (si *substringIndex) findCandidateTitles(filenameWords []string, minWordRat
 	for _, w := range filenameWords {
 		filenameSet[w] = true
 	}
-	minLen := float64(len(filenameWords)) * minWordRatio
+	// Count only title-bearing words in the denominator. The dominant rip
+	// naming Site.YY.MM.DD.Performer.Title.1080p embeds a date whose components
+	// each count as words, inflating the filename length enough to push real
+	// (short) titles below minWordRatio. Date tokens stay in filenameSet for the
+	// subset check; they're just excluded from the ratio.
+	minLen := float64(titleWordCount(filenameWords)) * minWordRatio
 	seen := make(map[string]bool)
 	var titles []string
 	for w := range filenameSet {
@@ -106,6 +112,48 @@ func (si *substringIndex) findCandidateTitles(filenameWords []string, minWordRat
 		}
 	}
 	return titles
+}
+
+// titleWordCount returns the number of words that carry title signal, excluding
+// the components of any embedded date run (YY/YYYY MM DD and DD MM YYYY). Used
+// as the minWordRatio denominator so release-style filenames don't reject short
+// titles purely because their date inflates the word count.
+func titleWordCount(words []string) int {
+	skip := make([]bool, len(words))
+	for i := 0; i+2 < len(words); i++ {
+		if isDateRun(words[i], words[i+1], words[i+2]) {
+			skip[i], skip[i+1], skip[i+2] = true, true, true
+		}
+	}
+	n := 0
+	for i := range words {
+		if !skip[i] {
+			n++
+		}
+	}
+	return n
+}
+
+// isDateRun reports whether three consecutive numeric tokens form a plausible
+// date: YYYY MM DD, YY MM DD, or DD MM YYYY.
+func isDateRun(a, b, c string) bool {
+	ai, err1 := strconv.Atoi(a)
+	bi, err2 := strconv.Atoi(b)
+	ci, err3 := strconv.Atoi(c)
+	if err1 != nil || err2 != nil || err3 != nil {
+		return false
+	}
+	month := bi >= 1 && bi <= 12
+	isYear := func(tok string, n int) bool { return len(tok) == 4 && n >= 1900 && n <= 2100 }
+	// YYYY MM DD or YY MM DD
+	if month && ci >= 1 && ci <= 31 && (isYear(a, ai) || len(a) == 2) {
+		return true
+	}
+	// DD MM YYYY
+	if ai >= 1 && ai <= 31 && month && isYear(c, ci) {
+		return true
+	}
+	return false
 }
 
 // MatchConfidence indicates how strong a filename-to-title match is.
