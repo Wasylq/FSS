@@ -329,10 +329,11 @@ func matchAgainst(titleMap map[string][]models.Scene, si *substringIndex, norm s
 			}
 			return MatchResult{Confidence: MatchAmbiguous, Candidates: len(filtered)}
 		}
-		if fileDurationSec > 0 {
-			return MatchResult{Confidence: MatchNone}
-		}
-		return MatchResult{Confidence: MatchExact, Scenes: scenes}
+		// An exact title exists but no scene's duration matches the file
+		// (filtered is only empty here when fileDurationSec > 0). Don't declare
+		// NONE — fall through to the substring candidates, where a different
+		// indexed title that is a subset of the filename may have the right
+		// duration.
 	}
 
 	type candidate struct {

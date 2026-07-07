@@ -337,6 +337,25 @@ func TestMatchExactDurationMatch(t *testing.T) {
 	}
 }
 
+func TestMatchExactDurationFailFallsThroughToSubstring(t *testing.T) {
+	// The exact-title bucket matches the filename but its only scene has the
+	// wrong duration. A shorter title that is a subset of the filename has the
+	// right duration — the duration-failed exact bucket must not short-circuit
+	// to NONE before that substring candidate is considered.
+	idx := BuildIndex([]models.Scene{
+		sceneWithDuration("1", "site", "Rachel Scene Special", 1800),
+		sceneWithDuration("2", "site", "Rachel Scene", 600),
+	})
+
+	r := idx.Match("Rachel Scene Special.mp4", 600)
+	if r.Confidence != MatchSubstring {
+		t.Fatalf("confidence = %v, want SUBSTR (fell through to duration-matching substring)", r.Confidence)
+	}
+	if len(r.Scenes) != 1 || r.Scenes[0].ID != "2" {
+		t.Errorf("scenes = %+v, want single scene id=2", r.Scenes)
+	}
+}
+
 func TestMatchExactDurationMismatch(t *testing.T) {
 	idx := BuildIndex([]models.Scene{
 		sceneWithDuration("1", "manyvids", "Some Title", 600),
