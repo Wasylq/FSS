@@ -59,6 +59,7 @@
 | [CumClinic](https://cumclinic.com) | `cumclinic.com`, `cumclinic.com/tour/categories/Movies_{N}_d.html` | Elevated X | No | `/tour` prefix, listing + detail enrichment, uses `titanmediautil` |
 | [Cumpsters](https://cumpsters.com) | `cumpsters.com`, `cumpsters.com/categories/Movies_{N}_d.html` | Elevated X | No | Root-served tour, listing + detail enrichment, uses `titanmediautil` |
 | [Daylene Rio](https://www.daylenerio.com) | `daylenerio.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
+| [Deepthroat Sirens](https://tour.deepthroatsirens.com) | `deepthroatsirens.com`, `tour.deepthroatsirens.com/scenes` | Next.js (mjedge/NATS) | Yes | `pageProps.contents` JSON via `/_next/data/{buildId}/scenes.json?page=N`, full metadata + price, table-driven `nextcontents` package |
 | [Defloration](https://www.defloration.com) | `defloration.com` | Custom (PWA feed) | No | Single-page `freetour.php` feed (~101 cards: id, title, description, thumbnail); no dates |
 | [Desirae's World](https://www.desiraesworld.com) | `desiraesworld.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
 | [Double View Casting](http://doubleviewcasting.com) | `doubleviewcasting.com`, `doubleviewcasting.com/scene/id/{N}` | Custom PHP | No | `/scenes/page/{N}` listing + detail (title, description, performers, duration, tags) |

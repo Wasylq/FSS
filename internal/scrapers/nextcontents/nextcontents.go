@@ -28,6 +28,7 @@ type siteConfig struct {
 
 var sites = []siteConfig{
 	{"freakmob", "FreakMob Media", "https://www.freakmobmedia.com", "videos", "freakmob"},
+	{"deepthroatsirens", "Deepthroat Sirens", "https://tour.deepthroatsirens.com", "scenes", ""},
 }
 
 type Scraper struct {

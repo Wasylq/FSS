@@ -18,4 +18,5 @@ func live(t *testing.T, id string) {
 	t.Fatalf("site not found: %s", id)
 }
 
-func TestLiveFreakMob(t *testing.T) { live(t, "freakmob") }
+func TestLiveFreakMob(t *testing.T)         { live(t, "freakmob") }
+func TestLiveDeepthroatSirens(t *testing.T) { live(t, "deepthroatsirens") }
