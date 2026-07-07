@@ -25,6 +25,7 @@ var sites = []siteConfig{
 	{"kawaii", "kawaiikawaii.jp", "Kawaii"},
 	{"madonna", "madonna-av.com", "Madonna"},
 	{"moodyz", "moodyz.com", "MOODYZ"},
+	{"oppai", "oppai-av.com", "Oppai"},
 	{"s1no1style", "s1s1s1.com", "S1 NO.1 STYLE"},
 	{"wanzfactory", "wanz-factory.com", "Wanz Factory"},
 }

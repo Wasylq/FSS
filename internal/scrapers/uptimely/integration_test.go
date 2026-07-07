@@ -60,3 +60,7 @@ func TestLiveKawaii(t *testing.T) {
 func TestLiveWanzFactory(t *testing.T) {
 	testutil.RunLiveScrape(t, newTestScraper(findSite("wanzfactory")), "https://wanz-factory.com/works/list/release", 2)
 }
+
+func TestLiveOppai(t *testing.T) {
+	testutil.RunLiveScrape(t, newTestScraper(findSite("oppai")), "https://oppai-av.com/works/list/release", 2)
+}

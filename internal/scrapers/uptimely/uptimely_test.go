@@ -1,13 +1,60 @@
 package uptimely
 
 import (
+	"fmt"
+	"regexp"
+	"strings"
 	"testing"
+
+	"github.com/Wasylq/FSS/internal/scrapers/uptimelyutil"
 )
 
 func TestSiteCount(t *testing.T) {
-	if len(sites) != 11 {
-		t.Errorf("expected 11 sites, got %d", len(sites))
+	if len(sites) != 12 {
+		t.Errorf("expected 12 sites, got %d", len(sites))
 	}
+}
+
+// buildScraper mirrors init()'s per-site construction so URL matching can be
+// asserted offline.
+func buildScraper(cfg siteConfig) *uptimelyutil.Scraper {
+	escaped := strings.ReplaceAll(cfg.Domain, ".", `\.`)
+	re := regexp.MustCompile(fmt.Sprintf(`^https?://(?:www\.)?%s/(?:works/list/|actress/detail/)`, escaped))
+	return uptimelyutil.New(uptimelyutil.SiteConfig{
+		ID:      cfg.SiteID,
+		Studio:  cfg.StudioName,
+		Domain:  cfg.Domain,
+		MatchRe: re,
+	})
+}
+
+func TestNewSitesMatchURLs(t *testing.T) {
+	cases := map[string][]string{
+		"oppai": {
+			"https://oppai-av.com/works/list/release",
+			"https://oppai-av.com/actress/detail/123",
+		},
+	}
+	for id, urls := range cases {
+		s := buildScraper(findSiteCfg(id))
+		for _, u := range urls {
+			if !s.MatchesURL(u) {
+				t.Errorf("%s: expected MatchesURL(%q) = true", id, u)
+			}
+		}
+		if s.MatchesURL("https://example.com/works/list/release") {
+			t.Errorf("%s: should not match unrelated domain", id)
+		}
+	}
+}
+
+func findSiteCfg(id string) siteConfig {
+	for _, c := range sites {
+		if c.SiteID == id {
+			return c
+		}
+	}
+	panic("site not found: " + id)
 }
 
 func TestUniqueSiteIDs(t *testing.T) {
