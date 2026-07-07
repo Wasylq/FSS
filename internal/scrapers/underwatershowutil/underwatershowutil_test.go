@@ -59,11 +59,11 @@ func TestMatchesURL(t *testing.T) {
 
 func TestStem(t *testing.T) {
 	cases := map[string]string{
-		"imgs/water_shmandora.jpg":  "water_shmandora",
-		"imgs900/yuna_noir1.jpg":    "yuna_noir1",
-		"foo":                       "foo",
-		"":                          "",
-		"a/b/c.d.jpg":               "c.d",
+		"imgs/water_shmandora.jpg": "water_shmandora",
+		"imgs900/yuna_noir1.jpg":   "yuna_noir1",
+		"foo":                      "foo",
+		"":                         "",
+		"a/b/c.d.jpg":              "c.d",
 	}
 	for in, want := range cases {
 		if got := stem(in); got != want {

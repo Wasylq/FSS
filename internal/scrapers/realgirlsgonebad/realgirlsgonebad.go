@@ -66,10 +66,10 @@ func (s *Scraper) ListScenes(ctx context.Context, studioURL string, opts scraper
 }
 
 var (
-	trailerRe  = regexp.MustCompile(`href="([^"]*trailers/[^"]+\.html)"`)
-	runtimeRe  = regexp.MustCompile(`Runtime:</strong>\s*([0-9:]+)`)
-	addedRe    = regexp.MustCompile(`Added:</strong>\s*([0-9]{1,2}\s+[A-Za-z]+,\s*[0-9]{4})`)
-	descRe     = regexp.MustCompile(`(?s)<p>(.*?)</p>\s*<div class="eDtls"`)
+	trailerRe   = regexp.MustCompile(`href="([^"]*trailers/[^"]+\.html)"`)
+	runtimeRe   = regexp.MustCompile(`Runtime:</strong>\s*([0-9:]+)`)
+	addedRe     = regexp.MustCompile(`Added:</strong>\s*([0-9]{1,2}\s+[A-Za-z]+,\s*[0-9]{4})`)
+	descRe      = regexp.MustCompile(`(?s)<p>(.*?)</p>\s*<div class="eDtls"`)
 	contentIDRe = regexp.MustCompile(`/contentthumbs/(\d+)`)
 	tagStripRe  = regexp.MustCompile(`<[^>]+>`)
 )
