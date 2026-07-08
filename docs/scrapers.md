@@ -102,6 +102,7 @@
 | [I Fucked The Boss](https://www.ifuckedtheboss.com) | `ifuckedtheboss.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
 | [Insex (1997-2005)](http://www.insexarchives.com) | `insexarchives.com` | Legacy PHP | No | `updates_new.php?start={N}` (~76 shoots; title, duration, description, thumbnail) |
 | [Interracial POVs](https://interracialpovs.com) | `interracialpovs.com`, `interracialpovs.com/categories/movies/{N}/latest/` | povporncash (NATS tour) | No | Listing-only parse, uses `hussieutil` |
+| [Jay's POV](https://www.jayspov.net) | `jayspov.net`, `jayspov.net/jays-pov-updates.html` | Adult Empire EWC | No | POV studio, `/jays-pov-updates.html?page=N` listing (id/title/performer/date/thumb) + detail worker pool for duration/tags/series, age-gate cookie bypass |
 | [Jeff's Models](https://jeffsmodels.com) | `jeffsmodels.com`, `jeffsmodels.com/update/{id}/` | NATS tour | No | Sitemap (~1407) + concurrent detail (title, date, performers, og:image) |
 | [Jizz on Teens](https://jizzonteens.com) | `jizzonteens.com`, `jizzonteens.com/page/{n}` | Custom (Deluxe Coin PHP tour) | No | Listing-only `<article>` parse (slug, title, poster, description); page 1 `/`, later `/page/{N}`, stops when a page repeats; no publish date |
 | [Joana Bliss](https://www.joanabliss.com) | `joanabliss.com` | Score Group | No | Score Group, table-driven `scoregroup` package |

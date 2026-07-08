@@ -136,6 +136,7 @@ import (
 	_ "github.com/Wasylq/FSS/internal/scrapers/jacquieetmichel"
 	_ "github.com/Wasylq/FSS/internal/scrapers/japanhdv"
 	_ "github.com/Wasylq/FSS/internal/scrapers/javdatabase"
+	_ "github.com/Wasylq/FSS/internal/scrapers/jayspov"
 	_ "github.com/Wasylq/FSS/internal/scrapers/jeffsmodels"
 	_ "github.com/Wasylq/FSS/internal/scrapers/jizzonteens"
 	_ "github.com/Wasylq/FSS/internal/scrapers/julesjordan"
