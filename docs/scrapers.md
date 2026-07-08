@@ -143,6 +143,7 @@
 | Perfect Gonzo (8 sites) | `allinternal.com`, `asstraffic.com`, `spermswap.com`, `primecups.com`, `tamedteens.com`, `cumforcover.com`, `milfthing.com`, `purepov.com` | Perfect Gonzo (custom PHP) | No | Shared `/movies` listing + concurrent detail fetch (title, date, duration, performers, tags), uses `perfectgonzoutil` |
 | [PerfectSlave](http://www.perfectslave.com) | `perfectslave.com`, `dungeoncorp.com/?page=updates&site=PER` | Dungeon Corp (PHP CMS) | No | Served via dungeoncorp.com site code PER, listing-only parse, uses `dungeoncorputil` |
 | [Picking Up Pussy](https://www.pickinguppussy.com) | `pickinguppussy.com`, `pickinguppussy.com/teen-babes/{name}/{id}` | Score Group | No | Score Group, table-driven `scoregroup` package |
+| [PJ Girls](https://www.pjgirls.com) | `pjgirls.com`, `pjgirls.com/en/video/{id}-{slug}/` | Custom PHP | No | Full sitemap enumeration (~2242) + detail worker pool for title/date/performers/duration/thumbnail |
 | [Porn Loser](https://www.pornloser.com) | `pornloser.com`, `pornloser.com/amateur-girls/{name}/{id}` | Score Group | No | Score Group, table-driven `scoregroup` package |
 | [Porn Mega Load](https://www.pornmegaload.com) | `pornmegaload.com`, `pornmegaload.com/porn-models/{name}/{id}` | Score Group | No | Score Group, table-driven `scoregroup` package |
 | [POV Pornstars](https://www.povpornstars.com) | `povpornstars.com`, `povpornstars.com/tour/categories/movies/{N}/latest/` | povporncash (NATS tour) | No | `/tour` prefix, listing-only parse, uses `hussieutil` |

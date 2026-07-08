@@ -190,6 +190,7 @@ import (
 	_ "github.com/Wasylq/FSS/internal/scrapers/perfectgonzo"
 	_ "github.com/Wasylq/FSS/internal/scrapers/pinupfiles"
 	_ "github.com/Wasylq/FSS/internal/scrapers/pissinghd"
+	_ "github.com/Wasylq/FSS/internal/scrapers/pjgirls"
 	_ "github.com/Wasylq/FSS/internal/scrapers/playboyplus"
 	_ "github.com/Wasylq/FSS/internal/scrapers/pornbox"
 	_ "github.com/Wasylq/FSS/internal/scrapers/porncz"
