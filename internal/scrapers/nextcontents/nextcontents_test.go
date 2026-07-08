@@ -51,7 +51,7 @@ const listingHTML = `<html><head></head><body>
 </body></html>`
 
 const pageJSON = `{"pageProps":{"contents":{"total":2,"page":"1","per_page":"24","total_pages":1,"data":[
-  {"id":679,"title":"Carmen gets Creampied","slug":"carmen-gets-creampied","publish_date":"2026/06/26 00:00:00","seconds_duration":1790,"thumb":"https://cdn/thumb8.jpg","description":"desc","content_price":20,"tags":["Big Tits","Creampies"],"models_slugs":[{"name":"Carmen Caliente","slug":"carmen-caliente"},{"name":"FREAKMOB","slug":"freakmob"}]}
+  {"id":679,"title":"Carmen gets Creampied","slug":"carmen-gets-creampied","publish_date":"2026/06/26 00:00:00","seconds_duration":1790,"thumb":"https://cdn/thumb8.jpg","description":"drool &amp; slurps","content_price":20,"tags":["Big Tits","Creampies"],"models_slugs":[{"name":"Carmen Caliente","slug":"carmen-caliente"},{"name":"FREAKMOB","slug":"freakmob"}]}
 ]}}}`
 
 func TestRunParsesContents(t *testing.T) {
@@ -91,6 +91,9 @@ func TestRunParsesContents(t *testing.T) {
 	sc := scenes[0].Scene
 	if sc.Title != "Carmen gets Creampied" || sc.ID != "679" {
 		t.Errorf("scene = %+v", sc)
+	}
+	if sc.Description != "drool & slurps" {
+		t.Errorf("description should be HTML-unescaped, got %q", sc.Description)
 	}
 	if sc.URL != ts.URL+"/scenes/carmen-gets-creampied" {
 		t.Errorf("url = %q", sc.URL)

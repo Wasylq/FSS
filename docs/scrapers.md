@@ -170,6 +170,7 @@
 | [Strict Restraint](https://www.dungeoncorp.com/?page=updates&site=STR) | `dungeoncorp.com/?page=updates&site=STR` | Dungeon Corp (PHP CMS) | No | Network site code STR, listing-only parse, uses `dungeoncorputil` |
 | [Subby Girls](https://www.subbygirls.com) | `subbygirls.com`, `subbygirls.com/main.html` | Reality Studio (clips.js) | No | Static `/js/clips.js` catalog (~922), performers + fetishes, uses `realitystudioutil` |
 | [Subspaceland](https://www.subspaceland.com) | `subspaceland.com`, `subspaceland.com/video/{model}/{slug}` | Class Media | No | Sitemap (~207) + detail fetch (title, release date, model, tags, description, thumbnail), uses `classmedia` package |
+| [Swallowed](https://swallowed.com) | `swallowed.com`, `tour.swallowed.com/scenes` | Next.js (mjedge/NATS) | Yes | `pageProps.contents` JSON via `/_next/data/{buildId}/scenes.json?page=N`, full metadata + price, table-driven `nextcontents` package |
 | [Sybian1](https://www.sybian1.com) | `sybian1.com`, `sybian1.com/tag/{slug}` | WordPress (REST API) | No | WP REST `posts` (~277), tags=performers, thumb from content, uses `fotoroutil` |
 | [Tawny Peaks](https://www.tawny-peaks.com) | `tawny-peaks.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
 | [That Fetish Girl](https://thatfetishgirl.com) | `thatfetishgirl.com`, `thatfetishgirl.com/updates/page_{N}.html` | Elevated X | No | Listing parse (~130 pages; title, date, thumbnail) |

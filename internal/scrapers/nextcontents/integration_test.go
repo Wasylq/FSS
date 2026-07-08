@@ -20,3 +20,4 @@ func live(t *testing.T, id string) {
 
 func TestLiveFreakMob(t *testing.T)         { live(t, "freakmob") }
 func TestLiveDeepthroatSirens(t *testing.T) { live(t, "deepthroatsirens") }
+func TestLiveSwallowed(t *testing.T)        { live(t, "swallowed") }

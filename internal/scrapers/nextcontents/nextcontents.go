@@ -8,6 +8,7 @@ package nextcontents
 import (
 	"context"
 	"fmt"
+	"html"
 	"net/http"
 	"regexp"
 	"strings"
@@ -29,6 +30,7 @@ type siteConfig struct {
 var sites = []siteConfig{
 	{"freakmob", "FreakMob Media", "https://www.freakmobmedia.com", "videos", "freakmob"},
 	{"deepthroatsirens", "Deepthroat Sirens", "https://tour.deepthroatsirens.com", "scenes", ""},
+	{"swallowed", "Swallowed", "https://tour.swallowed.com", "scenes", ""},
 }
 
 type Scraper struct {
@@ -149,9 +151,9 @@ func (s *Scraper) toScene(item contentItem, now time.Time) models.Scene {
 		ID:          fmt.Sprintf("%d", item.ID),
 		SiteID:      s.cfg.SiteID,
 		StudioURL:   s.cfg.Base,
-		Title:       strings.TrimSpace(item.Title),
+		Title:       html.UnescapeString(strings.TrimSpace(item.Title)),
 		URL:         fmt.Sprintf("%s/scenes/%s", s.cfg.Base, item.Slug),
-		Description: strings.TrimSpace(item.Description),
+		Description: html.UnescapeString(strings.TrimSpace(item.Description)),
 		Studio:      s.cfg.Studio,
 		Thumbnail:   item.Thumb,
 		Duration:    item.SecondsDuration,
