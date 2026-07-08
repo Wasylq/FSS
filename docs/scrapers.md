@@ -75,6 +75,7 @@
 | [First Anal Quest](https://www.firstanalquest.com) | `firstanalquest.com`, `firstanalquest.com/videos/{slug}-{id}/` | Custom PHP | No | `/latest-updates/{N}/` listing (title, date, duration, performers, thumb), date-sorted |
 | [Flat And Fucked MILFs](https://www.flatandfuckedmilfs.com) | `flatandfuckedmilfs.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
 | [FreakMob Media](https://www.freakmobmedia.com) | `freakmobmedia.com`, `freakmobmedia.com/videos` | Next.js (mjedge/NATS) | Yes | `pageProps.contents` JSON via `/_next/data/{buildId}/videos.json?page=N`, full metadata + price, table-driven `nextcontents` package (also covers Freak Mob Hardcore category) |
+| [Fuckermate](https://www.fuckermate.com) | `fuckermate.com`, `fuckermate.com/video/{slug}` | Custom PHP (Laravel) | No | Gay studio, `/video?page=N` listing + detail page for date/tags/performers, `rel="next"` pagination |
 | [Fucking Dungeon](https://www.dungeoncorp.com/?page=sites&site=FUD) | `dungeoncorp.com/?page=updates&site=FUD` | Dungeon Corp (PHP CMS) | No | Network site code FUD, listing-only parse, uses `dungeoncorputil` |
 | [Gangbang Media Germany](https://p-p-p.tv) | `p-p-p.tv`, `p-p-p.tv/videos/list` | Custom (German) | No | Listing-only parse (`?page={N}`): title/slug, performers (slug-derived), duration, thumbnail; detail pages login-gated so no dates |
 | [GenderXFilms](https://www.genderxfilms.com) | `genderxfilms.com` | Gamma/Algolia | No | Algolia search API (new `genderxfilms` segment), full metadata + 4K, uses `gammautil` |

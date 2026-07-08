@@ -97,6 +97,7 @@ import (
 	_ "github.com/Wasylq/FSS/internal/scrapers/frenchporn"
 	_ "github.com/Wasylq/FSS/internal/scrapers/ftvgirls"
 	_ "github.com/Wasylq/FSS/internal/scrapers/ftvmilfs"
+	_ "github.com/Wasylq/FSS/internal/scrapers/fuckermate"
 	_ "github.com/Wasylq/FSS/internal/scrapers/fyc"
 	_ "github.com/Wasylq/FSS/internal/scrapers/gamma"
 	_ "github.com/Wasylq/FSS/internal/scrapers/gangbangmedia"
@@ -282,7 +283,7 @@ import (
 	_ "github.com/Wasylq/FSS/internal/scrapers/wunf"
 	_ "github.com/Wasylq/FSS/internal/scrapers/xespl"
 	_ "github.com/Wasylq/FSS/internal/scrapers/xevbellringer"
-	_ "github.com/Wasylq/FSS/internal/scrapers/youthlust"
 	_ "github.com/Wasylq/FSS/internal/scrapers/yourvids"
+	_ "github.com/Wasylq/FSS/internal/scrapers/youthlust"
 	_ "github.com/Wasylq/FSS/internal/scrapers/yummygirl"
 )
