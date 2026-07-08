@@ -103,6 +103,23 @@ func TestParseListing_handlesAllVariants(t *testing.T) {
 	}
 }
 
+func TestParseListing_dottedDate(t *testing.T) {
+	// HammerBoys renders dates as DD.MM.YYYY (dots) instead of MM/DD/YYYY.
+	const html = `<div class="updateItem">
+  <a href="/updates/Sexy-Lukas.html"><img class="thumbs stdimage" src="/content/Sexy_Lukas/1.jpg"></a>
+  <h5><a href="/updates/Sexy-Lukas.html">Sexy Lukas Big</a></h5>
+  <span class="availdate">08.06.2022</span>
+</div>`
+	items := parseListing([]byte(html))
+	if len(items) != 1 {
+		t.Fatalf("got %d items, want 1", len(items))
+	}
+	d := items[0].date
+	if d.Year() != 2022 || d.Month() != 6 || d.Day() != 8 {
+		t.Errorf("dotted date = %v, want 2022-06-08", d)
+	}
+}
+
 func TestParseListing_dedupes(t *testing.T) {
 	doubled := listingHTML + listingHTML
 	items := parseListing([]byte(doubled))

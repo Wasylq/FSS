@@ -99,7 +99,8 @@ var (
 	// Duration "10&nbsp;min" or "10 min". &nbsp; appears literally in the HTML.
 	durationMinsRe = regexp.MustCompile(`(\d+)\s*(?:&nbsp;|\s)*min(?:&nbsp;|\s|<|$)`)
 	// Date "08/25/2022".
-	dateRe = regexp.MustCompile(`(\d{2}/\d{2}/\d{4})`)
+	dateRe    = regexp.MustCompile(`(\d{2}/\d{2}/\d{4})`)
+	dateDotRe = regexp.MustCompile(`(\d{2}\.\d{2}\.\d{4})`)
 	// Pagination max-page extraction. Accepts `updates_N_d.html` (default)
 	// and `Movies_N_d.html` (terrorxxx — capital M).
 	maxPageRe = regexp.MustCompile(`(?:updates|[Mm]ovies)_(\d+)_d\.html`)
@@ -170,6 +171,15 @@ func parseListing(body []byte) []sceneItem {
 			if d, err := time.Parse("01/02/2006", m[1]); err == nil {
 				item.date = d.UTC()
 				break
+			}
+		}
+		// Some sites (hammerboys) render dates as DD.MM.YYYY instead.
+		if item.date.IsZero() {
+			for _, m := range dateDotRe.FindAllStringSubmatch(block, -1) {
+				if d, err := time.Parse("02.01.2006", m[1]); err == nil {
+					item.date = d.UTC()
+					break
+				}
 			}
 		}
 

@@ -72,6 +72,7 @@ import (
 	_ "github.com/Wasylq/FSS/internal/scrapers/doubleviewcasting"
 	_ "github.com/Wasylq/FSS/internal/scrapers/dreamtranny"
 	_ "github.com/Wasylq/FSS/internal/scrapers/dungeoncorp"
+	_ "github.com/Wasylq/FSS/internal/scrapers/eastboys"
 	_ "github.com/Wasylq/FSS/internal/scrapers/eighteenvideoz"
 	_ "github.com/Wasylq/FSS/internal/scrapers/empirestore"
 	_ "github.com/Wasylq/FSS/internal/scrapers/englishmansion"

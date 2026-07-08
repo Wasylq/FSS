@@ -68,6 +68,14 @@ var updateItemSites = []darkreachupdateitemutil.SiteConfig{
 		MatchRe:  regexp.MustCompile(`^https?://(?:www\.)?spartavideo\.com`),
 	},
 	{
+		// www.hammerboys.tv returns an 8-byte stub — use the bare domain.
+		ID:       "hammerboys",
+		SiteBase: "https://hammerboys.tv",
+		Studio:   "HammerBoys.tv",
+		Patterns: []string{"hammerboys.tv", "hammerboys.tv/categories/updates_{N}_d.html"},
+		MatchRe:  regexp.MustCompile(`^https?://(?:www\.)?hammerboys\.tv`),
+	},
+	{
 		ID:       "watchyoujerk",
 		SiteBase: "http://watchyoujerk.com",
 		Studio:   "Watch You Jerk",

@@ -67,6 +67,7 @@
 | [DungeonCorp](https://www.dungeoncorp.com) | `dungeoncorp.com`, `dungeoncorp.com/?page=updates&site=DUN` | Dungeon Corp (PHP CMS) | No | Network site code DUN, listing-only parse, uses `dungeoncorputil` |
 | [E-body](https://av-e-body.com) | `av-e-body.com`, `av-e-body.com/works/list/release`, `av-e-body.com/actress/detail/{id}` | Up-Timely CMS | No | JAV maker, `/works/detail/{code}` detail fetch (title, actress, genre, date), uses `uptimely` package |
 | [Ebony Thots](https://www.ebonythots.com) | `ebonythots.com`, `ebonythots.com/black-porn-stars/{name}/{id}` | Score Group | No | Score Group, table-driven `scoregroup` package |
+| [EastBoys](https://www.eastboys.com) | `eastboys.com`, `eastboys.com/tour/video` | Custom (gen-pagination) | No | Gay studio, `/tour/video?order=newest&page=N` listing + detail worker pool (JSON-LD VideoObject: date/duration/performers/tags) |
 | [Eva Notty Videos](https://www.evanottyvideos.com) | `evanottyvideos.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
 | [Exploited Teens](https://www.exploitedteens.com) | `exploitedteens.com`, `exploitedteens.com/page{N}.html` | Custom (full-in-list) | No | Listing-only with inline metadata (id, title, date from id, duration, description, preview mp4) |
 | [Feed Her Fuck Her](https://www.feedherfuckher.com) | `feedherfuckher.com`, `feedherfuckher.com/bbw-models/{name}/{id}` | Score Group | No | Score Group, table-driven `scoregroup` package |
@@ -334,6 +335,7 @@
 | [Bulldog Pit](https://www.bulldogpit.com) | `bulldogpit.com` | My Gay Cash NATS CMS | No | Thin wrapper in `marsmedia` |
 | [Daddy On Twink](https://www.daddyontwink.com) | `daddyontwink.com` | My Gay Cash NATS CMS | No | Thin wrapper in `marsmedia` |
 | [Hairy And Raw](https://www.hairyandraw.com) | `hairyandraw.com` | My Gay Cash NATS CMS | No | Thin wrapper in `marsmedia` |
+| [HammerBoys.tv](https://hammerboys.tv) | `hammerboys.tv`, `hammerboys.tv/categories/updates_{N}_d.html` | Elevated X (updateItem) | No | Gay studio (EastBoys network), listing-only parse (title, performers, DD.MM.YYYY date, thumbnail), uses `darkreachupdateitemutil` (`darkreach` package) |
 | [Hard Brit Lads](https://www.hardbritlads.com) | `hardbritlads.com` | My Gay Cash NATS CMS | No | Thin wrapper in `marsmedia` |
 | [Southern Strokes](https://www.southernstrokes.com) | `southernstrokes.com` | My Gay Cash NATS CMS | No | Thin wrapper in `marsmedia` |
 | [Touch That Boy](https://www.touchthatboy.com) | `touchthatboy.com` | My Gay Cash NATS CMS | No | Thin wrapper in `marsmedia` |
