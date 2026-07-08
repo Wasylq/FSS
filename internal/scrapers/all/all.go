@@ -95,6 +95,7 @@ import (
 	_ "github.com/Wasylq/FSS/internal/scrapers/fotoro"
 	_ "github.com/Wasylq/FSS/internal/scrapers/fpn"
 	_ "github.com/Wasylq/FSS/internal/scrapers/frenchporn"
+	_ "github.com/Wasylq/FSS/internal/scrapers/frolicme"
 	_ "github.com/Wasylq/FSS/internal/scrapers/ftvgirls"
 	_ "github.com/Wasylq/FSS/internal/scrapers/ftvmilfs"
 	_ "github.com/Wasylq/FSS/internal/scrapers/fuckermate"
