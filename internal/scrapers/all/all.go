@@ -91,6 +91,7 @@ import (
 	_ "github.com/Wasylq/FSS/internal/scrapers/fetishnetwork"
 	_ "github.com/Wasylq/FSS/internal/scrapers/finishesthejob"
 	_ "github.com/Wasylq/FSS/internal/scrapers/firstanalquest"
+	_ "github.com/Wasylq/FSS/internal/scrapers/fittingroom"
 	_ "github.com/Wasylq/FSS/internal/scrapers/flourish"
 	_ "github.com/Wasylq/FSS/internal/scrapers/flourishuniv"
 	_ "github.com/Wasylq/FSS/internal/scrapers/fotoro"
