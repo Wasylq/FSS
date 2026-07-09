@@ -60,6 +60,7 @@ import (
 	_ "github.com/Wasylq/FSS/internal/scrapers/crunchboy"
 	_ "github.com/Wasylq/FSS/internal/scrapers/crystaleizou"
 	_ "github.com/Wasylq/FSS/internal/scrapers/cumlouder"
+	_ "github.com/Wasylq/FSS/internal/scrapers/cumperfection"
 	_ "github.com/Wasylq/FSS/internal/scrapers/czechav"
 	_ "github.com/Wasylq/FSS/internal/scrapers/czechvr"
 	_ "github.com/Wasylq/FSS/internal/scrapers/darkreach"
