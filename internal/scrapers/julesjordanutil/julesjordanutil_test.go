@@ -554,3 +554,27 @@ func TestMatchesURL(t *testing.T) {
 		}
 	}
 }
+
+func TestBasePath(t *testing.T) {
+	cases := []struct {
+		name     string
+		basePath string
+		wantBase string
+		wantPat0 string
+	}{
+		{"default trial", "", "https://www.julesjordan.com/trial", "julesjordan.com/trial/"},
+		{"explicit trial", "/trial", "https://www.julesjordan.com/trial", "julesjordan.com/trial/"},
+		{"root", "/", "https://www.julesjordan.com", "julesjordan.com/"},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			s := New(SiteConfig{SiteID: "x", Domain: "julesjordan.com", BasePath: c.basePath})
+			if s.base != c.wantBase {
+				t.Errorf("base = %q, want %q", s.base, c.wantBase)
+			}
+			if got := s.Patterns()[0]; got != c.wantPat0 {
+				t.Errorf("Patterns()[0] = %q, want %q", got, c.wantPat0)
+			}
+		})
+	}
+}

@@ -36,19 +36,33 @@ type SiteConfig struct {
 	Domain     string
 	StudioName string
 	Template   TemplateType
+	// BasePath is the URL path prefix under which the tour lives. Most Jules
+	// Jordan Network sites serve the tour from "/trial" (the default when this
+	// is empty). Sister-template sites that serve it from the document root
+	// (e.g. swallowsalon.com) set BasePath to "/".
+	BasePath string
 }
 
 type Scraper struct {
-	client *http.Client
-	base   string
-	cfg    SiteConfig
+	client     *http.Client
+	base       string
+	pathPrefix string
+	cfg        SiteConfig
 }
 
 func New(cfg SiteConfig) *Scraper {
+	prefix := cfg.BasePath
+	if prefix == "" {
+		prefix = "/trial"
+	}
+	// "/" means the tour lives at the document root — collapse it to "" so the
+	// path joins below don't produce a double slash.
+	prefix = strings.TrimSuffix(prefix, "/")
 	return &Scraper{
-		client: httpx.NewClient(30 * time.Second),
-		base:   "https://www." + cfg.Domain + "/trial",
-		cfg:    cfg,
+		client:     httpx.NewClient(30 * time.Second),
+		base:       "https://www." + cfg.Domain + prefix,
+		pathPrefix: prefix,
+		cfg:        cfg,
 	}
 }
 
@@ -57,12 +71,12 @@ var _ scraper.StudioScraper = (*Scraper)(nil)
 func (s *Scraper) ID() string { return s.cfg.SiteID }
 
 func (s *Scraper) Patterns() []string {
-	d := s.cfg.Domain
+	d := s.cfg.Domain + s.pathPrefix
 	return []string{
-		d + "/trial/",
-		d + "/trial/categories/movies.html",
-		d + "/trial/models/{slug}.html",
-		d + "/trial/dvds/dvds.html",
+		d + "/",
+		d + "/categories/movies.html",
+		d + "/models/{slug}.html",
+		d + "/dvds/dvds.html",
 	}
 }
 

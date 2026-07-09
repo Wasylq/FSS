@@ -8,6 +8,8 @@
 | [60 Plus MILFs](https://www.60plusmilfs.com) | `60plusmilfs.com`, `60plusmilfs.com/xxx-granny-models/{name}/{id}` | Score Group | No | Score Group, table-driven `scoregroup` package |
 | [Abby Winters](https://www.abbywinters.com) | `abbywinters.com`, `abbywinters.com/amateurs/shoots` | Custom | No | `/amateurs/shoots?page={N}` listing (~5529) + concurrent detail fetch (release date, performers); title/category/thumb from card |
 | [Amateur Allure](https://www.amateurallure.com) | `amateurallure.com`, `amateurallure.com/tour/scenes/{slug}_vids.html` | NATS tour | No | `/tour/updates/page_{N}.html` listing (~919) + concurrent detail fetch (og title/description, performers); date from listing |
+| [Amateur Allure Classics](https://www.amateurallureclassics.com) | `amateurallureclassics.com/`, `amateurallureclassics.com/categories/movies.html`, `amateurallureclassics.com/scenes/{slug}_vids.html` | ElevatedX CMS | No | Amateur Allure child; ElevatedX Classic template served from the document root via `julesjordanutil` (BasePath `/`) — `update_details` cards, `/categories/movies_{N}_d.html` listing, detail worker pool |
+| [Swallow Salon](https://www.swallowsalon.com) | `swallowsalon.com/`, `swallowsalon.com/categories/movies.html`, `swallowsalon.com/scenes/{slug}_vids.html` | ElevatedX CMS | No | Amateur Allure child; ElevatedX Classic template served from the document root via `julesjordanutil` (BasePath `/`) — `update_details` cards, `/categories/movies_{N}_d.html` listing, detail worker pool |
 | [Amateur Gay POV](https://amateurgaypov.com) | `amateurgaypov.com`, `amateurgaypov.com/categories/videos_{N}_d.html` | Bro Network (PHP CMS) | No | Listing-only parse (title, performers, date, duration, thumb), date-sorted, uses `bronetworkutil` |
 | [Amour Angels](https://amourangels.com) | `amourangels.com`, `amourangels.com/videos2.html` | Custom (static HTML, ISO-8859-1) | No | `/videos2.html` + `/videos2_{N}.html` listing (cover links `/z_cover_{id}.html`), worker-pool detail fetch (title, date, MM:SS runtime, photographer); 404 past last page ends pagination |
 | [Anal QTs](https://www.analqts.com) | `analqts.com`, `analqts.com/anal-porn-stars/{name}/{id}` | Score Group | No | Score Group, table-driven `scoregroup` package |
@@ -743,7 +745,7 @@ Scrapers that share a platform use common utility packages to avoid duplication:
 | `fotoroutil` | WordPress REST API sites (Fotoro fetish network + vanilla-WP studios; tags=performers or Scene.Tags, no duration) | `fotoro`, `pegasproductions`, `latinboyz`, `humiliationpov` | 10 sites |
 | `fycutil` | FYC/PornPros (Nuxt 3 SSR, `__NUXT_DATA__` devalue format, 12/page, model page support) | `fyc` | 20 sites |
 | `groobyutil` | Grooby CMS (HTML listing, NATS platform, `/tour/categories/movies_{page}_d.html` pagination) | `grooby` | 42 sites |
-| `julesjordanutil` | Jules Jordan Network (ElevatedX CMS, 3 template variants: JJ/Classic/Modern) | `julesjordan` | 5 sites |
+| `julesjordanutil` | Jules Jordan Network (ElevatedX CMS, 3 template variants: JJ/Classic/Modern); also drives root-base sister sites via `BasePath` | `julesjordan`, `swallowsalon`, `amateurallureclassics` | 7 sites |
 | `missaxutil` | MissaX CMS (NATS tour, `photo-thumb video-thumb` cards, listing + detail worker pool, model page) | `missax` | 2 sites |
 | `metartutil` | MetArt Network (JSON API at `/api/updates`, movies filtered client-side) | `metart` | 13 sites |
 | `veutil` | WordPress video-elements theme (WP REST API) | `videoelements` | 13 sites |
