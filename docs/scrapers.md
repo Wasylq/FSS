@@ -432,7 +432,7 @@
 | [MsNympho](http://www.msnympho.com) | `msnympho.com` | WYSIWYG Web Builder 18 | No | Thin wrapper in `nastymedia` |
 | [Nasty NY Amateurs](https://nastynyamateurs.com) | `nastynyamateurs.com` | WYSIWYG Web Builder 18 | No | Thin wrapper in `nastymedia` |
 | [Urban Amateurs](https://www.urbanamateurs.net) | `urbanamateurs.net` | WYSIWYG Web Builder 18 | No | Thin wrapper in `nastymedia` |
-| ModelCentro sites (30) | `{domain}/videos` | ModelCentro | No | Table-driven via `modelcentroutil`: Backalley Toonz, Big Johnny XXX, Black Money Erotica, Black Pynk, City Girlz (sallydangeloxxx.com), Cum Trainer, Facial Casting, Glamour Bunnies, Lisa Rivera XO, Monster Males, Mugur Porn, Naughty Colombia, Nerds of Porn, Peccatrici Produzioni, Penny Barber, Pervs MILFs n Teens, Porn Valley Girls, Porntugal, Ric Porter, RosellaExtrem, Sexy Nina Rivera, Suk My Dick, Super Hot Films, The Jerky Girls, The Lion XXX, Thicc Vision, THICQ, Throat Wars, Wet Wet Girls, Yung Dumb Sluts |
+| ModelCentro sites (31) | `{domain}/videos` | ModelCentro | No | Table-driven via `modelcentroutil`: Backalley Toonz, Big Johnny XXX, Black Money Erotica, Black Pynk, Brookelynne Briar, City Girlz (sallydangeloxxx.com), Cum Trainer, Facial Casting, Glamour Bunnies, Lisa Rivera XO, Monster Males, Mugur Porn, Naughty Colombia, Nerds of Porn, Peccatrici Produzioni, Penny Barber, Pervs MILFs n Teens, Porn Valley Girls, Porntugal, Ric Porter, RosellaExtrem, Sexy Nina Rivera, Suk My Dick, Super Hot Films, The Jerky Girls, The Lion XXX, Thicc Vision, THICQ, Throat Wars, Wet Wet Girls, Yung Dumb Sluts |
 | [Perfect Girlfriend](https://perfectgirlfriend.com) | `perfectgirlfriend.com` | WordPress | No | Sitemap-driven, JSON-LD VideoObject fallback, uses `wputil` |
 | [PissingHD](https://tour.pissinghd.com) | `pissinghd.com` | YourPornPartner | No | Tour page scraping, ~30 public scenes, limited metadata (no dates/performers) |
 | [Playboy Plus](https://www.playboyplus.com) | `playboyplus.com`, `playboyplus.com/en/model/view/{name}/{id}` | Gamma CMS / Algolia | Yes | Photoset index (`all_photosets_latest_desc`), API key bootstrapped from page source, model page via actor name facet filter, `transform.gammacdn.com/media` CDN |
@@ -748,7 +748,7 @@ Scrapers that share a platform use common utility packages to avoid duplication:
 | `metartutil` | MetArt Network (JSON API at `/api/updates`, movies filtered client-side) | `metart` | 13 sites |
 | `veutil` | WordPress video-elements theme (WP REST API) | `videoelements` | 13 sites |
 | `scoregrouputil` | Score Group (HTML listing + detail pages) | `scoregroup` | 93 sites |
-| `modelcentroutil` | ModelCentro/AdultCentro (JSON API at `/api/content.load`) | `modelcentro` | 30 sites |
+| `modelcentroutil` | ModelCentro/AdultCentro (JSON API at `/api/content.load`) | `modelcentro` | 31 sites |
 | `povrutil` | POVR/WankzVR (export JSON + HTML listing) | `povr` | 4 sites |
 | `uptimelyutil` | Up-Timely CMS (HTML listing + detail, Japanese metadata) | `uptimely` | 11 sites |
 | `utgutil` | UTG Networks CMS (two template variants: new Tailwind `<article>` + legacy Bootstrap 3, CDN slug IDs, model page support) | `glamose` | 10 sites |

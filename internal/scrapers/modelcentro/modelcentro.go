@@ -21,6 +21,7 @@ var sites = []siteConfig{
 	{"bigjohnnyxxx", "bigjohnnyxxx.com", "Big Johnny XXX", nil},
 	{"blackmoneyerotica", "blackmoneyerotica.com", "Black Money Erotica", nil},
 	{"blackpynk", "blackpynk.com", "Black Pynk", nil},
+	{"brookelynnebriar", "brookelynnebriar.com", "Brookelynne Briar", []string{"Brookelynne Briar"}},
 	{"citygirlz", "sallydangeloxxx.com", "City Girlz", nil},
 	{"cumtrainer", "cumtrainer.com", "Cum Trainer", nil},
 	{"facialcasting", "facialcasting.com", "Facial Casting", nil},
