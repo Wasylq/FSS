@@ -77,6 +77,7 @@ import (
 	_ "github.com/Wasylq/FSS/internal/scrapers/empirestore"
 	_ "github.com/Wasylq/FSS/internal/scrapers/englishmansion"
 	_ "github.com/Wasylq/FSS/internal/scrapers/erosarts"
+	_ "github.com/Wasylq/FSS/internal/scrapers/evolvedfights"
 	_ "github.com/Wasylq/FSS/internal/scrapers/exploitedteens"
 	_ "github.com/Wasylq/FSS/internal/scrapers/exploitedx"
 	_ "github.com/Wasylq/FSS/internal/scrapers/extrememoviepass"

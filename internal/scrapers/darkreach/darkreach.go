@@ -76,6 +76,13 @@ var updateItemSites = []darkreachupdateitemutil.SiteConfig{
 		MatchRe:  regexp.MustCompile(`^https?://(?:www\.)?hammerboys\.tv`),
 	},
 	{
+		ID:       "evolvedfightslez",
+		SiteBase: "https://evolvedfightslez.com",
+		Studio:   "Evolved Fights Lez",
+		Patterns: []string{"evolvedfightslez.com", "evolvedfightslez.com/categories/updates_{N}_d.html"},
+		MatchRe:  regexp.MustCompile(`^https?://(?:www\.)?evolvedfightslez\.com`),
+	},
+	{
 		ID:       "watchyoujerk",
 		SiteBase: "http://watchyoujerk.com",
 		Studio:   "Watch You Jerk",

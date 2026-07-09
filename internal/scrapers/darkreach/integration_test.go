@@ -20,3 +20,15 @@ func TestLiveHammerBoys(t *testing.T) {
 	}
 	testutil.RunLiveScrape(t, s, url, 3)
 }
+
+func TestLiveEvolvedFightsLez(t *testing.T) {
+	url := "https://evolvedfightslez.com/categories/updates_1_d.html"
+	s, err := scraper.ForURL(url)
+	if err != nil {
+		t.Fatalf("no scraper matched %s: %v", url, err)
+	}
+	if s.ID() != "evolvedfightslez" {
+		t.Fatalf("expected evolvedfightslez, got %s", s.ID())
+	}
+	testutil.RunLiveScrape(t, s, url, 3)
+}
