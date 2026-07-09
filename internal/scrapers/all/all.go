@@ -168,6 +168,7 @@ import (
 	_ "github.com/Wasylq/FSS/internal/scrapers/maturefetish"
 	_ "github.com/Wasylq/FSS/internal/scrapers/maturenl"
 	_ "github.com/Wasylq/FSS/internal/scrapers/maycontaingirl"
+	_ "github.com/Wasylq/FSS/internal/scrapers/meanawolf"
 	_ "github.com/Wasylq/FSS/internal/scrapers/mercury"
 	_ "github.com/Wasylq/FSS/internal/scrapers/metart"
 	_ "github.com/Wasylq/FSS/internal/scrapers/missax"
