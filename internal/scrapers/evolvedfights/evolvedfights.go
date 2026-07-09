@@ -31,6 +31,7 @@ type siteConfig struct {
 
 var sites = []siteConfig{
 	{"evolvedfights", "Evolved Fights", "https://evolvedfights.com", "updates", "p"},
+	{"candyglitter", "Candy Glitter", "https://candyglitterclips.com", "movies", "d"},
 }
 
 const detailWorkers = 6

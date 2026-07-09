@@ -19,3 +19,4 @@ func live(t *testing.T, id string) {
 }
 
 func TestLiveEvolvedFights(t *testing.T) { live(t, "evolvedfights") }
+func TestLiveCandyGlitter(t *testing.T)  { live(t, "candyglitter") }

@@ -43,6 +43,7 @@
 | [Busty Merilyn](https://www.bustymerilyn.com) | `bustymerilyn.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
 | [Busty Old Sluts](https://www.bustyoldsluts.com) | `bustyoldsluts.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
 | [CaptiveClinic](https://www.captiveclinic.com) | `captiveclinic.com` | PornCMS | No | Same PornCMS as GirlsGoneGyno (paginated `?mb=` listing), full card metadata, uses `girlsgonegyno` package |
+| [Candy Glitter](https://candyglitterclips.com) | `candyglitterclips.com`, `candyglitterclips.com/categories/movies_{N}_d.html` | Elevated X (latestUpdateB) | No | Solo creator, `latestUpdateB` listing + detail worker pool for date/duration, uses `evolvedfights` package |
 | [Caribbeancom](https://www.caribbeancom.com) | `caribbeancom.com`, `caribbeancom.com/moviepages/{id}/index.html` | Custom (JAV, EUC-JP) | No | `/listpages/all{N}.htm` listing + schema.org microdata detail (title, date, duration, performers) |
 | [Casting Couch-HD](https://www.castingcouch-hd.com) | `castingcouch-hd.com` | NVG Network (Next.js) | No | `__NEXT_DATA__` (latest ~42 public, title/date/duration/models), uses `nvg` package |
 | [Chastity Babes](https://www.chastitybabes.com) | `chastitybabes.com`, `chastitybabes.com/tag/{slug}` | WordPress (REST API) | No | WP REST `posts` (~1263), tags=performers, categories, no duration, uses `fotoroutil` |
