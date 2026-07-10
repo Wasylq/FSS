@@ -298,6 +298,7 @@
 | [Jerk to My Feet](https://www.jerktomyfeet.com) | `jerktomyfeet.com` | FoD AJAX | No | Thin wrapper in `feetondemand` |
 | [Foot Fetish Car Dates](https://www.footfetishcardates.com) | `footfetishcardates.com` | FoD AJAX | No | Thin wrapper in `feetondemand` |
 | [Foot Fetish Affiliates](https://footfetishaffiliates.com) | `footfetishaffiliates.com` | FoD AJAX | No | Thin wrapper in `feetondemand` |
+| [Foot Fetish Daily](https://www.footfetishdaily.com) | `footfetishdaily.com`, `footfetishdaily.com/videos`, `footfetishdaily.com/update/{id}/{slug}` | Kickass Pictures CMS | No | Standalone; `/videos/{N}` listing + detail worker pool parsing JSON-LD `VideoObject` (title/date/description/thumb) + `/model/{id}/{slug}` performers; child of Kick Ass Pictures |
 | [Goddess Brianna](https://www.goddessbrianna.net) | `goddessbrianna.net` | FoD AJAX | No | Thin wrapper in `feetondemand` |
 | [Fetish Network](https://www.fetishnetwork.com) | `fetishnetwork.com`, `fetishnetwork.com/t2/show.php?a={catID}` | Custom PHP/NATS | No | Legacy PHP CMS, HTML listing (10/page), paginated via `show.php?a={catID}_{page}`, date-sorted, ~450 HD scenes, 17 sub-sites (BrutalPOV, SexualDisgrace, LatinaPatrol, etc.), sub-site stored as Series |
 | Fisting Inferno network (3 sites) | `fistinginferno.com`, `clubinfernodungeon.com`, `fistingcentral.com` | Gamma/Algolia | No | 3 entries in the `gamma` table-driven package — each has its own Algolia segment. `fetishforce.com` redirects to `fistingcentral.com`. Also available as channels on kinkmen.com. |
