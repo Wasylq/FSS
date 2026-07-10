@@ -96,6 +96,8 @@
 | [Granny Loves Young Cock](https://www.grannylovesyoungcock.com) | `grannylovesyoungcock.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
 | [Hairy Coochies](https://www.hairycoochies.com) | `hairycoochies.com`, `hairycoochies.com/hirsute-girls/{name}/{id}` | Score Group | No | Score Group, table-driven `scoregroup` package |
 | [Hegre](https://www.hegre.com) | `hegre.com`, `hegre.com/models/{slug}`, `hegre.com/films/{slug}` | Custom | No | Models index → model pages → `/films/{slug}` detail (streaming pipeline), og title/description/thumb, performers, runtime; `locale=en;country=US` cookie for English |
+| [XX-Cel](https://xx-cel.com) | `xx-cel.com`, `xx-cel.com/movies/page-{N}/`, `xx-cel.com/movies/{slug}` | XX-Cel CMS | No | `/movies/page-{N}/` listing + detail worker pool (released date, MM:SS runtime, performers); title from slug. Table-driven via `xxcelutil` |
+| [Heavy On Hotties](https://www.heavyonhotties.com) | `heavyonhotties.com`, `heavyonhotties.com/movies/page-{N}/`, `heavyonhotties.com/movies/{slug}` | XX-Cel CMS | No | XX-Cel child (no `video-` slug prefix); same `xxcelutil` listing + detail flow |
 | [Holly Randall](https://hollyrandall.com) | `hollyrandall.com`, `hollyrandall.com/scenes/{slug}_vids.html` | Custom affiliate CMS | No | `categories/updates_{N}_p.html` listing + detail (title, date, performers, thumb) |
 | [Home Alone MILFs](https://www.homealonemilfs.com) | `homealonemilfs.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
 | [Hookup Hotshot](https://hookuphotshot.com) | `hookuphotshot.com`, `hookuphotshot.com/trailers/{slug}.html` | NATS tour | No | `categories/movies/{N}/latest/` listing + detail (title, date, performers, thumb) |
@@ -787,6 +789,7 @@ Scrapers that share a platform use common utility packages to avoid duplication:
 | `vixenutil` | Vixen Media Group (Next.js SSR, `__NEXT_DATA__` JSON, 12/page, detail worker pool, performer page support) | `vixen` | 9 sites |
 | `wownetworkutil` | Wow Network (sitemap discovery, JSON-LD detail pages, `wowmodels.com` CDN) | `wownetwork` | 4 sites |
 | `wputil` | WordPress (sitemap + HTML meta parsing) | _(standalone packages)_ | 5 sites (each has custom parsing) |
+| `xxcelutil` | XX-Cel network CMS (`/movies/page-{N}/` listing + `/movies/{slug}` detail) | `xxcel` | 2 sites |
 
 ## Adding a new scraper
 

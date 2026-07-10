@@ -1,6 +1,6 @@
 # Covered Sites — All Domains
 
-1520 scrapers covering 1615 distinct domains. Auto-generated from the scraper registry by `TestSitesMdInSync` — do not hand-edit; instead update the scraper's `Patterns()` and re-run `go test ./internal/scrapers/all/...`. The `stashbox` scraper is omitted here because its covered hosts are config-driven; see [`scrapers.md`](scrapers.md).
+1522 scrapers covering 1617 distinct domains. Auto-generated from the scraper registry by `TestSitesMdInSync` — do not hand-edit; instead update the scraper's `Patterns()` and re-run `go test ./internal/scrapers/all/...`. The `stashbox` scraper is omitted here because its covered hosts are config-driven; see [`scrapers.md`](scrapers.md).
 
 Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scraper ID(s)** column lists every scraper that claims URLs on that domain — most domains have one entry, but table-driven networks (`adultprime`, `tmw`, `nextdoorstudios`, etc.) host many sub-studios on a single root domain. See [`scrapers.md`](scrapers.md) for what each ID covers.
 
@@ -648,6 +648,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | hcjav.com | `porngutter` |
 | hdmassageporn.com | `hdmassageporn` |
 | hdsex18.com | `hdsex18` |
+| heavyonhotties.com | `heavyonhotties` |
 | hegre.com | `hegre` |
 | helixstudios.com | `8teenboy`, `spankthis` |
 | helixstudios.net | `helixstudios` |
@@ -1604,6 +1605,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | xevunleashed.com | `xevbellringer` |
 | xlgirls.com | `xlgirls` |
 | xvirtual.com | `xvirtual` |
+| xx-cel.com | `xxcel` |
 | xxxnj.com | `xxxnj` |
 | youngcourtesans.com | `youngcourtesans` |
 | youngerloverofmine.com | `youngerloverofmine` |
