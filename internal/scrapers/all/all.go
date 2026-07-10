@@ -217,6 +217,7 @@ import (
 	_ "github.com/Wasylq/FSS/internal/scrapers/povr"
 	_ "github.com/Wasylq/FSS/internal/scrapers/premiumbukkake"
 	_ "github.com/Wasylq/FSS/internal/scrapers/prestige"
+	_ "github.com/Wasylq/FSS/internal/scrapers/princessrene"
 	_ "github.com/Wasylq/FSS/internal/scrapers/private"
 	_ "github.com/Wasylq/FSS/internal/scrapers/privateblack"
 	_ "github.com/Wasylq/FSS/internal/scrapers/privatecastings"
