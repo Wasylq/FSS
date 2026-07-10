@@ -160,6 +160,7 @@ import (
 	_ "github.com/Wasylq/FSS/internal/scrapers/lewood"
 	_ "github.com/Wasylq/FSS/internal/scrapers/lifeselector"
 	_ "github.com/Wasylq/FSS/internal/scrapers/loveherfilms"
+	_ "github.com/Wasylq/FSS/internal/scrapers/lovinglyhandmade"
 	_ "github.com/Wasylq/FSS/internal/scrapers/loyalfans"
 	_ "github.com/Wasylq/FSS/internal/scrapers/lucasentertainment"
 	_ "github.com/Wasylq/FSS/internal/scrapers/lustery"
