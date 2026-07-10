@@ -68,6 +68,7 @@ import (
 	_ "github.com/Wasylq/FSS/internal/scrapers/deeps"
 	_ "github.com/Wasylq/FSS/internal/scrapers/defloration"
 	_ "github.com/Wasylq/FSS/internal/scrapers/dezyred"
+	_ "github.com/Wasylq/FSS/internal/scrapers/dickdrainers"
 	_ "github.com/Wasylq/FSS/internal/scrapers/digitaljmedia"
 	_ "github.com/Wasylq/FSS/internal/scrapers/dirtyflix"
 	_ "github.com/Wasylq/FSS/internal/scrapers/dorcelclub"
