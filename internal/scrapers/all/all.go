@@ -46,6 +46,7 @@ import (
 	_ "github.com/Wasylq/FSS/internal/scrapers/brutalmaster"
 	_ "github.com/Wasylq/FSS/internal/scrapers/caribbeancom"
 	_ "github.com/Wasylq/FSS/internal/scrapers/carnalplus"
+	_ "github.com/Wasylq/FSS/internal/scrapers/cearalynch"
 	_ "github.com/Wasylq/FSS/internal/scrapers/charleechase"
 	_ "github.com/Wasylq/FSS/internal/scrapers/cherrypimps"
 	_ "github.com/Wasylq/FSS/internal/scrapers/chickpass"
