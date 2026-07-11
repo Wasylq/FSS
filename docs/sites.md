@@ -1,6 +1,6 @@
 # Covered Sites — All Domains
 
-1527 scrapers covering 1622 distinct domains. Auto-generated from the scraper registry by `TestSitesMdInSync` — do not hand-edit; instead update the scraper's `Patterns()` and re-run `go test ./internal/scrapers/all/...`. The `stashbox` scraper is omitted here because its covered hosts are config-driven; see [`scrapers.md`](scrapers.md).
+1535 scrapers covering 1623 distinct domains. Auto-generated from the scraper registry by `TestSitesMdInSync` — do not hand-edit; instead update the scraper's `Patterns()` and re-run `go test ./internal/scrapers/all/...`. The `stashbox` scraper is omitted here because its covered hosts are config-driven; see [`scrapers.md`](scrapers.md).
 
 Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scraper ID(s)** column lists every scraper that claims URLs on that domain — most domains have one entry, but table-driven networks (`adultprime`, `tmw`, `nextdoorstudios`, etc.) host many sub-studios on a single root domain. See [`scrapers.md`](scrapers.md) for what each ID covers.
 
@@ -1104,6 +1104,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | premiumbukkake.com | `premiumbukkake` |
 | prestige-av.com | `prestige` |
 | prettydirty.com | `prettydirty` |
+| primalfetishnetwork.com | `primaleroticmassage`, `primalscosplay`, `primalsfootfantasies` (+5 more) |
 | primecups.com | `primecups` |
 | princesscum.com | `nubiles` |
 | private.com | `private` |
