@@ -261,6 +261,7 @@ import (
 	_ "github.com/Wasylq/FSS/internal/scrapers/spizoo"
 	_ "github.com/Wasylq/FSS/internal/scrapers/spunkworthy"
 	_ "github.com/Wasylq/FSS/internal/scrapers/stashbox"
+	_ "github.com/Wasylq/FSS/internal/scrapers/stasyqvr"
 	_ "github.com/Wasylq/FSS/internal/scrapers/staxus"
 	_ "github.com/Wasylq/FSS/internal/scrapers/strokies"
 	_ "github.com/Wasylq/FSS/internal/scrapers/swallowsalon"
