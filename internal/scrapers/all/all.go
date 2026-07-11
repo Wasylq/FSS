@@ -203,6 +203,7 @@ import (
 	_ "github.com/Wasylq/FSS/internal/scrapers/perfectgonzo"
 	_ "github.com/Wasylq/FSS/internal/scrapers/pervcity"
 	_ "github.com/Wasylq/FSS/internal/scrapers/peterfever"
+	_ "github.com/Wasylq/FSS/internal/scrapers/pinko"
 	_ "github.com/Wasylq/FSS/internal/scrapers/pinupfiles"
 	_ "github.com/Wasylq/FSS/internal/scrapers/pissinghd"
 	_ "github.com/Wasylq/FSS/internal/scrapers/pissplay"
