@@ -201,6 +201,7 @@ import (
 	_ "github.com/Wasylq/FSS/internal/scrapers/penthousegold"
 	_ "github.com/Wasylq/FSS/internal/scrapers/perfectgirlfriend"
 	_ "github.com/Wasylq/FSS/internal/scrapers/perfectgonzo"
+	_ "github.com/Wasylq/FSS/internal/scrapers/pervcity"
 	_ "github.com/Wasylq/FSS/internal/scrapers/peterfever"
 	_ "github.com/Wasylq/FSS/internal/scrapers/pinupfiles"
 	_ "github.com/Wasylq/FSS/internal/scrapers/pissinghd"

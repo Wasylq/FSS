@@ -1,6 +1,6 @@
 # Covered Sites — All Domains
 
-1522 scrapers covering 1617 distinct domains. Auto-generated from the scraper registry by `TestSitesMdInSync` — do not hand-edit; instead update the scraper's `Patterns()` and re-run `go test ./internal/scrapers/all/...`. The `stashbox` scraper is omitted here because its covered hosts are config-driven; see [`scrapers.md`](scrapers.md).
+1525 scrapers covering 1620 distinct domains. Auto-generated from the scraper registry by `TestSitesMdInSync` — do not hand-edit; instead update the scraper's `Patterns()` and re-run `go test ./internal/scrapers/all/...`. The `stashbox` scraper is omitted here because its covered hosts are config-driven; see [`scrapers.md`](scrapers.md).
 
 Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scraper ID(s)** column lists every scraper that claims URLs on that domain — most domains have one entry, but table-driven networks (`adultprime`, `tmw`, `nextdoorstudios`, etc.) host many sub-studios on a single root domain. See [`scrapers.md`](scrapers.md) for what each ID covers.
 
@@ -82,6 +82,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | analintroductions.com | `private` |
 | analized.com | `analized` |
 | analjesse.com | `analjesse` |
+| analoverdose.com | `analoverdose` |
 | analqts.com | `analqts` |
 | analrecruiters.com | `analrecruiters` |
 | analteenangels.com | `analteenangels` |
@@ -1047,6 +1048,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | pepeporn.com | `fakings` |
 | perfectgirlfriend.com | `perfectgirlfriend` |
 | perfectslave.com | `perfectslave` |
+| pervcity.com | `pervcity` |
 | pervdoctor.com | `pervdoctor` |
 | perversefamily.com | `perversefamily` |
 | perversefamilylive.com | `perversefamilylive` |
@@ -1467,6 +1469,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | unrealporn.com | `unrealporn` |
 | unusualpeople.com | `unusualpeople` |
 | upclosevr.com | `upclosevr` |
+| upherasshole.com | `upherasshole` |
 | upskirtjerk.com | `upskirtjerk` |
 | uralesbian.com | `uralesbian` |
 | valoryirene.com | `valoryirene` |
