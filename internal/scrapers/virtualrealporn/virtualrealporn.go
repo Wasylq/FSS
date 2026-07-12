@@ -1,13 +1,16 @@
 // Package virtualrealporn scrapes the VirtualRealPorn VR network — a family of
-// WordPress sites that share one CMS: VirtualRealPorn, VirtualRealGay,
-// VirtualRealTrans, VirtualRealJapan and VirtualRealPassion. It is a
-// table-driven package: one scraper is registered per site in init().
+// sites on the shared "VirtualRealHub" platform: VirtualRealPorn,
+// VirtualRealGay, VirtualRealTrans, VirtualRealJapan and VirtualRealPassion.
+// It is a table-driven package: one scraper is registered per site in init().
 //
-// The public scene catalogue is exposed through the Yoast "pelicula" (movie)
-// XML sitemaps, which list every scene URL in publish order (oldest first).
-// The scraper walks the sitemaps newest-first (reversed) and enriches each
-// scene from its detail page, which carries a schema.org Movie JSON-LD block
-// with title, description, duration, publish date, performers and keywords.
+// The public scene catalogue is exposed through a sitemap.xml index pointing
+// at a single per-site videos_sitemap.xml, which lists every scene URL in
+// publish order (oldest first). The scraper walks the file newest-first
+// (reversed) and enriches each scene from its detail page, which carries a
+// schema.org VideoObject JSON-LD block with title, description, duration and
+// upload date. As of the 2026 platform migration the JSON-LD no longer
+// includes performers or keywords, so those are scraped from the page's own
+// "VR Pornstars" (`vd-pornstar__name`) and tag (`vd-tags__tag`) markup instead.
 //
 // VirtualRealAmateur (virtualrealamateurporn.com) is intentionally not covered:
 // the domain 301-redirects to virtualrealporn.com and no longer publishes its
@@ -168,10 +171,11 @@ func (s *Scraper) run(ctx context.Context, opts scraper.ListOpts, out chan<- scr
 }
 
 // collectSceneURLs returns every scene detail URL for the site, ordered
-// newest-first. The Yoast pelicula sitemaps list scenes oldest-first across one
-// or more files (pelicula-sitemap.xml, pelicula-sitemap2.xml, …); both the file
-// order and the within-file order are reversed so the freshest scene comes
-// first, which is what KnownIDs early-stop relies on.
+// newest-first. The videos_sitemap.xml file(s) list scenes oldest-first; both
+// the file order and the within-file order are reversed so the freshest scene
+// comes first, which is what KnownIDs early-stop relies on. In practice each
+// site has exactly one videos_sitemap.xml, but the multi-file reversal is kept
+// in case the platform paginates it (videos_sitemap2.xml, …) in the future.
 func (s *Scraper) collectSceneURLs(ctx context.Context) ([]string, error) {
 	files, err := s.sceneSitemapFiles(ctx)
 	if err != nil {
@@ -203,10 +207,10 @@ func (s *Scraper) collectSceneURLs(ctx context.Context) ([]string, error) {
 	return urls, nil
 }
 
-// sceneSitemapFiles discovers the pelicula sitemap file URLs from the sitemap
+// sceneSitemapFiles discovers the videos_sitemap file URLs from the sitemap
 // index. The files are returned in index order (oldest first).
 func (s *Scraper) sceneSitemapFiles(ctx context.Context) ([]string, error) {
-	body, err := s.fetchPage(ctx, s.base+"/sitemap_index.xml")
+	body, err := s.fetchPage(ctx, s.base+"/sitemap.xml")
 	if err != nil {
 		return nil, err
 	}
@@ -217,7 +221,7 @@ func (s *Scraper) sceneSitemapFiles(ctx context.Context) ([]string, error) {
 	var files []string
 	for _, sm := range idx.Sitemaps {
 		loc := strings.TrimSpace(sm.Loc)
-		if strings.Contains(loc, "pelicula-sitemap") {
+		if strings.Contains(loc, "videos_sitemap") {
 			files = append(files, loc)
 		}
 	}
@@ -284,14 +288,21 @@ func (s *Scraper) fetchDetails(ctx context.Context, urls []string, opts scraper.
 	return scenes
 }
 
-// ldMovie is the subset of the schema.org Movie JSON-LD block on a detail page.
+// ldMovie is the subset of the schema.org Movie/VideoObject JSON-LD block on a
+// detail page. UploadDate is what the post-2026-migration VideoObject block
+// carries; DatePublished, Keywords, Genre and Actors are kept for the older
+// Movie-shaped block in case any page still serves it, but the current
+// platform's VideoObject omits all four — performers and tags are scraped
+// from the page's own markup instead (see pornstarNameRe/tagsRe below).
 type ldMovie struct {
 	Type          string          `json:"@type"`
 	Name          string          `json:"name"`
 	Description   string          `json:"description"`
 	Image         json.RawMessage `json:"image"`
+	ThumbnailURL  string          `json:"thumbnailUrl"`
 	Duration      string          `json:"duration"`
 	DatePublished string          `json:"datePublished"`
+	UploadDate    string          `json:"uploadDate"`
 	Keywords      string          `json:"keywords"`
 	Genre         string          `json:"genre"`
 	Actors        []struct {
@@ -302,12 +313,31 @@ type ldMovie struct {
 var (
 	ldJSONRe = regexp.MustCompile(`(?s)<script type="application/ld\+json"[^>]*>(.*?)</script>`)
 	slugRe   = regexp.MustCompile(`/([a-z0-9-]+)/?$`)
+
+	// pornstarNameRe and tagsRe scrape performers/tags directly from the
+	// detail page's "VR Pornstars" and tag-list sections — the current
+	// VideoObject JSON-LD no longer carries this data.
+	pornstarNameRe = regexp.MustCompile(`<span class="vd-pornstar__name">([^<]+)</span>`)
+	tagsRe         = regexp.MustCompile(`<a[^>]*class="vd-tags__tag"[^>]*>([^<]+)</a>`)
 )
 
 func (s *Scraper) toScene(body []byte, rawURL, id string, now time.Time) (models.Scene, bool) {
 	movie, ok := extractMovie(body)
 	if !ok {
 		return models.Scene{}, false
+	}
+
+	performers := actorNames(movie.Actors)
+	if len(performers) == 0 {
+		performers = extractPornstarNames(body)
+	}
+	tags := sceneTags(movie.Keywords, movie.Genre)
+	if len(tags) == 0 {
+		tags = extractTags(body)
+	}
+	thumbnail := firstImage(movie.Image)
+	if thumbnail == "" {
+		thumbnail = cleanText(movie.ThumbnailURL)
 	}
 
 	scene := models.Scene{
@@ -318,13 +348,17 @@ func (s *Scraper) toScene(body []byte, rawURL, id string, now time.Time) (models
 		URL:         rawURL,
 		Studio:      s.cfg.StudioName,
 		Description: cleanText(movie.Description),
-		Thumbnail:   firstImage(movie.Image),
-		Duration:    parseutil.ParseDurationColon(movie.Duration),
-		Performers:  actorNames(movie.Actors),
-		Tags:        sceneTags(movie.Keywords, movie.Genre),
+		Thumbnail:   thumbnail,
+		Duration:    parseDuration(movie.Duration),
+		Performers:  performers,
+		Tags:        tags,
 		ScrapedAt:   now,
 	}
-	if t, err := parseutil.TryParseDate(strings.TrimSpace(movie.DatePublished),
+	publishedAt := movie.DatePublished
+	if publishedAt == "" {
+		publishedAt = movie.UploadDate
+	}
+	if t, err := parseutil.TryParseDate(strings.TrimSpace(publishedAt),
 		time.RFC3339, "2006-01-02T15:04:05Z07:00", "2006-01-02"); err == nil {
 		scene.Date = t.UTC()
 	}
@@ -332,6 +366,47 @@ func (s *Scraper) toScene(body []byte, rawURL, id string, now time.Time) (models
 		scene.Title = titleFromSlug(id)
 	}
 	return scene, true
+}
+
+// parseDuration handles both the current ISO 8601 VideoObject duration
+// ("PT800S") and the older colon-separated Movie duration ("28:36").
+func parseDuration(s string) int {
+	if strings.HasPrefix(strings.TrimSpace(s), "PT") {
+		return parseutil.ParseDurationISO(s)
+	}
+	return parseutil.ParseDurationColon(s)
+}
+
+// extractPornstarNames scrapes performer names from the detail page's "VR
+// Pornstars" section, stripping the " VR" suffix every name carries there.
+func extractPornstarNames(body []byte) []string {
+	var out []string
+	seen := map[string]bool{}
+	for _, m := range pornstarNameRe.FindAllSubmatch(body, -1) {
+		name := strings.TrimSpace(html.UnescapeString(string(m[1])))
+		name = strings.TrimSuffix(name, " VR")
+		if name != "" && !seen[name] {
+			seen[name] = true
+			out = append(out, name)
+		}
+	}
+	return out
+}
+
+// extractTags scrapes the tag list directly from the detail page's tag
+// section markup.
+func extractTags(body []byte) []string {
+	var out []string
+	seen := map[string]bool{}
+	for _, m := range tagsRe.FindAllSubmatch(body, -1) {
+		tag := strings.TrimSpace(html.UnescapeString(string(m[1])))
+		key := strings.ToLower(tag)
+		if tag != "" && !seen[key] {
+			seen[key] = true
+			out = append(out, tag)
+		}
+	}
+	return out
 }
 
 // extractMovie parses the first schema.org Movie (or VideoObject) JSON-LD block.

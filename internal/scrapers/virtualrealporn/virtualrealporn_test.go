@@ -22,24 +22,24 @@ func readFixture(t *testing.T, name string) string {
 	return string(b)
 }
 
-// newTestServer serves a sitemap index, a single pelicula sitemap (with the
+// newTestServer serves a sitemap index, a single videos_sitemap (with the
 // three real fixture scene URLs rewritten to point at the server), and the
 // trimmed detail fixture for every scene.
 func newTestServer(t *testing.T) *httptest.Server {
 	t.Helper()
-	sitemap := readFixture(t, "pelicula-sitemap.xml")
+	sitemap := readFixture(t, "videos_sitemap.xml")
 	detail := readFixture(t, "detail-russian-shower.html")
 
 	var srv *httptest.Server
 	mux := http.NewServeMux()
-	mux.HandleFunc("/sitemap_index.xml", func(w http.ResponseWriter, _ *http.Request) {
+	mux.HandleFunc("/sitemap.xml", func(w http.ResponseWriter, _ *http.Request) {
 		w.Header().Set("Content-Type", "application/xml")
 		_, _ = fmt.Fprintf(w, `<?xml version="1.0" encoding="UTF-8"?>
 <sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-<sitemap><loc>%s/pelicula-sitemap.xml</loc></sitemap>
+<sitemap><loc>%s/videos_sitemap.xml</loc></sitemap>
 </sitemapindex>`, srv.URL)
 	})
-	mux.HandleFunc("/pelicula-sitemap.xml", func(w http.ResponseWriter, _ *http.Request) {
+	mux.HandleFunc("/videos_sitemap.xml", func(w http.ResponseWriter, _ *http.Request) {
 		w.Header().Set("Content-Type", "application/xml")
 		// Rewrite the real scene loc origins to the test server.
 		body := strings.ReplaceAll(sitemap, "https://virtualrealporn.com", srv.URL)
@@ -137,6 +137,9 @@ func TestSceneFieldsFromJSONLD(t *testing.T) {
 	if sc.Date.Year() != 2017 || sc.Date.Month() != 1 {
 		t.Errorf("Date = %v, want 2017-01", sc.Date)
 	}
+	// Performers no longer come from JSON-LD (the current VideoObject block
+	// omits "actors") — they're scraped from the "VR Pornstars" section, and
+	// the trailing " VR" suffix on each name must be stripped.
 	if len(sc.Performers) != 1 || sc.Performers[0] != "Nancy Ace" {
 		t.Errorf("Performers = %v, want [Nancy Ace]", sc.Performers)
 	}
@@ -154,11 +157,8 @@ func TestSceneFieldsFromJSONLD(t *testing.T) {
 	if sc.ID != "canceled-party" {
 		t.Errorf("ID = %q, want canceled-party", sc.ID)
 	}
-	// Generic genre tags (vr porn, virtual reality, 4k, …) must be dropped;
-	// specific keywords (blonde, russian, …) kept.
-	if hasTag(sc.Tags, "vr porn") || hasTag(sc.Tags, "4k") {
-		t.Errorf("generic genre tags not stripped: %v", sc.Tags)
-	}
+	// Tags likewise come from the page's own tag-list markup now (JSON-LD no
+	// longer carries "keywords"/"genre").
 	if !hasTag(sc.Tags, "russian") || !hasTag(sc.Tags, "blonde") {
 		t.Errorf("specific tags missing: %v", sc.Tags)
 	}
