@@ -57,10 +57,12 @@ func (s *Scraper) ListScenes(ctx context.Context, studioURL string, opts scraper
 
 var (
 	// cardRe matches a thumbnail anchor pointing at a /video/{slug}/ page
-	// followed immediately by the tour_pics image whose path holds the id.
+	// followed immediately by the tour image whose path holds the id.
 	// It covers both the modern "v-thumb" theme (strokies, tugcasting) and
-	// the older "video-card" theme (publichandjobs).
-	cardRe  = regexp.MustCompile(`(?s)<a[^>]+href="([^"]*/video/[^"]+)"[^>]*>\s*<img[^>]+src="([^"]*tour_pics/(\d+)-[^"]*)"`)
+	// the older "video-card" theme (publichandjobs). tugcasting/publichandjobs
+	// still serve the asset under /tour_pics/{id}-…, but strokies.com dropped
+	// the "_pics" suffix (now /tour/{id}-…) — match both.
+	cardRe  = regexp.MustCompile(`(?s)<a[^>]+href="([^"]*/video/[^"]+)"[^>]*>\s*<img[^>]+src="([^"]*tour(?:_pics)?/(\d+)-[^"]*)"`)
 	titleRe = regexp.MustCompile(`<h1 class="video-title">([^<]*)</h1>`)
 	descRe  = regexp.MustCompile(`(?s)<div class="video-description"[^>]*>(.*?)</div>`)
 	perfRe  = regexp.MustCompile(`<a href="/model/[^"]+/">([^<]+)</a>`)
