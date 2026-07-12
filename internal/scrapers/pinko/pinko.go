@@ -1,16 +1,29 @@
 // Package pinko scrapes the Pinko network sites — Pinko TGirls
-// (pinkotgirls.com) and Pinko Club (pinkoclub.com) — which run the same
-// custom PHP CMS and differ only in their scene-path prefix.
+// (pinkotgirls.com) and Pinko Club (pinkoclub.com). The two sites no longer
+// share a template:
 //
-// The /new-video.php?next={N} listing is ID-descending and carries the scene
-// ID, English title and CDN thumbnail on each `link-photo-home` card. A
-// worker pool then fetches each detail page to enrich the description (from
-// og:description) and the cast (from /trans-star/ or /pornostar/ links).
+//   - pinkotgirls.com still runs the original custom PHP CMS: ID-descending
+//     `/new-video.php?next={N}` listing pages carry the scene ID, English
+//     title and CDN thumbnail on each `link-photo-home` card; cast is scoped
+//     to the `titolo-video` block's `/trans-star/` links. The site exposes
+//     neither a publish date nor a duration anywhere, so Scene.Date and
+//     Scene.Duration are intentionally left zero for this site. The static
+//     JSON-LD VideoObject on detail pages is a copy-paste artifact (it
+//     references unrelated scenes) and is deliberately ignored.
+//   - pinkoclub.com was rebuilt on a modern template: listing pages moved to
+//     `/new-video.php?page={N}` (still ID-descending) with `article.card`
+//     entries whose href carries the scene ID after a sub-brand "line"
+//     segment (`/video-porno-italiani/`, `/frameleaks/`, `/xtime/`,
+//     `/pinkocomics/`, …) — the numeric ID is what matters, not which line
+//     segment precedes it. Detail pages expose a real duration and publish
+//     date in the `.video-meta` block, a full per-scene description in
+//     `span.video-desc__full` (og:description on this template is
+//     boilerplate marketing copy and is intentionally ignored), and cast
+//     linked via `/pornostar/{slug}.php` next to "View profile →".
 //
-// NOTE: the site exposes neither a publish date nor a duration anywhere, so
-// Scene.Date and Scene.Duration are intentionally left zero. The static
-// JSON-LD VideoObject on detail pages is a copy-paste artifact (it references
-// unrelated scenes) and is deliberately ignored.
+// SiteConfig.Modern selects which parser (legacy vs. modern) a given site
+// uses; a worker pool fetches each detail page found on the listing to
+// enrich the scene with description/cast/date/duration.
 package pinko
 
 import (
@@ -19,6 +32,7 @@ import (
 	"html"
 	"net/http"
 	"regexp"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -35,12 +49,13 @@ type SiteConfig struct {
 	Domain       string // bare hostname for URL matching
 	Base         string // scheme + host, no trailing slash
 	StudioName   string // human-readable studio name
-	DetailPrefix string // scene-path prefix, e.g. "/videotrans/"
+	DetailPrefix string // legacy-template scene-path prefix, e.g. "/videotrans/". Unused when Modern is true.
+	Modern       bool   // true for sites running the redesigned template (pinkoclub.com)
 }
 
 var sites = []SiteConfig{
 	{SiteID: "pinkotgirls", Domain: "pinkotgirls.com", Base: "https://www.pinkotgirls.com", StudioName: "Pinko TGirls", DetailPrefix: "/videotrans/"},
-	{SiteID: "pinkoclub", Domain: "pinkoclub.com", Base: "https://www.pinkoclub.com", StudioName: "Pinko Club", DetailPrefix: "/video-porno-italiani/"},
+	{SiteID: "pinkoclub", Domain: "pinkoclub.com", Base: "https://www.pinkoclub.com", StudioName: "Pinko Club", Modern: true},
 }
 
 func init() {
@@ -62,13 +77,21 @@ var _ scraper.StudioScraper = (*Scraper)(nil)
 // New builds a Scraper for the given site config.
 func New(cfg SiteConfig) *Scraper {
 	dom := regexp.QuoteMeta(cfg.Domain)
-	prefix := regexp.QuoteMeta(strings.Trim(cfg.DetailPrefix, "/"))
-	return &Scraper{
-		cfg:      cfg,
-		Client:   httpx.NewClient(30 * time.Second),
-		matchRe:  regexp.MustCompile(`^https?://(?:www\.)?` + dom + `(?:/|$)`),
-		cardIDRe: regexp.MustCompile(`/` + prefix + `/(\d+)-`),
+	s := &Scraper{
+		cfg:     cfg,
+		Client:  httpx.NewClient(30 * time.Second),
+		matchRe: regexp.MustCompile(`^https?://(?:www\.)?` + dom + `(?:/|$)`),
 	}
+	if cfg.Modern {
+		// The modern template splits scenes across several sub-brand "line"
+		// path segments (/video-porno-italiani/, /frameleaks/, /xtime/,
+		// /pinkocomics/, …); only the numeric ID after the segment matters.
+		s.cardIDRe = modernCardIDRe
+	} else {
+		prefix := regexp.QuoteMeta(strings.Trim(cfg.DetailPrefix, "/"))
+		s.cardIDRe = regexp.MustCompile(`/` + prefix + `/(\d+)-`)
+	}
+	return s
 }
 
 func (s *Scraper) ID() string { return s.cfg.SiteID }
@@ -185,18 +208,45 @@ func (s *Scraper) enqueueListing(ctx context.Context, opts scraper.ListOpts, out
 	}
 }
 
-// listURL builds the 1-indexed listing page URL. The page parameter is
-// `next=` (not page/p).
+// listURL builds the 1-indexed listing page URL. The legacy template's page
+// parameter is `next=`; the modern template (pinkoclub.com) uses `page=`.
 func (s *Scraper) listURL(page int) string {
+	if s.cfg.Modern {
+		return fmt.Sprintf("%s/new-video.php?page=%d", s.cfg.Base, page)
+	}
 	return fmt.Sprintf("%s/new-video.php?next=%d", s.cfg.Base, page)
 }
 
-// listingCardRe captures href, title and thumbnail src from a card anchor.
+// listingCardRe captures href, title and thumbnail src from a legacy-template
+// card anchor.
 var listingCardRe = regexp.MustCompile(`<a class="link-photo-home" href="([^"]+)" title="([^"]*)">\s*<img[^>]*?\bsrc="([^"]+)"`)
+
+// modernCardIDRe extracts the numeric scene ID from a modern-template href,
+// regardless of which sub-brand "line" path segment precedes it
+// (/video-porno-italiani/, /frameleaks/, /xtime/, /pinkocomics/, …).
+var modernCardIDRe = regexp.MustCompile(`^/[a-z0-9-]+/(\d+)-`)
+
+// modernArticleRe isolates one listing card block.
+var modernArticleRe = regexp.MustCompile(`(?s)<article class="card">(.*?)</article>`)
+
+// modernHrefRe, modernThumbRe and modernTitleRe pull the fields out of one
+// modern-template card block.
+var (
+	modernHrefRe  = regexp.MustCompile(`<a href="([^"]+)"`)
+	modernThumbRe = regexp.MustCompile(`<img src="(https://img\.pinkocdn\.com/[^"]+)"`)
+	modernTitleRe = regexp.MustCompile(`<h3 class="card__title">([^<]*)</h3>`)
+)
 
 // parseListing extracts the ID, detail URL, title and thumbnail from each
 // card on a listing page, de-duplicating by ID.
 func (s *Scraper) parseListing(body []byte) []card {
+	if s.cfg.Modern {
+		return s.parseListingModern(body)
+	}
+	return s.parseListingLegacy(body)
+}
+
+func (s *Scraper) parseListingLegacy(body []byte) []card {
 	page := string(body)
 	ms := listingCardRe.FindAllStringSubmatch(page, -1)
 	cards := make([]card, 0, len(ms))
@@ -222,25 +272,67 @@ func (s *Scraper) parseListing(body []byte) []card {
 	return cards
 }
 
+func (s *Scraper) parseListingModern(body []byte) []card {
+	blocks := modernArticleRe.FindAllString(string(body), -1)
+	cards := make([]card, 0, len(blocks))
+	seen := map[string]bool{}
+	for _, block := range blocks {
+		hm := modernHrefRe.FindStringSubmatch(block)
+		if hm == nil {
+			continue
+		}
+		href := hm[1]
+		idm := s.cardIDRe.FindStringSubmatch(href)
+		if idm == nil {
+			continue
+		}
+		id := idm[1]
+		if seen[id] {
+			continue
+		}
+		seen[id] = true
+		c := card{id: id, url: s.absURL(href)}
+		if tm := modernTitleRe.FindStringSubmatch(block); tm != nil {
+			c.title = strings.TrimSpace(html.UnescapeString(tm[1]))
+		}
+		if thm := modernThumbRe.FindStringSubmatch(block); thm != nil {
+			c.thumb = thm[1]
+		}
+		cards = append(cards, c)
+	}
+	return cards
+}
+
 type detailData struct {
 	title       string
 	description string
 	image       string
 	performers  []string
+	date        time.Time
+	duration    int
 }
 
 var (
 	// titoloH4Re isolates the cast <h4> inside the scene's title block so
-	// performer links are scoped to the scene cast (not page chrome).
+	// performer links are scoped to the scene cast (not page chrome). Legacy
+	// template only (Pinko TGirls).
 	titoloH4Re = regexp.MustCompile(`(?s)<div class="titolo-video">.*?<h4>(.*?)</h4>`)
-	// performerRe matches cast anchors: /trans-star/ (TGirls) or
-	// /pornostar/ (Club).
-	performerRe = regexp.MustCompile(`<a href="/(?:trans-star|pornostar)/[^"]+"[^>]*>([^<]+)</a>`)
+	// performerRe matches legacy-template cast anchors: /trans-star/.
+	performerRe = regexp.MustCompile(`<a href="/trans-star/[^"]+"[^>]*>([^<]+)</a>`)
 )
 
-// parseDetail pulls the title/description/image from OpenGraph tags and the
-// cast from the title block. The static JSON-LD VideoObject is ignored.
-func parseDetail(body []byte) detailData {
+// parseDetail dispatches to the legacy or modern detail-page parser.
+func (s *Scraper) parseDetail(body []byte) detailData {
+	if s.cfg.Modern {
+		return parseDetailModern(body)
+	}
+	return parseDetailLegacy(body)
+}
+
+// parseDetailLegacy pulls the title/description/image from OpenGraph tags
+// and the cast from the title block. The static JSON-LD VideoObject is
+// ignored. Neither date nor duration is available on this template.
+func parseDetailLegacy(body []byte) detailData {
 	og := parseutil.OpenGraph(body)
 	d := detailData{
 		title:       strings.TrimSpace(html.UnescapeString(og["og:title"])),
@@ -252,6 +344,71 @@ func parseDetail(body []byte) detailData {
 			name := strings.TrimSpace(html.UnescapeString(pm[1]))
 			if name != "" {
 				d.performers = append(d.performers, name)
+			}
+		}
+	}
+	return d
+}
+
+var (
+	// modernTitleH1Re is the authoritative scene title on the modern
+	// template. og:title on this template appends " | Pinko Club" and is
+	// used only as a fallback.
+	modernTitleH1Re = regexp.MustCompile(`<h1 class="video-title">([^<]*)</h1>`)
+	// modernDescFullRe holds the full per-scene description; og:description
+	// on this template is generic boilerplate marketing copy and is
+	// intentionally ignored.
+	modernDescFullRe = regexp.MustCompile(`(?s)<span class="video-desc__full">(.*?)</span>`)
+	// modernMetaBlockRe isolates the .video-meta block (views/date/duration/
+	// likes) so date and duration extraction can't false-match elsewhere on
+	// the page.
+	modernMetaBlockRe = regexp.MustCompile(`(?s)<div class="video-meta">(.*?)</div>`)
+	// modernDateRe pulls the publish date, formatted DD/MM/YYYY.
+	modernDateRe = regexp.MustCompile(`(\d{2}/\d{2}/\d{4})`)
+	// modernDurationRe pulls the whole-minutes duration, e.g. "42 min".
+	modernDurationRe = regexp.MustCompile(`(\d+)\s*min\b`)
+	// modernPerformerRe matches modern-template cast entries: the performer
+	// name immediately followed by its /pornostar/{slug}.php "View profile"
+	// link.
+	modernPerformerRe = regexp.MustCompile(`<strong>([^<]+)</strong>\s*<a href="/pornostar/[^"]+\.php">View profile`)
+)
+
+// parseDetailModern pulls title/description from the modern template's own
+// markup (not OpenGraph, which is boilerplate on this template except for
+// og:image), the cast from the "View profile" performer cards, and date/
+// duration from the .video-meta block.
+func parseDetailModern(body []byte) detailData {
+	og := parseutil.OpenGraph(body)
+	d := detailData{
+		image: strings.TrimSpace(html.UnescapeString(og["og:image"])),
+	}
+	if m := modernTitleH1Re.FindSubmatch(body); m != nil {
+		d.title = strings.TrimSpace(html.UnescapeString(string(m[1])))
+	} else if t := strings.TrimSpace(html.UnescapeString(og["og:title"])); t != "" {
+		if i := strings.LastIndex(t, " | "); i > 0 {
+			t = t[:i]
+		}
+		d.title = t
+	}
+	if m := modernDescFullRe.FindSubmatch(body); m != nil {
+		d.description = strings.TrimSpace(html.UnescapeString(string(m[1])))
+	}
+	for _, pm := range modernPerformerRe.FindAllSubmatch(body, -1) {
+		name := strings.TrimSpace(html.UnescapeString(string(pm[1])))
+		if name != "" {
+			d.performers = append(d.performers, name)
+		}
+	}
+	if mm := modernMetaBlockRe.FindSubmatch(body); mm != nil {
+		block := mm[1]
+		if dm := modernDateRe.FindSubmatch(block); dm != nil {
+			if t, err := parseutil.TryParseDate(string(dm[1]), "02/01/2006"); err == nil {
+				d.date = t
+			}
+		}
+		if durm := modernDurationRe.FindSubmatch(block); durm != nil {
+			if mins, err := strconv.Atoi(string(durm[1])); err == nil {
+				d.duration = mins * 60
 			}
 		}
 	}
@@ -282,7 +439,7 @@ func (s *Scraper) fetchDetail(ctx context.Context, c card, studioURL string, del
 	if err != nil {
 		return models.Scene{}, fmt.Errorf("detail %s: %w", c.id, err)
 	}
-	d := parseDetail(body)
+	d := s.parseDetail(body)
 	if d.title != "" {
 		scene.Title = d.title
 	}
@@ -291,6 +448,12 @@ func (s *Scraper) fetchDetail(ctx context.Context, c card, studioURL string, del
 		scene.Thumbnail = d.image
 	}
 	scene.Performers = d.performers
+	if !d.date.IsZero() {
+		scene.Date = d.date
+	}
+	if d.duration > 0 {
+		scene.Duration = d.duration
+	}
 	return scene, nil
 }
 
