@@ -12,6 +12,7 @@ import (
 
 	"github.com/Wasylq/FSS/internal/httpx"
 	"github.com/Wasylq/FSS/models"
+	"github.com/Wasylq/FSS/parseutil"
 	"github.com/Wasylq/FSS/scraper"
 )
 
@@ -38,7 +39,7 @@ func (s *Scraper) ID() string { return "seemomsuck" }
 func (s *Scraper) Patterns() []string {
 	return []string{
 		"seemomsuck.com",
-		"seemomsuck.com/models/{name}.html",
+		"seemomsuck.com/models/{name}",
 	}
 }
 
@@ -57,24 +58,29 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 	now := time.Now().UTC()
 
 	if isModelURL(studioURL) {
+		scraper.Debugf(1, "seemomsuck: scraping model page")
 		s.scrapeModelPage(ctx, studioURL, opts, out, now)
 	} else {
 		s.scrapeListingPages(ctx, opts, out, now)
 	}
 }
 
+// isModelURL matches both the current URL scheme (/models/{slug}) and the
+// site's old pre-migration form (/models/{slug}.html); the site 301-redirects
+// the latter to the former, but a user's saved URL may still use it.
 func isModelURL(u string) bool {
 	return strings.Contains(u, "/models/")
 }
 
+// The site is now a Laravel/Tailwind rebuild (formerly a static-HTML CMS).
+// Listings live at /videos (sort=date preserves reverse-chronological order,
+// matching the plain /videos "New" tab default) with page-numbered
+// pagination via ?page=N.
 func (s *Scraper) scrapeListingPages(ctx context.Context, opts scraper.ListOpts, out chan<- scraper.SceneResult, now time.Time) {
-	firstPage := true
 	scraper.Paginate(ctx, opts, "seemomsuck", out, func(ctx context.Context, page int) (scraper.PageResult, error) {
-		var pageURL string
-		if page == 1 {
-			pageURL = s.siteBase + "/updates.html?sort=date"
-		} else {
-			pageURL = fmt.Sprintf("%s/updates_%d.html?sort=date", s.siteBase, page)
+		pageURL := s.siteBase + "/videos?sort=date"
+		if page > 1 {
+			pageURL = fmt.Sprintf("%s/videos?sort=date&page=%d", s.siteBase, page)
 		}
 
 		body, err := s.fetchPage(ctx, pageURL)
@@ -82,107 +88,132 @@ func (s *Scraper) scrapeListingPages(ctx context.Context, opts scraper.ListOpts,
 			return scraper.PageResult{}, err
 		}
 
-		items := parseListingPage(body, s.siteBase)
-		var total int
-		if firstPage && len(items) > 0 {
-			maxPage := extractMaxPage(body)
-			total = len(items) * maxPage
-			firstPage = false
+		items := parseListingCards(body)
+		scenes := make([]models.Scene, len(items))
+		for i, ps := range items {
+			scenes[i] = ps.toScene(s.siteBase, now)
 		}
 
-		scenes := make([]models.Scene, len(items))
-		for i, ls := range items {
-			scenes[i] = ls.toScene(s.siteBase, now)
+		maxPage := extractMaxPage(body)
+		var total int
+		if page == 1 && len(items) > 0 {
+			total = len(items) * maxPage
 		}
+
 		return scraper.PageResult{
 			Scenes: scenes,
 			Total:  total,
-			Done:   !hasNextPage(body, page),
+			Done:   page >= maxPage || len(items) == 0,
 		}, nil
 	})
 }
 
+// Model pages moved from /models/{slug}.html to /models/{slug} (no
+// extension). In current practice each model's catalog fits on a single
+// page, but the same ?page=N pagination nav used by /videos can appear
+// there too, so we handle it the same way.
 func (s *Scraper) scrapeModelPage(ctx context.Context, modelURL string, opts scraper.ListOpts, out chan<- scraper.SceneResult, now time.Time) {
-	cleanURL := stripNATS(modelURL)
-	body, err := s.fetchPage(ctx, cleanURL)
-	if err != nil {
-		select {
-		case out <- scraper.Error(err):
-		case <-ctx.Done():
-		}
-		return
-	}
+	baseURL := cleanModelURL(modelURL)
+	var modelName string
 
-	modelName := extractModelName(body)
-	scenes := parseListingPage(body, s.siteBase)
-	for i := range scenes {
-		if len(scenes[i].performers) == 0 && modelName != "" {
-			scenes[i].performers = []string{modelName}
-		}
-	}
-
-	select {
-	case out <- scraper.Progress(len(scenes)):
-	case <-ctx.Done():
-		return
-	}
-
-	for _, ls := range scenes {
-		if opts.KnownIDs[ls.slug] {
-			scraper.Debugf(1, "seemomsuck: hit known ID, stopping early")
-			select {
-			case out <- scraper.StoppedEarly():
-			case <-ctx.Done():
+	scraper.Paginate(ctx, opts, "seemomsuck", out, func(ctx context.Context, page int) (scraper.PageResult, error) {
+		pageURL := baseURL
+		if page > 1 {
+			sep := "?"
+			if strings.Contains(baseURL, "?") {
+				sep = "&"
 			}
-			return
+			pageURL = fmt.Sprintf("%s%spage=%d", baseURL, sep, page)
 		}
-		select {
-		case out <- scraper.Scene(ls.toScene(s.siteBase, now)):
-		case <-ctx.Done():
-			return
+
+		body, err := s.fetchPage(ctx, pageURL)
+		if err != nil {
+			return scraper.PageResult{}, err
 		}
-	}
+
+		if page == 1 {
+			modelName = extractModelName(body)
+		}
+
+		items := parseModelCards(body)
+		scenes := make([]models.Scene, len(items))
+		for i, ps := range items {
+			if len(ps.performers) == 0 && modelName != "" {
+				ps.performers = []string{modelName}
+			}
+			scenes[i] = ps.toScene(s.siteBase, now)
+		}
+
+		maxPage := extractMaxPage(body)
+		var total int
+		if page == 1 && len(items) > 0 {
+			total = len(items) * maxPage
+		}
+
+		return scraper.PageResult{
+			Scenes: scenes,
+			Total:  total,
+			Done:   page >= maxPage || len(items) == 0,
+		}, nil
+	})
 }
 
-type listingScene struct {
-	slug        string
+// parsedScene holds the fields common to both the /videos listing cards and
+// the /models/{slug} cards; the model page cards don't carry a description,
+// published date, or view count, so those fields are left zero there.
+type parsedScene struct {
+	id          string
 	title       string
 	performers  []string
 	description string
 	thumb       string
+	published   time.Time
+	views       int
 }
 
-func (ls listingScene) toScene(siteBase string, now time.Time) models.Scene {
-	return models.Scene{
-		ID:          ls.slug,
+func (ps parsedScene) toScene(siteBase string, now time.Time) models.Scene {
+	sc := models.Scene{
+		ID:          ps.id,
 		SiteID:      "seemomsuck",
 		StudioURL:   siteBase,
-		Title:       ls.title,
-		URL:         siteBase + "/videos/" + ls.slug + ".html",
-		Thumbnail:   ls.thumb,
-		Description: ls.description,
-		Performers:  ls.performers,
+		Title:       ps.title,
+		URL:         siteBase + "/video/" + ps.id,
+		Thumbnail:   ps.thumb,
+		Description: ps.description,
+		Performers:  ps.performers,
 		Studio:      "See Mom Suck",
+		Views:       ps.views,
 		ScrapedAt:   now,
 	}
+	if !ps.published.IsZero() {
+		sc.Date = ps.published
+	}
+	return sc
 }
 
 var (
-	articleStartRe     = regexp.MustCompile(`<article class="content-list__item`)
-	videoLinkRe        = regexp.MustCompile(`href="/videos/([^".]+)\.html`)
-	titleRe            = regexp.MustCompile(`class="item-title">([^<]+)<`)
-	modelNameDivRe     = regexp.MustCompile(`(?s)class="model-name">(.*?)</div>`)
-	performerLinkRe    = regexp.MustCompile(`>([^<]+)</a>`)
-	descRe             = regexp.MustCompile(`(?s)class="item-description">(.*?)</p>`)
-	thumbRe            = regexp.MustCompile(`src="(/content/[^"]+)"`)
-	profileModelNameRe = regexp.MustCompile(`<span class="model-name">([^<]+)</span>`)
-	maxPageRe          = regexp.MustCompile(`updates_(\d+)\.html`)
+	// /videos listing cards.
+	listingCardStartRe = regexp.MustCompile(`<div class="flex flex-col md:flex-row md:items-start gap-6 lg:gap-10 mb-10 md:mb-12 py-2 md:py-4 lg:py-6">`)
+	listingTitleRe      = regexp.MustCompile(`(?s)<h2[^>]*>\s*<a[^>]*>([^<]*)</a>`)
+	publishedViewsRe    = regexp.MustCompile(`Published\s+([A-Za-z]+ \d{1,2},\s*\d{4})\s*\S\s*([\d,]+)\s*views`)
+	descriptionRe       = regexp.MustCompile(`(?s)class="mt-4 mb-4 md:mb-6 leading-relaxed[^"]*">\s*(.*?)\s*</p>`)
+
+	// /models/{slug} cards.
+	modelCardStartRe = regexp.MustCompile(`<div class="group cursor-pointer hover-video"`)
+	modelTitleRe     = regexp.MustCompile(`(?s)<h3[^>]*>\s*([^<]+?)\s*</h3>`)
+	modelNameRe      = regexp.MustCompile(`(?s)<h1\s+class="text-3xl lg:text-4xl font-bold text-white mb-8 tracking-wide uppercase"\s*>\s*([^<]+?)\s*</h1>`)
+
+	// Shared across both card types.
+	videoLinkRe     = regexp.MustCompile(`href="[^"]*/video/(\d+)"`)
+	performerLinkRe = regexp.MustCompile(`href="[^"]*/models/[^"]+"[^>]*>\s*([^<]+?)\s*</a>`)
+	thumbRe         = regexp.MustCompile(`<img\s+src="([^"]+)"`)
+	pageNumRe       = regexp.MustCompile(`page=(\d+)`)
 )
 
-func parseListingPage(body []byte, siteBase string) []listingScene {
+func parseListingCards(body []byte) []parsedScene {
 	page := string(body)
-	locs := articleStartRe.FindAllStringIndex(page, -1)
-	var scenes []listingScene
+	locs := listingCardStartRe.FindAllStringIndex(page, -1)
+	scenes := make([]parsedScene, 0, len(locs))
 
 	for i, loc := range locs {
 		start := loc[0]
@@ -196,32 +227,73 @@ func parseListingPage(body []byte, siteBase string) []listingScene {
 		if linkM == nil {
 			continue
 		}
-		slug := linkM[1]
+		ps := parsedScene{id: linkM[1]}
 
-		ls := listingScene{slug: slug}
-
-		if m := titleRe.FindStringSubmatch(block); m != nil {
-			ls.title = strings.TrimSpace(html.UnescapeString(m[1]))
+		if m := listingTitleRe.FindStringSubmatch(block); m != nil {
+			ps.title = strings.TrimSpace(html.UnescapeString(m[1]))
 		}
 
-		if m := modelNameDivRe.FindStringSubmatch(block); m != nil {
-			for _, pm := range performerLinkRe.FindAllStringSubmatch(m[1], -1) {
-				name := strings.TrimSpace(html.UnescapeString(pm[1]))
-				if name != "" {
-					ls.performers = append(ls.performers, name)
-				}
+		if m := publishedViewsRe.FindStringSubmatch(block); m != nil {
+			if t, err := parseutil.TryParseDate(strings.TrimSpace(m[1]), "Jan 2, 2006"); err == nil {
+				ps.published = t
+			}
+			if v, err := strconv.Atoi(strings.ReplaceAll(m[2], ",", "")); err == nil {
+				ps.views = v
 			}
 		}
 
-		if m := descRe.FindStringSubmatch(block); m != nil {
-			ls.description = cleanDescription(m[1])
+		for _, pm := range performerLinkRe.FindAllStringSubmatch(block, -1) {
+			name := strings.TrimSpace(html.UnescapeString(pm[1]))
+			if name != "" {
+				ps.performers = append(ps.performers, name)
+			}
+		}
+
+		if m := descriptionRe.FindStringSubmatch(block); m != nil {
+			ps.description = cleanDescription(m[1])
 		}
 
 		if m := thumbRe.FindStringSubmatch(block); m != nil {
-			ls.thumb = siteBase + m[1]
+			ps.thumb = m[1]
 		}
 
-		scenes = append(scenes, ls)
+		scenes = append(scenes, ps)
+	}
+	return scenes
+}
+
+// parseModelCards parses a /models/{slug} page. The site renders a "More
+// Scenes With {Model}" cross-promo section using the exact same card markup
+// but linking to a signup page on a different network site instead of a
+// /video/{id} URL — those blocks are skipped because videoLinkRe won't match.
+func parseModelCards(body []byte) []parsedScene {
+	page := string(body)
+	locs := modelCardStartRe.FindAllStringIndex(page, -1)
+	scenes := make([]parsedScene, 0, len(locs))
+
+	for i, loc := range locs {
+		start := loc[0]
+		end := len(page)
+		if i+1 < len(locs) {
+			end = locs[i+1][0]
+		}
+		block := page[start:end]
+
+		linkM := videoLinkRe.FindStringSubmatch(block)
+		if linkM == nil {
+			continue
+		}
+		ps := parsedScene{id: linkM[1]}
+
+		if m := modelTitleRe.FindStringSubmatch(block); m != nil {
+			ps.title = strings.TrimSpace(html.UnescapeString(m[1]))
+		}
+
+		if m := thumbRe.FindStringSubmatch(block); m != nil {
+			ps.thumb = m[1]
+		}
+
+		scenes = append(scenes, ps)
 	}
 	return scenes
 }
@@ -236,15 +308,18 @@ func cleanDescription(s string) string {
 }
 
 func extractModelName(body []byte) string {
-	if m := profileModelNameRe.FindSubmatch(body); m != nil {
+	if m := modelNameRe.FindSubmatch(body); m != nil {
 		return strings.TrimSpace(html.UnescapeString(string(m[1])))
 	}
 	return ""
 }
 
+// extractMaxPage returns the highest page number referenced anywhere in the
+// pagination nav (present on every page, including the last one, per the
+// site's own "?page=N" links), defaulting to 1 when there is no pagination.
 func extractMaxPage(body []byte) int {
 	max := 1
-	for _, m := range maxPageRe.FindAllSubmatch(body, -1) {
+	for _, m := range pageNumRe.FindAllSubmatch(body, -1) {
 		n, _ := strconv.Atoi(string(m[1]))
 		if n > max {
 			max = n
@@ -253,14 +328,13 @@ func extractMaxPage(body []byte) int {
 	return max
 }
 
-func hasNextPage(body []byte, current int) bool {
-	for _, m := range maxPageRe.FindAllSubmatch(body, -1) {
-		n, _ := strconv.Atoi(string(m[1]))
-		if n > current {
-			return true
-		}
-	}
-	return false
+// cleanModelURL strips tracking query params and the old ".html" suffix
+// (the site 301-redirects /models/{slug}.html to /models/{slug} now, but we
+// fetch the canonical form directly rather than relying on redirects).
+func cleanModelURL(u string) string {
+	u = stripNATS(u)
+	u = strings.TrimSuffix(u, ".html")
+	return u
 }
 
 func stripNATS(u string) string {
