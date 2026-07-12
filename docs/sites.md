@@ -1,6 +1,6 @@
 # Covered Sites — All Domains
 
-1536 scrapers covering 1624 distinct domains. Auto-generated from the scraper registry by `TestSitesMdInSync` — do not hand-edit; instead update the scraper's `Patterns()` and re-run `go test ./internal/scrapers/all/...`. The `stashbox` scraper is omitted here because its covered hosts are config-driven; see [`scrapers.md`](scrapers.md).
+1535 scrapers covering 1623 distinct domains. Auto-generated from the scraper registry by `TestSitesMdInSync` — do not hand-edit; instead update the scraper's `Patterns()` and re-run `go test ./internal/scrapers/all/...`. The `stashbox` scraper is omitted here because its covered hosts are config-driven; see [`scrapers.md`](scrapers.md).
 
 Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scraper ID(s)** column lists every scraper that claims URLs on that domain — most domains have one entry, but table-driven networks (`adultprime`, `tmw`, `nextdoorstudios`, etc.) host many sub-studios on a single root domain. See [`scrapers.md`](scrapers.md) for what each ID covers.
 
@@ -868,7 +868,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | mickybells.com | `mickybells` |
 | mika-ayden.com | `mikaayden` |
 | mikebigdick.com | `mikebigdick` |
-| milfaf.com, gilfaf.com, breedme.com, shadyspa.com (new cms) | `nookies` |
+| milfaf.com, gilfaf.com, breedme.com, shadyspa.com, over40handjobs.com (new cms) | `nookies` |
 | milfbundle.com | `milfbundle` |
 | milfcoach.com | `nubiles` |
 | milfed.com | `milehigh` |
@@ -1025,7 +1025,6 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | oppai-av.com | `oppai` |
 | orgytrain.com | `orgytrain` |
 | outofthefamily.com | `outofthefamily` |
-| over40handjobs.com | `over40handjobs` |
 | oyeloca.com | `oyeloca` |
 | p-p-p.tv | `gangbangmedia` |
 | pandafuck.com | `pandafuck` |
