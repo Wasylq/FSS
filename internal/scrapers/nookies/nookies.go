@@ -42,23 +42,24 @@ func (s *Scraper) Patterns() []string {
 		"nookies.com/site/{slug}",
 		"nookies.com/model/{slug}",
 		"nookies.com/tag/{slug}",
-		"milfaf.com, gilfaf.com, breedme.com, shadyspa.com (new CMS)",
+		"milfaf.com, gilfaf.com, breedme.com, shadyspa.com, over40handjobs.com (new CMS)",
 	}
 }
 
 var matchRe = regexp.MustCompile(`^https?://(?:www\.)?nookies\.com(?:/|$)`)
 
-// newCMSRe matches the four Nookies brands that run the richer Laravel/Vite
+// newCMSRe matches the five Nookies brands that run the richer Laravel/Vite
 // CMS on their own standalone domain (schema.org VideoObject detail pages).
 // The captured group is the brand slug, which is also the SiteID.
-var newCMSRe = regexp.MustCompile(`(?i)^https?://(?:www\.)?(milfaf|gilfaf|breedme|shadyspa)\.com\b`)
+var newCMSRe = regexp.MustCompile(`(?i)^https?://(?:www\.)?(milfaf|gilfaf|breedme|shadyspa|over40handjobs)\.com\b`)
 
 // studioNames maps a new-CMS brand slug to its display name.
 var studioNames = map[string]string{
-	"milfaf":   "MilfAF",
-	"gilfaf":   "GilfAF",
-	"breedme":  "BreedMe",
-	"shadyspa": "ShadySpa",
+	"milfaf":         "MilfAF",
+	"gilfaf":         "GilfAF",
+	"breedme":        "BreedMe",
+	"shadyspa":       "ShadySpa",
+	"over40handjobs": "Over 40 Handjobs",
 }
 
 func (s *Scraper) MatchesURL(u string) bool {
@@ -420,6 +421,11 @@ var (
 	// parseutil.VideoObject only carries "keywords", so genre is parsed here.
 	genreBlockRe = regexp.MustCompile(`(?s)"genre"\s*:\s*\[(.*?)\]`)
 	quotedRe     = regexp.MustCompile(`"((?:[^"\\]|\\.)*)"`)
+	// tagPillRe pulls the visible tag pills from a detail page. On brands
+	// where the VideoObject JSON-LD's "genre" array is absent or only
+	// present on some scenes (e.g. over40handjobs), the tag pills are always
+	// rendered, so they're used as a fallback when genre yields nothing.
+	tagPillRe = regexp.MustCompile(`(?s)href="[^"]*/tag/[^"]*"[^>]*>\s*([^<]+?)\s*</a>`)
 )
 
 // runNewCMS walks the new-CMS listing on the brand's own domain and enriches
@@ -574,7 +580,7 @@ func newScene(body []byte, id, slug, base, studioURL string, now time.Time) (mod
 		Preview:     vo.ContentURL,
 		Performers:  cleanAll(vo.Actors),
 		Studio:      studioNames[slug],
-		Tags:        parseGenre(body),
+		Tags:        sceneTags(body),
 		Duration:    parseutil.ParseDurationISO(vo.Duration),
 		ScrapedAt:   now,
 	}
@@ -588,6 +594,17 @@ func newScene(body []byte, id, slug, base, studioURL string, now time.Time) (mod
 	return scene, true
 }
 
+// sceneTags returns the scene's tags, preferring the VideoObject "genre"
+// array and falling back to the page's visible tag pills when genre is
+// absent (some brands, e.g. over40handjobs, only populate genre on some
+// scenes).
+func sceneTags(body []byte) []string {
+	if tags := parseGenre(body); len(tags) > 0 {
+		return tags
+	}
+	return parseTagPills(body)
+}
+
 // parseGenre pulls the VideoObject "genre" array (scene tags) from the body.
 func parseGenre(body []byte) []string {
 	m := genreBlockRe.FindSubmatch(body)
@@ -598,6 +615,21 @@ func parseGenre(body []byte) []string {
 	for _, q := range quotedRe.FindAllSubmatch(m[1], -1) {
 		if t := cleanText(string(q[1])); t != "" {
 			tags = append(tags, t)
+		}
+	}
+	return tags
+}
+
+// parseTagPills scrapes the visible tag pills (`<a href=".../tag/{slug}">Label</a>`)
+// from a detail page, deduped in document order.
+func parseTagPills(body []byte) []string {
+	seen := make(map[string]bool)
+	var tags []string
+	for _, m := range tagPillRe.FindAllSubmatch(body, -1) {
+		tag := cleanText(string(m[1]))
+		if tag != "" && !seen[tag] {
+			seen[tag] = true
+			tags = append(tags, tag)
 		}
 	}
 	return tags

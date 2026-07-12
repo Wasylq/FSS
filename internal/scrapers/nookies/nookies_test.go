@@ -416,6 +416,8 @@ func TestMatchesURL(t *testing.T) {
 		{"https://www.gilfaf.com/", true},
 		{"https://www.breedme.com/tag/creampie", true},
 		{"https://www.shadyspa.com/models/london-river", true},
+		{"https://www.over40handjobs.com/", true},
+		{"https://over40handjobs.com/videos", true},
 		{"https://teentugs.com/", false}, // legacy domain — scraped via nookies hub only
 	}
 	for _, tc := range tests {
@@ -525,6 +527,69 @@ func TestNewScene(t *testing.T) {
 	want := time.Date(2026, 6, 16, 0, 0, 0, 0, time.UTC)
 	if !sc.Date.Equal(want) {
 		t.Errorf("Date = %v, want %v", sc.Date, want)
+	}
+}
+
+// testNewDetailPageNoGenre mirrors a brand (over40handjobs) whose VideoObject
+// JSON-LD omits "genre" — tags must come from the visible tag pills instead.
+const testNewDetailPageNoGenre = `<!DOCTYPE html><html><head>
+<script type="application/ld+json">
+{
+  "@context":"https://schema.org",
+  "@type":"VideoObject",
+  "name":"Blonde MILF Bella Bare Awesome Tugjob",
+  "description":"A description.",
+  "thumbnailUrl":"https://nookies.com/tour-content/over40handjobs/main.jpg",
+  "uploadDate":"2026-05-15T00:00:00+00:00",
+  "duration":"PT9M54S",
+  "actor":[{"@type":"Person","name":"Bella Bare"}]
+}
+</script>
+</head><body>
+<a href="/tag/blonde">blonde</a>
+<a href="/tag/handjob">Handjob</a>
+<a href="/tag/handjob">Handjob</a>
+</body></html>`
+
+func TestSceneTagsFallsBackToTagPills(t *testing.T) {
+	tags := sceneTags([]byte(testNewDetailPageNoGenre))
+	want := []string{"blonde", "Handjob"}
+	if len(tags) != len(want) {
+		t.Fatalf("tags = %v, want %v", tags, want)
+	}
+	for i := range want {
+		if tags[i] != want[i] {
+			t.Errorf("tags[%d] = %q, want %q", i, tags[i], want[i])
+		}
+	}
+}
+
+func TestSceneTagsPrefersGenre(t *testing.T) {
+	// testNewDetailPage has a genre[] array and no tag pills at all — the
+	// genre path must be used, not silently fall through.
+	tags := sceneTags([]byte(testNewDetailPage))
+	if len(tags) != 4 {
+		t.Errorf("tags = %v, want 4 genre tags", tags)
+	}
+}
+
+func TestNewSceneNoGenreUsesTagPills(t *testing.T) {
+	sc, ok := newScene([]byte(testNewDetailPageNoGenre), "3430", "over40handjobs",
+		"https://www.over40handjobs.com", "https://www.over40handjobs.com/videos", time.Now().UTC())
+	if !ok {
+		t.Fatal("newScene returned ok=false")
+	}
+	if sc.Studio != "Over 40 Handjobs" {
+		t.Errorf("Studio = %q, want %q", sc.Studio, "Over 40 Handjobs")
+	}
+	want := []string{"blonde", "Handjob"}
+	if len(sc.Tags) != len(want) {
+		t.Fatalf("Tags = %v, want %v", sc.Tags, want)
+	}
+	for i := range want {
+		if sc.Tags[i] != want[i] {
+			t.Errorf("Tags[%d] = %q, want %q", i, sc.Tags[i], want[i])
+		}
 	}
 }
 

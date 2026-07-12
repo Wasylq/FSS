@@ -22,3 +22,12 @@ func TestLiveNookiesNewCMS(t *testing.T) {
 	testutil.SkipIfPlaceholder(t, u)
 	testutil.RunLiveScrape(t, New(), u, 3)
 }
+
+// TestLiveNookiesOver40Handjobs exercises the new-CMS path on over40handjobs.com,
+// which migrated to this same Laravel/Vite platform and lacks a reliable
+// VideoObject "genre" array (tag-pill fallback).
+func TestLiveNookiesOver40Handjobs(t *testing.T) {
+	const u = "https://www.over40handjobs.com/videos"
+	testutil.SkipIfPlaceholder(t, u)
+	testutil.RunLiveScrape(t, New(), u, 3)
+}
