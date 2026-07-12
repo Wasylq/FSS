@@ -233,7 +233,7 @@ Each scene is a JSON object with the fields listed in the [Data model](#data-mod
 
 JSON is **always written** by the flat store — it is the backing format for incremental updates. Even if you request `--output csv` only, a JSON file is also created alongside it.
 
-**Important:** all scenes are collected in memory first, then the entire JSON file is written at the end of the scrape. If you cancel mid-scrape (Ctrl+C), no output file is produced. For large sites (e.g. ~1750 pages), a scrape can take several minutes — use `--delay` to throttle requests and avoid being blocked.
+**Important:** all scenes are collected in memory first, then the entire JSON file is written at the end of the scrape. If you cancel mid-scrape (Ctrl+C), no output file is produced. For large sites (e.g. ~1750 pages), a scrape can take several minutes — use `--delay` to throttle requests and avoid being blocked. The progress line (`fetching: N / total scenes`) and the final `Done:` / `Partial save complete:` line both include elapsed wall-clock time. Note that `--delay` paces each worker individually, not the aggregate request rate — a high `--workers` count can still overwhelm a rate-limited site even with a non-zero delay, so lower `--workers` first if a site starts timing out mid-scrape.
 
 ### CSV
 

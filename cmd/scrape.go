@@ -151,6 +151,8 @@ func runScrape(cmd *cobra.Command, args []string) error {
 }
 
 func scrapeOne(ctx context.Context, st store.Store, studioURL, name, dbPath, outDir string, formats []string, full, refresh, force bool, workers int, defaultDelay time.Duration, siteDelays map[string]int) error {
+	start := time.Now()
+
 	sc, err := scraper.ForURL(studioURL)
 	if err != nil {
 		return err
@@ -233,10 +235,11 @@ func scrapeOne(ctx context.Context, st store.Store, studioURL, name, dbPath, out
 		fmt.Fprintf(os.Stderr, "warning: could not update studio record: %v\n", uErr)
 	}
 
+	elapsed := time.Since(start).Round(time.Second)
 	if ctx.Err() != nil {
-		fmt.Printf("Partial save complete: %d scenes.\n", len(scenes))
+		fmt.Printf("Partial save complete: %d scenes (%s elapsed).\n", len(scenes), elapsed)
 	} else {
-		fmt.Printf("Done: %d scenes saved.\n", len(scenes))
+		fmt.Printf("Done: %d scenes saved (%s elapsed).\n", len(scenes), elapsed)
 	}
 	return nil
 }
@@ -423,6 +426,7 @@ func collectScenes(ctx context.Context, sc scraper.StudioScraper, studioURL stri
 	if err != nil {
 		return nil, true, fmt.Errorf("starting scrape: %w", err)
 	}
+	start := time.Now()
 	var scenes []models.Scene
 	errCount := 0
 	total := 0
@@ -442,10 +446,11 @@ func collectScenes(ctx context.Context, sc scraper.StudioScraper, studioURL stri
 		case scraper.KindScene:
 		}
 		scenes = append(scenes, result.Scene)
+		elapsed := time.Since(start).Round(time.Second)
 		if total > 0 {
-			fmt.Printf("\r  fetching: %d / %d scenes", len(scenes), total)
+			fmt.Printf("\r  fetching: %d / %d scenes (%s elapsed)", len(scenes), total, elapsed)
 		} else {
-			fmt.Printf("\r  fetching: %d scenes", len(scenes))
+			fmt.Printf("\r  fetching: %d scenes (%s elapsed)", len(scenes), elapsed)
 		}
 	}
 	fmt.Println() // end the progress line

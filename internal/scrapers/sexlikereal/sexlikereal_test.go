@@ -248,6 +248,56 @@ func TestStudioFilter(t *testing.T) {
 	}
 }
 
+func TestPageFailureContinuesTraversal(t *testing.T) {
+	const page1 = `{"data":[{"id":1,"title":"One","label":"one-1","fullVideoLength":100}],"meta":{"pagination":{"page":1,"perPage":36,"totalCount":3,"totalPages":3}}}`
+	const page3 = `{"data":[{"id":3,"title":"Three","label":"three-3","fullVideoLength":100}],"meta":{"pagination":{"page":3,"perPage":36,"totalCount":3,"totalPages":3}}}`
+	const detail = `{"data":{"categories":[],"price":{"amount":0}}}`
+
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/v3/scenes" {
+			switch r.URL.Query().Get("page") {
+			case "1":
+				_, _ = fmt.Fprint(w, page1)
+			case "2":
+				w.WriteHeader(http.StatusBadRequest) // non-retryable, fails fast
+			case "3":
+				_, _ = fmt.Fprint(w, page3)
+			}
+			return
+		}
+		_, _ = fmt.Fprint(w, detail)
+	}))
+	defer ts.Close()
+
+	s := &Scraper{client: ts.Client(), apiBaseURL: ts.URL}
+	ch, err := s.ListScenes(context.Background(), "https://www.sexlikereal.com/scenes", scraper.ListOpts{})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	results := collect(ch)
+	var scenes, errs int
+	ids := map[string]bool{}
+	for _, r := range results {
+		switch r.Kind {
+		case scraper.KindScene:
+			scenes++
+			ids[r.Scene.ID] = true
+		case scraper.KindError:
+			errs++
+		}
+	}
+	if scenes != 2 {
+		t.Errorf("got %d scenes, want 2 (page 2 failure should not abort the rest of the traversal)", scenes)
+	}
+	if !ids["1"] || !ids["3"] {
+		t.Errorf("expected scenes 1 and 3, got %v", ids)
+	}
+	if errs == 0 {
+		t.Errorf("expected an error result for the failed page")
+	}
+}
+
 func TestModelFilter(t *testing.T) {
 	var capturedModels string
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

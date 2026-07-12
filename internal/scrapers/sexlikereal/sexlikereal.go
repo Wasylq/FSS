@@ -22,6 +22,19 @@ const (
 	perPage  = 36
 )
 
+// RecommendedDelay is a conservative minimum delay between requests to
+// avoid SexLikeReal's upstream throttling. It is inferred from operator
+// reports of scrapes starting fast (100+ scenes/s) then degrading to
+// request timeouts after ~20-30s at high worker counts with `--delay 0`
+// — not an officially published rate limit. It is **not** silently
+// enforced — the operator's `opts.Delay` is always honoured — but
+// `WarnDelayBelow` will surface a one-shot stderr warning when the
+// configured delay is lower. Because this scraper fans out over a worker
+// pool, `--workers` also drives the effective request rate; the warning
+// text can only speak to delay, so pair a lower delay with a lower
+// `--workers` count if throttling persists.
+const RecommendedDelay = 300 * time.Millisecond
+
 type Scraper struct {
 	client     *http.Client
 	apiBaseURL string
@@ -90,6 +103,7 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 	defer close(out)
 
 	mode, filterID := resolveFilter(studioURL)
+	scraper.WarnDelayBelow(s.ID(), opts.Delay, RecommendedDelay)
 
 	workers := opts.Workers
 	if workers <= 0 {
@@ -127,6 +141,7 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 		defer wg.Done()
 		defer close(work)
 
+		totalPages := 0
 		for page := 1; ; page++ {
 			if ctx.Err() != nil {
 				return
@@ -158,8 +173,21 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 				select {
 				case out <- scraper.Error(fmt.Errorf("page %d: %w", page, err)):
 				case <-ctx.Done():
+					return
+				}
+				// Once totalPages is known, a transient failure on a single
+				// page must not abandon the rest of the traversal — skip it
+				// and keep going so one bad page doesn't lose thousands of
+				// unreached scenes. Page 1 failing is still fatal: with no
+				// totalPages there is no way to know how many pages remain.
+				if totalPages > 0 && page < totalPages {
+					continue
 				}
 				return
+			}
+
+			if resp.Meta.Pagination.TotalPages > 0 {
+				totalPages = resp.Meta.Pagination.TotalPages
 			}
 
 			if page == 1 && resp.Meta.Pagination.TotalCount > 0 {
