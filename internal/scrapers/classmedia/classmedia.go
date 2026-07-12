@@ -151,7 +151,7 @@ func (s *Scraper) get(ctx context.Context, u string) ([]byte, error) {
 // ---- Subspaceland (sitemap + worker pool) ----
 
 var (
-	sslSitemapRe = regexp.MustCompile(`https?://(?:www\.)?subspaceland\.com/video/[a-z0-9-]+/[a-z0-9-]+`)
+	sslSitemapRe = regexp.MustCompile(`<loc>(https?://(?:www\.)?subspaceland\.com/video/[a-z0-9-]+/[a-z0-9-]+)</loc>`)
 	sslTitleRe   = regexp.MustCompile(`(?s)<h1[^>]*>(.*?)</h1>`)
 	sslDateRe    = regexp.MustCompile(`Released on\s+(\d{1,2}\s+[A-Za-z]+\s+\d{4})`)
 	sslModelRe   = regexp.MustCompile(`href="https?://(?:www\.)?subspaceland\.com/model/[a-z0-9-]+"[^>]*>([^<]+)</a>`)
@@ -239,11 +239,11 @@ func (s *Scraper) fetchSitemap(ctx context.Context) ([]string, error) {
 	if err != nil {
 		return nil, err
 	}
-	matches := sslSitemapRe.FindAllString(string(body), -1)
+	matches := sslSitemapRe.FindAllStringSubmatch(string(body), -1)
 	seen := make(map[string]bool, len(matches))
 	urls := make([]string, 0, len(matches))
-	for _, m := range matches {
-		m = strings.Replace(m, "http://", "https://", 1)
+	for _, sm := range matches {
+		m := strings.Replace(sm[1], "http://", "https://", 1)
 		if !seen[m] {
 			seen[m] = true
 			urls = append(urls, m)
