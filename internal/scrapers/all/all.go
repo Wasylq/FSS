@@ -248,6 +248,7 @@ import (
 	_ "github.com/Wasylq/FSS/internal/scrapers/reflectivedesire"
 	_ "github.com/Wasylq/FSS/internal/scrapers/rocketinc"
 	_ "github.com/Wasylq/FSS/internal/scrapers/romeromultimedia"
+	_ "github.com/Wasylq/FSS/internal/scrapers/rubberpassion"
 	_ "github.com/Wasylq/FSS/internal/scrapers/sapphix"
 	_ "github.com/Wasylq/FSS/internal/scrapers/scoregroup"
 	_ "github.com/Wasylq/FSS/internal/scrapers/seemomsuck"
