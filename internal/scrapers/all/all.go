@@ -292,6 +292,7 @@ import (
 	_ "github.com/Wasylq/FSS/internal/scrapers/vixen"
 	_ "github.com/Wasylq/FSS/internal/scrapers/vna"
 	_ "github.com/Wasylq/FSS/internal/scrapers/vrhush"
+	_ "github.com/Wasylq/FSS/internal/scrapers/vrlatina"
 	_ "github.com/Wasylq/FSS/internal/scrapers/vrporn"
 	_ "github.com/Wasylq/FSS/internal/scrapers/waap"
 	_ "github.com/Wasylq/FSS/internal/scrapers/wankitnow"
