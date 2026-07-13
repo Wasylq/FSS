@@ -322,3 +322,121 @@ ld_blog_vars.articles.push({
 		t.Errorf("got %d scenes, want 1 (non-product post should be skipped)", len(scenes))
 	}
 }
+
+// ---- KnownIDs key-mismatch regression ----
+//
+// Scene.ID is the product code (e.g. "HONB-311"), which only the detail page
+// carries — the listing exposes nothing but the numeric article ID. The
+// early-stop used to compare a stored KnownIDs entry against that article ID,
+// so it never matched and every incremental run re-walked the whole archive.
+// The check now runs after the detail fetch, against the real Scene.ID.
+
+// newKnownIDsServer serves a two-article listing whose second article is a
+// real product; the first is a non-product post that is skipped.
+func newKnownIDsServer(t *testing.T) *httptest.Server {
+	t.Helper()
+	var tsURL string
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if p := r.URL.Query().Get("p"); p != "" && p != "1" {
+			_, _ = fmt.Fprint(w, `<html><body><script>var ld_blog_vars = {}; ld_blog_vars.articles = [];</script></body></html>`)
+			return
+		}
+		switch r.URL.Path {
+		case "/":
+			_, _ = fmt.Fprintf(w, `<html><body><script>
+var ld_blog_vars = {};
+ld_blog_vars.articles = [];
+ld_blog_vars.articles.push({
+    id : '31328743',
+    permalink : '%s/archives/31328743.html',
+    title : 'HONB-311',
+    categories : [ { id:'2', name:'初代渋谷特別特攻本部', permalink:'#' } ],
+    date : '2023-03-15 00:00:05'
+});
+</script></body></html>`, tsURL)
+		case "/archives/31328743.html":
+			_, _ = fmt.Fprint(w, fixtureDetail)
+		default:
+			http.NotFound(w, r)
+		}
+	}))
+	t.Cleanup(ts.Close)
+	tsURL = ts.URL
+	return ts
+}
+
+func runMercury(t *testing.T, ts *httptest.Server, opts scraper.ListOpts) (scenes, stopped int) {
+	t.Helper()
+	s := &Scraper{client: ts.Client()}
+	out := make(chan scraper.SceneResult)
+	go s.run(context.Background(), ts.URL, opts, out)
+	for r := range out {
+		switch r.Kind {
+		case scraper.KindScene:
+			scenes++
+		case scraper.KindStoppedEarly:
+			stopped++
+		case scraper.KindError:
+			t.Errorf("unexpected error: %v", r.Err)
+		}
+	}
+	return scenes, stopped
+}
+
+// A KnownIDs set seeded the way the store does — from the emitted Scene.ID —
+// must suppress the scene and stop early. Keying on the article ID would not.
+func TestRunKnownIDsUsesSceneID(t *testing.T) {
+	ts := newKnownIDsServer(t)
+
+	// First pass: discover what the scraper actually emits.
+	s := &Scraper{client: ts.Client()}
+	out := make(chan scraper.SceneResult)
+	go s.run(context.Background(), ts.URL, scraper.ListOpts{Workers: 1}, out)
+	known := map[string]bool{}
+	for r := range out {
+		if r.Kind == scraper.KindScene {
+			known[r.Scene.ID] = true
+		}
+	}
+	if !known["HONB-311"] {
+		t.Fatalf("KnownIDs = %v, expected the product code HONB-311", known)
+	}
+
+	scenes, stopped := runMercury(t, ts, scraper.ListOpts{Workers: 1, KnownIDs: known})
+	if scenes != 0 {
+		t.Errorf("got %d scenes, want 0 — the only scene was already known", scenes)
+	}
+	if stopped == 0 {
+		t.Error("expected a StoppedEarly signal")
+	}
+}
+
+// The article ID must NOT act as an early-stop key: it is not what ends up in
+// the store, so honouring it would stop on an unrelated identifier.
+func TestRunArticleIDIsNotAKnownIDKey(t *testing.T) {
+	ts := newKnownIDsServer(t)
+
+	scenes, stopped := runMercury(t, ts, scraper.ListOpts{
+		Workers:  1,
+		KnownIDs: map[string]bool{"31328743": true},
+	})
+	if scenes != 1 {
+		t.Errorf("got %d scenes, want 1 — the article ID is not a Scene.ID", scenes)
+	}
+	if stopped != 0 {
+		t.Errorf("got %d StoppedEarly, want 0", stopped)
+	}
+}
+
+// With no KnownIDs at all there must be no early-stop signal.
+func TestRunNoKnownIDsNoStopSignal(t *testing.T) {
+	ts := newKnownIDsServer(t)
+
+	scenes, stopped := runMercury(t, ts, scraper.ListOpts{Workers: 1})
+	if scenes != 1 {
+		t.Errorf("got %d scenes, want 1", scenes)
+	}
+	if stopped != 0 {
+		t.Errorf("got %d StoppedEarly, want 0", stopped)
+	}
+}

@@ -584,3 +584,168 @@ func TestListResponseUnmarshalObject(t *testing.T) {
 		t.Errorf("Total = %d, want 5", lr.Total)
 	}
 }
+
+// ---- KnownIDs key-mismatch regression ----
+//
+// Scene.ID is the SKU delivery-item ID, not the product UUID. An early-stop
+// keyed on the UUID never matched a stored KnownIDs entry, so every incremental
+// run silently re-walked the whole catalogue. The tests below seed KnownIDs the
+// way the store actually does — from emitted Scene.IDs — which is what the
+// original test failed to do.
+
+// knownIDsFromScenes builds a KnownIDs set the way the store does: from the IDs
+// the scraper itself emitted. Seeding from any other key masks a mismatch.
+func knownIDsFromScenes(t *testing.T, s *Scraper, studioURL string) map[string]bool {
+	t.Helper()
+	ch, err := s.ListScenes(context.Background(), studioURL, scraper.ListOpts{Delay: time.Millisecond})
+	if err != nil {
+		t.Fatal(err)
+	}
+	ids := map[string]bool{}
+	for r := range ch {
+		if r.Kind == scraper.KindScene {
+			ids[r.Scene.ID] = true
+		}
+	}
+	if len(ids) == 0 {
+		t.Fatal("first pass emitted no scenes")
+	}
+	return ids
+}
+
+func runCounting(t *testing.T, s *Scraper, studioURL string, opts scraper.ListOpts) (scenes, stopped int) {
+	t.Helper()
+	ch, err := s.ListScenes(context.Background(), studioURL, opts)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for r := range ch {
+		switch r.Kind {
+		case scraper.KindScene:
+			scenes++
+		case scraper.KindStoppedEarly:
+			stopped++
+		case scraper.KindError:
+			t.Errorf("unexpected error: %v", r.Err)
+		}
+	}
+	return scenes, stopped
+}
+
+// A re-scrape with every scene already known must emit nothing and stop early.
+// Before the fix this re-walked and re-emitted the entire catalogue.
+func TestListScenesKnownIDsUsesSceneID(t *testing.T) {
+	products := []product{
+		sampleProduct("uuid-new", "NEW-001", "新しい"),
+		sampleProduct("uuid-old", "OLD-001", "古い"),
+	}
+	ts := newTestServer(products)
+	defer ts.Close()
+	s := newTestScraper(ts)
+
+	known := knownIDsFromScenes(t, s, ts.URL+"/goods")
+	// Scene.ID is the uppercased delivery-item ID, never the UUID.
+	for _, want := range []string{"NEW-001", "OLD-001"} {
+		if !known[want] {
+			t.Fatalf("KnownIDs = %v, expected it to contain %q", known, want)
+		}
+	}
+
+	scenes, stopped := runCounting(t, s, ts.URL+"/goods", scraper.ListOpts{
+		KnownIDs: known,
+		Delay:    time.Millisecond,
+	})
+	if scenes != 0 {
+		t.Errorf("got %d scenes, want 0 — all were already known", scenes)
+	}
+	if stopped == 0 {
+		t.Error("expected a StoppedEarly signal")
+	}
+}
+
+// Only the newest scene is unknown, so exactly it should come back.
+func TestListScenesKnownIDsEmitsOnlyNewScenes(t *testing.T) {
+	products := []product{
+		sampleProduct("uuid-new", "NEW-001", "新しい"),
+		sampleProduct("uuid-old", "OLD-001", "古い"),
+	}
+	ts := newTestServer(products)
+	defer ts.Close()
+	s := newTestScraper(ts)
+
+	scenes, stopped := runCounting(t, s, ts.URL+"/goods", scraper.ListOpts{
+		KnownIDs: map[string]bool{"OLD-001": true},
+		Delay:    time.Millisecond,
+	})
+	if scenes != 1 {
+		t.Errorf("got %d scenes, want 1", scenes)
+	}
+	if stopped == 0 {
+		t.Error("expected a StoppedEarly signal")
+	}
+}
+
+// ---- listingKeys ----
+
+func TestListingKeys(t *testing.T) {
+	cases := []struct {
+		name string
+		item listProduct
+		want []string
+	}{
+		{
+			name: "sku present yields the Scene.ID first",
+			item: listProduct{
+				UUID: "uuid-1",
+				SKU:  []sku{{DeliveryItemID: "abf-022", Category: &skuCategory{Title: "DVD"}}},
+			},
+			want: []string{"ABF-022", "uuid-1"},
+		},
+		{
+			name: "DVD sku wins over other categories",
+			item: listProduct{
+				UUID: "uuid-2",
+				SKU: []sku{
+					{DeliveryItemID: "gooe-abf-022", Category: &skuCategory{Title: "限定"}},
+					{DeliveryItemID: "abf-022", Category: &skuCategory{Title: "DVD"}},
+				},
+			},
+			want: []string{"ABF-022", "uuid-2"},
+		},
+		{
+			name: "listing without sku falls back to uuid",
+			item: listProduct{UUID: "uuid-3"},
+			want: []string{"uuid-3"},
+		},
+		{
+			name: "empty item yields no keys",
+			item: listProduct{},
+			want: nil,
+		},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			got := listingKeys(c.item)
+			if len(got) != len(c.want) {
+				t.Fatalf("listingKeys = %v, want %v", got, c.want)
+			}
+			for i := range got {
+				if got[i] != c.want[i] {
+					t.Errorf("listingKeys[%d] = %q, want %q", i, got[i], c.want[i])
+				}
+			}
+		})
+	}
+}
+
+// listingKeys must agree with extractSceneID on what a scene's ID is.
+func TestListingKeysMatchesExtractSceneID(t *testing.T) {
+	p := sampleProduct("uuid-9", "xyz-100", "タイトル")
+	item := listProduct{UUID: p.UUID, SKU: p.SKU}
+
+	want := extractSceneID(p)
+	got := listingKeys(item)
+	if len(got) == 0 || got[0] != want {
+		t.Errorf("listingKeys first key = %v, want %q (extractSceneID)", got, want)
+	}
+}

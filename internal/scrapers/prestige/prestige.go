@@ -10,6 +10,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/Wasylq/FSS/internal/httpx"
@@ -91,6 +92,10 @@ func (lr *listResponse) UnmarshalJSON(b []byte) error {
 
 type listProduct struct {
 	UUID string `json:"uuid"`
+	// SKU is decoded so the early-stop can compare against the same value
+	// that becomes Scene.ID (see sceneIDFor). The listing endpoint does not
+	// always include it; when absent, listingKeys falls back to the UUID.
+	SKU []sku `json:"sku"`
 }
 
 type product struct {
@@ -222,6 +227,12 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 	}
 
 	work := make(chan listProduct)
+	// hitKnown is set by a worker that fetches a scene already in KnownIDs.
+	// The listing goroutine checks it between pages: the listing payload does
+	// not reliably carry the SKU that becomes Scene.ID, so this post-detail
+	// check is the only early-stop guaranteed to fire. listingKeys still
+	// short-circuits earlier when the SKU is present.
+	var hitKnown atomic.Bool
 	var wg sync.WaitGroup
 	scraper.Debugf(1, "prestige: fetching details with %d workers", workers)
 	for i := 0; i < workers; i++ {
@@ -236,6 +247,11 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 					case <-ctx.Done():
 						return
 					}
+					continue
+				}
+				if opts.KnownIDs[scene.ID] {
+					scraper.Debugf(1, "prestige: detail %s already known, stopping early", scene.ID)
+					hitKnown.Store(true)
 					continue
 				}
 				select {
@@ -291,16 +307,19 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 				}
 			}
 
+			// A worker has already reached a known scene, so every later page
+			// is known too.
+			if hitKnown.Load() {
+				return
+			}
+
 			for _, item := range lr.Data {
 				if item.UUID == "" {
 					continue
 				}
-				if opts.KnownIDs[item.UUID] {
+				if known(opts.KnownIDs, listingKeys(item)) {
 					scraper.Debugf(1, "prestige: hit known ID, stopping early")
-					select {
-					case out <- scraper.StoppedEarly():
-					case <-ctx.Done():
-					}
+					hitKnown.Store(true)
 					return
 				}
 				if seen[item.UUID] {
@@ -321,6 +340,12 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 	}()
 
 	wg.Wait()
+
+	// Emitted once, after every worker has finished sending, so the signal
+	// cannot interleave with scenes still in flight.
+	if hitKnown.Load() {
+		send(ctx, out, scraper.StoppedEarly())
+	}
 }
 
 // ---- URL helpers ----
@@ -441,17 +466,45 @@ func (s *Scraper) toScene(studioURL string, p product) models.Scene {
 }
 
 func extractSceneID(p product) string {
-	for _, sk := range p.SKU {
+	return sceneIDFor(p.SKU, p.UUID)
+}
+
+// sceneIDFor derives a scene ID from a product's SKU list: the DVD SKU's
+// delivery-item ID if there is one, else any delivery-item ID, else the
+// product UUID. Shared by extractSceneID and the listing early-stop so both
+// agree on what a scene's ID is.
+func sceneIDFor(skus []sku, uuid string) string {
+	for _, sk := range skus {
 		if sk.Category != nil && sk.Category.Title == "DVD" && sk.DeliveryItemID != "" {
 			return strings.ToUpper(sk.DeliveryItemID)
 		}
 	}
-	for _, sk := range p.SKU {
+	for _, sk := range skus {
 		if sk.DeliveryItemID != "" {
 			return strings.ToUpper(sk.DeliveryItemID)
 		}
 	}
-	return p.UUID
+	return uuid
+}
+
+// listingKeys returns every identifier a stored KnownIDs entry could plausibly
+// hold for this listing item, most-specific first.
+//
+// Scene.ID is the SKU delivery-item ID, not the product UUID, so an early-stop
+// that only checked item.UUID never matched and every incremental run re-walked
+// the whole catalogue. When the listing payload carries the SKU the first key
+// is an exact Scene.ID match; the UUID is kept as a fallback both for products
+// with no delivery-item ID (where Scene.ID *is* the UUID) and for listing
+// responses that omit the SKU block.
+func listingKeys(item listProduct) []string {
+	keys := make([]string, 0, 2)
+	if id := sceneIDFor(item.SKU, ""); id != "" {
+		keys = append(keys, id)
+	}
+	if item.UUID != "" {
+		keys = append(keys, item.UUID)
+	}
+	return keys
 }
 
 // ---- HTTP ----
@@ -470,6 +523,16 @@ func (s *Scraper) fetchJSON(ctx context.Context, rawURL string, v any) error {
 	}
 	defer func() { _ = resp.Body.Close() }()
 	return httpx.DecodeJSON(resp.Body, v)
+}
+
+// known reports whether any of keys is present in the KnownIDs set.
+func known(knownIDs map[string]bool, keys []string) bool {
+	for _, k := range keys {
+		if knownIDs[k] {
+			return true
+		}
+	}
+	return false
 }
 
 func send(ctx context.Context, ch chan<- scraper.SceneResult, r scraper.SceneResult) bool {

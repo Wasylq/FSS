@@ -9,6 +9,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/Wasylq/FSS/internal/httpx"
@@ -67,6 +68,11 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 	scraper.Debugf(1, "mercury: listing base %s", baseURL)
 
 	work := make(chan listItem, opts.Workers)
+	// Scene.ID is the product code, which is only readable from the detail
+	// page — the listing exposes nothing but the article ID. So the KnownIDs
+	// check has to happen after the detail fetch; the listing loop reads
+	// hitKnown between pages to stop paginating.
+	var hitKnown atomic.Bool
 	var wg sync.WaitGroup
 	for i := 0; i < opts.Workers; i++ {
 		wg.Add(1)
@@ -90,6 +96,11 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 					continue
 				}
 				if !ok {
+					continue
+				}
+				if opts.KnownIDs[scene.ID] {
+					scraper.Debugf(1, "mercury: detail %s already known, stopping early", scene.ID)
+					hitKnown.Store(true)
 					continue
 				}
 				select {
@@ -132,35 +143,39 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 			break
 		}
 
-		hitKnown := false
+		// A worker has already reached a known scene, so every later page is
+		// known too.
+		if hitKnown.Load() {
+			break
+		}
+
+		cancelled := false
 		for _, item := range items {
-			if opts.KnownIDs[strconv.Itoa(item.articleID)] {
-				scraper.Debugf(1, "mercury: hit known article ID %d, stopping early", item.articleID)
-				hitKnown = true
-				break
-			}
 			select {
 			case work <- item:
 			case <-ctx.Done():
-				hitKnown = true
+				cancelled = true
 			}
 			if ctx.Err() != nil {
 				break
 			}
 		}
-		if hitKnown {
-			if opts.KnownIDs != nil {
-				select {
-				case out <- scraper.StoppedEarly():
-				case <-ctx.Done():
-				}
-			}
+		if cancelled {
 			break
 		}
 	}
 
 	close(work)
 	wg.Wait()
+
+	// Emitted once, after every worker has finished sending, so the signal
+	// cannot interleave with scenes still in flight.
+	if hitKnown.Load() {
+		select {
+		case out <- scraper.StoppedEarly():
+		case <-ctx.Done():
+		}
+	}
 }
 
 var (
