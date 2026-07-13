@@ -1,6 +1,6 @@
 # Covered Sites — All Domains
 
-1536 scrapers covering 1624 distinct domains. Auto-generated from the scraper registry by `TestSitesMdInSync` — do not hand-edit; instead update the scraper's `Patterns()` and re-run `go test ./internal/scrapers/all/...`. The `stashbox` scraper is omitted here because its covered hosts are config-driven; see [`scrapers.md`](scrapers.md).
+1538 scrapers covering 1626 distinct domains. Auto-generated from the scraper registry by `TestSitesMdInSync` — do not hand-edit; instead update the scraper's `Patterns()` and re-run `go test ./internal/scrapers/all/...`. The `stashbox` scraper is omitted here because its covered hosts are config-driven; see [`scrapers.md`](scrapers.md).
 
 Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scraper ID(s)** column lists every scraper that claims URLs on that domain — most domains have one entry, but table-driven networks (`adultprime`, `tmw`, `nextdoorstudios`, etc.) host many sub-studios on a single root domain. See [`scrapers.md`](scrapers.md) for what each ID covers.
 
@@ -740,6 +740,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | juliaannlive.com | `juliaann` |
 | kanbi-av.com | `prestige` |
 | karinahart.com | `karinahart` |
+| karissa-diamond.com | `karissadiamond` |
 | karupsha.com | `karupsha` |
 | karupsow.com | `karupsow` |
 | karupspc.com | `karupspc` |
@@ -925,6 +926,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | mountainfuckfest.com | `mountainfuckfest` |
 | mousouzoku-av.com | `mousouzoku` |
 | movieporn.com | `movieporn` |
+| mplstudios.com | `mplstudios` |
 | mrfacial.puba.com | `pubamrfacial` |
 | mrluckylife.com | `mrluckylife` |
 | mrluckypov.com | `mrluckypov` |

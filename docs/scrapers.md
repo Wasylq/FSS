@@ -115,6 +115,7 @@
 | [Jeff's Models](https://jeffsmodels.com) | `jeffsmodels.com`, `jeffsmodels.com/update/{id}/` | NATS tour | No | Sitemap (~1407) + concurrent detail (title, date, performers, og:image) |
 | [Jizz on Teens](https://jizzonteens.com) | `jizzonteens.com`, `jizzonteens.com/page/{n}` | Custom (Deluxe Coin PHP tour) | No | Listing-only `<article>` parse (slug, title, poster, description); page 1 `/`, later `/page/{N}`, stops when a page repeats; no publish date |
 | [Joana Bliss](https://www.joanabliss.com) | `joanabliss.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
+| [Karissa Diamond](https://karissa-diamond.com) | `karissa-diamond.com`, `karissa-diamond.com/videoCollection/` | Custom | No | MPL Studios child, standalone site; `/workFiles/loadMore.php` offset JSON API (~28 videos, `[items, nextOffset, isMember]`) + detail worker pool for duration; date-sorted |
 | [Karina Hart](https://www.karinahart.com) | `karinahart.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
 | [Kawaii](https://kawaiikawaii.jp) | `kawaiikawaii.jp/works/list/release`, `kawaiikawaii.jp/works/detail/{code}`, `kawaiikawaii.jp/actress/detail/{id}` | Up-Timely CMS | No | Thin wrapper around `uptimelyutil`. ~589 products. |
 | [Latina Coochies](https://www.latinacoochies.com) | `latinacoochies.com`, `latinacoochies.com/latina-porn-stars/{name}/{id}` | Score Group | No | Score Group, table-driven `scoregroup` package |
@@ -126,6 +127,7 @@
 | [Linsey's World](https://www.linseysworld.com) | `linseysworld.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
 | [MASQULIN](https://masqulin.com) | `masqulin.com`, `thebronetwork.com/categories/masqulin_{N}_d.html` | Bro Network (PHP CMS) | No | Catalog lives as a category on thebronetwork.com, listing-only parse, uses `bronetworkutil` |
 | [May Contain Girl](https://maycontaingirl.com) | `maycontaingirl.com`, `maycontaingirl.com/tag/{slug}` | WordPress (REST API) | No | WP REST `posts` (~115, art-nude/Pony Magazine), uses `fotoroutil` |
+| [MPL Studios](https://www.mplstudios.com) | `mplstudios.com/videos/`, `mplstudios.com/portfolio/{id}-{Model_Name}/` | Custom (PHP) | No | `/videos/{N}/` listing (~800, 48/page, date-sorted) + detail worker pool for duration; `/portfolio/` model mode renders all updates on one page, filtered to `updateVideo` cards (photo sets excluded) |
 | [Mega Tits Minka](https://www.megatitsminka.com) | `megatitsminka.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
 | [Men Are Slaves](https://www.menareslaves.com) | `menareslaves.com`, `menareslaves.com/main.html` | Reality Studio (clips.js) | No | Static `/js/clips.js` catalog (~2214), titles + performers + fetishes, uses `realitystudioutil` |
 | [Men of Montréal](https://www.menofmontreal.com) | `menofmontreal.com`, `thebronetwork.com/categories/men-of-montreal_{N}_d.html` | Bro Network (PHP CMS) | No | Catalog lives as a category on thebronetwork.com, listing-only parse, uses `bronetworkutil` |
