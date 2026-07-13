@@ -251,6 +251,33 @@ var sites = []siteConfig{
 	// SiteName empty → no availableOnSite filter → whole asgmax catalog.
 	{"nextdoorstudios", "nextdoorstudios.com", "Next Door Studios", "", "", "", "", ""},
 
+	// ---- Pride Studios (also in the ASGMAX segment) ----
+	//
+	// Same segment and Algolia key shape as the Next Door family above, split
+	// the same way: some brands serve /en/videos from their own host, the rest
+	// redirect to pridestudios.com/en/videos/sites/{slug}. For the redirecting
+	// ones the bootstrap lands on pridestudios.com, whose apiKey is
+	// Referer-restricted to that host, so RefererBase must be pinned to match.
+
+	// Own-domain sites — /en/videos served by their own host.
+	{"extrabigdicks", "extrabigdicks.com", "Extra Big Dicks", "extrabigdicks", "", "", "", ""},
+	{"menover30", "menover30.com", "Men Over 30", "menover30", "", "", "", ""},
+	{"familycreep", "familycreep.com", "Family Creep", "familycreep", "", "", "", ""},
+
+	// Own-domain sites that redirect to pridestudios.com.
+	{"circlejerkboys", "circlejerkboys.com", "Circle Jerk Boys", "circlejerkboys", "https://www.pridestudios.com", "", "", ""},
+	{"boyzparty", "boyzparty.com", "Boyz Party", "boyzparty", "https://www.pridestudios.com", "", "", ""},
+	{"highperformancemen", "highperformancemen.com", "High Performance Men", "highperformancemen", "https://www.pridestudios.com", "", "", ""},
+	{"dylanlucas", "dylanlucas.com", "DylanLucas", "dylanlucas", "https://www.pridestudios.com", "", "", ""},
+	{"cockvirgins", "cockvirgins.com", "Cock Virgins", "cockvirgins", "https://www.pridestudios.com", "", "", ""},
+	{"bearback", "bearback.com", "BearBack", "bearback", "https://www.pridestudios.com", "", "", ""},
+
+	// Pride Studios network hub. SiteName is pinned rather than left empty:
+	// pridestudios.com shares the asgmax segment with the much larger Next
+	// Door catalogue, so an unfiltered hub would return all 13k asgmax scenes
+	// instead of this brand's own.
+	{"pridestudios", "pridestudios.com", "Pride Studios", "pridestudios", "", "", "", ""},
+
 	// Alpha Studio Group — gay studios, each on its own domain bootstrapping
 	// its own Algolia segment key. Standard own-domain Gamma sites: the
 	// /en/videos page yields a segment-scoped apiKey and availableOnSite

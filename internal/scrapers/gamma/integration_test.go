@@ -236,3 +236,30 @@ func TestLiveLethalHardcoreVR(t *testing.T) {
 func TestLiveGenderXFilms(t *testing.T) {
 	testutil.RunLiveScrape(t, newTestScraper(findSite("genderxfilms")), "https://www.genderxfilms.com/", 2)
 }
+
+// Pride Studios — like the Vivid network, some brands redirect to the hub and
+// their Algolia key is Referer-signed for pridestudios.com, so RefererBase has
+// to be pinned or Algolia answers HTTP 403. One live smoke per site validates
+// that wiring across all 10 entries.
+func TestLivePrideStudios(t *testing.T) {
+	cases := []struct{ id, url string }{
+		// Own-domain sites.
+		{"extrabigdicks", "https://www.extrabigdicks.com/en/videos"},
+		{"menover30", "https://www.menover30.com/en/videos"},
+		{"familycreep", "https://www.familycreep.com/en/videos"},
+		// Sites that redirect to the hub (RefererBase pinned).
+		{"circlejerkboys", "https://www.circlejerkboys.com/en/videos"},
+		{"boyzparty", "https://www.boyzparty.com/en/videos"},
+		{"highperformancemen", "https://www.highperformancemen.com/en/videos"},
+		{"dylanlucas", "https://www.dylanlucas.com/en/videos"},
+		{"cockvirgins", "https://www.cockvirgins.com/en/videos"},
+		{"bearback", "https://www.bearback.com/en/videos"},
+		// Hub.
+		{"pridestudios", "https://www.pridestudios.com/en/videos"},
+	}
+	for _, c := range cases {
+		t.Run(c.id, func(t *testing.T) {
+			testutil.RunLiveScrape(t, newTestScraper(findSite(c.id)), c.url, 2)
+		})
+	}
+}
