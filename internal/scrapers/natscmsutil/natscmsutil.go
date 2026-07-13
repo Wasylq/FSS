@@ -1,30 +1,35 @@
-// Package marsmedia scrapes the Mars Media gay-network sister sites that
-// run on the My Gay Cash NATS CMS (nats.mygaycash.com). 12 of the 14
-// stashdb children share this platform; the remaining two
-// (tgirlplaytime.com, twotgirls.com) use Nebula CMS and are not yet
-// covered.
+// Package natscmsutil scrapes sites running the "My Gay Cash" /
+// TooMuchMedia NATS tour CMS — an Angular SPA mounted at `/natscms-app/`
+// (`<base href="/natscms-app/">`, `nats-tours-root` body tag) backed by a
+// `tour_api.php` JSON API. Each site's `/natscms-app/config.json` carries
+// a `natsUrl` (the API host — a shared `nats.mygaycash.com` for the Mars
+// Media network, or a self-hosted host like `api.cosplayground.com`) and a
+// per-site `cms_area_id` UUID.
+//
+// This package holds the shared discovery/parse logic; concrete site
+// tables (marsmedia, cosplayground, …) supply per-instance SiteConfig rows
+// and register the scrapers.
 //
 // Discovery flow:
 //
-//  1. Fetch `https://nats.mygaycash.com/tour_api.php/content/page?slug=/`
-//     with the `X-NATS-cms-area-id: {uuid}` header (the API rejects the
-//     request as "Invalid Area" without it). Walk the returned page's
-//     `blocks` array, find the first `set_list` block, and capture its
-//     `cms_block_id`.
-//  2. Fetch `…/tour_api.php/content/servers` (same header) to get the
-//     `cms_content_server_id → settings.url` map used to resolve
-//     thumbnail CDN hostnames (e.g. `c76161b613.mjedge.net`).
-//  3. Fetch `…/tour_api.php/content/sets?cms_block_id={id}` (same
-//     header). The response carries `total_count` plus a `sets` array
-//     containing every scene in the block — the `max_asset_count`
-//     setting on the block is a client-side render hint, not a
-//     server-side limit, so one request returns the entire catalogue.
+//  1. Fetch `{NatsAPIBase}/content/page?slug=/` with the
+//     `X-NATS-cms-area-id: {uuid}` header (the API rejects the request as
+//     "Invalid Area" without it). Walk the returned page's `blocks` array,
+//     find the first `set_list` block, and capture its `cms_block_id`.
+//  2. Fetch `…/content/servers` (same header) to get the
+//     `cms_content_server_id → settings.url` map used to resolve thumbnail
+//     CDN hostnames (e.g. `c76161b613.mjedge.net`).
+//  3. Fetch `…/content/sets?cms_block_id={id}` (same header). The response
+//     carries `total_count` plus a `sets` array containing every scene in
+//     the block — the `max_asset_count` setting on the block is a
+//     client-side render hint, not a server-side limit, so one request
+//     returns the entire catalogue.
 //
 // Each set entry has:
 //
 //   - `cms_set_id` — stable scene ID
 //   - `name` — title
-//   - `description` — HTML-decoded scene synopsis
+//   - `description` — HTML-decoded scene synopsis (may be absent)
 //   - `slug` — URL slug
 //   - `added_nice` — publish date `YYYY-MM-DD`
 //   - `member_views` — view count
@@ -35,8 +40,9 @@
 //
 // Detail pages are not fetched — every field is already on the listing.
 // Scene URLs are synthesised as `{base}/tour/trailer/{slug}/`, the SPA's
-// user-facing trailer route, so each scene has a stable anchor.
-package marsmedia
+// user-facing trailer route, so each scene has a stable anchor. Sets are
+// returned newest-first, so date-sorted `KnownIDs` early-stop works.
+package natscmsutil
 
 import (
 	"context"
@@ -54,16 +60,19 @@ import (
 	"github.com/Wasylq/FSS/scraper"
 )
 
-const (
-	natsAPIBase = "https://nats.mygaycash.com/tour_api.php"
-	studioName  = "Mars Media"
-)
-
-// SiteConfig describes one Mars Media NATS-CMS sister site.
+// SiteConfig describes one NATS-CMS site.
 type SiteConfig struct {
 	ID       string
 	SiteBase string // e.g. "https://www.bearfilms.com" — no trailing slash
 	SiteName string
+	// StudioName is written to Scene.Studio (the network/brand name, e.g.
+	// "Mars Media" or "Cosplayground").
+	StudioName string
+	// NatsAPIBase is the site's `tour_api.php` base URL, e.g.
+	// "https://nats.mygaycash.com/tour_api.php" (shared Mars Media backend)
+	// or "https://api.cosplayground.com/tour_api.php" (self-hosted). Taken
+	// from the site's `/natscms-app/config.json` `natsUrl` + `/tour_api.php`.
+	NatsAPIBase string
 	// CMSAreaID is the per-site UUID the NATS API uses as the
 	// `X-NATS-cms-area-id` header. Hard-coded from each site's
 	// `/natscms-app/config.json` to skip one HTTP round-trip per scrape.
@@ -193,7 +202,7 @@ type previewItem struct {
 // ---- Discovery + fetch ----
 
 func (s *Scraper) fetchPageConfig(ctx context.Context) (*pageResponse, error) {
-	u := natsAPIBase + "/content/page?slug=/"
+	u := s.cfg.NatsAPIBase + "/content/page?slug=/"
 	body, err := s.fetchAPI(ctx, u)
 	if err != nil {
 		return nil, err
@@ -222,7 +231,7 @@ func findSetListBlockID(page *pageResponse) string {
 }
 
 func (s *Scraper) fetchSets(ctx context.Context, blockID string) (*setsResponse, error) {
-	u := natsAPIBase + "/content/sets?cms_block_id=" + blockID
+	u := s.cfg.NatsAPIBase + "/content/sets?cms_block_id=" + blockID
 	body, err := s.fetchAPI(ctx, u)
 	if err != nil {
 		return nil, err
@@ -241,7 +250,7 @@ func (s *Scraper) fetchSets(ctx context.Context, blockID string) (*setsResponse,
 // resolve thumbnail CDN hosts. Per-area — must be fetched after the
 // area-id header is set.
 func (s *Scraper) fetchServers(ctx context.Context) (map[string]string, error) {
-	body, err := s.fetchAPI(ctx, natsAPIBase+"/content/servers")
+	body, err := s.fetchAPI(ctx, s.cfg.NatsAPIBase+"/content/servers")
 	if err != nil {
 		return nil, err
 	}
@@ -281,7 +290,7 @@ func (s *Scraper) fetchAPI(ctx context.Context, url string) ([]byte, error) {
 
 func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOpts, out chan<- scraper.SceneResult) {
 	defer close(out)
-	scraper.Debugf(1, "marsmedia/%s: discovering set_list block via NATS CMS", s.cfg.ID)
+	scraper.Debugf(1, "natscms/%s: discovering set_list block via NATS CMS", s.cfg.ID)
 
 	page, err := s.fetchPageConfig(ctx)
 	if err != nil {
@@ -299,17 +308,17 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 		}
 		return
 	}
-	scraper.Debugf(1, "marsmedia/%s: set_list block_id=%s", s.cfg.ID, blockID)
+	scraper.Debugf(1, "natscms/%s: set_list block_id=%s", s.cfg.ID, blockID)
 
 	servers, err := s.fetchServers(ctx)
 	if err != nil {
 		// Don't bail — without servers we just skip thumbnails. Log and
 		// keep going so a transient CDN-list failure doesn't lose a
 		// whole scrape.
-		scraper.Debugf(1, "marsmedia/%s: servers fetch failed (%v) — thumbnails omitted", s.cfg.ID, err)
+		scraper.Debugf(1, "natscms/%s: servers fetch failed (%v) — thumbnails omitted", s.cfg.ID, err)
 		servers = nil
 	} else {
-		scraper.Debugf(1, "marsmedia/%s: %d CDN server(s)", s.cfg.ID, len(servers))
+		scraper.Debugf(1, "natscms/%s: %d CDN server(s)", s.cfg.ID, len(servers))
 	}
 
 	sets, err := s.fetchSets(ctx, blockID)
@@ -325,7 +334,7 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 	if total == 0 {
 		total = len(sets.Sets)
 	}
-	scraper.Debugf(1, "marsmedia/%s: %d total scenes", s.cfg.ID, total)
+	scraper.Debugf(1, "natscms/%s: %d total scenes", s.cfg.ID, total)
 	if total > 0 {
 		select {
 		case out <- scraper.Progress(total):
@@ -337,7 +346,7 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 	now := time.Now().UTC()
 	for _, entry := range sets.Sets {
 		if opts.KnownIDs[entry.CMSSetID] {
-			scraper.Debugf(1, "marsmedia/%s: hit known ID %s, stopping early", s.cfg.ID, entry.CMSSetID)
+			scraper.Debugf(1, "natscms/%s: hit known ID %s, stopping early", s.cfg.ID, entry.CMSSetID)
 			select {
 			case out <- scraper.StoppedEarly():
 			case <-ctx.Done():
@@ -364,7 +373,7 @@ func (s *Scraper) toScene(e setEntry, studioURL string, servers map[string]strin
 		// Trailer slug page — most sites route `/tour/trailer/{slug}` to
 		// the SPA's scene-detail view.
 		URL:       fmt.Sprintf("%s/tour/trailer/%s/", s.cfg.SiteBase, e.Slug),
-		Studio:    studioName,
+		Studio:    s.cfg.StudioName,
 		Series:    s.cfg.SiteName,
 		ScrapedAt: now,
 		Views:     int(e.MemberViews),

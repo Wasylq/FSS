@@ -1,18 +1,30 @@
+// Package marsmedia registers the Mars Media gay-network sister sites that
+// run on the My Gay Cash NATS CMS (nats.mygaycash.com). It is a thin site
+// table over the shared natscmsutil core; 12 of the 14 stashdb children
+// share this platform, while the remaining two (tgirlplaytime.com,
+// twotgirls.com) use Nebula CMS and are not yet covered.
 package marsmedia
 
 import (
 	"regexp"
 
+	"github.com/Wasylq/FSS/internal/scrapers/natscmsutil"
 	"github.com/Wasylq/FSS/scraper"
 )
 
-// sites is the table of Mars Media sister sites covered by this
-// scraper. cms_area_id UUIDs are pulled from each site's
-// `/natscms-app/config.json` (the per-site SPA bootstrap config). The
-// 14-child stashdb tree includes two extra domains — `tgirlplaytime.com`
-// and `twotgirls.com` — that run a different (Nebula) CMS and are not
-// covered here.
-var sites = []SiteConfig{
+const (
+	// mygaycashAPIBase is the shared NATS backend every Mars Media sister
+	// site talks to (per-site scoping comes from the CMSAreaID header).
+	mygaycashAPIBase = "https://nats.mygaycash.com/tour_api.php"
+	marsMediaStudio  = "Mars Media"
+)
+
+// sites is the table of Mars Media sister sites covered by this package.
+// cms_area_id UUIDs are pulled from each site's `/natscms-app/config.json`
+// (the per-site SPA bootstrap config). The 14-child stashdb tree includes
+// two extra domains — `tgirlplaytime.com` and `twotgirls.com` — that run a
+// different (Nebula) CMS and are not covered here.
+var sites = []natscmsutil.SiteConfig{
 	{
 		ID:        "bearfilms",
 		SiteBase:  "https://www.bearfilms.com",
@@ -111,8 +123,16 @@ var sites = []SiteConfig{
 	},
 }
 
+// withDefaults fills the shared Mars Media backend + studio name onto a
+// table row (the per-row entries only carry site-specific fields).
+func withDefaults(cfg natscmsutil.SiteConfig) natscmsutil.SiteConfig {
+	cfg.NatsAPIBase = mygaycashAPIBase
+	cfg.StudioName = marsMediaStudio
+	return cfg
+}
+
 func init() {
 	for _, cfg := range sites {
-		scraper.Register(New(cfg))
+		scraper.Register(natscmsutil.New(withDefaults(cfg)))
 	}
 }

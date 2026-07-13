@@ -194,9 +194,9 @@ func (ps parsedScene) toScene(siteBase string, now time.Time) models.Scene {
 var (
 	// /videos listing cards.
 	listingCardStartRe = regexp.MustCompile(`<div class="flex flex-col md:flex-row md:items-start gap-6 lg:gap-10 mb-10 md:mb-12 py-2 md:py-4 lg:py-6">`)
-	listingTitleRe      = regexp.MustCompile(`(?s)<h2[^>]*>\s*<a[^>]*>([^<]*)</a>`)
-	publishedViewsRe    = regexp.MustCompile(`Published\s+([A-Za-z]+ \d{1,2},\s*\d{4})\s*\S\s*([\d,]+)\s*views`)
-	descriptionRe       = regexp.MustCompile(`(?s)class="mt-4 mb-4 md:mb-6 leading-relaxed[^"]*">\s*(.*?)\s*</p>`)
+	listingTitleRe     = regexp.MustCompile(`(?s)<h2[^>]*>\s*<a[^>]*>([^<]*)</a>`)
+	publishedViewsRe   = regexp.MustCompile(`Published\s+([A-Za-z]+ \d{1,2},\s*\d{4})\s*\S\s*([\d,]+)\s*views`)
+	descriptionRe      = regexp.MustCompile(`(?s)class="mt-4 mb-4 md:mb-6 leading-relaxed[^"]*">\s*(.*?)\s*</p>`)
 
 	// /models/{slug} cards.
 	modelCardStartRe = regexp.MustCompile(`<div class="group cursor-pointer hover-video"`)

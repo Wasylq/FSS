@@ -58,6 +58,7 @@ import (
 	_ "github.com/Wasylq/FSS/internal/scrapers/colbyknox"
 	_ "github.com/Wasylq/FSS/internal/scrapers/collegeuniform"
 	_ "github.com/Wasylq/FSS/internal/scrapers/corbinfisher"
+	_ "github.com/Wasylq/FSS/internal/scrapers/cosplayground"
 	_ "github.com/Wasylq/FSS/internal/scrapers/crunchboy"
 	_ "github.com/Wasylq/FSS/internal/scrapers/crystaleizou"
 	_ "github.com/Wasylq/FSS/internal/scrapers/cumlouder"
