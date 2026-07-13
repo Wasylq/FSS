@@ -21,3 +21,10 @@ func live(t *testing.T, id string) {
 func TestLiveFreakMob(t *testing.T)         { live(t, "freakmob") }
 func TestLiveDeepthroatSirens(t *testing.T) { live(t, "deepthroatsirens") }
 func TestLiveSwallowed(t *testing.T)        { live(t, "swallowed") }
+
+// Sticky Dollars network.
+func TestLiveTrueAnal(t *testing.T)       { live(t, "trueanal") }
+func TestLiveNympho(t *testing.T)         { live(t, "nympho") }
+func TestLiveDirtyAuditions(t *testing.T) { live(t, "dirtyauditions") }
+func TestLiveAllAnal(t *testing.T)        { live(t, "allanal") }
+func TestLiveAnalOnly(t *testing.T)       { live(t, "analonly") }

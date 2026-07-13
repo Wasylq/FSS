@@ -1,6 +1,6 @@
 # Covered Sites — All Domains
 
-1550 scrapers covering 1638 distinct domains. Auto-generated from the scraper registry by `TestSitesMdInSync` — do not hand-edit; instead update the scraper's `Patterns()` and re-run `go test ./internal/scrapers/all/...`. The `stashbox` scraper is omitted here because its covered hosts are config-driven; see [`scrapers.md`](scrapers.md).
+1555 scrapers covering 1643 distinct domains. Auto-generated from the scraper registry by `TestSitesMdInSync` — do not hand-edit; instead update the scraper's `Patterns()` and re-run `go test ./internal/scrapers/all/...`. The `stashbox` scraper is omitted here because its covered hosts are config-driven; see [`scrapers.md`](scrapers.md).
 
 Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scraper ID(s)** column lists every scraper that claims URLs on that domain — most domains have one entry, but table-driven networks (`adultprime`, `tmw`, `nextdoorstudios`, etc.) host many sub-studios on a single root domain. See [`scrapers.md`](scrapers.md) for what each ID covers.
 
@@ -435,6 +435,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | dilfed.com | `milehigh` |
 | dirty-coach.com | `tmw-dirty-coach` |
 | dirty-doctor.com | `tmw-dirty-doctor` |
+| dirtyauditions.com | `dirtyauditions` |
 | dirtyflix.com | `dirtyflix` |
 | dirtysarah.com | `dirtysarah` |
 | dirtyscout.com | `bigstr` |
@@ -1431,17 +1432,21 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | tonightsgirlfriend.com | `naughtyamerica` |
 | toptobottom.com | `men` |
 | touchmywife.com | `touchmywife` |
+| tour.allanal.com | `allanal` |
+| tour.analonly.com | `analonly` |
 | tour.bamvisions.com | `bamvisions` |
 | tour.curvyculturexxx.com | `curvyculturexxx` |
 | tour.deepthroatsirens.com | `deepthroatsirens` |
 | tour.gilfgasms.com | `gilfgasms` |
 | tour.milfcandy.com | `milfcandy` |
 | tour.nebraskacoeds.com | `nebraskacoeds` |
+| tour.nympho.com | `nympho` |
 | tour.swallowed.com | `swallowed` |
 | tour.theflourishamateurs.com | `theflourishamateurs` |
 | tour.theflourishfetish.com | `theflourishfetish` |
 | tour.theflourishpov.com | `theflourishpov` |
 | tour.theflourishxxx.com | `theflourishxxx` |
+| tour.trueanal.com | `trueanal` |
 | transangels.com | `transangels` |
 | transexdomination.com | `transexdomination` |
 | transexjapan.com | `transexjapan` |

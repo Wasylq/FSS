@@ -31,6 +31,18 @@ var sites = []siteConfig{
 	{"freakmob", "FreakMob Media", "https://www.freakmobmedia.com", "videos", "freakmob"},
 	{"deepthroatsirens", "Deepthroat Sirens", "https://tour.deepthroatsirens.com", "scenes", ""},
 	{"swallowed", "Swallowed", "https://tour.swallowed.com", "scenes", ""},
+
+	// Sticky Dollars network (stickydollars.com is the hub linking these).
+	//
+	// Dirty Auditions is served from its APEX domain, not a tour subdomain:
+	// tour.dirtyauditions.com is a misconfigured host serving a completely
+	// different site (AD4X, site_domain ad4x.com, 1309 scenes on a /videos
+	// route). Pointing Base there would silently scrape the wrong catalogue.
+	{"trueanal", "True Anal", "https://tour.trueanal.com", "scenes", ""},
+	{"nympho", "Nympho", "https://tour.nympho.com", "scenes", ""},
+	{"dirtyauditions", "Dirty Auditions", "https://dirtyauditions.com", "scenes", ""},
+	{"allanal", "All Anal", "https://tour.allanal.com", "scenes", ""},
+	{"analonly", "Anal Only", "https://tour.analonly.com", "scenes", ""},
 }
 
 type Scraper struct {

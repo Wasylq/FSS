@@ -112,3 +112,57 @@ func TestRunParsesContents(t *testing.T) {
 		t.Errorf("price = %v", sc.LowestPrice)
 	}
 }
+
+// TestStickyDollarsSites pins the Sticky Dollars rows, in particular that
+// Dirty Auditions points at its apex domain. tour.dirtyauditions.com is a
+// misconfigured host serving an unrelated site (AD4X, 1309 scenes on a
+// /videos route), so a tour.* Base there would scrape the wrong catalogue.
+func TestStickyDollarsSites(t *testing.T) {
+	byID := map[string]siteConfig{}
+	for _, c := range sites {
+		byID[c.SiteID] = c
+	}
+
+	want := map[string]string{
+		"trueanal":       "https://tour.trueanal.com",
+		"nympho":         "https://tour.nympho.com",
+		"dirtyauditions": "https://dirtyauditions.com",
+		"allanal":        "https://tour.allanal.com",
+		"analonly":       "https://tour.analonly.com",
+	}
+	for id, base := range want {
+		cfg, ok := byID[id]
+		if !ok {
+			t.Errorf("missing site %q", id)
+			continue
+		}
+		if cfg.Base != base {
+			t.Errorf("%s: Base = %q, want %q", id, cfg.Base, base)
+		}
+		if cfg.ListPath != "scenes" {
+			t.Errorf("%s: ListPath = %q, want scenes", id, cfg.ListPath)
+		}
+		if cfg.Studio == "" {
+			t.Errorf("%s: Studio is empty", id)
+		}
+	}
+
+	if got := byID["dirtyauditions"].Base; strings.HasPrefix(got, "https://tour.") {
+		t.Errorf("dirtyauditions Base is %q — the tour subdomain serves AD4X, not Dirty Auditions", got)
+	}
+}
+
+func TestUniqueSiteIDsAndBases(t *testing.T) {
+	ids := map[string]bool{}
+	bases := map[string]bool{}
+	for _, c := range sites {
+		if ids[c.SiteID] {
+			t.Errorf("duplicate SiteID %q", c.SiteID)
+		}
+		ids[c.SiteID] = true
+		if bases[c.Base] {
+			t.Errorf("duplicate Base %q", c.Base)
+		}
+		bases[c.Base] = true
+	}
+}
