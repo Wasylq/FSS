@@ -24,6 +24,7 @@ import (
 	_ "github.com/Wasylq/FSS/internal/scrapers/apclips"
 	_ "github.com/Wasylq/FSS/internal/scrapers/apovstory"
 	_ "github.com/Wasylq/FSS/internal/scrapers/auntjudys"
+	_ "github.com/Wasylq/FSS/internal/scrapers/avidolz"
 	_ "github.com/Wasylq/FSS/internal/scrapers/aylo"
 	_ "github.com/Wasylq/FSS/internal/scrapers/aziani"
 	_ "github.com/Wasylq/FSS/internal/scrapers/badoink"

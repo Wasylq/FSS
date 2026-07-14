@@ -40,6 +40,10 @@ type urlset struct {
 
 type SitemapURL struct {
 	Loc string `xml:"loc"`
+	// LastMod is the sitemap's <lastmod>, when present. It is a modification
+	// time, not a publish date, so treat it as approximate — but on sites that
+	// expose no date at all in their page markup it is the only date source.
+	LastMod string `xml:"lastmod"`
 }
 
 func FetchSitemap(ctx context.Context, client *http.Client, sitemapURL string, headers map[string]string) ([]SitemapURL, error) {
