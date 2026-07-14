@@ -7,8 +7,8 @@ import (
 )
 
 func TestSiteCount(t *testing.T) {
-	if len(sites) != 22 {
-		t.Errorf("expected 22 sites, got %d", len(sites))
+	if len(sites) != 23 {
+		t.Errorf("expected 23 sites, got %d", len(sites))
 	}
 }
 
@@ -49,5 +49,39 @@ func TestMatchesURL(t *testing.T) {
 	}
 	if s.MatchesURL("https://baddaddypov.com/") {
 		t.Error("should not match different domain")
+	}
+}
+
+// TestArchAngelVideoSite pins the ArchAngel Video entry. ArchAngel is part of
+// Full Porn Network and runs the same Elevated X TourFoundation skin as
+// analized.com, so it belongs here as a config row rather than in a scraper of
+// its own.
+func TestArchAngelVideoSite(t *testing.T) {
+	var found bool
+	for _, c := range sites {
+		if c.SiteID == "archangelvideo" {
+			found = true
+			if c.Domain != "archangelvideo.com" {
+				t.Errorf("Domain = %q", c.Domain)
+			}
+			if c.SiteBase != "https://archangelvideo.com" {
+				t.Errorf("SiteBase = %q", c.SiteBase)
+			}
+			if c.StudioName != "ArchAngel Video" {
+				t.Errorf("StudioName = %q", c.StudioName)
+			}
+		}
+	}
+	if !found {
+		t.Fatal("archangelvideo is not configured")
+	}
+
+	s := newSiteScraper(sites[0])
+	_ = s
+	for _, c := range sites {
+		sc := newSiteScraper(c)
+		if !sc.MatchesURL("https://" + c.Domain + "/") {
+			t.Errorf("%s does not match its own domain", c.SiteID)
+		}
 	}
 }

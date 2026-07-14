@@ -19,6 +19,7 @@ var sites = []fpnutil.SiteConfig{
 	{SiteID: "analamateur", Domain: "analamateur.com", SiteBase: "https://analamateur.com", StudioName: "Anal Amateur"},
 	{SiteID: "analbbc", Domain: "analbbc.com", SiteBase: "https://analbbc.com", StudioName: "AnalBBC"},
 	{SiteID: "analized", Domain: "analized.com", SiteBase: "https://analized.com", StudioName: "Analized"},
+	{SiteID: "archangelvideo", Domain: "archangelvideo.com", SiteBase: "https://archangelvideo.com", StudioName: "ArchAngel Video"},
 	{SiteID: "badbrotherpov", Domain: "badbrotherpov.com", SiteBase: "https://badbrotherpov.com", StudioName: "Bad Brother POV"},
 	{SiteID: "baddaddypov", Domain: "baddaddypov.com", SiteBase: "https://baddaddypov.com", StudioName: "Bad Daddy POV"},
 	{SiteID: "badfamilypov", Domain: "badfamilypov.com", SiteBase: "https://badfamilypov.com", StudioName: "Bad Family POV"},

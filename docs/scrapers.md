@@ -718,6 +718,7 @@
 | [Lethal Pass](https://www.lethalpass.com) | `lethalpass.com`, `lethalpass.com/channels/{slug}` | Wankz JSON API | No | REST JSON API, 18 channels, ~3.9k scenes, uses `wankzutil` |
 | [Full Porn Network](https://fullpornnetwork.com) | `fullpornnetwork.com`, `fullpornnetwork.com/models/{name}.html`, `fullpornnetwork.com/porn-categories/{slug}`, `fullpornnetwork.com/channels/{slug}` | Full Porn Network (Higgs Field) | No | Hub site aggregating all FPN subsites, HTML listing (20/page) + detail page worker pool, table-driven `fpn` package using `fpnutil` |
 | [Abbie Maley](https://abbiemaley.com) | `abbiemaley.com` | Full Porn Network | No | FPN subsite, uses `fpnutil` |
+| [ArchAngel Video](https://archangelvideo.com) | `archangelvideo.com` | Full Porn Network | No | FPN subsite, uses `fpnutil`. Sibling StashDB entries archangelworld.com and lustarmyproductions.com are dead domains; archangel.world is a Squarespace merch page with no scenes. |
 | [Anal Amateur](https://analamateur.com) | `analamateur.com` | Full Porn Network | No | FPN subsite, uses `fpnutil` |
 | [AnalBBC](https://analbbc.com) | `analbbc.com` | Full Porn Network | No | FPN subsite, uses `fpnutil` |
 | [Analized](https://analized.com) | `analized.com`, `analized.com/models/{name}.html`, `analized.com/porn-categories/{slug}`, `analized.com/channels/{slug}` | Full Porn Network | No | FPN subsite, uses `fpnutil` |
