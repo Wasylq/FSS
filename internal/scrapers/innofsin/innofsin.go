@@ -17,6 +17,9 @@ import (
 	"github.com/Wasylq/FSS/scraper"
 )
 
+// postsPerPage is the WP REST page size. WP caps per_page at 100.
+const postsPerPage = 100
+
 type siteConfig struct {
 	id      string
 	domain  string
@@ -154,9 +157,18 @@ func (s *siteScraper) fetchAllPosts(ctx context.Context, base string, opts scrap
 			return all, ctx.Err()
 		}
 
-		apiURL := fmt.Sprintf("%s/wp-json/wp/v2/posts?per_page=100&page=%d&_embed", base, page)
-		posts, total, err := s.fetchPage(ctx, apiURL)
+		apiURL := fmt.Sprintf("%s/wp-json/wp/v2/posts?per_page=%d&page=%d&_embed", base, postsPerPage, page)
+		posts, total, totalPages, err := s.fetchPage(ctx, apiURL)
 		if err != nil {
+			// When the post count is an exact multiple of the page size, the
+			// loop requests one page past the end and WP answers HTTP 400.
+			// Returning that as an error made the caller discard every post
+			// already fetched, leaving the site unscrapeable until its count
+			// drifted off the boundary. Past page 1 this is end-of-list.
+			if page > 1 {
+				scraper.Debugf(1, "%s: API page %d past end (%v), stopping", s.cfg.id, page, err)
+				break
+			}
 			return all, fmt.Errorf("API page %d: %w", page, err)
 		}
 
@@ -166,7 +178,7 @@ func (s *siteScraper) fetchAllPosts(ctx context.Context, base string, opts scrap
 
 		all = append(all, posts...)
 
-		if len(posts) < 100 {
+		if len(posts) < postsPerPage || (totalPages > 0 && page >= totalPages) {
 			break
 		}
 		if opts.Delay > 0 {
@@ -181,23 +193,26 @@ func (s *siteScraper) fetchAllPosts(ctx context.Context, base string, opts scrap
 	return all, nil
 }
 
-func (s *siteScraper) fetchPage(ctx context.Context, apiURL string) ([]wpPost, int, error) {
+// fetchPage returns one page of posts plus the total post and page counts from
+// the WP REST pagination headers.
+func (s *siteScraper) fetchPage(ctx context.Context, apiURL string) ([]wpPost, int, int, error) {
 	resp, err := httpx.Do(ctx, s.client, httpx.Request{
 		URL:     apiURL,
 		Headers: httpx.BrowserHeaders(httpx.UserAgentFirefox),
 	})
 	if err != nil {
-		return nil, 0, err
+		return nil, 0, 0, err
 	}
 	defer func() { _ = resp.Body.Close() }()
 
 	total, _ := strconv.Atoi(resp.Header.Get("X-WP-Total"))
+	totalPages, _ := strconv.Atoi(resp.Header.Get("X-WP-TotalPages"))
 
 	var posts []wpPost
 	if err := httpx.DecodeJSON(resp.Body, &posts); err != nil {
-		return nil, 0, fmt.Errorf("decoding posts: %w", err)
+		return nil, 0, 0, fmt.Errorf("decoding posts: %w", err)
 	}
-	return posts, total, nil
+	return posts, total, totalPages, nil
 }
 
 // --- detail page for performers ---

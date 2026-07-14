@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -80,13 +81,14 @@ func TestFetchPage(t *testing.T) {
 		client: ts.Client(),
 	}
 
-	posts, total, err := s.fetchPage(context.Background(), ts.URL+"/wp-json/wp/v2/posts?per_page=100&page=1&_embed")
+	posts, total, totalPages, err := s.fetchPage(context.Background(), ts.URL+"/wp-json/wp/v2/posts?per_page=100&page=1&_embed")
 	if err != nil {
 		t.Fatalf("fetchPage: %v", err)
 	}
 	if total != 2 {
 		t.Errorf("total = %d, want 2", total)
 	}
+	_ = totalPages
 	if len(posts) != 2 {
 		t.Fatalf("got %d posts, want 2", len(posts))
 	}
@@ -257,5 +259,100 @@ func TestStripHTML(t *testing.T) {
 		if got != tt.want {
 			t.Errorf("stripHTML(%q) = %q, want %q", tt.in, got, tt.want)
 		}
+	}
+}
+
+// ---- exact-multiple-of-page-size regression ----
+//
+// When the post count is an exact multiple of the page size, the loop asks for
+// one page past the end and WP answers HTTP 400. That error used to propagate
+// out of fetchAllPosts, and the caller discarded every post already fetched —
+// so the site was unscrapeable until its post count drifted off the boundary.
+
+// exactMultipleServer serves `total` posts at `perPage` per page and answers
+// HTTP 400 past the end, the way WordPress does.
+func exactMultipleServer(t *testing.T, total, perPage int) *httptest.Server {
+	t.Helper()
+	var ts *httptest.Server
+	ts = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/wp-json/wp/v2/posts" {
+			_, _ = fmt.Fprint(w, detailHTML)
+			return
+		}
+		page, _ := strconv.Atoi(r.URL.Query().Get("page"))
+		if page < 1 {
+			page = 1
+		}
+		totalPages := (total + perPage - 1) / perPage
+		if page > totalPages {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusBadRequest)
+			_, _ = fmt.Fprint(w, `{"code":"rest_post_invalid_page_number"}`)
+			return
+		}
+
+		start := (page - 1) * perPage
+		end := min(start+perPage, total)
+		var sb strings.Builder
+		sb.WriteString("[")
+		for i := start; i < end; i++ {
+			if i > start {
+				sb.WriteString(",")
+			}
+			fmt.Fprintf(&sb, `{"id":%d,"date":"2026-01-01T00:00:00","slug":"s%d","link":"%s/s%d/","title":{"rendered":"Scene %d"},"content":{"rendered":""}}`,
+				1000+i, i, ts.URL, i, i)
+		}
+		sb.WriteString("]")
+
+		w.Header().Set("X-WP-Total", strconv.Itoa(total))
+		w.Header().Set("X-WP-TotalPages", strconv.Itoa(totalPages))
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = fmt.Fprint(w, sb.String())
+	}))
+	t.Cleanup(ts.Close)
+	return ts
+}
+
+func TestFetchAllPostsExactMultiple(t *testing.T) {
+	// 200 posts at 100/page: page 3 is past the end and 400s.
+	ts := exactMultipleServer(t, 200, postsPerPage)
+	s := &siteScraper{cfg: sites[0], client: ts.Client()}
+
+	out := make(chan scraper.SceneResult, 16)
+	posts, err := s.fetchAllPosts(context.Background(), ts.URL, scraper.ListOpts{}, out)
+	if err != nil {
+		t.Fatalf("fetchAllPosts returned an error on an exact page-size multiple: %v", err)
+	}
+	if len(posts) != 200 {
+		t.Fatalf("got %d posts, want 200 — the past-the-end 400 must not discard them", len(posts))
+	}
+}
+
+func TestFetchAllPostsPartialLastPage(t *testing.T) {
+	ts := exactMultipleServer(t, 250, postsPerPage)
+	s := &siteScraper{cfg: sites[0], client: ts.Client()}
+
+	out := make(chan scraper.SceneResult, 16)
+	posts, err := s.fetchAllPosts(context.Background(), ts.URL, scraper.ListOpts{}, out)
+	if err != nil {
+		t.Fatalf("fetchAllPosts: %v", err)
+	}
+	if len(posts) != 250 {
+		t.Fatalf("got %d posts, want 250", len(posts))
+	}
+}
+
+// A first-page failure is still a real error — it means the site is broken,
+// not that the listing ended.
+func TestFetchAllPostsFirstPageErrorIsFatal(t *testing.T) {
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusInternalServerError)
+	}))
+	defer ts.Close()
+
+	s := &siteScraper{cfg: sites[0], client: ts.Client()}
+	out := make(chan scraper.SceneResult, 16)
+	if _, err := s.fetchAllPosts(context.Background(), ts.URL, scraper.ListOpts{}, out); err == nil {
+		t.Error("expected an error when page 1 fails")
 	}
 }
