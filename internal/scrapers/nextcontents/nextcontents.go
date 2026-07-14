@@ -43,6 +43,26 @@ var sites = []siteConfig{
 	{"dirtyauditions", "Dirty Auditions", "https://dirtyauditions.com", "scenes", ""},
 	{"allanal", "All Anal", "https://tour.allanal.com", "scenes", ""},
 	{"analonly", "Anal Only", "https://tour.analonly.com", "scenes", ""},
+
+	// Top Web Models network. Six brands have their own tour host serving a
+	// /scenes route; the rest exist only as /sites/{domain} on the hub, which
+	// returns the same pageProps.contents payload filtered to that brand.
+	// Deepthroat Sirens is part of this network too but is already configured
+	// above under its own entry.
+	{"biggulpgirls", "Big Gulp Girls", "https://tour.biggulpgirls.com", "scenes", ""},
+	{"shesbrandnew", "She's Brand New", "https://tour.shesbrandnew.com", "scenes", ""},
+	{"facialsforever", "Facials Forever", "https://tour.facialsforever.com", "scenes", ""},
+	{"cougarseason", "Cougar Season", "https://tour.cougarseason.com", "scenes", ""},
+	{"poundedpetite", "Pounded Petite", "https://tour.poundedpetite.com", "scenes", ""},
+	{"2girls1camera", "2 Girls 1 Camera", "https://tour.2girls1camera.com", "scenes", ""},
+
+	// Hub-only brands — no live domain of their own, so Base is the hub and
+	// ListPath selects the per-site route. Scene URLs still resolve under the
+	// hub's /scenes/{slug}.
+	{"topwebmodels", "Top Web Models", "https://tour.topwebmodels.com", "sites/topwebmodels.com", ""},
+	{"twmclassics", "TWM Classics", "https://tour.topwebmodels.com", "sites/twmclassics.com", ""},
+	{"twminterviews", "TWM Interviews", "https://tour.topwebmodels.com", "sites/topwebmodels-interviews.com", ""},
+	{"twmpornvault", "TWM Porn Vault", "https://tour.topwebmodels.com", "sites/twm-porn-vault.com", ""},
 }
 
 type Scraper struct {
@@ -56,11 +76,21 @@ var _ scraper.StudioScraper = (*Scraper)(nil)
 func newScraper(cfg siteConfig) *Scraper {
 	host := strings.TrimPrefix(cfg.Base, "https://")
 	host = strings.TrimPrefix(host, "http://")
-	escaped := strings.ReplaceAll(host, ".", `\.`)
+	pattern := `^https?://` + strings.ReplaceAll(host, ".", `\.`)
+
+	// Brands with no domain of their own live at {hub}/sites/{domain}, so
+	// several configs share one Base. Matching on the host alone would make
+	// them indistinguishable — and would let any of them answer for the bare
+	// hub URL, which is an aggregate of other brands. Scope those to their
+	// own path instead; the hub root deliberately matches no scraper.
+	if strings.HasPrefix(cfg.ListPath, "sites/") {
+		pattern += `/` + strings.ReplaceAll(cfg.ListPath, ".", `\.`) + `(?:/|$)`
+	}
+
 	return &Scraper{
 		cfg:     cfg,
 		client:  httpx.NewClient(30 * time.Second),
-		matchRe: regexp.MustCompile(`^https?://` + escaped),
+		matchRe: regexp.MustCompile(pattern),
 	}
 }
 

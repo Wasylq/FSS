@@ -152,17 +152,65 @@ func TestStickyDollarsSites(t *testing.T) {
 	}
 }
 
-func TestUniqueSiteIDsAndBases(t *testing.T) {
+// Several hub-only brands legitimately share a Base, so the unique key is the
+// Base and ListPath together — that pair is what identifies a catalogue.
+func TestUniqueSiteIDsAndRoutes(t *testing.T) {
 	ids := map[string]bool{}
-	bases := map[string]bool{}
+	routes := map[string]bool{}
 	for _, c := range sites {
 		if ids[c.SiteID] {
 			t.Errorf("duplicate SiteID %q", c.SiteID)
 		}
 		ids[c.SiteID] = true
-		if bases[c.Base] {
-			t.Errorf("duplicate Base %q", c.Base)
+		route := c.Base + "/" + c.ListPath
+		if routes[route] {
+			t.Errorf("duplicate route %q", route)
 		}
-		bases[c.Base] = true
+		routes[route] = true
+	}
+}
+
+// TestHubOnlyBrandsMatchTheirOwnPath covers the Top Web Models brands that have
+// no domain of their own. They share the hub's Base, so each must match only
+// its /sites/{domain} path — otherwise whichever registered first would answer
+// for all of them, and for the bare hub URL, which aggregates other brands.
+func TestHubOnlyBrandsMatchTheirOwnPath(t *testing.T) {
+	byID := map[string]*Scraper{}
+	for _, c := range sites {
+		byID[c.SiteID] = newScraper(c)
+	}
+
+	classics, vault := byID["twmclassics"], byID["twmpornvault"]
+	if classics == nil || vault == nil {
+		t.Fatal("missing hub-only TWM brands")
+	}
+
+	const classicsURL = "https://tour.topwebmodels.com/sites/twmclassics.com"
+	const vaultURL = "https://tour.topwebmodels.com/sites/twm-porn-vault.com"
+
+	if !classics.MatchesURL(classicsURL) {
+		t.Errorf("twmclassics does not match its own path")
+	}
+	if classics.MatchesURL(vaultURL) {
+		t.Errorf("twmclassics wrongly matches the porn-vault path")
+	}
+	if !vault.MatchesURL(vaultURL) {
+		t.Errorf("twmpornvault does not match its own path")
+	}
+	if vault.MatchesURL(classicsURL) {
+		t.Errorf("twmpornvault wrongly matches the classics path")
+	}
+
+	// The bare hub is an aggregate of brands covered by other entries, so no
+	// hub-only scraper may claim it.
+	for _, id := range []string{"topwebmodels", "twmclassics", "twminterviews", "twmpornvault"} {
+		if byID[id].MatchesURL("https://tour.topwebmodels.com/scenes") {
+			t.Errorf("%s must not match the bare hub listing", id)
+		}
+	}
+
+	// Own-domain brands still match on host alone.
+	if !byID["biggulpgirls"].MatchesURL("https://tour.biggulpgirls.com/scenes") {
+		t.Error("biggulpgirls should match its own host")
 	}
 }

@@ -28,3 +28,15 @@ func TestLiveNympho(t *testing.T)         { live(t, "nympho") }
 func TestLiveDirtyAuditions(t *testing.T) { live(t, "dirtyauditions") }
 func TestLiveAllAnal(t *testing.T)        { live(t, "allanal") }
 func TestLiveAnalOnly(t *testing.T)       { live(t, "analonly") }
+
+// Top Web Models network.
+func TestLiveBigGulpGirls(t *testing.T)   { live(t, "biggulpgirls") }
+func TestLiveShesBrandNew(t *testing.T)   { live(t, "shesbrandnew") }
+func TestLiveFacialsForever(t *testing.T) { live(t, "facialsforever") }
+func TestLiveCougarSeason(t *testing.T)   { live(t, "cougarseason") }
+func TestLivePoundedPetite(t *testing.T)  { live(t, "poundedpetite") }
+func TestLive2Girls1Camera(t *testing.T)  { live(t, "2girls1camera") }
+func TestLiveTopWebModels(t *testing.T)   { live(t, "topwebmodels") }
+func TestLiveTWMClassics(t *testing.T)    { live(t, "twmclassics") }
+func TestLiveTWMInterviews(t *testing.T)  { live(t, "twminterviews") }
+func TestLiveTWMPornVault(t *testing.T)   { live(t, "twmpornvault") }

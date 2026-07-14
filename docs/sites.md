@@ -1,6 +1,6 @@
 # Covered Sites — All Domains
 
-1555 scrapers covering 1643 distinct domains. Auto-generated from the scraper registry by `TestSitesMdInSync` — do not hand-edit; instead update the scraper's `Patterns()` and re-run `go test ./internal/scrapers/all/...`. The `stashbox` scraper is omitted here because its covered hosts are config-driven; see [`scrapers.md`](scrapers.md).
+1565 scrapers covering 1650 distinct domains. Auto-generated from the scraper registry by `TestSitesMdInSync` — do not hand-edit; instead update the scraper's `Patterns()` and re-run `go test ./internal/scrapers/all/...`. The `stashbox` scraper is omitted here because its covered hosts are config-driven; see [`scrapers.md`](scrapers.md).
 
 Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scraper ID(s)** column lists every scraper that claims URLs on that domain — most domains have one entry, but table-driven networks (`adultprime`, `tmw`, `nextdoorstudios`, etc.) host many sub-studios on a single root domain. See [`scrapers.md`](scrapers.md) for what each ID covers.
 
@@ -1432,20 +1432,27 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | tonightsgirlfriend.com | `naughtyamerica` |
 | toptobottom.com | `men` |
 | touchmywife.com | `touchmywife` |
+| tour.2girls1camera.com | `2girls1camera` |
 | tour.allanal.com | `allanal` |
 | tour.analonly.com | `analonly` |
 | tour.bamvisions.com | `bamvisions` |
+| tour.biggulpgirls.com | `biggulpgirls` |
+| tour.cougarseason.com | `cougarseason` |
 | tour.curvyculturexxx.com | `curvyculturexxx` |
 | tour.deepthroatsirens.com | `deepthroatsirens` |
+| tour.facialsforever.com | `facialsforever` |
 | tour.gilfgasms.com | `gilfgasms` |
 | tour.milfcandy.com | `milfcandy` |
 | tour.nebraskacoeds.com | `nebraskacoeds` |
 | tour.nympho.com | `nympho` |
+| tour.poundedpetite.com | `poundedpetite` |
+| tour.shesbrandnew.com | `shesbrandnew` |
 | tour.swallowed.com | `swallowed` |
 | tour.theflourishamateurs.com | `theflourishamateurs` |
 | tour.theflourishfetish.com | `theflourishfetish` |
 | tour.theflourishpov.com | `theflourishpov` |
 | tour.theflourishxxx.com | `theflourishxxx` |
+| tour.topwebmodels.com | `topwebmodels`, `twmclassics`, `twminterviews` (+1 more) |
 | tour.trueanal.com | `trueanal` |
 | transangels.com | `transangels` |
 | transexdomination.com | `transexdomination` |
