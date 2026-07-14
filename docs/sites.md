@@ -1,6 +1,6 @@
 # Covered Sites — All Domains
 
-1570 scrapers covering 1655 distinct domains. Auto-generated from the scraper registry by `TestSitesMdInSync` — do not hand-edit; instead update the scraper's `Patterns()` and re-run `go test ./internal/scrapers/all/...`. The `stashbox` scraper is omitted here because its covered hosts are config-driven; see [`scrapers.md`](scrapers.md).
+1573 scrapers covering 1658 distinct domains. Auto-generated from the scraper registry by `TestSitesMdInSync` — do not hand-edit; instead update the scraper's `Patterns()` and re-run `go test ./internal/scrapers/all/...`. The `stashbox` scraper is omitted here because its covered hosts are config-driven; see [`scrapers.md`](scrapers.md).
 
 Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scraper ID(s)** column lists every scraper that claims URLs on that domain — most domains have one entry, but table-driven networks (`adultprime`, `tmw`, `nextdoorstudios`, etc.) host many sub-studios on a single root domain. See [`scrapers.md`](scrapers.md) for what each ID covers.
 
@@ -1153,6 +1153,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | rachelroxxx.puba.com | `pubarachelroxxx` |
 | ragingstallion.com | `ragingstallion` |
 | randyblue.com | `randyblue` |
+| ravebunnys.com | `ravebunnys` |
 | rawalphamales.com | `rawalphamales` |
 | rawattack.com | `rawattack` |
 | rawboys.com | `rawboys` |
@@ -1216,6 +1217,8 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | scoutboys.com | `scoutboys` |
 | seancody.com | `seancody` |
 | secretcircle.com | `secretcircle` |
+| seehimfuck.com | `seehimfuck` |
+| seehimsolo.com | `seehimsolo` |
 | seemomsuck.com | `seemomsuck` |
 | selfiefetish.com | `selfiefetish` |
 | sellyourgf.com | `sellyourgf` |
