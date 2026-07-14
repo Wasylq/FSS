@@ -1,6 +1,6 @@
 # Covered Sites — All Domains
 
-1565 scrapers covering 1650 distinct domains. Auto-generated from the scraper registry by `TestSitesMdInSync` — do not hand-edit; instead update the scraper's `Patterns()` and re-run `go test ./internal/scrapers/all/...`. The `stashbox` scraper is omitted here because its covered hosts are config-driven; see [`scrapers.md`](scrapers.md).
+1569 scrapers covering 1654 distinct domains. Auto-generated from the scraper registry by `TestSitesMdInSync` — do not hand-edit; instead update the scraper's `Patterns()` and re-run `go test ./internal/scrapers/all/...`. The `stashbox` scraper is omitted here because its covered hosts are config-driven; see [`scrapers.md`](scrapers.md).
 
 Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scraper ID(s)** column lists every scraper that claims URLs on that domain — most domains have one entry, but table-driven networks (`adultprime`, `tmw`, `nextdoorstudios`, etc.) host many sub-studios on a single root domain. See [`scrapers.md`](scrapers.md) for what each ID covers.
 
@@ -1573,7 +1573,9 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | wow-orgasms.com | `tmw-wow-orgasms` |
 | wowgirls.com | `wowgirls` |
 | wtfpass.com | `wtfpass` |
+| www.10musume.com | `10musume` |
 | www.1girl1camera.com | `puba1girl1camera` |
+| www.1pondo.tv | `1pondo` |
 | www.amateur18.tvtour | `amateur18` |
 | www.angelasommers.com | `angelasommers` |
 | www.barebackcumpigs.com | `barebackcumpigs` |
@@ -1608,7 +1610,9 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | www.metalbondage.com | `metalbondage` |
 | www.mountainfuckfest.comtour | `mountainfuckfest` |
 | www.msnympho.com | `msnympho` |
+| www.muramura.tv | `muramura` |
 | www.mybangvan.comtour | `mybangvan` |
+| www.pacopacomama.com | `pacopacomama` |
 | www.pegasproductions.com | `pegasproductions` |
 | www.pornonstage.comtour | `pornonstage` |
 | www.priyaraiofficial.com | `pubapriyarai` |

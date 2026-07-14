@@ -65,6 +65,7 @@ import (
 	_ "github.com/Wasylq/FSS/internal/scrapers/cumperfection"
 	_ "github.com/Wasylq/FSS/internal/scrapers/czechav"
 	_ "github.com/Wasylq/FSS/internal/scrapers/czechvr"
+	_ "github.com/Wasylq/FSS/internal/scrapers/d2pass"
 	_ "github.com/Wasylq/FSS/internal/scrapers/darkreach"
 	_ "github.com/Wasylq/FSS/internal/scrapers/data18"
 	_ "github.com/Wasylq/FSS/internal/scrapers/deeps"
