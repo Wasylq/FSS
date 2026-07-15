@@ -48,6 +48,39 @@ var sites = []siteConfig{
 		matchRe:  regexp.MustCompile(`^https?://(?:www\.)?boundmusclejocks\.com`),
 		patterns: []string{"boundmusclejocks.com", "boundmusclejocks.com/videos"},
 	},
+
+	// BoyNapped group — same YPP/Journey backend and the same "Hollywood"
+	// /videos template with per-card JSON-LD. Grouped by the shared
+	// secured.westbill.com/contact/ib/boyn/ support bucket. BoyNapped itself
+	// runs a different theme and has its own scraper.
+	{
+		id:       "badboybondage",
+		domain:   "badboybondage.com",
+		studio:   "Bad Boy Bondage",
+		matchRe:  regexp.MustCompile(`^https?://(?:www\.)?badboybondage\.com`),
+		patterns: []string{"badboybondage.com", "badboybondage.com/videos"},
+	},
+	{
+		id:       "badboysbootcamp",
+		domain:   "badboysbootcamp.com",
+		studio:   "Bad Boys Bootcamp",
+		matchRe:  regexp.MustCompile(`^https?://(?:www\.)?badboysbootcamp\.com`),
+		patterns: []string{"badboysbootcamp.com", "badboysbootcamp.com/videos"},
+	},
+	{
+		id:       "daddysbondageboys",
+		domain:   "daddysbondageboys.com",
+		studio:   "Daddys Bondage Boys",
+		matchRe:  regexp.MustCompile(`^https?://(?:www\.)?daddysbondageboys\.com`),
+		patterns: []string{"daddysbondageboys.com", "daddysbondageboys.com/videos"},
+	},
+	{
+		id:       "undietwinks",
+		domain:   "undietwinks.com",
+		studio:   "Undie Twinks",
+		matchRe:  regexp.MustCompile(`^https?://(?:www\.)?undietwinks\.com`),
+		patterns: []string{"undietwinks.com", "undietwinks.com/videos"},
+	},
 }
 
 func init() {

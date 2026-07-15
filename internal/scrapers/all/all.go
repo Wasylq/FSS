@@ -41,6 +41,7 @@ import (
 	_ "github.com/Wasylq/FSS/internal/scrapers/bondagecafe"
 	_ "github.com/Wasylq/FSS/internal/scrapers/bondagejunkies"
 	_ "github.com/Wasylq/FSS/internal/scrapers/boyfun"
+	_ "github.com/Wasylq/FSS/internal/scrapers/boynapped"
 	_ "github.com/Wasylq/FSS/internal/scrapers/bratprincess"
 	_ "github.com/Wasylq/FSS/internal/scrapers/britishbratz"
 	_ "github.com/Wasylq/FSS/internal/scrapers/bronetwork"

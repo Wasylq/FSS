@@ -1,6 +1,6 @@
 # Covered Sites — All Domains
 
-1578 scrapers covering 1664 distinct domains. Auto-generated from the scraper registry by `TestSitesMdInSync` — do not hand-edit; instead update the scraper's `Patterns()` and re-run `go test ./internal/scrapers/all/...`. The `stashbox` scraper is omitted here because its covered hosts are config-driven; see [`scrapers.md`](scrapers.md).
+1583 scrapers covering 1669 distinct domains. Auto-generated from the scraper registry by `TestSitesMdInSync` — do not hand-edit; instead update the scraper's `Patterns()` and re-run `go test ./internal/scrapers/all/...`. The `stashbox` scraper is omitted here because its covered hosts are config-driven; see [`scrapers.md`](scrapers.md).
 
 Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scraper ID(s)** column lists every scraper that claims URLs on that domain — most domains have one entry, but table-driven networks (`adultprime`, `tmw`, `nextdoorstudios`, etc.) host many sub-studios on a single root domain. See [`scrapers.md`](scrapers.md) for what each ID covers.
 
@@ -128,6 +128,8 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | babevr.com | `babevr` |
 | backalleytoonzonline.com | `backalleytoonz` |
 | backroomcastingcouch.com | `backroomcastingcouch` |
+| badboybondage.com | `badboybondage` |
+| badboysbootcamp.com | `badboysbootcamp` |
 | badbrotherpov.com | `badbrotherpov` |
 | baddaddypov.com | `baddaddypov` |
 | badfamilypov.com | `badfamilypov` |
@@ -211,6 +213,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | boyfriendsharing.comtag | `boyfriendsharing` |
 | boyfun.com | `boyfun` |
 | boygusher.com | `boygusher` |
+| boynapped.com | `boynapped` |
 | boys-pissing.com | `boyspissing` |
 | boys-smoking.com | `boyssmoking` |
 | boysfirsttime.com | `realitydudes` |
@@ -392,6 +395,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | czechvrnetwork.com | `czechvrnetwork` |
 | czechwifeswap.com | `czechwifeswap` |
 | dadcrush.com | `dadcrush` |
+| daddysbondageboys.com | `daddysbondageboys` |
 | daddyslilangel.com | `nubiles` |
 | dahlia-av.jp | `faleno` |
 | dahliasky.puba.com | `pubadahliasky` |
@@ -1503,6 +1507,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | ukupskirts.com | `ukupskirts` |
 | ultrafilms.com | `ultrafilms` |
 | underwatershow.com | `underwatershow` |
+| undietwinks.com | `undietwinks` |
 | universblack.com | `universblack` |
 | unrealporn.com | `unrealporn` |
 | unusualpeople.com | `unusualpeople` |
