@@ -53,6 +53,7 @@ import (
 	_ "github.com/Wasylq/FSS/internal/scrapers/cherrypimps"
 	_ "github.com/Wasylq/FSS/internal/scrapers/chickpass"
 	_ "github.com/Wasylq/FSS/internal/scrapers/classmedia"
+	_ "github.com/Wasylq/FSS/internal/scrapers/claudiamarie"
 	_ "github.com/Wasylq/FSS/internal/scrapers/clips4sale"
 	_ "github.com/Wasylq/FSS/internal/scrapers/clubdom"
 	_ "github.com/Wasylq/FSS/internal/scrapers/cockyboys"
