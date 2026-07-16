@@ -60,6 +60,12 @@ import (
 	"github.com/Wasylq/FSS/scraper"
 )
 
+// maxSetsBytes caps the /content/sets read. The endpoint returns a site's
+// entire catalogue in one response, which for a large archive runs well past
+// httpx.MaxPageBytes — LadyboyGold's 5006 sets are ~11.5 MB — and a truncated
+// read yields zero scenes rather than a partial list.
+const maxSetsBytes = 64 * 1024 * 1024
+
 // SiteConfig describes one NATS-CMS site.
 type SiteConfig struct {
 	ID       string
@@ -79,6 +85,12 @@ type SiteConfig struct {
 	CMSAreaID string
 	Patterns  []string
 	MatchRe   *regexp.Regexp
+	// SkipPathRe, when set, drops sets whose `path` matches it. Some sites
+	// return photo sets and videos from the same block with no type field —
+	// LadyboyGold's block mixes ~1800 photo sets into ~3200 scenes — and the
+	// path segment is the only thing that tells them apart. Nil means keep
+	// every set, which is the right default for sites that only publish video.
+	SkipPathRe *regexp.Regexp
 }
 
 type Scraper struct {
@@ -181,6 +193,7 @@ type setEntry struct {
 	Name        string      `json:"name"`
 	Description string      `json:"description"`
 	Slug        string      `json:"slug"`
+	Path        string      `json:"path"`       // content path; used by SkipPathRe
 	AddedNice   string      `json:"added_nice"` // "YYYY-MM-DD"
 	MemberViews stringOrInt `json:"member_views"`
 	Preview     previewBlob `json:"preview_formatted"`
@@ -283,7 +296,7 @@ func (s *Scraper) fetchAPI(ctx context.Context, url string) ([]byte, error) {
 		return nil, err
 	}
 	defer func() { _ = resp.Body.Close() }()
-	return httpx.ReadBody(resp.Body)
+	return httpx.ReadBodyN(resp.Body, maxSetsBytes)
 }
 
 // ---- run loop ----
@@ -344,7 +357,12 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 	}
 
 	now := time.Now().UTC()
+	skipped := 0
 	for _, entry := range sets.Sets {
+		if s.cfg.SkipPathRe != nil && s.cfg.SkipPathRe.MatchString(entry.Path) {
+			skipped++
+			continue
+		}
 		if opts.KnownIDs[entry.CMSSetID] {
 			scraper.Debugf(1, "natscms/%s: hit known ID %s, stopping early", s.cfg.ID, entry.CMSSetID)
 			select {
@@ -358,6 +376,9 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 		case <-ctx.Done():
 			return
 		}
+	}
+	if skipped > 0 {
+		scraper.Debugf(1, "natscms/%s: skipped %d non-video sets via SkipPathRe", s.cfg.ID, skipped)
 	}
 }
 

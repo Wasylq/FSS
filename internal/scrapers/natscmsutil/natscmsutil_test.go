@@ -5,6 +5,8 @@ import (
 	"regexp"
 	"testing"
 	"time"
+
+	"github.com/Wasylq/FSS/internal/httpx"
 )
 
 func TestStringOrInt(t *testing.T) {
@@ -155,5 +157,63 @@ func TestToScene(t *testing.T) {
 	}
 	if got.Date.Year() != 2026 || got.Date.Month() != 7 || got.Date.Day() != 10 {
 		t.Errorf("date = %v", got.Date)
+	}
+}
+
+// TestSkipPathRe covers the optional photo-set filter. Some sites return photo
+// sets and videos from the same block with no type field, so the content path
+// is the only discriminator; a nil SkipPathRe must keep everything.
+func TestSkipPathRe(t *testing.T) {
+	sets := []setEntry{
+		{CMSSetID: "1", Name: "A video", Path: "lbg/00lfb/videos/a/", AddedNice: "2026-01-01"},
+		{CMSSetID: "2", Name: "A photo set", Path: "lbg/00lfb/photos/b/", AddedNice: "2026-01-02"},
+		{CMSSetID: "3", Name: "A 4k video", Path: "lbg/00lfb/4kvideos/c/", AddedNice: "2026-01-03"},
+		{CMSSetID: "4", Name: "A 4k photo set", Path: "lbg/00lfb/4kphotos/d/", AddedNice: "2026-01-04"},
+	}
+
+	cases := []struct {
+		name    string
+		re      *regexp.Regexp
+		wantIDs []string
+	}{
+		{
+			name:    "nil keeps everything",
+			re:      nil,
+			wantIDs: []string{"1", "2", "3", "4"},
+		},
+		{
+			name:    "photo paths dropped",
+			re:      regexp.MustCompile(`/[0-9a-z_]*photos[0-9a-z_]*/`),
+			wantIDs: []string{"1", "3"},
+		},
+	}
+
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			var got []string
+			for _, e := range sets {
+				if c.re != nil && c.re.MatchString(e.Path) {
+					continue
+				}
+				got = append(got, e.CMSSetID)
+			}
+			if len(got) != len(c.wantIDs) {
+				t.Fatalf("kept %v, want %v", got, c.wantIDs)
+			}
+			for i := range got {
+				if got[i] != c.wantIDs[i] {
+					t.Errorf("kept %v, want %v", got, c.wantIDs)
+					break
+				}
+			}
+		})
+	}
+}
+
+// The sets endpoint returns a whole catalogue in one response, so the read cap
+// must be well above httpx.MaxPageBytes or a large site decodes to nothing.
+func TestMaxSetsBytesExceedsDefault(t *testing.T) {
+	if maxSetsBytes <= httpx.MaxPageBytes {
+		t.Errorf("maxSetsBytes = %d, must exceed httpx.MaxPageBytes = %d", maxSetsBytes, httpx.MaxPageBytes)
 	}
 }
