@@ -17,6 +17,7 @@ type siteConfig struct {
 
 var sites = []siteConfig{
 	{"attackers", "attackers.net", "Attackers"},
+	{"chijoheaven", "bi-av.com", "Chijo Heaven"},
 	{"dasdas", "dasdas.jp", "DAS!"},
 	{"ebody", "av-e-body.com", "E-body"},
 	{"fitch", "fitch-av.com", "Fitch"},

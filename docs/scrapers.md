@@ -123,6 +123,7 @@
 | [Karissa Diamond](https://karissa-diamond.com) | `karissa-diamond.com`, `karissa-diamond.com/videoCollection/` | Custom | No | MPL Studios child, standalone site; `/workFiles/loadMore.php` offset JSON API (~28 videos, `[items, nextOffset, isMember]`) + detail worker pool for duration; date-sorted |
 | [Karina Hart](https://www.karinahart.com) | `karinahart.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
 | [Kawaii](https://kawaiikawaii.jp) | `kawaiikawaii.jp/works/list/release`, `kawaiikawaii.jp/works/detail/{code}`, `kawaiikawaii.jp/actress/detail/{id}` | Up-Timely CMS | No | Thin wrapper around `uptimelyutil`. ~589 products. |
+| [Chijo Heaven](https://bi-av.com) | `bi-av.com/works/list/release`, `bi-av.com/works/detail/{code}`, `bi-av.com/actress/detail/{id}` | Up-Timely CMS | No | Thin wrapper around `uptimelyutil`. ~350 works. The apex is an age gate; content lives under `/top` and `/works/`. |
 | [Latina Coochies](https://www.latinacoochies.com) | `latinacoochies.com`, `latinacoochies.com/latina-porn-stars/{name}/{id}` | Score Group | No | Score Group, table-driven `scoregroup` package |
 | [Latin Mommas](https://www.latinmommas.com) | `latinmommas.com` | Score Group | No | Score Group, table-driven `scoregroup` package |
 | [LatinBoyz](https://latinboyz.com) | `latinboyz.com`, `latinboyz.com/tag/{slug}` | WordPress (REST API) | No | WP REST `posts` (gay Latino; feed includes occasional text stories), date + description + thumbnail, uses `fotoroutil` |
