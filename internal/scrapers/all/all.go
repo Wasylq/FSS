@@ -193,6 +193,7 @@ import (
 	_ "github.com/Wasylq/FSS/internal/scrapers/mousouzoku"
 	_ "github.com/Wasylq/FSS/internal/scrapers/mplstudios"
 	_ "github.com/Wasylq/FSS/internal/scrapers/mydirtyhobby"
+	_ "github.com/Wasylq/FSS/internal/scrapers/nadinejansen"
 	_ "github.com/Wasylq/FSS/internal/scrapers/nakednews"
 	_ "github.com/Wasylq/FSS/internal/scrapers/nastymedia"
 	_ "github.com/Wasylq/FSS/internal/scrapers/naughtyamerica"
