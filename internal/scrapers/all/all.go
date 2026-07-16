@@ -271,6 +271,7 @@ import (
 	_ "github.com/Wasylq/FSS/internal/scrapers/sindrive"
 	_ "github.com/Wasylq/FSS/internal/scrapers/smqueenroad"
 	_ "github.com/Wasylq/FSS/internal/scrapers/sofiemarie"
+	_ "github.com/Wasylq/FSS/internal/scrapers/spankmonster"
 	_ "github.com/Wasylq/FSS/internal/scrapers/spicevids"
 	_ "github.com/Wasylq/FSS/internal/scrapers/spizoo"
 	_ "github.com/Wasylq/FSS/internal/scrapers/spunkworthy"
