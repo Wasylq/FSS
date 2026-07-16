@@ -68,16 +68,17 @@ func (s *Scraper) ListScenes(ctx context.Context, studioURL string, opts scraper
 }
 
 var (
-	cardRe      = regexp.MustCompile(`<div class="sexyvideo"`)
-	sceneIDRe   = regexp.MustCompile(`id="set-target-(\d+)"`)
-	titleRe     = regexp.MustCompile(`(?s)<h4>\s*<a[^>]+title="([^"]+)"`)
-	sceneURLRe  = regexp.MustCompile(`(?s)<h4>\s*<a\s+href="([^"]+)"`)
-	thumbRe     = regexp.MustCompile(`<img[^>]*class="[^"]*mainThumb[^"]*"[^>]*src="([^"]+)"`)
-	durationRe  = regexp.MustCompile(`<i class='fas fa-video'></i>\s*<div[^>]*>(\d+:\d{2}(?::\d{2})?)`)
-	performerRe = regexp.MustCompile(`<div class="modelname">\s*<a[^>]+><span[^>]*>([^<]+)</span></a>`)
-	descRe      = regexp.MustCompile(`<p class="photodesc">([^<]+)</p>`)
-	dateRe      = regexp.MustCompile(`<i class='far fa-calendar'[^>]*></i>\s*(\d{1,2}(?:st|nd|rd|th)\s+\w+\s+\d{4})`)
-	maxPageRe   = regexp.MustCompile(`movies_(\d+)_d\.html`)
+	cardRe       = regexp.MustCompile(`<div class="sexyvideo"`)
+	sceneIDRe    = regexp.MustCompile(`id="set-target-(\d+)"`)
+	comingSoonRe = regexp.MustCompile(`class="comingsoon"`)
+	titleRe      = regexp.MustCompile(`(?s)<h4>\s*<a[^>]+title="([^"]+)"`)
+	sceneURLRe   = regexp.MustCompile(`(?s)<h4>\s*<a\s+href="([^"]+)"`)
+	thumbRe      = regexp.MustCompile(`<img[^>]*class="[^"]*mainThumb[^"]*"[^>]*src="([^"]+)"`)
+	durationRe   = regexp.MustCompile(`<i class='fas fa-video'></i>\s*<div[^>]*>(\d+:\d{2}(?::\d{2})?)`)
+	performerRe  = regexp.MustCompile(`<div class="modelname">\s*<a[^>]+><span[^>]*>([^<]+)</span></a>`)
+	descRe       = regexp.MustCompile(`<p class="photodesc">([^<]+)</p>`)
+	dateRe       = regexp.MustCompile(`<i class='far fa-calendar'[^>]*></i>\s*(\d{1,2}(?:st|nd|rd|th)\s+\w+\s+\d{4})`)
+	maxPageRe    = regexp.MustCompile(`movies_(\d+)_d\.html`)
 
 	modelSlugRe = regexp.MustCompile(`/models/([^_/.]+?)(?:\.html)?$`)
 )
@@ -105,6 +106,13 @@ func parseListingPage(body []byte) []sceneItem {
 			end = starts[i+1][0]
 		}
 		block := page[start:end]
+
+		// Unreleased scenes are rendered as a "Coming Soon!" card with a
+		// countdown and no trailer link, so they have no title and no URL.
+		// Emitting them would produce scenes with empty required fields.
+		if comingSoonRe.MatchString(block) {
+			continue
+		}
 
 		var item sceneItem
 

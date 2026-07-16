@@ -367,3 +367,41 @@ func TestToSceneAbsoluteURLs(t *testing.T) {
 		t.Errorf("Thumbnail = %q, should not be modified", scene.Thumbnail)
 	}
 }
+
+// TestParseListingSkipsComingSoon covers unreleased scenes. The tour renders
+// them as a card with a countdown and no trailer link, so they carry a
+// set-target id but no title and no URL — emitting them would produce scenes
+// with empty required fields.
+func TestParseListingSkipsComingSoon(t *testing.T) {
+	body := []byte(`
+<div class="sexyvideo">
+  <div class="videoblock">
+    <div class="modelname"><a href="/tour/models/Kawaii-Fiona.html"><span class="text-center">Kawaii Fiona</span></a></div>
+    <div class="epochtime">
+      <img id="set-target-11544" alt="It&#039;s Been A While ..." class="mainThumb thumbs stdimage" src="/tour/content//contentthumbs/86/95/268695-1x.jpg" />
+    </div>
+    <div class="comingsoon" style="text-align: center;">Coming Soon!<br>
+      <div class="countdown" data-end="1784714400"></div>
+    </div>
+  </div>
+</div>
+<div class="sexyvideo">
+  <div class="videoblock">
+    <span><i class='fas fa-video'></i> <div style='color: #ff0; display:inline'>17:02&nbsp;HD&nbsp;Video</div></span>
+    <div class="modelname"><a href="/tour/models/Someone.html"><span class="text-center">Someone</span></a></div>
+    <img id="set-target-11545" class="mainThumb thumbs stdimage" src="/tour/content//x-1x.jpg" />
+    <h4><a href="https://www.groobygirls.com/tour/trailers/Sweet-Look-Serious-Body.html" title="Sweet Look. Serious Body">x</a></h4>
+  </div>
+</div>`)
+
+	items := parseListingPage(body)
+	if len(items) != 1 {
+		t.Fatalf("got %d items, want 1 (the Coming Soon card must be skipped)", len(items))
+	}
+	if items[0].id != "11545" {
+		t.Errorf("id = %q, want 11545 (the released scene)", items[0].id)
+	}
+	if items[0].title == "" || items[0].url == "" {
+		t.Errorf("released scene lost its title/url: %+v", items[0])
+	}
+}
