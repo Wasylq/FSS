@@ -3,14 +3,14 @@
 package brutalmaster
 
 import (
-	"regexp"
 	"testing"
 
-	"github.com/Wasylq/FSS/internal/scrapers/fotoroutil"
 	"github.com/Wasylq/FSS/internal/scrapers/testutil"
 )
 
+// New() is used rather than a locally-built config so the test exercises the
+// shipped settings — an inline config here previously missed the raised
+// Timeout, so the site timed out on every run while the real scraper was fine.
 func TestLiveBrutalMaster(t *testing.T) {
-	s := fotoroutil.New(fotoroutil.SiteConfig{ID: "brutalmaster", Studio: "Brutal Master", SiteBase: "https://brutalmaster.com", TagsAsTags: true, MatchRe: regexp.MustCompile(`brutalmaster`)})
-	testutil.RunLiveScrape(t, s, "https://brutalmaster.com/", 2)
+	testutil.RunLiveScrape(t, New(), "https://brutalmaster.com/", 2)
 }

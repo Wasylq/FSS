@@ -33,6 +33,10 @@ type SiteConfig struct {
 	TagsAsTags bool
 	Patterns   []string
 	MatchRe    *regexp.Regexp
+	// Timeout overrides the HTTP client timeout. Sites with large catalogues
+	// can take well past the default on a 100-post page — Brutal Master's
+	// first page is ~4 MB and needs ~40s. Zero means defaultTimeout.
+	Timeout time.Duration
 }
 
 type Scraper struct {
@@ -40,10 +44,17 @@ type Scraper struct {
 	Client *http.Client
 }
 
+// defaultTimeout is the HTTP client timeout for sites that do not override it.
+const defaultTimeout = 30 * time.Second
+
 func New(cfg SiteConfig) *Scraper {
+	timeout := cfg.Timeout
+	if timeout <= 0 {
+		timeout = defaultTimeout
+	}
 	return &Scraper{
 		cfg:    cfg,
-		Client: httpx.NewClient(30 * time.Second),
+		Client: httpx.NewClient(timeout),
 	}
 }
 
