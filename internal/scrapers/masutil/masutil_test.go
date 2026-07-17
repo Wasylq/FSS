@@ -267,3 +267,58 @@ func TestHTMLEntitiesInTitle(t *testing.T) {
 		t.Errorf("Title = %q, want %q", cards[0].Title, "Leather & Lust: Behind the Moans")
 	}
 }
+
+// TestExtractMaxPageOptionForms covers the page <select>, which the CMS renders
+// inconsistently. A regex that only accepted a bare value followed immediately
+// by ">" matched none of the quoted or `selected` forms, leaving maxPage at 0
+// and the walk with no page-count termination.
+func TestExtractMaxPageOptionForms(t *testing.T) {
+	cases := []struct {
+		name string
+		body string
+		want int
+	}{
+		{
+			name: "bare values",
+			body: `<select><option value=1>1</option><option value=12>12</option></select>`,
+			want: 12,
+		},
+		{
+			name: "double-quoted values",
+			body: `<select><option value="1">1</option><option value="12">12</option></select>`,
+			want: 12,
+		},
+		{
+			name: "single-quoted values",
+			body: `<select><option value='7'>7</option></select>`,
+			want: 7,
+		},
+		{
+			name: "selected attribute before the bracket",
+			body: `<select><option value=3 selected>3</option><option value=9>9</option></select>`,
+			want: 9,
+		},
+		{
+			name: "quoted plus selected",
+			body: `<select><option value="4" selected="selected">4</option><option value="21">21</option></select>`,
+			want: 21,
+		},
+		{
+			name: "pagenumbers wins over the select",
+			body: `<a class="pagenumbers">30</a><select><option value=9>9</option></select>`,
+			want: 30,
+		},
+		{
+			name: "neither present",
+			body: `<div>no pager here</div>`,
+			want: 0,
+		},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			if got := ExtractMaxPage(c.body); got != c.want {
+				t.Errorf("ExtractMaxPage = %d, want %d", got, c.want)
+			}
+		})
+	}
+}

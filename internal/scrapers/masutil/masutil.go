@@ -137,8 +137,13 @@ var (
 
 	thumbRe = regexp.MustCompile(`<img[^>]+src="([^"]*faceimages/[^"]*)"`)
 
-	maxPageRe       = regexp.MustCompile(`class="pagenumbers">(\d+)</a>`)
-	maxPageSelectRe = regexp.MustCompile(`<option value=(\d+)>`)
+	maxPageRe = regexp.MustCompile(`class="pagenumbers">(\d+)</a>`)
+	// The page <select> renders its options inconsistently: some are bare
+	// (`value=12`), some quoted (`value="12"`), and the current page carries a
+	// `selected` attribute before the closing bracket. Requiring an unquoted
+	// value followed immediately by `>` missed all but the plainest form, which
+	// left maxPage at 0 and the walk with no page-count termination.
+	maxPageSelectRe = regexp.MustCompile(`<option[^>]*\bvalue=["']?(\d+)["']?`)
 )
 
 func ParseCards(body string) []CardData {

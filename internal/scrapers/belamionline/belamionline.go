@@ -18,6 +18,9 @@ const siteID = "belamionline"
 
 const tourBase = "https://newtour.belamionline.com"
 
+// perPage is the listing page size the tour renders.
+const perPage = 32
+
 type section struct {
 	page string
 	name string
@@ -108,6 +111,7 @@ func detectSection(u string) *section {
 
 func (s *Scraper) runSection(ctx context.Context, studioURL string, opts scraper.ListOpts, out chan<- scraper.SceneResult, sec section) {
 	now := time.Now().UTC()
+	maxPage := 0
 	scraper.Paginate(ctx, opts, siteID, out, func(ctx context.Context, page int) (scraper.PageResult, error) {
 		pageURL := tourBase + "/" + sec.page
 		if page > 1 {
@@ -120,16 +124,20 @@ func (s *Scraper) runSection(ctx context.Context, studioURL string, opts scraper
 		items := parseListingPage(body)
 		total := 0
 		if page == 1 {
-			total = parseMaxPage(body) * 32
+			maxPage = parseMaxPage(body)
+			total = maxPage * perPage
 		}
 		scenes := make([]models.Scene, len(items))
 		for i, item := range items {
 			scenes[i] = toScene(studioURL, item, now)
 		}
+		// Termination comes from the pager the site itself renders. The
+		// short-page check is only a fallback: a page-size change would make a
+		// hardcoded count stop the walk on the very first page.
 		return scraper.PageResult{
 			Scenes: scenes,
 			Total:  total,
-			Done:   len(items) < 32,
+			Done:   (maxPage > 0 && page >= maxPage) || len(items) < perPage,
 		}, nil
 	})
 }

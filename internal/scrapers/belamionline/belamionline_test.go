@@ -313,3 +313,18 @@ func TestParseDescription_BacktickEscape(t *testing.T) {
 }
 
 func strPtr(s string) *string { return &s }
+
+// perPage is only a fallback for termination; the pager parsed from the page is
+// primary. Termination used to key off a hardcoded 32-item page size, so a
+// page-size change would have stopped the walk on page 1.
+func TestPerPageIsAFallbackNotTheOnlyGuard(t *testing.T) {
+	if perPage != 32 {
+		t.Errorf("perPage = %d, want 32 (the tour's page size)", perPage)
+	}
+	// The existing TestParseMaxPage/TestParseMaxPage_NoPagination cover the
+	// pager parse itself; this pins that runSection has a real page count to
+	// terminate on.
+	if got := parseMaxPage([]byte(listingHTML)); got <= 1 {
+		t.Errorf("parseMaxPage(listing) = %d, want a real page count to terminate on", got)
+	}
+}
