@@ -1,6 +1,6 @@
 # Covered Sites — All Domains
 
-1590 scrapers covering 1676 distinct domains. Auto-generated from the scraper registry by `TestSitesMdInSync` — do not hand-edit; instead update the scraper's `Patterns()` and re-run `go test ./internal/scrapers/all/...`. The `stashbox` scraper is omitted here because its covered hosts are config-driven; see [`scrapers.md`](scrapers.md).
+1591 scrapers covering 1678 distinct domains. Auto-generated from the scraper registry by `TestSitesMdInSync` — do not hand-edit; instead update the scraper's `Patterns()` and re-run `go test ./internal/scrapers/all/...`. The `stashbox` scraper is omitted here because its covered hosts are config-driven; see [`scrapers.md`](scrapers.md).
 
 Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scraper ID(s)** column lists every scraper that claims URLs on that domain — most domains have one entry, but table-driven networks (`adultprime`, `tmw`, `nextdoorstudios`, etc.) host many sub-studios on a single root domain. See [`scrapers.md`](scrapers.md) for what each ID covers.
 
@@ -827,6 +827,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | littledick.club | `littledickclub` |
 | littlefromasia.com | `littlefromasia` |
 | littlefromasia.comtag | `littlefromasia` |
+| littlemutt.com | `littlemutt` |
 | lolafoxx.puba.com | `pubalolafoxx` |
 | lollyhardcore.com | `tmw-lollyhardcore` |
 | lollyink.puba.com | `pubalollyink` |
@@ -1462,6 +1463,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | tour.deepthroatsirens.com | `deepthroatsirens` |
 | tour.facialsforever.com | `facialsforever` |
 | tour.gilfgasms.com | `gilfgasms` |
+| tour.littlemutt.com | `littlemutt` |
 | tour.milfcandy.com | `milfcandy` |
 | tour.nebraskacoeds.com | `nebraskacoeds` |
 | tour.nympho.com | `nympho` |
