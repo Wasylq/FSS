@@ -131,6 +131,7 @@ import (
 	_ "github.com/Wasylq/FSS/internal/scrapers/goldwinpass"
 	_ "github.com/Wasylq/FSS/internal/scrapers/grandparentsx"
 	_ "github.com/Wasylq/FSS/internal/scrapers/grooby"
+	_ "github.com/Wasylq/FSS/internal/scrapers/guysinsweatpants"
 	_ "github.com/Wasylq/FSS/internal/scrapers/hegre"
 	_ "github.com/Wasylq/FSS/internal/scrapers/helixstudios"
 	_ "github.com/Wasylq/FSS/internal/scrapers/hmp"
