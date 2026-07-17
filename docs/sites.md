@@ -1,6 +1,6 @@
 # Covered Sites — All Domains
 
-1592 scrapers covering 1679 distinct domains. Auto-generated from the scraper registry by `TestSitesMdInSync` — do not hand-edit; instead update the scraper's `Patterns()` and re-run `go test ./internal/scrapers/all/...`. The `stashbox` scraper is omitted here because its covered hosts are config-driven; see [`scrapers.md`](scrapers.md).
+1603 scrapers covering 1690 distinct domains. Auto-generated from the scraper registry by `TestSitesMdInSync` — do not hand-edit; instead update the scraper's `Patterns()` and re-run `go test ./internal/scrapers/all/...`. The `stashbox` scraper is omitted here because its covered hosts are config-driven; see [`scrapers.md`](scrapers.md).
 
 Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scraper ID(s)** column lists every scraper that claims URLs on that domain — most domains have one entry, but table-driven networks (`adultprime`, `tmw`, `nextdoorstudios`, etc.) host many sub-studios on a single root domain. See [`scrapers.md`](scrapers.md) for what each ID covers.
 
@@ -337,6 +337,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | cristiannlive.com | `cristiann` |
 | crunchboy.com | `crunchboy` |
 | crystal-eizou.jp | `crystaleizou` |
+| cuckhunter.com | `cuckhunter` |
 | cum4k.com | `cum4k` |
 | cumbots.com | `cumbots` |
 | cumbuffet.com | `cumbuffet` |
@@ -690,6 +691,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | homealonemilfs.com | `homealonemilfs` |
 | hometeenvids.com | `tmw-hometeenvids` |
 | hometoyteens.com | `tmw-hometoyteens` |
+| honeytrans.com | `honeytrans` |
 | honnaka.jp | `honnaka` |
 | hookuphotshot.com | `hookuphotshot` |
 | hornyasianmilfs.com | `hornyasianmilfs` |
@@ -738,6 +740,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | jalifstudio.com | `jalifstudio` |
 | jamesdeen.com | `jamesdeen` |
 | japanhdv.com | `japanhdv` |
+| japanlust.com | `japanlust` |
 | javdatabase.com | `javdatabase` |
 | jaydencole.puba.com | `pubajaydencole` |
 | jaydenjaymes.puba.com | `pubajaydenjaymes` |
@@ -752,6 +755,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | jizzorgy.com | `men` |
 | joanabliss.com | `joanabliss` |
 | joethepervert.com | `joethepervert` |
+| joibabes.com | `joibabes` |
 | jonnidarkkoxxx.com | `jonnidarkkoxxx` |
 | joymii.com | `joymii` |
 | jsi.empirestores.co | `justinslayer` |
@@ -807,6 +811,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | lesbea.com | `lesbea` |
 | lesbianfactor.com | `lesbianfactor` |
 | lesbianx.com | `lesbianx` |
+| lesworship.com | `lesworship` |
 | lethalhardcore.com | `lethalhardcore` |
 | lethalhardcorevr.com | `lethalhardcorevr` |
 | lethallipstick.com | `lethallipstick` |
@@ -1032,6 +1037,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | nubileset.com | `nubiles` |
 | nubilesunscripted.com | `nubiles` |
 | nudefightclub.com | `nudefightclub` |
+| nudeyogaporn.com | `nudeyogaporn` |
 | nudolls.com | `nudolls` |
 | nurumassage.com | `nurumassage` |
 | nylonsx.com | `tmw-nylonsx` |
@@ -1124,6 +1130,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | povhotel.com | `povhotel` |
 | povlife.com | `povlife` |
 | povmania.com | `povmania` |
+| povmasters.com | `povmasters` |
 | povpornstars.com | `povpornstars` |
 | povthis.com | `povthis` |
 | powerfetish.com | `powerfetish` |
@@ -1166,6 +1173,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | rachelroxxx.puba.com | `pubarachelroxxx` |
 | ragingstallion.com | `ragingstallion` |
 | randyblue.com | `randyblue` |
+| randypass.com | `randypass` |
 | ravebunnys.com | `ravebunnys` |
 | rawalphamales.com | `rawalphamales` |
 | rawattack.com | `rawattack` |
@@ -1477,14 +1485,17 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | tour.topwebmodels.com | `topwebmodels`, `twmclassics`, `twminterviews` (+1 more) |
 | tour.trueanal.com | `trueanal` |
 | transangels.com | `transangels` |
+| transdaylight.com | `transdaylight` |
 | transexdomination.com | `transexdomination` |
 | transexjapan.com | `transexjapan` |
 | transexpov.com | `transexpov` |
 | transfixed.com | `transfixed` |
 | transgasm.com | `transgasm` |
 | transgressivexxx.com | `transgressivexxx` |
+| transmidnight.com | `transmidnight` |
 | transnificent.com | `transnificent` |
 | transqueens.com | `transqueens` |
+| transroommates.com | `transroommates` |
 | transsensual.com | `transsensual` |
 | transsexualangel.com | `transsexualangel` |
 | transsexualroadtrip.com | `transsexualroadtrip` |

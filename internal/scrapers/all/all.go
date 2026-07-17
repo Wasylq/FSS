@@ -23,6 +23,7 @@ import (
 	_ "github.com/Wasylq/FSS/internal/scrapers/analvids"
 	_ "github.com/Wasylq/FSS/internal/scrapers/apclips"
 	_ "github.com/Wasylq/FSS/internal/scrapers/apovstory"
+	_ "github.com/Wasylq/FSS/internal/scrapers/arx"
 	_ "github.com/Wasylq/FSS/internal/scrapers/auntjudys"
 	_ "github.com/Wasylq/FSS/internal/scrapers/avidolz"
 	_ "github.com/Wasylq/FSS/internal/scrapers/aylo"
