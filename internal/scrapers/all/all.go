@@ -285,6 +285,7 @@ import (
 	_ "github.com/Wasylq/FSS/internal/scrapers/strokies"
 	_ "github.com/Wasylq/FSS/internal/scrapers/swallowsalon"
 	_ "github.com/Wasylq/FSS/internal/scrapers/swearl"
+	_ "github.com/Wasylq/FSS/internal/scrapers/tadpolexstudio"
 	_ "github.com/Wasylq/FSS/internal/scrapers/tainster"
 	_ "github.com/Wasylq/FSS/internal/scrapers/takaratv"
 	_ "github.com/Wasylq/FSS/internal/scrapers/taratainton"
