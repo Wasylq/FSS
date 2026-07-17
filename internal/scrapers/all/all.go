@@ -299,6 +299,7 @@ import (
 	_ "github.com/Wasylq/FSS/internal/scrapers/uptimely"
 	_ "github.com/Wasylq/FSS/internal/scrapers/venusav"
 	_ "github.com/Wasylq/FSS/internal/scrapers/videoelements"
+	_ "github.com/Wasylq/FSS/internal/scrapers/vintageflash"
 	_ "github.com/Wasylq/FSS/internal/scrapers/vip4k"
 	_ "github.com/Wasylq/FSS/internal/scrapers/virtualrealporn"
 	_ "github.com/Wasylq/FSS/internal/scrapers/virtualtaboo"
