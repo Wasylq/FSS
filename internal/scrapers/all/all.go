@@ -165,6 +165,7 @@ import (
 	_ "github.com/Wasylq/FSS/internal/scrapers/kinkacademy"
 	_ "github.com/Wasylq/FSS/internal/scrapers/kmproduce"
 	_ "github.com/Wasylq/FSS/internal/scrapers/kocompany"
+	_ "github.com/Wasylq/FSS/internal/scrapers/kristenbjorn"
 	_ "github.com/Wasylq/FSS/internal/scrapers/ladyboygold"
 	_ "github.com/Wasylq/FSS/internal/scrapers/ladyfyre"
 	_ "github.com/Wasylq/FSS/internal/scrapers/latinboyz"
