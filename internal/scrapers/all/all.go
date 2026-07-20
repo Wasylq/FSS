@@ -148,6 +148,7 @@ import (
 	_ "github.com/Wasylq/FSS/internal/scrapers/insexarchives"
 	_ "github.com/Wasylq/FSS/internal/scrapers/interracialpass"
 	_ "github.com/Wasylq/FSS/internal/scrapers/ishotmyself"
+	_ "github.com/Wasylq/FSS/internal/scrapers/itspov"
 	_ "github.com/Wasylq/FSS/internal/scrapers/iwantclips"
 	_ "github.com/Wasylq/FSS/internal/scrapers/jacquieetmichel"
 	_ "github.com/Wasylq/FSS/internal/scrapers/japanhdv"
