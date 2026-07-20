@@ -14,41 +14,55 @@ type siteConfig struct {
 	Domain     string
 	StudioName string
 	Performers []string // solo-performer sites
+	// Aliases are extra domains that redirect to Domain. Requests still go to
+	// Domain; these only widen URL matching so a redirecting domain a user
+	// pastes still resolves to this scraper.
+	Aliases []string
 }
 
 var sites = []siteConfig{
-	{"backalleytoonz", "backalleytoonzonline.com", "Backalley Toonz", nil},
-	{"bigjohnnyxxx", "bigjohnnyxxx.com", "Big Johnny XXX", nil},
-	{"blackmoneyerotica", "blackmoneyerotica.com", "Black Money Erotica", nil},
-	{"blackpynk", "blackpynk.com", "Black Pynk", nil},
-	{"brookelynnebriar", "brookelynnebriar.com", "Brookelynne Briar", []string{"Brookelynne Briar"}},
-	{"citygirlz", "sallydangeloxxx.com", "City Girlz", nil},
-	{"cumtrainer", "cumtrainer.com", "Cum Trainer", nil},
-	{"facialcasting", "facialcasting.com", "Facial Casting", nil},
-	{"glamourbunnies", "glamourbunnies.com", "Glamour Bunnies", nil},
-	{"lisariveraxo", "lisariveraxo.com", "Lisa Rivera XO", []string{"Lisa Rivera"}},
-	{"monstermalesprod", "monstermalesprod.com", "Monster Males", nil},
-	{"mugurporn", "mugurporn.com", "Mugur Porn", nil},
-	{"naughtycolombia", "naughtycolombia.com", "Naughty Colombia", nil},
-	{"nerdsofporn", "nerdsofporn.com", "Nerds of Porn", nil},
-	{"peccatriciproduzioni", "peccatriciproduzioni.com", "Peccatrici Produzioni", nil},
-	{"pennybarber", "pennybarber.com", "Penny Barber", []string{"Penny Barber"}},
-	{"pervsmilfsnteens", "pervsmilfsnteens.com", "Pervs MILFs n Teens", nil},
-	{"porntugal", "porntugal.com", "Porntugal", nil},
-	{"pvgirls", "pvgirls.com", "Porn Valley Girls", nil},
-	{"ricporter", "ricporter.tv", "Ric Porter", nil},
-	{"sexyninarivera", "sexyninarivera.com", "Sexy Nina Rivera", []string{"Nina Rivera"}},
-	{"sukmydick", "sukmydick.com", "Suk My Dick", nil},
-	{"superhotfilms", "superhotfilms.com", "Super Hot Films", nil},
-	{"thejerkygirls", "thejerkygirls.com", "The Jerky Girls", nil},
-	{"thiccvision", "thiccvision.com", "Thicc Vision", nil},
-	{"thicq", "thicq.com", "THICQ", nil},
-	{"throatwars", "throatwars.com", "Throat Wars", nil},
-	{"wetwetgirls", "wetwetgirls.com", "Wet Wet Girls", nil},
-	{"yungdumbsluts", "yungdumbsluts.com", "Yung Dumb Sluts", nil},
-	{"rosellaextrem", "rosella-extrem.com", "RosellaExtrem", nil},
-	{"thelionxxx", "thelionxxx.com", "The Lion XXX", nil},
-	{"kinkyrubberworld", "kinkyrubberworld.com", "Kinky Rubber World", []string{"Latex Lara"}},
+	{"backalleytoonz", "backalleytoonzonline.com", "Backalley Toonz", nil, nil},
+	{"bigjohnnyxxx", "bigjohnnyxxx.com", "Big Johnny XXX", nil, nil},
+	{"blackmoneyerotica", "blackmoneyerotica.com", "Black Money Erotica", nil, nil},
+	{"blackpynk", "blackpynk.com", "Black Pynk", nil, nil},
+	{"brookelynnebriar", "brookelynnebriar.com", "Brookelynne Briar", []string{"Brookelynne Briar"}, nil},
+	{"citygirlz", "sallydangeloxxx.com", "City Girlz", nil, nil},
+	{"cumtrainer", "cumtrainer.com", "Cum Trainer", nil, nil},
+	{"facialcasting", "facialcasting.com", "Facial Casting", nil, nil},
+	{"glamourbunnies", "glamourbunnies.com", "Glamour Bunnies", nil, nil},
+	{"lisariveraxo", "lisariveraxo.com", "Lisa Rivera XO", []string{"Lisa Rivera"}, nil},
+	{"monstermalesprod", "monstermalesprod.com", "Monster Males", nil, nil},
+	{"mugurporn", "mugurporn.com", "Mugur Porn", nil, nil},
+	{"naughtycolombia", "naughtycolombia.com", "Naughty Colombia", nil, nil},
+	{"nerdsofporn", "nerdsofporn.com", "Nerds of Porn", nil, nil},
+	{"peccatriciproduzioni", "peccatriciproduzioni.com", "Peccatrici Produzioni", nil, nil},
+	{"pennybarber", "pennybarber.com", "Penny Barber", []string{"Penny Barber"}, nil},
+	{"pervsmilfsnteens", "pervsmilfsnteens.com", "Pervs MILFs n Teens", nil, nil},
+	{"porntugal", "porntugal.com", "Porntugal", nil, nil},
+	{"pvgirls", "pvgirls.com", "Porn Valley Girls", nil, nil},
+	{"ricporter", "ricporter.tv", "Ric Porter", nil, nil},
+	{"sexyninarivera", "sexyninarivera.com", "Sexy Nina Rivera", []string{"Nina Rivera"}, nil},
+	{"sukmydick", "sukmydick.com", "Suk My Dick", nil, nil},
+	{"superhotfilms", "superhotfilms.com", "Super Hot Films", nil, nil},
+	{"thejerkygirls", "thejerkygirls.com", "The Jerky Girls", nil, nil},
+	{"thiccvision", "thiccvision.com", "Thicc Vision", nil, nil},
+	{"thicq", "thicq.com", "THICQ", nil, nil},
+	{"throatwars", "throatwars.com", "Throat Wars", nil, nil},
+	{"wetwetgirls", "wetwetgirls.com", "Wet Wet Girls", nil, nil},
+	{"yungdumbsluts", "yungdumbsluts.com", "Yung Dumb Sluts", nil, nil},
+	{"rosellaextrem", "rosella-extrem.com", "RosellaExtrem", nil, nil},
+	{"thelionxxx", "thelionxxx.com", "The Lion XXX", nil, nil},
+	{"kinkyrubberworld", "kinkyrubberworld.com", "Kinky Rubber World", []string{"Latex Lara"}, nil},
+	{"naughtylada", "naughty-lada.com", "Naughty Lada", []string{"Naughty Lada"}, []string{"naughtylada.com"}},
+}
+
+// matchReFor accepts the site's own domain plus any alias that redirects to it.
+func matchReFor(cfg siteConfig) *regexp.Regexp {
+	domains := append([]string{cfg.Domain}, cfg.Aliases...)
+	for i, d := range domains {
+		domains[i] = strings.ReplaceAll(d, ".", `\.`)
+	}
+	return regexp.MustCompile(fmt.Sprintf(`^https?://(?:www\.)?(?:%s)(?:/videos)?/?(?:\?.*)?$`, strings.Join(domains, "|")))
 }
 
 type siteScraper struct {
@@ -62,9 +76,6 @@ func (s *siteScraper) MatchesURL(u string) bool { return s.matchRe.MatchString(u
 
 func init() {
 	for _, cfg := range sites {
-		escaped := strings.ReplaceAll(cfg.Domain, ".", `\.`)
-		re := regexp.MustCompile(fmt.Sprintf(`^https?://(?:www\.)?%s(?:/videos)?/?(?:\?.*)?$`, escaped))
-
 		s := &siteScraper{
 			Scraper: modelcentroutil.New(modelcentroutil.SiteConfig{
 				SiteID:     cfg.SiteID,
@@ -72,7 +83,7 @@ func init() {
 				StudioName: cfg.StudioName,
 				Performers: cfg.Performers,
 			}),
-			matchRe: re,
+			matchRe: matchReFor(cfg),
 		}
 		scraper.Register(s)
 	}

@@ -1,6 +1,6 @@
 # Covered Sites — All Domains
 
-1607 scrapers covering 1694 distinct domains. Auto-generated from the scraper registry by `TestSitesMdInSync` — do not hand-edit; instead update the scraper's `Patterns()` and re-run `go test ./internal/scrapers/all/...`. The `stashbox` scraper is omitted here because its covered hosts are config-driven; see [`scrapers.md`](scrapers.md).
+1608 scrapers covering 1695 distinct domains. Auto-generated from the scraper registry by `TestSitesMdInSync` — do not hand-edit; instead update the scraper's `Patterns()` and re-run `go test ./internal/scrapers/all/...`. The `stashbox` scraper is omitted here because its covered hosts are config-driven; see [`scrapers.md`](scrapers.md).
 
 Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scraper ID(s)** column lists every scraper that claims URLs on that domain — most domains have one entry, but table-driven networks (`adultprime`, `tmw`, `nextdoorstudios`, etc.) host many sub-studios on a single root domain. See [`scrapers.md`](scrapers.md) for what each ID covers.
 
@@ -996,6 +996,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | nataliastarr.com | `nataliastarr` |
 | nataliefiore.com | `nataliefiore` |
 | natashanice.puba.com | `pubanatashanice` |
+| naughty-lada.com | `naughtylada` |
 | naughtyamerica.com | `naughtyamerica` |
 | naughtyamericavr.com | `naughtyamerica` |
 | naughtycolombia.com | `naughtycolombia` |

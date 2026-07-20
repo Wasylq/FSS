@@ -1,17 +1,14 @@
 package modelcentro
 
 import (
-	"fmt"
-	"regexp"
-	"strings"
 	"testing"
 
 	"github.com/Wasylq/FSS/scraper"
 )
 
 func TestSiteCount(t *testing.T) {
-	if len(sites) != 32 {
-		t.Errorf("expected 32 sites, got %d", len(sites))
+	if len(sites) != 33 {
+		t.Errorf("expected 33 sites, got %d", len(sites))
 	}
 }
 
@@ -50,13 +47,17 @@ func TestMatchesURL(t *testing.T) {
 		{".tv domain", "ricporter", "https://ricporter.tv/videos", true},
 		{"www kinkyrubberworld", "kinkyrubberworld", "https://www.kinkyrubberworld.com/videos", true},
 		{"kinkyrubberworld base", "kinkyrubberworld", "https://kinkyrubberworld.com", true},
+		// naughtylada.com is a live redirect to the hyphenated domain, so both
+		// must resolve to the same scraper.
+		{"naughtylada canonical", "naughtylada", "https://naughty-lada.com/videos", true},
+		{"naughtylada alias", "naughtylada", "https://naughtylada.com", true},
+		{"naughtylada alias videos", "naughtylada", "https://www.naughtylada.com/videos/", true},
+		{"alias is not a wildcard", "naughtylada", "https://naughty-lada.org", false},
 	}
 
 	lookup := map[string]*siteScraper{}
 	for _, cfg := range sites {
-		escaped := strings.ReplaceAll(cfg.Domain, ".", `\.`)
-		re := regexp.MustCompile(fmt.Sprintf(`^https?://(?:www\.)?%s(?:/videos)?/?(?:\?.*)?$`, escaped))
-		lookup[cfg.SiteID] = &siteScraper{matchRe: re}
+		lookup[cfg.SiteID] = &siteScraper{matchRe: matchReFor(cfg)}
 	}
 
 	for _, c := range cases {
