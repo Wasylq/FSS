@@ -63,6 +63,12 @@ var sites = []siteConfig{
 	{"twmclassics", "TWM Classics", "https://tour.topwebmodels.com", "sites/twmclassics.com", ""},
 	{"twminterviews", "TWM Interviews", "https://tour.topwebmodels.com", "sites/topwebmodels-interviews.com", ""},
 	{"twmpornvault", "TWM Porn Vault", "https://tour.topwebmodels.com", "sites/twm-porn-vault.com", ""},
+
+	// AltErotic serves the same CMS from its apex domain on a /videos route.
+	// Its eight sub-brands (Alt Fetish, Director POV, Ink Amateurs, Inked Up
+	// Sex, My Tattoo Girls, Piercing Play, Sexy Inked and the Original Series)
+	// are channels on this host, not separate domains.
+	{"alterotic", "AltErotic", "https://alterotic.com", "videos", ""},
 }
 
 type Scraper struct {
@@ -194,12 +200,12 @@ func (s *Scraper) toScene(item contentItem, now time.Time) models.Scene {
 		SiteID:      s.cfg.SiteID,
 		StudioURL:   s.cfg.Base,
 		Title:       html.UnescapeString(strings.TrimSpace(item.Title)),
-		URL:         fmt.Sprintf("%s/scenes/%s", s.cfg.Base, item.Slug),
+		URL:         fmt.Sprintf("%s/%s/%s", s.cfg.Base, s.scenePath(), item.Slug),
 		Description: html.UnescapeString(strings.TrimSpace(item.Description)),
 		Studio:      s.cfg.Studio,
 		Thumbnail:   item.Thumb,
 		Duration:    item.SecondsDuration,
-		Tags:        item.Tags,
+		Tags:        cleanTags(item.Tags),
 		Performers:  s.performers(item),
 		ScrapedAt:   now,
 	}
@@ -214,6 +220,34 @@ func (s *Scraper) toScene(item contentItem, now time.Time) models.Scene {
 		sc.AddPrice(models.PriceSnapshot{Date: date, Regular: float64(item.ContentPrice)})
 	}
 	return sc
+}
+
+// scenePath is the route detail pages live under. It matches ListPath on sites
+// that serve their own catalogue — /videos/{slug} for a "videos" list, and
+// likewise for "scenes". Hub-only brands use a "sites/{domain}" list path but
+// their scenes still resolve under the hub's /scenes/{slug}.
+func (s *Scraper) scenePath() string {
+	if strings.Contains(s.cfg.ListPath, "/") {
+		return "scenes"
+	}
+	return s.cfg.ListPath
+}
+
+// cleanTags trims and dedupes. The CMS prefixes many tags with a non-breaking
+// space (e.g. "\u00a0arm Tattoo"), so the raw values cannot be used as-is.
+// strings.TrimSpace handles U+00A0 — unicode.IsSpace covers it.
+func cleanTags(tags []string) []string {
+	var out []string
+	seen := make(map[string]bool)
+	for _, t := range tags {
+		t = strings.TrimSpace(t)
+		if t == "" || seen[t] {
+			continue
+		}
+		seen[t] = true
+		out = append(out, t)
+	}
+	return out
 }
 
 // performers returns the model names with the studio's own brand entry removed.

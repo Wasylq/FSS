@@ -40,3 +40,6 @@ func TestLiveTopWebModels(t *testing.T)   { live(t, "topwebmodels") }
 func TestLiveTWMClassics(t *testing.T)    { live(t, "twmclassics") }
 func TestLiveTWMInterviews(t *testing.T)  { live(t, "twminterviews") }
 func TestLiveTWMPornVault(t *testing.T)   { live(t, "twmpornvault") }
+
+// AltErotic.
+func TestLiveAltErotic(t *testing.T) { live(t, "alterotic") }

@@ -7,6 +7,7 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/Wasylq/FSS/scraper"
 )
@@ -95,7 +96,9 @@ func TestRunParsesContents(t *testing.T) {
 	if sc.Description != "drool & slurps" {
 		t.Errorf("description should be HTML-unescaped, got %q", sc.Description)
 	}
-	if sc.URL != ts.URL+"/scenes/carmen-gets-creampied" {
+	// ListPath is "videos" here, so the detail route is /videos/ too — a
+	// hardcoded /scenes/ 404s on FreakMob.
+	if sc.URL != ts.URL+"/videos/carmen-gets-creampied" {
 		t.Errorf("url = %q", sc.URL)
 	}
 	if sc.Duration != 1790 {
@@ -212,5 +215,51 @@ func TestHubOnlyBrandsMatchTheirOwnPath(t *testing.T) {
 	// Own-domain brands still match on host alone.
 	if !byID["biggulpgirls"].MatchesURL("https://tour.biggulpgirls.com/scenes") {
 		t.Error("biggulpgirls should match its own host")
+	}
+}
+
+// The scene route follows the listing route: a site whose catalogue is at
+// /videos serves its detail pages at /videos/{slug}, and a hardcoded /scenes/
+// would 404 (FreakMob and AltErotic both do).
+func TestScenePathFollowsListPath(t *testing.T) {
+	cases := map[string]string{
+		"videos":                 "videos",
+		"scenes":                 "scenes",
+		"sites/twmclassics.com":  "scenes",
+		"sites/topwebmodels.com": "scenes",
+	}
+	for listPath, want := range cases {
+		s := &Scraper{cfg: siteConfig{ListPath: listPath}}
+		if got := s.scenePath(); got != want {
+			t.Errorf("scenePath() for ListPath %q = %q, want %q", listPath, got, want)
+		}
+	}
+}
+
+func TestScenePathIsUsedInSceneURL(t *testing.T) {
+	for _, cfg := range sites {
+		if cfg.SiteID != "alterotic" {
+			continue
+		}
+		s := newScraper(cfg)
+		sc := s.toScene(contentItem{ID: 1848, Slug: "some-scene"}, time.Time{})
+		if want := "https://alterotic.com/videos/some-scene"; sc.URL != want {
+			t.Errorf("URL = %q, want %q", sc.URL, want)
+		}
+	}
+}
+
+// The CMS prefixes many tags with a non-breaking space, which is not stripped
+// by taking the raw JSON values.
+func TestCleanTags(t *testing.T) {
+	got := cleanTags([]string{" arm Tattoo", "Bbc", " Bbc ", "", "   ", " Bbc", "Sleeve Tattoo"})
+	want := []string{"arm Tattoo", "Bbc", "Sleeve Tattoo"}
+	if len(got) != len(want) {
+		t.Fatalf("cleanTags = %q, want %q", got, want)
+	}
+	for i := range want {
+		if got[i] != want[i] {
+			t.Errorf("cleanTags[%d] = %q, want %q", i, got[i], want[i])
+		}
 	}
 }
