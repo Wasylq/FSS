@@ -263,3 +263,46 @@ func TestCleanTags(t *testing.T) {
 		}
 	}
 }
+
+// Not every site in the family fills the same fields: some leave
+// seconds_duration null and publish the runtime only as a display string, in
+// either of two formats.
+func TestDurationFallbacks(t *testing.T) {
+	cases := []struct {
+		name string
+		item contentItem
+		want int
+	}{
+		{"seconds wins", contentItem{SecondsDuration: 1337, VideosDuration: "22:17"}, 1337},
+		{"colon fallback", contentItem{VideosDuration: "22:17"}, 22*60 + 17},
+		{"float-seconds fallback", contentItem{VideosDuration: "1964.77"}, 1964},
+		{"integer-seconds fallback", contentItem{VideosDuration: "600"}, 600},
+		{"absent", contentItem{}, 0},
+		{"garbage", contentItem{VideosDuration: "soon"}, 0},
+		{"negative", contentItem{VideosDuration: "-5"}, 0},
+	}
+	for _, c := range cases {
+		if got := duration(c.item); got != c.want {
+			t.Errorf("%s: duration = %d, want %d", c.name, got, c.want)
+		}
+	}
+}
+
+// The older field name is protocol-relative, so it cannot be used verbatim.
+func TestThumbnailFallbacks(t *testing.T) {
+	cases := []struct {
+		name string
+		item contentItem
+		want string
+	}{
+		{"thumb wins", contentItem{Thumb: "https://a/x.jpg", Thumbnail: "//b/y.jpg"}, "https://a/x.jpg"},
+		{"protocol-relative gets a scheme", contentItem{Thumbnail: "//b/y.jpg"}, "https://b/y.jpg"},
+		{"absolute passes through", contentItem{Thumbnail: "https://b/y.jpg"}, "https://b/y.jpg"},
+		{"absent", contentItem{}, ""},
+	}
+	for _, c := range cases {
+		if got := thumbnail(c.item); got != c.want {
+			t.Errorf("%s: thumbnail = %q, want %q", c.name, got, c.want)
+		}
+	}
+}

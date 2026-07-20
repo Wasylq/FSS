@@ -11,11 +11,13 @@ import (
 	"html"
 	"net/http"
 	"regexp"
+	"strconv"
 	"strings"
 	"time"
 
 	"github.com/Wasylq/FSS/internal/httpx"
 	"github.com/Wasylq/FSS/models"
+	"github.com/Wasylq/FSS/parseutil"
 	"github.com/Wasylq/FSS/scraper"
 )
 
@@ -69,6 +71,12 @@ var sites = []siteConfig{
 	// Sex, My Tattoo Girls, Piercing Play, Sexy Inked and the Original Series)
 	// are channels on this host, not separate domains.
 	{"alterotic", "AltErotic", "https://alterotic.com", "videos", ""},
+
+	// Blake Mason, the surviving Twisted XXX Media brand (that network's
+	// domain no longer resolves; the site is run by IndieBucks now). Its
+	// payload leaves seconds_duration null and uses the older `thumbnail`
+	// field, both of which toScene falls back to.
+	{"blakemason", "Blake Mason", "https://blakemason.com", "videos", ""},
 }
 
 type Scraper struct {
@@ -203,8 +211,8 @@ func (s *Scraper) toScene(item contentItem, now time.Time) models.Scene {
 		URL:         fmt.Sprintf("%s/%s/%s", s.cfg.Base, s.scenePath(), item.Slug),
 		Description: html.UnescapeString(strings.TrimSpace(item.Description)),
 		Studio:      s.cfg.Studio,
-		Thumbnail:   item.Thumb,
-		Duration:    item.SecondsDuration,
+		Thumbnail:   thumbnail(item),
+		Duration:    duration(item),
 		Tags:        cleanTags(item.Tags),
 		Performers:  s.performers(item),
 		ScrapedAt:   now,
@@ -220,6 +228,38 @@ func (s *Scraper) toScene(item contentItem, now time.Time) models.Scene {
 		sc.AddPrice(models.PriceSnapshot{Date: date, Regular: float64(item.ContentPrice)})
 	}
 	return sc
+}
+
+// thumbnail prefers the newer `thumb` field, falling back to the older
+// `thumbnail`, which is protocol-relative.
+func thumbnail(item contentItem) string {
+	if item.Thumb != "" {
+		return item.Thumb
+	}
+	if strings.HasPrefix(item.Thumbnail, "//") {
+		return "https:" + item.Thumbnail
+	}
+	return item.Thumbnail
+}
+
+// duration prefers seconds_duration, which some sites leave null. The display
+// runtime is the fallback, in either of the two formats sites use for it.
+func duration(item contentItem) int {
+	if item.SecondsDuration > 0 {
+		return item.SecondsDuration
+	}
+	v := strings.TrimSpace(item.VideosDuration)
+	if v == "" {
+		return 0
+	}
+	if strings.Contains(v, ":") {
+		return parseutil.ParseDurationColon(v)
+	}
+	secs, err := strconv.ParseFloat(v, 64)
+	if err != nil || secs < 0 {
+		return 0
+	}
+	return int(secs)
 }
 
 // scenePath is the route detail pages live under. It matches ListPath on sites
@@ -291,16 +331,22 @@ type contentsPage struct {
 }
 
 type contentItem struct {
-	ID              int64       `json:"id"`
-	Title           string      `json:"title"`
-	Slug            string      `json:"slug"`
-	PublishDate     string      `json:"publish_date"`
-	SecondsDuration int         `json:"seconds_duration"`
-	Thumb           string      `json:"thumb"`
-	Description     string      `json:"description"`
-	ContentPrice    int         `json:"content_price"`
-	Tags            []string    `json:"tags"`
-	ModelsSlugs     []modelSlug `json:"models_slugs"`
+	ID              int64  `json:"id"`
+	Title           string `json:"title"`
+	Slug            string `json:"slug"`
+	PublishDate     string `json:"publish_date"`
+	SecondsDuration int    `json:"seconds_duration"`
+	// VideosDuration is the display runtime. Sites disagree on its format —
+	// "22:17" on some, float seconds ("1964.77") on others — and some leave
+	// seconds_duration null, so it is only consulted as a fallback.
+	VideosDuration string `json:"videos_duration"`
+	Thumb          string `json:"thumb"`
+	// Thumbnail is the older field name, and is protocol-relative.
+	Thumbnail    string      `json:"thumbnail"`
+	Description  string      `json:"description"`
+	ContentPrice int         `json:"content_price"`
+	Tags         []string    `json:"tags"`
+	ModelsSlugs  []modelSlug `json:"models_slugs"`
 }
 
 type modelSlug struct {

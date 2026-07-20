@@ -43,3 +43,6 @@ func TestLiveTWMPornVault(t *testing.T)   { live(t, "twmpornvault") }
 
 // AltErotic.
 func TestLiveAltErotic(t *testing.T) { live(t, "alterotic") }
+
+// Blake Mason (ex-Twisted XXX Media).
+func TestLiveBlakeMason(t *testing.T) { live(t, "blakemason") }
