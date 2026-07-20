@@ -409,13 +409,24 @@ func (s *SQLite) applyMigration1() error {
 // ---- Store interface ----
 
 func (s *SQLite) Load(studioURL string) ([]models.Scene, error) {
+	// Every column below carrying a DEFAULT is still nullable — a DEFAULT only
+	// applies when the column is omitted on insert, not when NULL is written
+	// explicitly. A single NULL would otherwise fail the row scan and take the
+	// whole studio's Load down with it, so they are coalesced here rather than
+	// scanned into a sql.Null* per field. `date` is the one column with no
+	// default at all, and is the likeliest to be NULL in a hand-edited or
+	// externally-written database.
 	rows, err := s.db.Query(`
-		SELECT id, site_id, studio_url, title, url, date, description,
-		       thumbnail, preview, director, studio,
-		       series, series_part,
-		       duration, resolution, width, height, format,
-		       views, likes, comments,
-		       lowest_price, lowest_price_date, scraped_at, deleted_at
+		SELECT id, site_id, studio_url,
+		       COALESCE(title, ''), COALESCE(url, ''),
+		       COALESCE(date, ''), COALESCE(description, ''),
+		       COALESCE(thumbnail, ''), COALESCE(preview, ''),
+		       COALESCE(director, ''), COALESCE(studio, ''),
+		       COALESCE(series, ''), COALESCE(series_part, 0),
+		       COALESCE(duration, 0), COALESCE(resolution, ''),
+		       COALESCE(width, 0), COALESCE(height, 0), COALESCE(format, ''),
+		       COALESCE(views, 0), COALESCE(likes, 0), COALESCE(comments, 0),
+		       COALESCE(lowest_price, 0), lowest_price_date, scraped_at, deleted_at
 		FROM scenes WHERE studio_url = ?
 		ORDER BY scraped_at DESC, id`, studioURL)
 	if err != nil {

@@ -52,7 +52,7 @@ Prints all registered scrapers and the URL patterns each one handles.
 
 ### `fss list-studios`
 
-Lists all studios in the SQLite database with scene counts and last-scraped timestamps. Requires `--db`.
+Lists all studios in the SQLite database with scene counts and last-scraped timestamps. Needs a database: pass `--db`, or set `db:` in the config file and omit the flag.
 
 ### `fss check <url>`
 
@@ -437,6 +437,7 @@ Ten tables (three core + six junction/lookup + one metadata). Inspect with any S
 ```bash
 fss list-studios --db              # uses default db location
 fss list-studios --db ./fss.db     # uses a custom path
+fss list-studios                   # uses the config file's `db:` value
 ```
 
 ### Example queries

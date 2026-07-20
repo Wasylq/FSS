@@ -1332,3 +1332,56 @@ func TestSQLiteCompositePKNoCrossStudioSteal(t *testing.T) {
 	}
 	check(urlB, "B title", "Bob", "tagB", 4.99)
 }
+
+// A DEFAULT on a TEXT column does not make it NOT NULL — it only applies when
+// the column is omitted on insert. A NULL written by a hand edit or an external
+// tool used to fail the row scan and take the entire studio's Load with it.
+func TestLoadToleratesNullColumns(t *testing.T) {
+	dir := t.TempDir()
+	st, err := NewSQLite(filepath.Join(dir, "null.db"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() { _ = st.Close() }()
+
+	const studioURL = "https://example.com/studio"
+	if err := st.Save(studioURL, []models.Scene{{
+		ID:        "1",
+		SiteID:    "example",
+		StudioURL: studioURL,
+		Title:     "Intact",
+		ScrapedAt: time.Now().UTC(),
+	}}); err != nil {
+		t.Fatal(err)
+	}
+
+	// Null out every column that the schema leaves nullable.
+	if _, err := st.db.Exec(`
+		UPDATE scenes SET
+			date = NULL, description = NULL, thumbnail = NULL, preview = NULL,
+			director = NULL, studio = NULL, series = NULL, series_part = NULL,
+			duration = NULL, resolution = NULL, width = NULL, height = NULL,
+			format = NULL, views = NULL, likes = NULL, comments = NULL,
+			lowest_price = NULL
+		WHERE id = '1'`); err != nil {
+		t.Fatal(err)
+	}
+
+	scenes, err := st.Load(studioURL)
+	if err != nil {
+		t.Fatalf("Load failed on a row with NULL columns: %v", err)
+	}
+	if len(scenes) != 1 {
+		t.Fatalf("got %d scenes, want 1", len(scenes))
+	}
+	sc := scenes[0]
+	if sc.ID != "1" || sc.Title != "Intact" {
+		t.Errorf("scene = %+v", sc)
+	}
+	if !sc.Date.IsZero() {
+		t.Errorf("Date = %v, want the zero time for a NULL date", sc.Date)
+	}
+	if sc.Description != "" || sc.Duration != 0 || sc.LowestPrice != 0 {
+		t.Errorf("NULLs should read as zero values, got %+v", sc)
+	}
+}

@@ -23,8 +23,22 @@ func init() {
 	listStudiosCmd.Flags().Lookup("db").NoOptDefVal = "default"
 }
 
+// resolveListStudiosDB mirrors scrape.go: the flag wins, and an unset flag
+// falls back to the config file's `db:` value. Without the fallback, an
+// operator who set `db:` in config.yaml and scraped with it would be told no
+// database is configured.
+func resolveListStudiosDB() string {
+	if listStudiosDB != "" {
+		return listStudiosDB
+	}
+	if cfg != nil {
+		return cfg.DB
+	}
+	return ""
+}
+
 func runListStudios(cmd *cobra.Command, _ []string) error {
-	path := config.ResolveDBPath(listStudiosDB)
+	path := config.ResolveDBPath(resolveListStudiosDB())
 	if path == "" {
 		return fmt.Errorf("--db is required (pass --db for the default location, or --db /path/to/file.db)")
 	}
