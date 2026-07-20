@@ -256,3 +256,34 @@ func TestListScenesFiltersOwner(t *testing.T) {
 		t.Fatalf("got %d scenes, want 2 (other creator filtered out)", len(scenes))
 	}
 }
+
+// The store URL is what StashDB records for LoyalFans creators. Before it was
+// matched, slugFromURL's last-segment fallback would have turned it into the
+// creator slug "store".
+func TestMatchesStoreURL(t *testing.T) {
+	s := New()
+	cases := map[string]string{
+		"https://www.loyalfans.com/goddexxdaphne":       "goddexxdaphne",
+		"https://www.loyalfans.com/goddexxdaphne/store": "goddexxdaphne",
+		"https://loyalfans.com/goddexxdaphne/store/":    "goddexxdaphne",
+		"https://www.loyalfans.com/goddexxdaphne/":      "goddexxdaphne",
+	}
+	for u, wantSlug := range cases {
+		if !s.MatchesURL(u) {
+			t.Errorf("MatchesURL(%q) = false, want true", u)
+			continue
+		}
+		if got := slugFromURL(u); got != wantSlug {
+			t.Errorf("slugFromURL(%q) = %q, want %q", u, got, wantSlug)
+		}
+	}
+
+	for _, u := range []string{
+		"https://www.loyalfans.com/goddexxdaphne/store/extra",
+		"https://example.com/goddexxdaphne/store",
+	} {
+		if s.MatchesURL(u) {
+			t.Errorf("MatchesURL(%q) = true, want false", u)
+		}
+	}
+}

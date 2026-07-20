@@ -42,10 +42,15 @@ func (s *Scraper) ID() string { return "loyalfans" }
 func (s *Scraper) Patterns() []string {
 	return []string{
 		"loyalfans.com/{creator_slug}",
+		"loyalfans.com/{creator_slug}/store",
 	}
 }
 
-var matchRe = regexp.MustCompile(`^https?://(?:www\.)?loyalfans\.com/([a-zA-Z0-9_-]+)$`)
+// The creator's store page is the URL StashDB records and the one a user is
+// most likely to paste, so it is matched alongside the bare profile. Without
+// the explicit /store branch slugFromURL's last-segment fallback would return
+// "store" and scrape a creator that does not exist.
+var matchRe = regexp.MustCompile(`^https?://(?:www\.)?loyalfans\.com/([a-zA-Z0-9_-]+)(?:/store)?/?$`)
 
 func (s *Scraper) MatchesURL(u string) bool {
 	return matchRe.MatchString(u)
