@@ -151,6 +151,7 @@ import (
 	_ "github.com/Wasylq/FSS/internal/scrapers/itspov"
 	_ "github.com/Wasylq/FSS/internal/scrapers/iwantclips"
 	_ "github.com/Wasylq/FSS/internal/scrapers/jacquieetmichel"
+	_ "github.com/Wasylq/FSS/internal/scrapers/jakecruise"
 	_ "github.com/Wasylq/FSS/internal/scrapers/japanhdv"
 	_ "github.com/Wasylq/FSS/internal/scrapers/javdatabase"
 	_ "github.com/Wasylq/FSS/internal/scrapers/jayspov"

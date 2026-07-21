@@ -1,6 +1,6 @@
 # Covered Sites — All Domains
 
-1611 scrapers covering 1698 distinct domains. Auto-generated from the scraper registry by `TestSitesMdInSync` — do not hand-edit; instead update the scraper's `Patterns()` and re-run `go test ./internal/scrapers/all/...`. The `stashbox` scraper is omitted here because its covered hosts are config-driven; see [`scrapers.md`](scrapers.md).
+1615 scrapers covering 1702 distinct domains. Auto-generated from the scraper registry by `TestSitesMdInSync` — do not hand-edit; instead update the scraper's `Patterns()` and re-run `go test ./internal/scrapers/all/...`. The `stashbox` scraper is omitted here because its covered hosts are config-driven; see [`scrapers.md`](scrapers.md).
 
 Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scraper ID(s)** column lists every scraper that claims URLs on that domain — most domains have one entry, but table-driven networks (`adultprime`, `tmw`, `nextdoorstudios`, etc.) host many sub-studios on a single root domain. See [`scrapers.md`](scrapers.md) for what each ID covers.
 
@@ -314,6 +314,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | clubkayden.com | `clubkayden` |
 | cock4stepmom.com | `cock4stepmom` |
 | cocksuckerprod.com | `cocksuckerprod` |
+| cocksuremen.com | `cocksuremen` |
 | cockvirgins.com | `cockvirgins` |
 | cockyboys.com | `cockyboys` |
 | codivorexxx.com | `codivorexxx` |
@@ -701,6 +702,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | horrorporn.com | `horrorporn` |
 | hotandtatted.com | `hotandtatted` |
 | hotcrazymess.com | `nubiles` |
+| hotdadshotlads.com | `hotdadshotlads` |
 | hotgold.xxx | `gasm` |
 | hotguysfuck.com | `hotguysfuck` |
 | hothouse.com | `hothouse` |
@@ -741,6 +743,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | itspov.com | `itspov` |
 | iwantclips.com | `iwantclips` |
 | jacquieetmicheltv.net | `jacquieetmichel` |
+| jakecruise.com | `jakecruise` |
 | jalifstudio.com | `jalifstudio` |
 | jamesdeen.com | `jamesdeen` |
 | japanhdv.com | `japanhdv` |
@@ -1349,6 +1352,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | str8chaser.com | `realitydudes` |
 | str8hell.com | `str8hell` |
 | str8togay.com | `men` |
+| straightguysforgayeyes.com | `straightguysforgayeyes` |
 | straplez.com | `straplez` |
 | strippers4k.com | `strippers4k` |
 | strokies.com | `strokies` |
