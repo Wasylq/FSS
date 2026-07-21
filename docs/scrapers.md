@@ -784,6 +784,21 @@
 | Pure Media (6 sites) | `pure-ts.com`, `pure-bbw.com`, `tspov.com`, `pure-xxx.com`, `becomingfemme.com`, `sissypov.com` | Pure Media (static tour) | No | Model-page enumeration + concurrent detail fetch (title, date, description, performers, thumb), uses `puremediautil` |
 | Treasure Island Media (7 sub-brands) | `treasureislandmedia.com`, `*.treasureislandmedia.com` | Drupal | No | One Drupal catalog `/scenes?channel=All&page=N` + concurrent og/detail fetch; sub-brand (TIM Suck/Fuck/Jack/Classics, Bruthaload, Grindhouse Raw, Latin Loads) derived from og:url host |
 
+## Studios investigated and skipped
+
+StashDB studios that were probed and deliberately left uncovered, with the
+reason, so a later pass does not re-investigate them from scratch. Re-probe if a
+site comes back.
+
+| Studio | Domain(s) | Why skipped |
+|--------|-----------|-------------|
+| Bryci Studios | `bryci.com`, `bellapass.com` | `bryci.com` is a Namecheap URL forward to OnlyFans; `bellapass.com` resolves but never completes a TCP/TLS handshake on 80 or 443, and `tour.bellapass.com` is NXDOMAIN. No live BellaPass CMS remains. |
+| Jimmy Draws VR | `jimmydrawsvr.com` (`jimmydraws.com`/`.net` are NXDOMAIN) | Serves a hand-rolled static page whose body contains no links other than favicons — stripping tags leaves an empty string. A `CheckHeaderStamp` marker suggests JS/bot gating; nothing is reachable over plain HTTP. |
+| LongMint | `longmint.com` | The tour is switched off network-wide: every path returns the same `noindex` notice ("Public access to tour pages and preview content has been disabled"). Sibling `ladybonk.com` serves the byte-identical page. No metadata of any kind is published. |
+| Bailey Jay | `ts-baileyjay.com` | The tour's updates page is a static image collage — seven `<img>` tags and nothing else. No titles, dates, scene links, listing, pagination or sitemap. (The `tgirl-network.com` aggregator does paginate, but yields only id/title/performer/thumb with no date.) |
+| Maximo Garcia | `maximogarcia.com` | Parked: redirects to a `ww1.` domain-parking page. |
+| Bellesa House | `bellesa.co`, `bellesaplus.co` | `bellesa.co` is a tube aggregating other studios (LetsDoeIt, Adult Time, Erika Lust…), and Bellesa's own-brand channels there (`bellesa house`, `bellesa films`, `bellesa house party`, `bellesa blind date`) all return zero videos. The originals moved to `bellesaplus.co`, which answers 403. |
+
 ## Shared scraper packages
 
 Scrapers that share a platform use common utility packages to avoid duplication:
