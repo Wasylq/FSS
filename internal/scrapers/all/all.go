@@ -304,6 +304,7 @@ import (
 	_ "github.com/Wasylq/FSS/internal/scrapers/tokyohot"
 	_ "github.com/Wasylq/FSS/internal/scrapers/treasureislandmedia"
 	_ "github.com/Wasylq/FSS/internal/scrapers/underwatershow"
+	_ "github.com/Wasylq/FSS/internal/scrapers/updateitem"
 	_ "github.com/Wasylq/FSS/internal/scrapers/uptimely"
 	_ "github.com/Wasylq/FSS/internal/scrapers/venusav"
 	_ "github.com/Wasylq/FSS/internal/scrapers/videoelements"
