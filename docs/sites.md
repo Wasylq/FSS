@@ -1,6 +1,6 @@
 # Covered Sites — All Domains
 
-1615 scrapers covering 1702 distinct domains. Auto-generated from the scraper registry by `TestSitesMdInSync` — do not hand-edit; instead update the scraper's `Patterns()` and re-run `go test ./internal/scrapers/all/...`. The `stashbox` scraper is omitted here because its covered hosts are config-driven; see [`scrapers.md`](scrapers.md).
+1617 scrapers covering 1705 distinct domains. Auto-generated from the scraper registry by `TestSitesMdInSync` — do not hand-edit; instead update the scraper's `Patterns()` and re-run `go test ./internal/scrapers/all/...`. The `stashbox` scraper is omitted here because its covered hosts are config-driven; see [`scrapers.md`](scrapers.md).
 
 Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scraper ID(s)** column lists every scraper that claims URLs on that domain — most domains have one entry, but table-driven networks (`adultprime`, `tmw`, `nextdoorstudios`, etc.) host many sub-studios on a single root domain. See [`scrapers.md`](scrapers.md) for what each ID covers.
 
@@ -816,6 +816,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | legsemporium.com | `legsemporium` |
 | legsex.com | `legsex` |
 | legsjapan.com | `legsjapan` |
+| lesarchive.com | `lesarchive` |
 | lesbea.com | `lesbea` |
 | lesbianfactor.com | `lesbianfactor` |
 | lesbianx.com | `lesbianx` |
@@ -1392,10 +1393,12 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | teamfucksgirl.com | `porngutter` |
 | teamskeet.com | `teamskeet` |
 | teasingandpleasing.com | `teasingandpleasing` |
+| teen-depot.com | `teendreams` |
 | teenageanalsluts.com | `teenageanalsluts` |
 | teenagetryouts.com | `teenagetryouts` |
 | teencoreclub.com | `teencoreclub` |
 | teencurves.com | `teencurves` |
+| teendreams.com | `teendreams` |
 | teenerotica.xxx | `porngutter` |
 | teenfidelity.com | `teenfidelity` |
 | teenmegaworld.net | `tmw-18firstsex`, `tmw-aboutgirlslove`, `tmw-anal-angels` (+32 more) |

@@ -295,6 +295,7 @@ import (
 	_ "github.com/Wasylq/FSS/internal/scrapers/taratainton"
 	_ "github.com/Wasylq/FSS/internal/scrapers/teamskeet"
 	_ "github.com/Wasylq/FSS/internal/scrapers/teencoreclub"
+	_ "github.com/Wasylq/FSS/internal/scrapers/teendreams"
 	_ "github.com/Wasylq/FSS/internal/scrapers/thatfetishgirl"
 	_ "github.com/Wasylq/FSS/internal/scrapers/timtales"
 	_ "github.com/Wasylq/FSS/internal/scrapers/titanmedia"
