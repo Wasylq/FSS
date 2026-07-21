@@ -1,6 +1,6 @@
 # Covered Sites — All Domains
 
-1620 scrapers covering 1708 distinct domains. Auto-generated from the scraper registry by `TestSitesMdInSync` — do not hand-edit; instead update the scraper's `Patterns()` and re-run `go test ./internal/scrapers/all/...`. The `stashbox` scraper is omitted here because its covered hosts are config-driven; see [`scrapers.md`](scrapers.md).
+1624 scrapers covering 1712 distinct domains. Auto-generated from the scraper registry by `TestSitesMdInSync` — do not hand-edit; instead update the scraper's `Patterns()` and re-run `go test ./internal/scrapers/all/...`. The `stashbox` scraper is omitted here because its covered hosts are config-driven; see [`scrapers.md`](scrapers.md).
 
 Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scraper ID(s)** column lists every scraper that claims URLs on that domain — most domains have one entry, but table-driven networks (`adultprime`, `tmw`, `nextdoorstudios`, etc.) host many sub-studios on a single root domain. See [`scrapers.md`](scrapers.md) for what each ID covers.
 
@@ -1118,6 +1118,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | plantsvscunts.com | `plantsvscunts` |
 | playboyplus.com | `playboyplus` |
 | playboytv.com | `playboytv` |
+| playgirlstories.com | `playgirlstories` |
 | plumperpass.com | `plumperpass` |
 | popuporgies.com | `popuporgies` |
 | porkvendors.com | `porkvendors` |
@@ -1201,6 +1202,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | realitydudes.com | `realitydudes` |
 | realityjunkies.com | `realityjunkies` |
 | realitykings.com | `realitykings` |
+| realitylovers.com | `realitylovers` |
 | realitysis.com | `nubiles` |
 | realjamvr.com | `realjamvr` |
 | realsensual.com | `realsensual` |
@@ -1530,6 +1532,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | ts-castingcouch.com | `tscastingcouch` |
 | tsfactor.com | `tsfactor` |
 | tspov.com | `tspov` |
+| tsvirtuallovers.com | `tsvirtuallovers` |
 | tugcasting.com | `tugcasting` |
 | tushy.com | `tushy` |
 | tushyraw.com | `tushyraw` |
@@ -1603,6 +1606,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | watch4beauty.com | `watch4beauty` |
 | watchmefucked.com | `tmw-watchmefucked` |
 | watchyoujerk.com | `watchyoujerk` |
+| wearecrazy.com | `wearecrazy` |
 | wearehairy.com | `wearehairy` |
 | webyoung.com | `webyoung` |
 | weliketosuck.com | `weliketosuck` |
