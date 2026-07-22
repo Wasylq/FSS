@@ -345,4 +345,5 @@ import (
 	_ "github.com/Wasylq/FSS/internal/scrapers/yourvids"
 	_ "github.com/Wasylq/FSS/internal/scrapers/youthlust"
 	_ "github.com/Wasylq/FSS/internal/scrapers/yummygirl"
+	_ "github.com/Wasylq/FSS/internal/scrapers/zishy"
 )

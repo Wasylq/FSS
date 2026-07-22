@@ -6,6 +6,7 @@ package httpx
 import (
 	"bytes"
 	"context"
+	"crypto/tls"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -142,6 +143,41 @@ func NewClient(timeout time.Duration) *http.Client {
 	return &http.Client{
 		Timeout:   timeout,
 		Transport: sharedTransport,
+	}
+}
+
+// legacyTLSTransport is a separate pool for hosts whose TLS stack predates
+// Go's default cipher list. See NewLegacyTLSClient.
+var legacyTLSTransport http.RoundTripper = &http.Transport{
+	MaxIdleConns:        100,
+	MaxIdleConnsPerHost: 10,
+	IdleConnTimeout:     90 * time.Second,
+	ForceAttemptHTTP2:   true,
+	TLSClientConfig: &tls.Config{
+		MinVersion: tls.VersionTLS12,
+		// Go's default suite list is ECDHE-only. A few old servers offer
+		// nothing Go will negotiate — DHE, which crypto/tls does not implement
+		// at all, plus static-RSA key exchange, which it implements but no
+		// longer offers by default. Naming the RSA suites explicitly is the
+		// only way to reach those hosts from Go.
+		CipherSuites: []uint16{
+			tls.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,
+			tls.TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,
+			tls.TLS_RSA_WITH_AES_128_GCM_SHA256,
+			tls.TLS_RSA_WITH_AES_256_GCM_SHA384,
+		},
+	},
+}
+
+// NewLegacyTLSClient returns a client for hosts that cannot complete a
+// handshake with Go's default cipher list. Certificates are still verified —
+// this widens the accepted key exchange, it does not disable checks. The
+// negotiated suites lack forward secrecy, so use it only where a scraper has
+// been shown to fail otherwise, and only for reading public metadata.
+func NewLegacyTLSClient(timeout time.Duration) *http.Client {
+	return &http.Client{
+		Timeout:   timeout,
+		Transport: legacyTLSTransport,
 	}
 }
 

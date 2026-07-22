@@ -2,6 +2,7 @@ package httpx
 
 import (
 	"context"
+	"crypto/tls"
 	"errors"
 	"io"
 	"net/http"
@@ -478,4 +479,48 @@ func contains(s, substr string) bool {
 		}
 	}
 	return false
+}
+
+// A few old servers offer only DHE (which crypto/tls does not implement) and
+// static-RSA key exchange (which Go no longer offers by default), so the legacy
+// client has to name the RSA suites explicitly. It must still verify
+// certificates — it widens key exchange, it does not disable checks.
+func TestNewLegacyTLSClient(t *testing.T) {
+	c := NewLegacyTLSClient(5 * time.Second)
+	if c.Timeout != 5*time.Second {
+		t.Errorf("Timeout = %v", c.Timeout)
+	}
+
+	tr, ok := c.Transport.(*http.Transport)
+	if !ok {
+		t.Fatalf("Transport is %T, want *http.Transport", c.Transport)
+	}
+	if tr.TLSClientConfig == nil {
+		t.Fatal("TLSClientConfig is nil")
+	}
+	if tr.TLSClientConfig.InsecureSkipVerify {
+		t.Error("InsecureSkipVerify is set — the legacy client must still verify certificates")
+	}
+	if tr.TLSClientConfig.MinVersion < tls.VersionTLS12 {
+		t.Errorf("MinVersion = %x, want at least TLS 1.2", tr.TLSClientConfig.MinVersion)
+	}
+
+	var sawRSAKex bool
+	for _, s := range tr.TLSClientConfig.CipherSuites {
+		if s == tls.TLS_RSA_WITH_AES_128_GCM_SHA256 {
+			sawRSAKex = true
+		}
+	}
+	if !sawRSAKex {
+		t.Error("no static-RSA suite offered — this client exists precisely to reach hosts that need one")
+	}
+
+	// The default client must keep Go's own list.
+	def, ok := NewClient(time.Second).Transport.(*http.Transport)
+	if !ok {
+		t.Fatalf("default transport is %T", NewClient(time.Second).Transport)
+	}
+	if def.TLSClientConfig != nil {
+		t.Error("the default client must not inherit the widened cipher list")
+	}
 }
