@@ -159,6 +159,7 @@ import (
 	_ "github.com/Wasylq/FSS/internal/scrapers/jayspov"
 	_ "github.com/Wasylq/FSS/internal/scrapers/jeffsmodels"
 	_ "github.com/Wasylq/FSS/internal/scrapers/jizzonteens"
+	_ "github.com/Wasylq/FSS/internal/scrapers/joybear"
 	_ "github.com/Wasylq/FSS/internal/scrapers/julesjordan"
 	_ "github.com/Wasylq/FSS/internal/scrapers/karissadiamond"
 	_ "github.com/Wasylq/FSS/internal/scrapers/karups"
