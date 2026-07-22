@@ -40,6 +40,7 @@ package adultdoorwayutil
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"html"
 	"net/http"
@@ -453,5 +454,27 @@ func (s *Scraper) fetchPage(ctx context.Context, url string) ([]byte, error) {
 		return nil, err
 	}
 	defer func() { _ = resp.Body.Close() }()
-	return httpx.ReadBody(resp.Body)
+
+	body, err := httpx.ReadBody(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+	if err := checkCMSError(body); err != nil {
+		return nil, fmt.Errorf("%s: %w", url, err)
+	}
+	return body, nil
+}
+
+// dbErrorRe matches the error page this CMS serves when its database is
+// unreachable. It comes back as HTTP 200 with a short body, so without this
+// check a site-side outage reads as a page with no scenes on it — every
+// listing parses to zero results and the run looks like an empty catalogue
+// rather than a failure.
+var dbErrorRe = regexp.MustCompile(`(?i)Error</B></span> connecting to database server|PDO Error Message`)
+
+func checkCMSError(body []byte) error {
+	if dbErrorRe.Match(body) {
+		return errors.New("site database is unreachable (CMS returned its DB-error page with HTTP 200)")
+	}
+	return nil
 }

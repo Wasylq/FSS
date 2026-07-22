@@ -421,3 +421,29 @@ func TestListScenes_knownIDsStopsEarly(t *testing.T) {
 		t.Error("expected StoppedEarly signal")
 	}
 }
+
+// The CMS serves its database-error page with HTTP 200 and a short body. Left
+// undetected it parses to zero scenes, so a site-side outage reads as an empty
+// catalogue rather than a failure — which is exactly the shape that trips the
+// destructive-save path on --full/--refresh.
+func TestCheckCMSErrorDetectsTheDBOutagePage(t *testing.T) {
+	outage := []byte(`<!-- AUTOSEO v2.0: API unreachable -->
+<title>blackpayback.com - tour</title>
+<span style="color:red;"><B>Error</B></span> connecting to database server: <b>stagingbp_ex@cs1913lan</b>.<br /><B>PDO Error Message</B>: SQLSTATE[HY000] [2002] Connection refused<br />`)
+
+	if err := checkCMSError(outage); err == nil {
+		t.Fatal("the DB-error page must be reported as an error, not parsed as an empty listing")
+	}
+
+	// A normal listing must not trip it.
+	for _, ok := range [][]byte{
+		[]byte(`<html><body><div class="update_details" data-setid="1">fine</div></body></html>`),
+		[]byte(``),
+		// A scene description mentioning a database is not an outage.
+		[]byte(`<html><p>She works as a database administrator.</p></html>`),
+	} {
+		if err := checkCMSError(ok); err != nil {
+			t.Errorf("false positive on %q: %v", ok, err)
+		}
+	}
+}
