@@ -245,6 +245,7 @@ import (
 	_ "github.com/Wasylq/FSS/internal/scrapers/privateblack"
 	_ "github.com/Wasylq/FSS/internal/scrapers/privatecastings"
 	_ "github.com/Wasylq/FSS/internal/scrapers/privateclassics"
+	_ "github.com/Wasylq/FSS/internal/scrapers/producersfun"
 	_ "github.com/Wasylq/FSS/internal/scrapers/puba"
 	_ "github.com/Wasylq/FSS/internal/scrapers/puffy"
 	_ "github.com/Wasylq/FSS/internal/scrapers/puremature"
