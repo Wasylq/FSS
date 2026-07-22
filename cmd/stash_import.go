@@ -826,12 +826,12 @@ func dedup(ss []string) []string {
 
 func strPtr(s string) *string { return &s }
 
-func truncate(s string, max int) string {
+func truncate(s string, limit int) string {
 	r := []rune(s)
-	if len(r) <= max {
+	if len(r) <= limit {
 		return s
 	}
-	return string(r[:max-3]) + "..."
+	return string(r[:limit-3]) + "..."
 }
 
 var validImportFields = map[string]bool{

@@ -37,7 +37,7 @@ func resolveListStudiosDB() string {
 	return ""
 }
 
-func runListStudios(cmd *cobra.Command, _ []string) error {
+func runListStudios(_ *cobra.Command, _ []string) error {
 	path := config.ResolveDBPath(resolveListStudiosDB())
 	if path == "" {
 		return fmt.Errorf("--db is required (pass --db for the default location, or --db /path/to/file.db)")

@@ -1,3 +1,6 @@
+// Package identify scans a directory of video files, matches each filename
+// against previously scraped FSS scene metadata, and writes Kodi-style .nfo
+// sidecar files for the matches. It is the engine behind `fss identify`.
 package identify
 
 import (

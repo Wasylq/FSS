@@ -10,6 +10,8 @@ import (
 	"time"
 
 	"github.com/Wasylq/FSS/models"
+
+	// Registers the cgo-free "sqlite" driver with database/sql.
 	_ "modernc.org/sqlite"
 )
 

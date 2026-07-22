@@ -1,3 +1,5 @@
+// Package nfo generates Kodi-style .nfo XML documents from merged scene
+// metadata, for media managers that read sidecar files.
 package nfo
 
 import (

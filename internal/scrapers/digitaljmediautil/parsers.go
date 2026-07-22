@@ -151,11 +151,11 @@ func parseCuteButts(cfg SiteConfig, body, studioURL string, now time.Time) []mod
 		if d := cbDateRe.FindStringSubmatch(b); d != nil {
 			sc.Date = parseJPDate(d[1])
 		}
-		var models_ []string
+		var perfNames []string
 		for _, mm := range cbModelRe.FindAllStringSubmatch(b, -1) {
-			models_ = append(models_, mm[1])
+			perfNames = append(perfNames, mm[1])
 		}
-		sc.Performers = dedupTrim(models_)
+		sc.Performers = dedupTrim(perfNames)
 		var tags []string
 		for _, t := range cbTagRe.FindAllStringSubmatch(b, -1) {
 			tags = append(tags, t[1])
@@ -439,11 +439,11 @@ func parseUraLesbian(cfg SiteConfig, body, studioURL string, now time.Time) []mo
 		sc := newScene(cfg, studioURL, id, now)
 		sc.Thumbnail = thumb(cfg, "tour", id, "tour-lg.jpg")
 		if h := ulH1Re.FindStringSubmatch(b); h != nil {
-			var models_ []string
+			var perfNames []string
 			for _, mm := range ulModelRe.FindAllStringSubmatch(h[1], -1) {
-				models_ = append(models_, mm[1])
+				perfNames = append(perfNames, mm[1])
 			}
-			sc.Performers = dedupTrim(models_)
+			sc.Performers = dedupTrim(perfNames)
 			if len(sc.Performers) > 0 {
 				sc.Title = strings.Join(sc.Performers, ", ")
 			}

@@ -1,3 +1,7 @@
+// Package cmd implements the fss command-line interface: the cobra command
+// tree, flag wiring, and config resolution. It is the CLI entry point, not a
+// library surface — external consumers should import the public packages
+// listed in docs/library.md instead.
 package cmd
 
 import (

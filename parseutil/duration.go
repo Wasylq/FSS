@@ -5,11 +5,11 @@ import (
 	"strings"
 )
 
+const maxDurationSeconds = 24 * 3600 // 24 hours; anything beyond is garbage input
+
 // ParseDurationColon parses colon-separated durations like "MM:SS" or
 // "HH:MM:SS" and returns the total seconds. Handles any number of
 // colon-separated parts. Returns 0 for empty or unparseable input.
-const maxDurationSeconds = 24 * 3600 // 24 hours; anything beyond is garbage input
-
 func ParseDurationColon(s string) int {
 	parts := strings.Split(strings.TrimSpace(s), ":")
 	if len(parts) > 3 {

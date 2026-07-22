@@ -1,3 +1,7 @@
+// Package parseutil holds the parsing helpers shared across FSS scrapers:
+// duration parsing (colon-separated and ISO 8601), date normalisation,
+// Open Graph meta extraction, and schema.org VideoObject extraction from
+// JSON-LD. Scrapers should reach for these rather than reimplementing them.
 package parseutil
 
 import (

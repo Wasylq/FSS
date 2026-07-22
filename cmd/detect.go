@@ -90,7 +90,11 @@ func runDetect(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-func detectPlatform(page string, cookies []*http.Cookie, headers http.Header) []detection {
+// TODO: response headers are fetched and passed in but not yet used as a
+// detection signal. Server / X-Powered-By / Set-Cookie names would identify
+// several CMSes that currently require body-content matching. Renamed to _
+// so the unused-parameter lint stays green until that lands.
+func detectPlatform(page string, cookies []*http.Cookie, _ http.Header) []detection {
 	var results []detection
 	lp := strings.ToLower(page)
 

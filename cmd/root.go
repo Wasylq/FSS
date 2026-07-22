@@ -15,7 +15,7 @@ var cfg *config.Config
 var rootCmd = &cobra.Command{
 	Use:   "fss",
 	Short: "FullStudioScraper — scrape all scenes and metadata from a studio URL",
-	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
+	PersistentPreRunE: func(cmd *cobra.Command, _ []string) error {
 		verbose, _ := cmd.Flags().GetCount("debug")
 		scraper.SetVerbose(verbose)
 
@@ -47,6 +47,7 @@ func SetVersion(version, commit, date string) {
 	rootCmd.Version = version + " (" + commit + ", " + date + ")"
 }
 
+// Execute runs the root command and exits non-zero on failure.
 func Execute() {
 	if err := rootCmd.Execute(); err != nil {
 		os.Exit(1)

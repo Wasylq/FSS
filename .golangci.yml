@@ -1,0 +1,108 @@
+version: "2"
+
+linters:
+  default: standard
+  enable:
+    - bodyclose
+    - copyloopvar
+    - errorlint
+    - gocyclo
+    - misspell
+    - revive
+
+  settings:
+    misspell:
+      # Both are verbatim site data, not typos of ours:
+      #   sketchysex — real site + Go package name (sketchysex.com)
+      #   roomate    — the site's own slug/title, "/scene/manojob/best-roomate-ever";
+      #                test fixtures must reproduce it exactly
+      # Do NOT run `golangci-lint --fix` without these: it renames the package
+      # and breaks the finishesthejob fixture assertions.
+      ignore-rules:
+        - sketchysex
+        - roomate
+
+    gocyclo:
+      # No function currently exceeds 75 (cmd/detect.go detectPlatform), so
+      # this gates *new* outliers only. Ratchet it down as the existing
+      # high-complexity functions get refactored.
+      min-complexity: 80
+
+    revive:
+      rules:
+        - name: blank-imports
+        - name: context-as-argument
+        - name: context-keys-type
+        - name: dot-imports
+        - name: empty-block
+        - name: error-naming
+        - name: error-return
+        - name: error-strings
+        - name: errorf
+        - name: exported
+          # Stuttering renames (stash.StashScene -> stash.Scene) would be
+          # breaking changes to public packages other modules import.
+          arguments:
+            - disableStutteringCheck
+        - name: increment-decrement
+        - name: indent-error-flow
+        - name: package-comments
+        - name: range
+        - name: receiver-naming
+        - name: redefines-builtin-id
+        - name: superfluous-else
+        - name: time-naming
+        - name: unexported-return
+        - name: unreachable-code
+        - name: unused-parameter
+        - name: var-declaration
+        - name: var-naming
+
+  exclusions:
+    rules:
+      # godoc comments only matter for code other modules can import.
+      # internal/ is unimportable by definition, and the ~290 scrapers there
+      # implement the same four-method StudioScraper interface — documenting
+      # each identically would be ~2,100 findings of pure churn. The nine
+      # public packages (scraper, models, match, output, parseutil, stash,
+      # nfo, identify, scrapers/all) stay gated: see docs/library.md.
+      - path: internal/
+        linters:
+          - revive
+        text: '^(exported|package-comments):'
+
+      # Staged cleanup, not a permanent exemption. These fire ~430 times
+      # across internal/ (275 unused params, 112 builtin shadows, 40 empty
+      # blocks). Mechanical, but too large for one pass. Remove these
+      # exclusions one rule at a time as the cleanup lands — the same rules
+      # are already enforced everywhere outside internal/.
+      - path: internal/
+        linters:
+          - revive
+        text: '^(unused-parameter|redefines-builtin-id|empty-block):'
+
+      # Several *util packages export ParseListingPage/ParseSitemap so their
+      # external _test packages can drive the parser directly. The returned
+      # row types are genuinely package-private and exporting them would widen
+      # the API for no consumer. Not applicable outside internal/.
+      - path: internal/
+        linters:
+          - revive
+        text: '^unexported-return:'
+
+      # Doc comments on test helpers add nothing to the public API surface.
+      - path: _test\.go$
+        linters:
+          - revive
+        text: '^(exported|package-comments|unused-parameter):'
+
+      # bodyclose in httpx_test.go is deliberate: the tests assert on the
+      # response of a httptest server that is torn down by the test itself.
+      - path: _test\.go$
+        linters:
+          - bodyclose
+
+formatters:
+  enable:
+    - gofmt
+    - goimports

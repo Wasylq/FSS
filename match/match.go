@@ -159,6 +159,9 @@ func isDateRun(a, b, c string) bool {
 // MatchConfidence indicates how strong a filename-to-title match is.
 type MatchConfidence int
 
+// Confidence levels, ordered from strongest to weakest. MatchNone means no
+// candidate matched; MatchAmbiguous means several distinct titles did and the
+// caller must disambiguate.
 const (
 	MatchExact MatchConfidence = iota
 	MatchSubstring

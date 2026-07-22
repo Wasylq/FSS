@@ -134,15 +134,15 @@ func ResolutionTags(width int) []string {
 }
 
 // MergeStrings returns the ordered union of two slices, preserving the order
-// from existing first, then appending any new entries not already present.
-func MergeStrings(existing, new []string) []string {
+// from existing first, then appending any incoming entries not already present.
+func MergeStrings(existing, incoming []string) []string {
 	seen := make(map[string]bool, len(existing))
-	result := make([]string, 0, len(existing)+len(new))
+	result := make([]string, 0, len(existing)+len(incoming))
 	for _, s := range existing {
 		seen[s] = true
 		result = append(result, s)
 	}
-	for _, s := range new {
+	for _, s := range incoming {
 		if !seen[s] {
 			result = append(result, s)
 		}

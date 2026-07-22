@@ -1,3 +1,7 @@
+// Package stash is a GraphQL client for a running Stash instance
+// (https://stashapp.cc). It covers the queries and mutations FSS needs to
+// read scenes and push scraped metadata back: finding scenes by filter,
+// resolving tags/performers/studios to IDs, and updating scenes.
 package stash
 
 import (
@@ -24,12 +28,17 @@ const MaxCoverImageBytes = 10 * 1024 * 1024
 // cannot OOM the CLI.
 const MaxResponseBytes = 50 * 1024 * 1024
 
+// Client talks to a single Stash instance's GraphQL endpoint. It is safe for
+// concurrent use; the underlying HTTP client is pooled.
 type Client struct {
 	url    string
 	apiKey string
 	http   *http.Client
 }
 
+// NewClient returns a Client for the Stash instance at url (the base URL, e.g.
+// "http://localhost:9999" — "/graphql" is appended). apiKey may be empty if
+// the instance has authentication disabled.
 func NewClient(url, apiKey string) *Client {
 	graphqlURL := url + "/graphql"
 	return &Client{
@@ -54,32 +63,42 @@ type StashScene struct {
 	StashIDs   []StashID    `json:"stash_ids"`
 }
 
+// StashFile is one video file backing a scene. A scene may have several if
+// Stash has detected duplicates.
 type StashFile struct {
 	Basename string  `json:"basename"`
 	Path     string  `json:"path"`
 	Duration float64 `json:"duration"`
 }
 
+// StashTag is a tag attached to a scene.
 type StashTag struct {
 	ID   string `json:"id"`
 	Name string `json:"name"`
 }
 
+// StashPerf is a performer attached to a scene.
 type StashPerf struct {
 	ID   string `json:"id"`
 	Name string `json:"name"`
 }
 
+// StashStudio is the studio a scene belongs to.
 type StashStudio struct {
 	ID   string `json:"id"`
 	Name string `json:"name"`
 }
 
+// StashID links a scene to its entry in an external stash-box instance.
+// Endpoint is the stash-box GraphQL URL; StashID is the remote UUID.
 type StashID struct {
 	Endpoint string `json:"endpoint"`
 	StashID  string `json:"stash_id"`
 }
 
+// SceneUpdateInput is the payload for a scene update mutation. Pointer fields
+// are omitted when nil, so only the fields explicitly set are written — this
+// is what makes partial metadata pushes non-destructive.
 type SceneUpdateInput struct {
 	ID           string   `json:"id"`
 	Title        *string  `json:"title,omitempty"`
@@ -93,6 +112,8 @@ type SceneUpdateInput struct {
 	Organized    *bool    `json:"organized,omitempty"`
 }
 
+// FindScenesFilter narrows a FindScenes query. Fields tagged `json:"-"` are
+// applied client-side rather than sent to Stash.
 type FindScenesFilter struct {
 	Organized     *bool  `json:"organized,omitempty"`
 	PerformerName string `json:"-"`
