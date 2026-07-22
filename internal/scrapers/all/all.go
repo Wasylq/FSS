@@ -10,6 +10,7 @@ import (
 	_ "github.com/Wasylq/FSS/internal/scrapers/adultdoorway"
 	_ "github.com/Wasylq/FSS/internal/scrapers/adultprime"
 	_ "github.com/Wasylq/FSS/internal/scrapers/africanbucks"
+	_ "github.com/Wasylq/FSS/internal/scrapers/alettaoceanlive"
 	_ "github.com/Wasylq/FSS/internal/scrapers/alexandrasnow"
 	_ "github.com/Wasylq/FSS/internal/scrapers/alisonangel"
 	_ "github.com/Wasylq/FSS/internal/scrapers/allover30"
