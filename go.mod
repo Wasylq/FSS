@@ -1,6 +1,6 @@
 module github.com/Wasylq/FSS
 
-go 1.26.2
+go 1.26.5
 
 require (
 	github.com/adrg/xdg v0.5.3

@@ -4,7 +4,7 @@
 # from go.mod via scripts/go-version.sh; the default below is the fallback for
 # `docker build .` invocations that don't pass --build-arg, and a lint guard
 # in CI enforces that this default stays in sync with go.mod.
-ARG GO_VERSION=1.26.2
+ARG GO_VERSION=1.26.5
 ARG ALPINE_VERSION=3.21
 
 # ---- build ----
