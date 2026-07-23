@@ -119,7 +119,7 @@ func (s *Scraper) runListing(ctx context.Context, studioURL string, opts scraper
 	wg.Wait()
 }
 
-func (s *Scraper) enqueuePages(ctx context.Context, studioURL string, opts scraper.ListOpts, out chan<- scraper.SceneResult, work chan<- listingScene) {
+func (s *Scraper) enqueuePages(ctx context.Context, _ string, opts scraper.ListOpts, out chan<- scraper.SceneResult, work chan<- listingScene) {
 	for page := 1; ; page++ {
 		if ctx.Err() != nil {
 			return

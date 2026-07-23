@@ -236,7 +236,7 @@ func (s *Scraper) fetchDetails(ctx context.Context, studioURL, base string, opts
 	wg.Wait()
 }
 
-func (s *Scraper) fetchAndParseDetail(ctx context.Context, detailURL, studioURL, base string, now time.Time) (models.Scene, error) {
+func (s *Scraper) fetchAndParseDetail(ctx context.Context, detailURL, studioURL, _ string, now time.Time) (models.Scene, error) {
 	// dahlia-av.jp intermittently emits a WordPress notice that flips the
 	// HTTP status to 500 while still rendering the full work page (same
 	// pattern as SexMex Pro). Use DoWithStatus so the body is parsed
@@ -280,7 +280,7 @@ var (
 	pagesRe    = regexp.MustCompile(`class='pages'>(\d+)\s*/\s*(\d+)</span>`)
 )
 
-func parseWorkURLs(body []byte, base string) []string {
+func parseWorkURLs(body []byte, _ string) []string {
 	seen := map[string]bool{}
 	var urls []string
 	for _, m := range workURLRe.FindAllSubmatch(body, -1) {

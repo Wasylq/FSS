@@ -325,7 +325,7 @@ func parseDetailPage(body []byte) detailData {
 	return d
 }
 
-func (s *Scraper) fetchDetail(ctx context.Context, base string, item listingItem, studioURL string, delay time.Duration) (models.Scene, error) {
+func (s *Scraper) fetchDetail(ctx context.Context, _ string, item listingItem, studioURL string, delay time.Duration) (models.Scene, error) {
 	if delay > 0 {
 		select {
 		case <-time.After(delay):

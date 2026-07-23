@@ -95,7 +95,7 @@ var (
 	performerRe = regexp.MustCompile(`^(.+?)\s+#\d+`)
 )
 
-func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOpts, out chan<- scraper.SceneResult) {
+func (s *Scraper) run(ctx context.Context, _ string, opts scraper.ListOpts, out chan<- scraper.SceneResult) {
 	defer close(out)
 
 	now := time.Now().UTC()

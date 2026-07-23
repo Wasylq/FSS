@@ -54,7 +54,7 @@ var (
 	categoryRe = regexp.MustCompile(`/tour/categories/([\w-]+)\.html`)
 )
 
-func resolveListingSlug(studioURL, siteBase string) string {
+func resolveListingSlug(studioURL, _ string) string {
 	if m := modelRe.FindStringSubmatch(studioURL); m != nil {
 		return "models/" + m[1]
 	}

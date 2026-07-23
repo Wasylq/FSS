@@ -121,7 +121,7 @@ func (s *Scraper) runListing(ctx context.Context, studioURL string, opts scraper
 	wg.Wait()
 }
 
-func (s *Scraper) enqueuePages(ctx context.Context, studioURL string, opts scraper.ListOpts, out chan<- scraper.SceneResult, work chan<- listingScene) {
+func (s *Scraper) enqueuePages(ctx context.Context, _ string, opts scraper.ListOpts, out chan<- scraper.SceneResult, work chan<- listingScene) {
 	for page := 1; ; page++ {
 		if ctx.Err() != nil {
 			return
@@ -477,7 +477,7 @@ var (
 	htmlTagRe  = regexp.MustCompile(`<[^>]+>`)
 )
 
-func parseDetailPage(body []byte, base string) detailData {
+func parseDetailPage(body []byte, _ string) detailData {
 	var d detailData
 	page := string(body)
 

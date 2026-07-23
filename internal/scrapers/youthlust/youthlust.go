@@ -48,7 +48,7 @@ func (s *Scraper) MatchesURL(u string) bool {
 	return strings.Contains(u, "youthlust.club")
 }
 
-func (s *Scraper) ListScenes(ctx context.Context, studioURL string, opts scraper.ListOpts) (<-chan scraper.SceneResult, error) {
+func (s *Scraper) ListScenes(ctx context.Context, _ string, opts scraper.ListOpts) (<-chan scraper.SceneResult, error) {
 	out := make(chan scraper.SceneResult)
 	go s.run(ctx, opts, out)
 	return out, nil

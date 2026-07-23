@@ -119,19 +119,19 @@ func (s *siteScraper) run(ctx context.Context, studioURL string, opts scraper.Li
 		}()
 	}
 
-	s.produceListing(ctx, studioURL, opts, out, work, delay)
+	s.produceListing(ctx, studioURL, opts, out, work)
 	close(work)
 	wg.Wait()
 }
 
 var modelPageRe = regexp.MustCompile(`/model-([a-zA-Z0-9-]+)`)
 
-func (s *siteScraper) produceListing(ctx context.Context, studioURL string, opts scraper.ListOpts, out chan<- scraper.SceneResult, work chan<- workItem, delay time.Duration) {
+func (s *siteScraper) produceListing(ctx context.Context, studioURL string, opts scraper.ListOpts, out chan<- scraper.SceneResult, work chan<- workItem) {
 	if modelPageRe.MatchString(studioURL) {
 		s.scrapeModelPage(ctx, studioURL, opts, out, work)
 		return
 	}
-	s.scrapeSitemap(ctx, studioURL, opts, out, work, delay)
+	s.scrapeSitemap(ctx, opts, out, work)
 }
 
 func (s *siteScraper) siteBase() string {
@@ -140,7 +140,9 @@ func (s *siteScraper) siteBase() string {
 
 var sitemapURLRe = regexp.MustCompile(`<loc>[^<]*/(detail-(\d+)-([^<]+))</loc>`)
 
-func (s *siteScraper) scrapeSitemap(ctx context.Context, studioURL string, opts scraper.ListOpts, out chan<- scraper.SceneResult, work chan<- workItem, delay time.Duration) {
+// scrapeSitemap makes a single sitemap request and dispatches work items; the
+// per-request delay is applied by the workers in fetchDetail, not here.
+func (s *siteScraper) scrapeSitemap(ctx context.Context, opts scraper.ListOpts, out chan<- scraper.SceneResult, work chan<- workItem) {
 	sitemapURL := s.siteBase() + "/sitemap.php"
 
 	body, err := s.fetchPage(ctx, sitemapURL)

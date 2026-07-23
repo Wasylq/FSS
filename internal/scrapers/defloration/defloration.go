@@ -62,7 +62,7 @@ var (
 	wsRe        = regexp.MustCompile(`\s+`)
 )
 
-func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOpts, out chan<- scraper.SceneResult) {
+func (s *Scraper) run(ctx context.Context, studioURL string, _ scraper.ListOpts, out chan<- scraper.SceneResult) {
 	defer close(out)
 
 	listURL := siteBase + "/freetour.php?language=en"

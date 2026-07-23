@@ -130,7 +130,7 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 	})
 }
 
-func (s *Scraper) scrapeModelPage(ctx context.Context, studioURL string, opts scraper.ListOpts, out chan<- scraper.SceneResult, now time.Time) {
+func (s *Scraper) scrapeModelPage(ctx context.Context, studioURL string, _ scraper.ListOpts, out chan<- scraper.SceneResult, now time.Time) {
 	body, err := s.fetchPage(ctx, studioURL)
 	if err != nil {
 		select {

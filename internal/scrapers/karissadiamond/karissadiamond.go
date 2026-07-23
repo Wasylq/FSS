@@ -79,7 +79,7 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 
 	now := time.Now().UTC()
 	offset := 0
-	scraper.Paginate(ctx, opts, siteID, out, func(ctx context.Context, page int) (scraper.PageResult, error) {
+	scraper.Paginate(ctx, opts, siteID, out, func(ctx context.Context, _ int) (scraper.PageResult, error) {
 		items, next, err := s.fetchBatch(ctx, offset)
 		if err != nil {
 			return scraper.PageResult{}, err

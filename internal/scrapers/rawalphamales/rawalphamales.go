@@ -272,7 +272,7 @@ func parseTotalPages(body []byte) int {
 	return n
 }
 
-func hasNextPage(body []byte, current int) bool {
+func hasNextPage(body []byte, _ int) bool {
 	return nextPageRe.Match(body)
 }
 
@@ -300,7 +300,7 @@ func parseOrdinalDate(s string) time.Time {
 	return t.UTC()
 }
 
-func parseDetail(body []byte, entry listEntry, base string) models.Scene {
+func parseDetail(body []byte, entry listEntry, _ string) models.Scene {
 	now := time.Now().UTC()
 	scene := models.Scene{
 		ID:         entry.slug,

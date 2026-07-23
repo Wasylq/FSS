@@ -151,7 +151,7 @@ func (s *Scraper) produceModel(ctx context.Context, studioURL string, opts scrap
 	}
 }
 
-func (s *Scraper) produceListing(ctx context.Context, studioURL string, opts scraper.ListOpts, out chan<- scraper.SceneResult, work chan<- listEntry) {
+func (s *Scraper) produceListing(ctx context.Context, _ string, opts scraper.ListOpts, out chan<- scraper.SceneResult, work chan<- listEntry) {
 	for page := 1; ; page++ {
 		if ctx.Err() != nil {
 			break

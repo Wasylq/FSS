@@ -152,7 +152,7 @@ func (s *Scraper) listingURL(page int) string {
 	return fmt.Sprintf("%s/tour/updates/page_%d.html", s.base, page)
 }
 
-func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOpts, out chan<- scraper.SceneResult) {
+func (s *Scraper) run(ctx context.Context, _ string, opts scraper.ListOpts, out chan<- scraper.SceneResult) {
 	defer close(out)
 	scraper.Debugf(1, "goldwinpass: scraping full catalog")
 

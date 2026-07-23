@@ -74,7 +74,7 @@ var contentHrefRe = regexp.MustCompile(`href="(/fr/content/([a-f0-9]{24})/[^"]+)
 // total scene count can be estimated for progress display.
 var pageNumRe = regexp.MustCompile(`[?&]page=(\d+)`)
 
-func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOpts, out chan<- scraper.SceneResult) {
+func (s *Scraper) run(ctx context.Context, _ string, opts scraper.ListOpts, out chan<- scraper.SceneResult) {
 	defer close(out)
 
 	scraper.Debugf(1, "jacquieetmichel: scraping content listing")

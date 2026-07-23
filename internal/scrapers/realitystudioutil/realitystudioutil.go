@@ -62,7 +62,7 @@ var rowRe = regexp.MustCompile(`\[\s*"([^"]*)"\s*,\s*"([^"]*)"\s*,\s*"([^"]*)"\s
 
 var dateLayouts = []string{"01-02-06", "01/02/06", "01-02-2006", "01/02/2006"}
 
-func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOpts, out chan<- scraper.SceneResult) {
+func (s *Scraper) run(ctx context.Context, studioURL string, _ scraper.ListOpts, out chan<- scraper.SceneResult) {
 	defer close(out)
 
 	scraper.Debugf(1, "%s: fetching clips.js", s.cfg.ID)

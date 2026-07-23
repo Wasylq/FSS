@@ -410,7 +410,7 @@ func (s *Scraper) fetchDetail(ctx context.Context, entry listEntry) (models.Scen
 	return parseDetail(body, entry, s.base()), nil
 }
 
-func parseDetail(body []byte, entry listEntry, base string) models.Scene {
+func parseDetail(body []byte, entry listEntry, _ string) models.Scene {
 	now := time.Now().UTC()
 	scene := models.Scene{
 		ID:         entry.sceneID,

@@ -84,7 +84,7 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 	}
 	scraper.Debugf(1, "%s: found %d model pages", s.cfg.ID, len(modelURLs))
 
-	stubs := s.collectScenes(ctx, modelURLs)
+	stubs := s.collectScenes(ctx, modelURLs, opts.Delay)
 	if ctx.Err() != nil {
 		return
 	}
@@ -108,6 +108,13 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 				defer func() { <-sem }()
 			case <-ctx.Done():
 				return
+			}
+			if opts.Delay > 0 {
+				select {
+				case <-time.After(opts.Delay):
+				case <-ctx.Done():
+					return
+				}
 			}
 			scene := s.toScene(ctx, studioURL, st, now)
 			if scene.ID == "" {
@@ -151,7 +158,7 @@ func (s *Scraper) fetchModelList(ctx context.Context) ([]string, error) {
 
 // collectScenes walks every model page (worker pool) and aggregates scene stubs,
 // deduping by trailer URL and unioning the performers that listed each scene.
-func (s *Scraper) collectScenes(ctx context.Context, modelURLs []string) []*sceneStub {
+func (s *Scraper) collectScenes(ctx context.Context, modelURLs []string, delay time.Duration) []*sceneStub {
 	var mu sync.Mutex
 	byURL := map[string]*sceneStub{}
 	var order []*sceneStub
@@ -167,6 +174,13 @@ func (s *Scraper) collectScenes(ctx context.Context, modelURLs []string) []*scen
 				defer func() { <-sem }()
 			case <-ctx.Done():
 				return
+			}
+			if delay > 0 {
+				select {
+				case <-time.After(delay):
+				case <-ctx.Done():
+					return
+				}
 			}
 			body, err := s.get(ctx, modelURL)
 			if err != nil {

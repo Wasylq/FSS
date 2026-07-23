@@ -99,7 +99,7 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 	})
 }
 
-func parseListing(body []byte, now time.Time) []listItem {
+func parseListing(body []byte, _ time.Time) []listItem {
 	parts := cardSplitRe.Split(string(body), -1)
 	if len(parts) <= 1 {
 		return nil

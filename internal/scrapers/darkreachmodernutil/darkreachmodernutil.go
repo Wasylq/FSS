@@ -169,7 +169,7 @@ func (s *Scraper) listingURL(page int) string {
 	return fmt.Sprintf("%s%s/categories/movies_%d_d.html", s.cfg.SiteBase, s.cfg.TourPrefix, page)
 }
 
-func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOpts, out chan<- scraper.SceneResult) {
+func (s *Scraper) run(ctx context.Context, _ string, opts scraper.ListOpts, out chan<- scraper.SceneResult) {
 	defer close(out)
 	scraper.Debugf(1, "%s: scraping full catalog", s.cfg.ID)
 

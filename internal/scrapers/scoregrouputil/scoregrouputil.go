@@ -186,7 +186,7 @@ var (
 	thumbRe      = regexp.MustCompile(`src="((?:https?:)?//[^"]*(?:posting_\d+|scoreuniverse\.com/)[^"]*\.(?:jpg|png|webp))"`)
 )
 
-func parseListingPage(body []byte, siteBase string) []listingScene {
+func parseListingPage(body []byte, _ string) []listingScene {
 	html := string(body)
 	locs := sceneStartRe.FindAllStringIndex(html, -1)
 	var scenes []listingScene

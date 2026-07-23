@@ -149,7 +149,7 @@ func (s *siteScraper) run(ctx context.Context, studioURL string, opts scraper.Li
 	s.fetchDetailsAndEmit(ctx, base, posts, studioURL, opts, out)
 }
 
-func (s *siteScraper) fetchAllPosts(ctx context.Context, base string, opts scraper.ListOpts, out chan<- scraper.SceneResult) ([]wpPost, error) {
+func (s *siteScraper) fetchAllPosts(ctx context.Context, base string, opts scraper.ListOpts, _ chan<- scraper.SceneResult) ([]wpPost, error) {
 	var all []wpPost
 	page := 1
 	for {
@@ -248,7 +248,7 @@ func (s *siteScraper) fetchPerformers(ctx context.Context, pageURL string) ([]st
 
 // --- detail fetching worker pool ---
 
-func (s *siteScraper) fetchDetailsAndEmit(ctx context.Context, base string, posts []wpPost, studioURL string, opts scraper.ListOpts, out chan<- scraper.SceneResult) {
+func (s *siteScraper) fetchDetailsAndEmit(ctx context.Context, _ string, posts []wpPost, studioURL string, opts scraper.ListOpts, out chan<- scraper.SceneResult) {
 	now := time.Now().UTC()
 	workers := opts.Workers
 	if workers <= 0 {

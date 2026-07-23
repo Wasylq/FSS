@@ -72,7 +72,7 @@ var matchRe = regexp.MustCompile(`^https?://(?:www\.)?fetishkitsch\.com(?:/|$)`)
 
 func (s *Scraper) MatchesURL(u string) bool { return matchRe.MatchString(u) }
 
-func (s *Scraper) ListScenes(ctx context.Context, studioURL string, opts scraper.ListOpts) (<-chan scraper.SceneResult, error) {
+func (s *Scraper) ListScenes(ctx context.Context, studioURL string, _ scraper.ListOpts) (<-chan scraper.SceneResult, error) {
 	out := make(chan scraper.SceneResult)
 	go s.run(ctx, studioURL, out)
 	return out, nil
