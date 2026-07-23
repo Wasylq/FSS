@@ -23,10 +23,16 @@ linters:
         - roomate
 
     gocyclo:
-      # No function currently exceeds 75 (cmd/detect.go detectPlatform), so
-      # this gates *new* outliers only. Ratchet it down as the existing
-      # high-complexity functions get refactored.
-      min-complexity: 80
+      # The worst remaining function is gasm's run() at 45. Everything above it
+      # has been refactored (detectPlatform was 75, now table-driven and under
+      # 20), so 50 gates new outliers with a little headroom.
+      #
+      # Deliberately not lower: ~60 of the functions between 20 and 40 are
+      # scraper run/runPaginated entry points whose complexity is the URL-mode
+      # dispatch the design calls for (see "Check for URL filtering modes"),
+      # plus a dozen table-driven tests. Dropping the threshold to 20 would
+      # flag ~142 functions that are almost all working as intended.
+      min-complexity: 50
 
     revive:
       rules:

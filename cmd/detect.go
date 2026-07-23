@@ -90,208 +90,212 @@ func runDetect(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
+// platformRule is one platform fingerprint. A rule fires when any of its
+// anyLower/anyRaw signals is present, or when every allLower signal is.
+// Combining both (Cherry Pimps) means "this domain, or this pair of assets".
+//
+// anyLower/allLower match against the lowercased page; anyRaw matches the page
+// verbatim, for signals whose casing is part of the fingerprint.
+type platformRule struct {
+	platform string
+	pkg      string
+	detail   string
+
+	anyLower []string
+	anyRaw   []string
+	allLower []string
+
+	// custom replaces the signal matching entirely, for rules whose detail
+	// string varies or that can emit more than one detection.
+	custom func(page, lp string, cookies []*http.Cookie) []detection
+}
+
+func (r platformRule) matches(page, lp string) bool {
+	for _, s := range r.anyLower {
+		if strings.Contains(lp, s) {
+			return true
+		}
+	}
+	for _, s := range r.anyRaw {
+		if strings.Contains(page, s) {
+			return true
+		}
+	}
+	if len(r.allLower) == 0 {
+		return false
+	}
+	for _, s := range r.allLower {
+		if !strings.Contains(lp, s) {
+			return false
+		}
+	}
+	return true
+}
+
+// platformRules is ordered: detections are reported in this sequence, and the
+// generic WordPress check sits near the end so more specific platforms are
+// reported first.
+//
+// Note it is not strictly last — Spizoo, Vixen and Nasty Media follow it, so a
+// page matching one of those and WordPress reports WordPress first. That is
+// long-standing behaviour, preserved here deliberately; moving the WordPress
+// rule to the end would change `fss detect` output ordering for those sites.
+var platformRules = []platformRule{
+	{custom: detectAylo},
+	{platform: "TeamSkeet/PSM", pkg: "teamskeetutil", detail: "psmcdn.net CDN detected",
+		anyLower: []string{"psmcdn.net"}},
+	{custom: detectGamma},
+	{platform: "ModelCentro", pkg: "modelcentroutil",
+		anyLower: []string{"centrofiles.com", "/api/content.load"},
+		anyRaw:   []string{"fox.createApplication"}},
+	{platform: "Adult Prime", pkg: "adultprimeutil",
+		anyLower: []string{"cdnstatic.imctransfer.com", "portal-video-wrapper"}},
+	{custom: detectFYC},
+	{custom: detectNextJS},
+	{platform: "Score Group", pkg: "scoregrouputil",
+		anyLower: []string{"scoreland.com", "scoregroup.com", "score-group"}},
+	{platform: "MetArt Network", pkg: "metartutil",
+		anyLower: []string{"metartnetwork.com", "gccdn.metartnetwork.com"}},
+	{platform: "Up-Timely CMS", pkg: "uptimelyutil",
+		anyLower: []string{"cdn.up-timely.com", "p-workpage__title"}},
+	{platform: "Czech AV / HQ Media Go", pkg: "czechavutil",
+		anyLower: []string{"hqmediago.com", "cdn77.hqmediago.com"}},
+	{platform: "Teen Mega World", pkg: "tmwutil",
+		anyLower: []string{"teenmegaworld"}},
+	{platform: "Full Porn Network", pkg: "fpnutil",
+		anyLower: []string{"fullpornnetwork.com", "fpncash.com"}},
+	{platform: "Grooby CMS", pkg: "groobyutil",
+		allLower: []string{"grooby.com", "set-target-"}},
+	{platform: "Jules Jordan Network", pkg: "julesjordanutil",
+		anyLower: []string{"julesjordan.com", "jj-content-card"}},
+	{platform: "SexMex Pro CMS", pkg: "sexmexutil",
+		anyLower: []string{"sexmex.xxx", "sexmexpro"}},
+	{platform: "POVR/WankzVR", pkg: "povrutil",
+		anyLower: []string{"povr.com", "wankzvr.com"}},
+	{platform: "Railway/Express", pkg: "railwayutil",
+		anyLower: []string{"sites-api-production.up.railway.app"}},
+	{platform: "New Sensations", pkg: "newsensationsutil",
+		allLower: []string{"newsensations.com", "videothumb_"}},
+	{platform: "Wow Network", pkg: "wownetworkutil",
+		anyLower: []string{"wowmodels.com"}},
+	{platform: "VNA Girls", pkg: "vnautil",
+		anyLower: []string{"vnagirls.com", "stickydollars.htm"}},
+	{platform: "MissaX CMS", pkg: "missaxutil",
+		allLower: []string{"missax", "photo-thumb video-thumb"}},
+	{platform: "Cherry Pimps", pkg: "cherrypimpsutil",
+		anyLower: []string{"cherrypimps.com"},
+		allLower: []string{"elx_styles.css", "tourhelper.js"}},
+	{platform: "Real Spankings", pkg: "realspankingsutil",
+		anyLower: []string{"realspankingsnetwork.com", "alpine entertainment group"}},
+	{platform: "FTV", pkg: "ftvutil",
+		anyLower: []string{"ftvcash.com", "cdn.ftvgirls.com", "cdn.ftvmilfs.com"}},
+	{platform: "Wankz", pkg: "wankzutil",
+		anyLower: []string{"images.wankz.com", "images.lethalpass.com"}},
+	{platform: "UTG Networks / Glamose", pkg: "utgutil",
+		anyLower: []string{"assets.utgnetworks.com", "utg networks ltd"}},
+	{platform: "Pornstar Platinum", pkg: "pornstarplatinum",
+		anyLower: []string{"pornstarplatinum.com"}},
+	{platform: "My Gay Cash NATS CMS", pkg: "marsmedia",
+		anyLower: []string{"nats.mygaycash.com", "natscms-app"}},
+	{platform: "Puba", pkg: "puba",
+		anyLower: []string{"puba.com"}},
+	{custom: detectWordPress},
+	{platform: "Spizoo", pkg: "spizooutil",
+		anyLower: []string{"spizoo.com"}},
+	{platform: "Vixen Media Group", pkg: "vixenutil",
+		anyLower: []string{"vixen.com", "blacked.com", "tushy.com"}},
+	{platform: "Nasty Media Group (WWB18)", pkg: "nastymedia",
+		anyLower: []string{"nasty media group"},
+		anyRaw:   []string{"WYSIWYG Web Builder 18"}},
+}
+
 // TODO: response headers are fetched and passed in but not yet used as a
 // detection signal. Server / X-Powered-By / Set-Cookie names would identify
 // several CMSes that currently require body-content matching. Renamed to _
 // so the unused-parameter lint stays green until that lands.
 func detectPlatform(page string, cookies []*http.Cookie, _ http.Header) []detection {
-	var results []detection
 	lp := strings.ToLower(page)
 
-	// Aylo/Juan — instance_token cookie
+	var results []detection
+	for _, r := range platformRules {
+		if r.custom != nil {
+			results = append(results, r.custom(page, lp, cookies)...)
+			continue
+		}
+		if r.matches(page, lp) {
+			results = append(results, detection{r.platform, r.pkg, r.detail})
+		}
+	}
+	return results
+}
+
+// detectAylo keys off the instance_token cookie rather than page content.
+func detectAylo(_, _ string, cookies []*http.Cookie) []detection {
 	for _, c := range cookies {
 		if c.Name == "instance_token" {
-			results = append(results, detection{"Aylo/Juan", "ayloutil", "instance_token cookie found"})
-			break
+			return []detection{{"Aylo/Juan", "ayloutil", "instance_token cookie found"}}
 		}
 	}
+	return nil
+}
 
-	// TeamSkeet/PSM — psmcdn.net
-	if strings.Contains(lp, "psmcdn.net") {
-		results = append(results, detection{"TeamSkeet/PSM", "teamskeetutil", "psmcdn.net CDN detected"})
+// detectGamma reports the specific Algolia application ID when it is the
+// signal that matched, since that is the stronger fingerprint.
+func detectGamma(page, lp string, _ []*http.Cookie) []detection {
+	hasAppID := strings.Contains(page, "TSMKFA364Q")
+	hasAlgolia := strings.Contains(lp, "algolia.net") && strings.Contains(lp, "applicationid")
+	if !hasAppID && !hasAlgolia {
+		return nil
 	}
-
-	// Gamma/Algolia
-	if strings.Contains(page, "TSMKFA364Q") || (strings.Contains(lp, "algolia.net") && strings.Contains(lp, "applicationid")) {
-		detail := "Algolia API detected"
-		if strings.Contains(page, "TSMKFA364Q") {
-			detail = "Algolia applicationID TSMKFA364Q"
-		}
-		results = append(results, detection{"Gamma Entertainment", "gammautil", detail})
+	detail := "Algolia API detected"
+	if hasAppID {
+		detail = "Algolia applicationID TSMKFA364Q"
 	}
+	return []detection{{"Gamma Entertainment", "gammautil", detail}}
+}
 
-	// ModelCentro
-	if strings.Contains(lp, "centrofiles.com") || strings.Contains(page, "fox.createApplication") || strings.Contains(lp, "/api/content.load") {
-		results = append(results, detection{"ModelCentro", "modelcentroutil", ""})
+// detectFYC matches Nuxt, noting whether FYC/PornPros CDN signals accompany it.
+func detectFYC(page, lp string, _ []*http.Cookie) []detection {
+	if !strings.Contains(page, `id="__NUXT_DATA__"`) {
+		return nil
 	}
-
-	// Adult Prime
-	if strings.Contains(lp, "cdnstatic.imctransfer.com") || strings.Contains(lp, "portal-video-wrapper") {
-		results = append(results, detection{"Adult Prime", "adultprimeutil", ""})
+	detail := "__NUXT_DATA__ tag found"
+	if strings.Contains(lp, "pornpros") || strings.Contains(lp, "fuckyoucash") {
+		detail += " + FYC/PornPros signals"
 	}
+	return []detection{{"FYC/PornPros (Nuxt)", "fycutil", detail}}
+}
 
-	// FYC/PornPros — __NUXT_DATA__ + pornpros CDN
-	if strings.Contains(page, `id="__NUXT_DATA__"`) {
-		detail := "__NUXT_DATA__ tag found"
-		if strings.Contains(lp, "pornpros") || strings.Contains(lp, "fuckyoucash") {
-			detail += " + FYC/PornPros signals"
-		}
-		results = append(results, detection{"FYC/PornPros (Nuxt)", "fycutil", detail})
+// detectNextJS can report both Wank It Now and the generic Next.js paysite,
+// since a page may carry the mjedge and yppcdn signals at once.
+func detectNextJS(page, lp string, _ []*http.Cookie) []detection {
+	if !strings.Contains(page, `id="__NEXT_DATA__"`) {
+		return nil
 	}
+	detail := "__NEXT_DATA__ tag found"
 
-	// Next.js __NEXT_DATA__ (KB Productions, Ghost Pro, Wank It Now, etc.)
-	if strings.Contains(page, `id="__NEXT_DATA__"`) {
-		detail := "__NEXT_DATA__ tag found"
-		if strings.Contains(lp, "mjedge.net") {
-			detail += " + mjedge.net CDN"
-			if strings.Contains(lp, "wankitnow") {
-				results = append(results, detection{"Wank It Now", "wankitnowutil", detail})
-			}
-		}
-		if strings.Contains(lp, "yppcdn.com") || strings.Contains(lp, "nats_site_id") {
-			results = append(results, detection{"Next.js Paysite (Ghost Pro / KB Productions)", "ghostpro / kbproductions", detail})
+	var results []detection
+	if strings.Contains(lp, "mjedge.net") {
+		detail += " + mjedge.net CDN"
+		if strings.Contains(lp, "wankitnow") {
+			results = append(results, detection{"Wank It Now", "wankitnowutil", detail})
 		}
 	}
-
-	// Score Group
-	if strings.Contains(lp, "scoreland.com") || strings.Contains(lp, "scoregroup.com") || strings.Contains(lp, "score-group") {
-		results = append(results, detection{"Score Group", "scoregrouputil", ""})
+	if strings.Contains(lp, "yppcdn.com") || strings.Contains(lp, "nats_site_id") {
+		results = append(results, detection{"Next.js Paysite (Ghost Pro / KB Productions)", "ghostpro / kbproductions", detail})
 	}
-
-	// MetArt Network
-	if strings.Contains(lp, "metartnetwork.com") || strings.Contains(lp, "gccdn.metartnetwork.com") {
-		results = append(results, detection{"MetArt Network", "metartutil", ""})
-	}
-
-	// Up-Timely CMS
-	if strings.Contains(lp, "cdn.up-timely.com") || strings.Contains(lp, "p-workpage__title") {
-		results = append(results, detection{"Up-Timely CMS", "uptimelyutil", ""})
-	}
-
-	// Czech AV / HQ Media Go
-	if strings.Contains(lp, "hqmediago.com") || strings.Contains(lp, "cdn77.hqmediago.com") {
-		results = append(results, detection{"Czech AV / HQ Media Go", "czechavutil", ""})
-	}
-
-	// Teen Mega World
-	if strings.Contains(lp, "teenmegaworld") {
-		results = append(results, detection{"Teen Mega World", "tmwutil", ""})
-	}
-
-	// Full Porn Network
-	if strings.Contains(lp, "fullpornnetwork.com") || strings.Contains(lp, "fpncash.com") {
-		results = append(results, detection{"Full Porn Network", "fpnutil", ""})
-	}
-
-	// Grooby
-	if strings.Contains(lp, "grooby.com") && strings.Contains(lp, "set-target-") {
-		results = append(results, detection{"Grooby CMS", "groobyutil", ""})
-	}
-
-	// Jules Jordan Network
-	if strings.Contains(lp, "julesjordan.com") || strings.Contains(lp, "jj-content-card") {
-		results = append(results, detection{"Jules Jordan Network", "julesjordanutil", ""})
-	}
-
-	// SexMex Pro
-	if strings.Contains(lp, "sexmex.xxx") || strings.Contains(lp, "sexmexpro") {
-		results = append(results, detection{"SexMex Pro CMS", "sexmexutil", ""})
-	}
-
-	// POVR/WankzVR
-	if strings.Contains(lp, "povr.com") || strings.Contains(lp, "wankzvr.com") {
-		results = append(results, detection{"POVR/WankzVR", "povrutil", ""})
-	}
-
-	// Railway/Express
-	if strings.Contains(lp, "sites-api-production.up.railway.app") {
-		results = append(results, detection{"Railway/Express", "railwayutil", ""})
-	}
-
-	// New Sensations
-	if strings.Contains(lp, "newsensations.com") && strings.Contains(lp, "videothumb_") {
-		results = append(results, detection{"New Sensations", "newsensationsutil", ""})
-	}
-
-	// Wow Network
-	if strings.Contains(lp, "wowmodels.com") {
-		results = append(results, detection{"Wow Network", "wownetworkutil", ""})
-	}
-
-	// VNA Girls
-	if strings.Contains(lp, "vnagirls.com") || strings.Contains(lp, "stickydollars.htm") {
-		results = append(results, detection{"VNA Girls", "vnautil", ""})
-	}
-
-	// MissaX CMS
-	if strings.Contains(lp, "missax") && strings.Contains(lp, "photo-thumb video-thumb") {
-		results = append(results, detection{"MissaX CMS", "missaxutil", ""})
-	}
-
-	// Cherry Pimps
-	if strings.Contains(lp, "cherrypimps.com") || (strings.Contains(lp, "elx_styles.css") && strings.Contains(lp, "tourhelper.js")) {
-		results = append(results, detection{"Cherry Pimps", "cherrypimpsutil", ""})
-	}
-
-	// Real Spankings
-	if strings.Contains(lp, "realspankingsnetwork.com") || strings.Contains(lp, "alpine entertainment group") {
-		results = append(results, detection{"Real Spankings", "realspankingsutil", ""})
-	}
-
-	// FTV
-	if strings.Contains(lp, "ftvcash.com") || strings.Contains(lp, "cdn.ftvgirls.com") || strings.Contains(lp, "cdn.ftvmilfs.com") {
-		results = append(results, detection{"FTV", "ftvutil", ""})
-	}
-
-	// Wankz
-	if strings.Contains(lp, "images.wankz.com") || strings.Contains(lp, "images.lethalpass.com") {
-		results = append(results, detection{"Wankz", "wankzutil", ""})
-	}
-
-	// UTG/Glamose
-	if strings.Contains(lp, "assets.utgnetworks.com") || strings.Contains(lp, "utg networks ltd") {
-		results = append(results, detection{"UTG Networks / Glamose", "utgutil", ""})
-	}
-
-	// Pornstar Platinum
-	if strings.Contains(lp, "pornstarplatinum.com") {
-		results = append(results, detection{"Pornstar Platinum", "pornstarplatinum", ""})
-	}
-
-	// My Gay Cash NATS
-	if strings.Contains(lp, "nats.mygaycash.com") || strings.Contains(lp, "natscms-app") {
-		results = append(results, detection{"My Gay Cash NATS CMS", "marsmedia", ""})
-	}
-
-	// Puba
-	if strings.Contains(lp, "puba.com") {
-		results = append(results, detection{"Puba", "puba", ""})
-	}
-
-	// WordPress (generic — check last)
-	if strings.Contains(lp, "/wp-json/") || strings.Contains(lp, "/wp-content/") || strings.Contains(lp, "wp-includes") {
-		detail := "WordPress detected"
-		if strings.Contains(lp, "video-elements") {
-			results = append(results, detection{"WP video-elements", "veutil", detail + " + video-elements theme"})
-		} else {
-			results = append(results, detection{"WordPress", "wputil (standalone)", detail})
-		}
-	}
-
-	// Spizoo
-	if strings.Contains(lp, "spizoo.com") {
-		results = append(results, detection{"Spizoo", "spizooutil", ""})
-	}
-
-	// Vixen MG
-	if strings.Contains(lp, "vixen.com") || strings.Contains(lp, "blacked.com") || strings.Contains(lp, "tushy.com") {
-		results = append(results, detection{"Vixen Media Group", "vixenutil", ""})
-	}
-
-	// Nasty Media Group
-	if strings.Contains(page, "WYSIWYG Web Builder 18") || strings.Contains(lp, "nasty media group") {
-		results = append(results, detection{"Nasty Media Group (WWB18)", "nastymedia", ""})
-	}
-
 	return results
+}
+
+// detectWordPress is deliberately generic and runs late; the video-elements
+// theme is reported instead of plain WordPress when present.
+func detectWordPress(_, lp string, _ []*http.Cookie) []detection {
+	if !strings.Contains(lp, "/wp-json/") && !strings.Contains(lp, "/wp-content/") && !strings.Contains(lp, "wp-includes") {
+		return nil
+	}
+	const detail = "WordPress detected"
+	if strings.Contains(lp, "video-elements") {
+		return []detection{{"WP video-elements", "veutil", detail + " + video-elements theme"}}
+	}
+	return []detection{{"WordPress", "wputil (standalone)", detail}}
 }
