@@ -89,7 +89,7 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 		if len(urls) == 0 {
 			return scraper.PageResult{Done: true}, nil
 		}
-		scenes := s.enrich(ctx, studioURL, urls, now)
+		scenes := s.enrich(ctx, studioURL, urls, now, opts.Delay)
 		return scraper.PageResult{Scenes: scenes}, nil
 	})
 }
@@ -127,7 +127,7 @@ func normalizeURL(u string) string {
 	return baseURL + "/tour/" + u
 }
 
-func (s *Scraper) enrich(ctx context.Context, studioURL string, urls []string, now time.Time) []models.Scene {
+func (s *Scraper) enrich(ctx context.Context, studioURL string, urls []string, now time.Time, delay time.Duration) []models.Scene {
 	scenes := make([]models.Scene, len(urls))
 	var wg sync.WaitGroup
 	sem := make(chan struct{}, detailWorkers)
@@ -140,6 +140,13 @@ func (s *Scraper) enrich(ctx context.Context, studioURL string, urls []string, n
 				defer func() { <-sem }()
 			case <-ctx.Done():
 				return
+			}
+			if delay > 0 {
+				select {
+				case <-time.After(delay):
+				case <-ctx.Done():
+					return
+				}
 			}
 			scenes[i] = s.toScene(ctx, studioURL, u, now)
 		}(i, u)

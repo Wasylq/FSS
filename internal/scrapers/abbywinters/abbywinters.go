@@ -101,7 +101,7 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 		if len(fresh) == 0 {
 			return scraper.PageResult{Done: true, Total: total}, nil
 		}
-		scenes := s.enrich(ctx, studioURL, fresh, now)
+		scenes := s.enrich(ctx, studioURL, fresh, now, opts.Delay)
 		return scraper.PageResult{Scenes: scenes, Total: total}, nil
 	})
 }
@@ -148,7 +148,7 @@ func parseCards(body []byte) []cardItem {
 	return items
 }
 
-func (s *Scraper) enrich(ctx context.Context, studioURL string, items []cardItem, now time.Time) []models.Scene {
+func (s *Scraper) enrich(ctx context.Context, studioURL string, items []cardItem, now time.Time, delay time.Duration) []models.Scene {
 	scraper.Debugf(1, "abbywinters: fetching %d details with %d workers", len(items), detailWorkers)
 	scenes := make([]models.Scene, len(items))
 	var wg sync.WaitGroup
@@ -162,6 +162,13 @@ func (s *Scraper) enrich(ctx context.Context, studioURL string, items []cardItem
 				defer func() { <-sem }()
 			case <-ctx.Done():
 				return
+			}
+			if delay > 0 {
+				select {
+				case <-time.After(delay):
+				case <-ctx.Done():
+					return
+				}
 			}
 			scenes[i] = s.toScene(ctx, studioURL, it, now)
 		}(i, it)

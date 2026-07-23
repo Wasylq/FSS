@@ -98,7 +98,7 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 			return scraper.PageResult{Done: true}, nil
 		}
 
-		scenes := s.enrich(ctx, studioURL, fresh, now)
+		scenes := s.enrich(ctx, studioURL, fresh, now, opts.Delay)
 		// Fewer than a full page of cards means this is the last page.
 		done := len(cards) < cardsPerPage
 		return scraper.PageResult{Scenes: scenes, Done: done}, nil
@@ -163,7 +163,7 @@ func parseCard(block string) card {
 	return c
 }
 
-func (s *Scraper) enrich(ctx context.Context, studioURL string, cards []card, now time.Time) []models.Scene {
+func (s *Scraper) enrich(ctx context.Context, studioURL string, cards []card, now time.Time, delay time.Duration) []models.Scene {
 	scraper.Debugf(1, "%s: fetching %d details with %d workers", s.cfg.ID, len(cards), detailWorkers)
 	scenes := make([]models.Scene, len(cards))
 	var wg sync.WaitGroup
@@ -177,6 +177,13 @@ func (s *Scraper) enrich(ctx context.Context, studioURL string, cards []card, no
 				defer func() { <-sem }()
 			case <-ctx.Done():
 				return
+			}
+			if delay > 0 {
+				select {
+				case <-time.After(delay):
+				case <-ctx.Done():
+					return
+				}
 			}
 			scenes[i] = s.toScene(ctx, studioURL, c, now)
 		}(i, c)

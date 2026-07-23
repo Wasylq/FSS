@@ -129,7 +129,7 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 		return
 	}
 	slugCh := make(chan string, 128)
-	go s.produceFilmSlugs(ctx, modelSlugs, slugCh)
+	go s.produceFilmSlugs(ctx, modelSlugs, slugCh, opts.Delay)
 	s.emitFromChan(ctx, studioURL, slugCh, now, opts, out)
 }
 
@@ -155,7 +155,7 @@ func (s *Scraper) fetchModelSlugs(ctx context.Context) []string {
 // produceFilmSlugs fetches every model page concurrently and streams the film
 // slugs it finds into slugCh, closing the channel when enumeration completes.
 // De-duplication is handled downstream in emitFromChan.
-func (s *Scraper) produceFilmSlugs(ctx context.Context, modelSlugs []string, slugCh chan<- string) {
+func (s *Scraper) produceFilmSlugs(ctx context.Context, modelSlugs []string, slugCh chan<- string, delay time.Duration) {
 	defer close(slugCh)
 	scraper.Debugf(1, "hegre: enumerating films from %d models with %d workers", len(modelSlugs), defaultWorker)
 
@@ -173,6 +173,13 @@ func (s *Scraper) produceFilmSlugs(ctx context.Context, modelSlugs []string, slu
 				defer func() { <-sem }()
 			case <-ctx.Done():
 				return
+			}
+			if delay > 0 {
+				select {
+				case <-time.After(delay):
+				case <-ctx.Done():
+					return
+				}
 			}
 			for _, f := range s.fetchModelFilms(ctx, ms) {
 				select {
@@ -238,6 +245,13 @@ func (s *Scraper) emitFromChan(ctx context.Context, studioURL string, slugCh <-c
 				seenMu.Unlock()
 				if dup {
 					continue
+				}
+				if opts.Delay > 0 {
+					select {
+					case <-time.After(opts.Delay):
+					case <-ctx.Done():
+						return
+					}
 				}
 				scene, ok := s.fetchFilm(ctx, studioURL, slug, now)
 				if !ok {

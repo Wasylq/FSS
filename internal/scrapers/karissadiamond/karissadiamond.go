@@ -90,10 +90,10 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 		// The server reports where the next batch starts. If it ever fails to
 		// advance, stop rather than re-requesting the same offset forever.
 		if next <= offset {
-			return scraper.PageResult{Scenes: s.enrich(ctx, studioURL, items, now), Done: true}, nil
+			return scraper.PageResult{Scenes: s.enrich(ctx, studioURL, items, now, opts.Delay), Done: true}, nil
 		}
 		offset = next
-		return scraper.PageResult{Scenes: s.enrich(ctx, studioURL, items, now)}, nil
+		return scraper.PageResult{Scenes: s.enrich(ctx, studioURL, items, now, opts.Delay)}, nil
 	})
 }
 
@@ -143,7 +143,7 @@ func (s *Scraper) fetchBatch(ctx context.Context, offset int) ([]item, int, erro
 
 // ---- detail enrichment ----
 
-func (s *Scraper) enrich(ctx context.Context, studioURL string, items []item, now time.Time) []models.Scene {
+func (s *Scraper) enrich(ctx context.Context, studioURL string, items []item, now time.Time, delay time.Duration) []models.Scene {
 	scenes := make([]models.Scene, len(items))
 	scraper.Debugf(1, "%s: fetching %d details with %d workers", siteID, len(items), detailWorkers)
 	var wg sync.WaitGroup
@@ -157,6 +157,13 @@ func (s *Scraper) enrich(ctx context.Context, studioURL string, items []item, no
 				defer func() { <-sem }()
 			case <-ctx.Done():
 				return
+			}
+			if delay > 0 {
+				select {
+				case <-time.After(delay):
+				case <-ctx.Done():
+					return
+				}
 			}
 			scenes[i] = s.toScene(ctx, studioURL, it, now)
 		}(i, it)

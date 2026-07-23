@@ -140,7 +140,7 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 		if len(fresh) == 0 {
 			return scraper.PageResult{Done: true}, nil
 		}
-		return scraper.PageResult{Scenes: s.enrich(ctx, studioURL, fresh, now)}, nil
+		return scraper.PageResult{Scenes: s.enrich(ctx, studioURL, fresh, now, opts.Delay)}, nil
 	})
 }
 
@@ -209,7 +209,7 @@ func (s *Scraper) normalizeURL(u string) string {
 
 // ---- detail enrichment ----
 
-func (s *Scraper) enrich(ctx context.Context, studioURL string, items []listItem, now time.Time) []models.Scene {
+func (s *Scraper) enrich(ctx context.Context, studioURL string, items []listItem, now time.Time, delay time.Duration) []models.Scene {
 	scenes := make([]models.Scene, len(items))
 	scraper.Debugf(1, "%s: fetching %d details with %d workers", s.cfg.SiteID, len(items), detailWorkers)
 	var wg sync.WaitGroup
@@ -223,6 +223,13 @@ func (s *Scraper) enrich(ctx context.Context, studioURL string, items []listItem
 				defer func() { <-sem }()
 			case <-ctx.Done():
 				return
+			}
+			if delay > 0 {
+				select {
+				case <-time.After(delay):
+				case <-ctx.Done():
+					return
+				}
 			}
 			scenes[i] = s.toScene(ctx, studioURL, it, now)
 		}(i, it)

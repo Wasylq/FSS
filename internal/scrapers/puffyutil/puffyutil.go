@@ -146,7 +146,7 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 			return scraper.PageResult{Done: true}, nil
 		}
 		scraper.Debugf(1, "%s: page %d yielded %d new scenes", s.cfg.ID, page, len(fresh))
-		scenes := s.enrich(ctx, studioURL, fresh, now, workers)
+		scenes := s.enrich(ctx, studioURL, fresh, now, workers, opts.Delay)
 		return scraper.PageResult{Scenes: scenes}, nil
 	})
 }
@@ -217,7 +217,7 @@ func (s *Scraper) parseListing(body string) []card {
 	return cards
 }
 
-func (s *Scraper) enrich(ctx context.Context, studioURL string, cards []card, now time.Time, workers int) []models.Scene {
+func (s *Scraper) enrich(ctx context.Context, studioURL string, cards []card, now time.Time, workers int, delay time.Duration) []models.Scene {
 	scenes := make([]models.Scene, len(cards))
 	var wg sync.WaitGroup
 	sem := make(chan struct{}, workers)
@@ -230,6 +230,13 @@ func (s *Scraper) enrich(ctx context.Context, studioURL string, cards []card, no
 				defer func() { <-sem }()
 			case <-ctx.Done():
 				return
+			}
+			if delay > 0 {
+				select {
+				case <-time.After(delay):
+				case <-ctx.Done():
+					return
+				}
 			}
 			scenes[i] = s.toScene(ctx, studioURL, c, now)
 		}(i, c)

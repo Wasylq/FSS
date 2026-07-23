@@ -86,7 +86,7 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 		if err != nil {
 			return scraper.PageResult{}, err
 		}
-		scenes := s.enrich(ctx, studioURL, items, now)
+		scenes := s.enrich(ctx, studioURL, items, now, opts.Delay)
 		return scraper.PageResult{Scenes: scenes}, nil
 	})
 }
@@ -126,7 +126,7 @@ func (s *Scraper) fetchListing(ctx context.Context, pageURL string) ([]listItem,
 	return items, nil
 }
 
-func (s *Scraper) enrich(ctx context.Context, studioURL string, items []listItem, now time.Time) []models.Scene {
+func (s *Scraper) enrich(ctx context.Context, studioURL string, items []listItem, now time.Time, delay time.Duration) []models.Scene {
 	scenes := make([]models.Scene, len(items))
 	scraper.Debugf(1, "doubleviewcasting: fetching %d details with %d workers", len(items), detailWorkers)
 	var wg sync.WaitGroup
@@ -140,6 +140,13 @@ func (s *Scraper) enrich(ctx context.Context, studioURL string, items []listItem
 				defer func() { <-sem }()
 			case <-ctx.Done():
 				return
+			}
+			if delay > 0 {
+				select {
+				case <-time.After(delay):
+				case <-ctx.Done():
+					return
+				}
 			}
 			scenes[i] = s.toScene(ctx, studioURL, it, now)
 		}(i, it)

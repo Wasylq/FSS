@@ -104,7 +104,7 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 		if len(fresh) == 0 {
 			return scraper.PageResult{Done: true}, nil
 		}
-		scenes := s.enrich(ctx, studioURL, fresh, now)
+		scenes := s.enrich(ctx, studioURL, fresh, now, opts.Delay)
 		return scraper.PageResult{Scenes: scenes}, nil
 	})
 }
@@ -132,7 +132,7 @@ func (s *Scraper) fetchListing(ctx context.Context, pageURL string) ([]string, e
 	return urls, nil
 }
 
-func (s *Scraper) enrich(ctx context.Context, studioURL string, urls []string, now time.Time) []models.Scene {
+func (s *Scraper) enrich(ctx context.Context, studioURL string, urls []string, now time.Time, delay time.Duration) []models.Scene {
 	scenes := make([]models.Scene, len(urls))
 	scraper.Debugf(1, "treasureislandmedia: fetching %d details with %d workers", len(urls), detailWorkers)
 	var wg sync.WaitGroup
@@ -146,6 +146,13 @@ func (s *Scraper) enrich(ctx context.Context, studioURL string, urls []string, n
 				defer func() { <-sem }()
 			case <-ctx.Done():
 				return
+			}
+			if delay > 0 {
+				select {
+				case <-time.After(delay):
+				case <-ctx.Done():
+					return
+				}
 			}
 			scenes[i] = s.toScene(ctx, studioURL, u, now)
 		}(i, u)

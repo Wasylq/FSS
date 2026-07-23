@@ -92,7 +92,7 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 	now := time.Now().UTC()
 	if singlePageRe.MatchString(studioURL) {
 		scraper.Debugf(1, "%s: scraping filtered page %s", siteID, studioURL)
-		s.runSinglePage(ctx, studioURL, out, now)
+		s.runSinglePage(ctx, studioURL, out, now, opts.Delay)
 		return
 	}
 
@@ -113,7 +113,7 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 		if len(fresh) == 0 {
 			return scraper.PageResult{Done: true}, nil
 		}
-		return scraper.PageResult{Scenes: s.enrich(ctx, studioURL, fresh, now)}, nil
+		return scraper.PageResult{Scenes: s.enrich(ctx, studioURL, fresh, now, opts.Delay)}, nil
 	})
 }
 
@@ -126,7 +126,7 @@ func listingPageURL(page int) string {
 	return fmt.Sprintf("%s/videos/%d", siteBase, page)
 }
 
-func (s *Scraper) runSinglePage(ctx context.Context, studioURL string, out chan<- scraper.SceneResult, now time.Time) {
+func (s *Scraper) runSinglePage(ctx context.Context, studioURL string, out chan<- scraper.SceneResult, now time.Time, delay time.Duration) {
 	body, err := s.fetchPage(ctx, studioURL)
 	if err != nil {
 		select {
@@ -143,7 +143,7 @@ func (s *Scraper) runSinglePage(ctx context.Context, studioURL string, out chan<
 	case <-ctx.Done():
 		return
 	}
-	for _, scene := range s.enrich(ctx, studioURL, items, now) {
+	for _, scene := range s.enrich(ctx, studioURL, items, now, delay) {
 		select {
 		case out <- scraper.Scene(scene):
 		case <-ctx.Done():
@@ -224,7 +224,7 @@ func parseListing(body []byte) []listItem {
 
 // ---- detail enrichment ----
 
-func (s *Scraper) enrich(ctx context.Context, studioURL string, items []listItem, now time.Time) []models.Scene {
+func (s *Scraper) enrich(ctx context.Context, studioURL string, items []listItem, now time.Time, delay time.Duration) []models.Scene {
 	scenes := make([]models.Scene, len(items))
 	scraper.Debugf(1, "%s: fetching %d details with %d workers", siteID, len(items), detailWorkers)
 	var wg sync.WaitGroup
@@ -238,6 +238,13 @@ func (s *Scraper) enrich(ctx context.Context, studioURL string, items []listItem
 				defer func() { <-sem }()
 			case <-ctx.Done():
 				return
+			}
+			if delay > 0 {
+				select {
+				case <-time.After(delay):
+				case <-ctx.Done():
+					return
+				}
 			}
 			scenes[i] = s.toScene(ctx, studioURL, it, now)
 		}(i, it)

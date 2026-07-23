@@ -98,7 +98,7 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 		if len(fresh) == 0 {
 			return scraper.PageResult{Done: true}, nil
 		}
-		scenes := s.enrich(ctx, studioURL, fresh, now)
+		scenes := s.enrich(ctx, studioURL, fresh, now, opts.Delay)
 		return scraper.PageResult{Scenes: scenes}, nil
 	})
 }
@@ -117,7 +117,7 @@ func (s *Scraper) fetchListing(ctx context.Context, pageURL string) ([]string, e
 	return codes, nil
 }
 
-func (s *Scraper) enrich(ctx context.Context, studioURL string, codes []string, now time.Time) []models.Scene {
+func (s *Scraper) enrich(ctx context.Context, studioURL string, codes []string, now time.Time, delay time.Duration) []models.Scene {
 	scraper.Debugf(1, "tokyohot: fetching %d details with %d workers", len(codes), detailWorkers)
 	scenes := make([]models.Scene, len(codes))
 	var wg sync.WaitGroup
@@ -131,6 +131,13 @@ func (s *Scraper) enrich(ctx context.Context, studioURL string, codes []string, 
 				defer func() { <-sem }()
 			case <-ctx.Done():
 				return
+			}
+			if delay > 0 {
+				select {
+				case <-time.After(delay):
+				case <-ctx.Done():
+					return
+				}
 			}
 			scenes[i] = s.toScene(ctx, studioURL, code, now)
 		}(i, code)

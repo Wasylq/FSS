@@ -92,7 +92,7 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 	now := time.Now().UTC()
 	if singlePageRe.MatchString(studioURL) {
 		scraper.Debugf(1, "%s: scraping single-page listing %s", siteID, studioURL)
-		s.runSinglePage(ctx, studioURL, out, now)
+		s.runSinglePage(ctx, studioURL, out, now, opts.Delay)
 		return
 	}
 	scraper.Debugf(1, "%s: scraping /most-recent/ listing", siteID)
@@ -110,7 +110,7 @@ func (s *Scraper) runListing(ctx context.Context, studioURL string, opts scraper
 		if len(cards) == 0 {
 			return scraper.PageResult{Done: true}, nil
 		}
-		return scraper.PageResult{Scenes: s.enrich(ctx, studioURL, cards, now)}, nil
+		return scraper.PageResult{Scenes: s.enrich(ctx, studioURL, cards, now, opts.Delay)}, nil
 	})
 }
 
@@ -124,7 +124,7 @@ func listingPageURL(page int) string {
 }
 
 // runSinglePage handles model and tag pages, which have no pagination.
-func (s *Scraper) runSinglePage(ctx context.Context, studioURL string, out chan<- scraper.SceneResult, now time.Time) {
+func (s *Scraper) runSinglePage(ctx context.Context, studioURL string, out chan<- scraper.SceneResult, now time.Time, delay time.Duration) {
 	body, err := s.get(ctx, studioURL)
 	if err != nil {
 		select {
@@ -142,7 +142,7 @@ func (s *Scraper) runSinglePage(ctx context.Context, studioURL string, out chan<
 		return
 	}
 
-	for _, scene := range s.enrich(ctx, studioURL, cards, now) {
+	for _, scene := range s.enrich(ctx, studioURL, cards, now, delay) {
 		select {
 		case out <- scraper.Scene(scene):
 		case <-ctx.Done():
@@ -233,7 +233,7 @@ func parseCard(inner string) (card, bool) {
 
 // ---- detail enrichment ----
 
-func (s *Scraper) enrich(ctx context.Context, studioURL string, cards []card, now time.Time) []models.Scene {
+func (s *Scraper) enrich(ctx context.Context, studioURL string, cards []card, now time.Time, delay time.Duration) []models.Scene {
 	scenes := make([]models.Scene, len(cards))
 	scraper.Debugf(1, "%s: fetching %d details with %d workers", siteID, len(cards), detailWorkers)
 	var wg sync.WaitGroup
@@ -247,6 +247,13 @@ func (s *Scraper) enrich(ctx context.Context, studioURL string, cards []card, no
 				defer func() { <-sem }()
 			case <-ctx.Done():
 				return
+			}
+			if delay > 0 {
+				select {
+				case <-time.After(delay):
+				case <-ctx.Done():
+					return
+				}
 			}
 			scenes[i] = s.toScene(ctx, studioURL, c, now)
 		}(i, c)

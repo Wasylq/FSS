@@ -100,14 +100,14 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 			return scraper.PageResult{Done: true}, nil
 		}
 		if s.cfg.detailParse != nil {
-			s.enrich(ctx, fresh)
+			s.enrich(ctx, fresh, opts.Delay)
 		}
 		return scraper.PageResult{Scenes: fresh}, nil
 	})
 }
 
 // enrich fetches each scene's detail page concurrently and applies detailParse.
-func (s *Scraper) enrich(ctx context.Context, scenes []models.Scene) {
+func (s *Scraper) enrich(ctx context.Context, scenes []models.Scene, delay time.Duration) {
 	scraper.Debugf(1, "%s: enriching %d scenes with %d workers", s.cfg.SiteID, len(scenes), detailWorkers)
 	var wg sync.WaitGroup
 	sem := make(chan struct{}, detailWorkers)
@@ -123,6 +123,13 @@ func (s *Scraper) enrich(ctx context.Context, scenes []models.Scene) {
 				defer func() { <-sem }()
 			case <-ctx.Done():
 				return
+			}
+			if delay > 0 {
+				select {
+				case <-time.After(delay):
+				case <-ctx.Done():
+					return
+				}
 			}
 			body, err := s.get(ctx, scenes[i].URL)
 			if err != nil {
