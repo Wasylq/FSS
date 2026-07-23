@@ -49,9 +49,9 @@ func listingCard(id, title, performers, desc, thumbSlug string) string {
 </div>`, id, thumbSlug, title, id, title, perfHTML, desc, id)
 }
 
-func paginationNav(current, max int) string {
+func paginationNav(current, maxPage int) string {
 	var links []string
-	for p := 1; p <= max; p++ {
+	for p := 1; p <= maxPage; p++ {
 		if p == current {
 			continue
 		}

@@ -158,9 +158,9 @@ func TestExtractMaxPage(t *testing.T) {
 <a href="/porn-categories/movies/?page=10&sort=most-recent">10</a>
 <a href="/porn-categories/movies/?page=2&sort=most-recent">&gt;</a>
 `)
-	max := extractMaxPage(body)
-	if max != 10 {
-		t.Errorf("extractMaxPage = %d, want 10", max)
+	maxPage := extractMaxPage(body)
+	if maxPage != 10 {
+		t.Errorf("extractMaxPage = %d, want 10", maxPage)
 	}
 }
 

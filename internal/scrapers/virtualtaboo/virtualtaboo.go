@@ -356,17 +356,17 @@ func extractSlug(rawURL string) string {
 }
 
 func parseMaxPage(body []byte) int {
-	max := 0
+	maxPage := 0
 	for _, m := range pageRe.FindAllSubmatch(body, -1) {
 		n := 0
 		for _, c := range m[1] {
 			n = n*10 + int(c-'0')
 		}
-		if n > max {
-			max = n
+		if n > maxPage {
+			maxPage = n
 		}
 	}
-	return max
+	return maxPage
 }
 
 func hasNextPage(body []byte, current int) bool {
@@ -472,14 +472,14 @@ func (s *Scraper) parseDetail(body []byte, entry listEntry) models.Scene {
 func parseDuration(m []string) int {
 	if m[1] != "" {
 		h := atoi(m[1])
-		min := atoi(m[2])
+		mins := atoi(m[2])
 		sec := atoi(m[3])
-		return h*3600 + min*60 + sec
+		return h*3600 + mins*60 + sec
 	}
 	if m[4] != "" {
-		min := atoi(m[4])
+		mins := atoi(m[4])
 		sec := atoi(m[5])
-		return min*60 + sec
+		return mins*60 + sec
 	}
 	if m[6] != "" {
 		return atoi(m[6]) * 60

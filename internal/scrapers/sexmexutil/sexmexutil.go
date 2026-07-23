@@ -149,14 +149,14 @@ var (
 
 func extractMaxPage(body []byte) int {
 	matches := pageNumRe.FindAllSubmatch(body, -1)
-	max := 0
+	maxPage := 0
 	for _, m := range matches {
 		n, _ := strconv.Atoi(string(m[1]))
-		if n > max {
-			max = n
+		if n > maxPage {
+			maxPage = n
 		}
 	}
-	return max
+	return maxPage
 }
 
 type card struct {

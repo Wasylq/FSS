@@ -151,13 +151,13 @@ func parseAjaxURL(body []byte) (string, bool) {
 // page. Returns 0 if no pagination links are present (single-page
 // catalogue or the AJAX hash didn't expose them).
 func parseMaxOffset(body []byte) int {
-	max := 0
+	maxPage := 0
 	for _, m := range outerMaxPageRe.FindAllSubmatch(body, -1) {
-		if n, _ := strconv.Atoi(string(m[1])); n > max {
-			max = n
+		if n, _ := strconv.Atoi(string(m[1])); n > maxPage {
+			maxPage = n
 		}
 	}
-	return max
+	return maxPage
 }
 
 // parseInnerCards extracts every `img-portfolio` card from the inner

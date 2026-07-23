@@ -492,9 +492,9 @@ func TestParseLegacyYears(t *testing.T) {
 
 func TestParseLegacyMaxPage(t *testing.T) {
 	body := []byte(`<a href="/updates/videos/1">1</a><a href="/updates/videos/2">2</a><a href="/updates/videos/3">3</a>`)
-	max := parseLegacyMaxPage(body)
-	if max != 3 {
-		t.Errorf("maxPage = %d, want 3", max)
+	maxPage := parseLegacyMaxPage(body)
+	if maxPage != 3 {
+		t.Errorf("maxPage = %d, want 3", maxPage)
 	}
 }
 

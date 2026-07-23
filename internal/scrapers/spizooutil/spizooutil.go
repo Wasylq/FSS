@@ -154,14 +154,14 @@ func estimateTotal(body []byte, perPage int) int {
 		pages, _ := strconv.Atoi(string(m[1]))
 		return pages * perPage
 	}
-	max := 1
+	maxPage := 1
 	for _, m := range maxPageRe.FindAllSubmatch(body, -1) {
 		n, _ := strconv.Atoi(string(m[1]))
-		if n > max {
-			max = n
+		if n > maxPage {
+			maxPage = n
 		}
 	}
-	return max * perPage
+	return maxPage * perPage
 }
 
 func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOpts, out chan<- scraper.SceneResult) {

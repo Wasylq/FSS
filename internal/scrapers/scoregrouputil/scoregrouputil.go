@@ -263,14 +263,14 @@ var pageRe = regexp.MustCompile(`page=(\d+)`)
 
 func extractMaxPage(body []byte) int {
 	matches := pageRe.FindAllSubmatch(body, -1)
-	max := 1
+	maxPage := 1
 	for _, m := range matches {
 		n, _ := strconv.Atoi(string(m[1]))
-		if n > max {
-			max = n
+		if n > maxPage {
+			maxPage = n
 		}
 	}
-	return max
+	return maxPage
 }
 
 func hasNextPage(body []byte, current int) bool {

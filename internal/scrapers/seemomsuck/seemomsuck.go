@@ -318,14 +318,14 @@ func extractModelName(body []byte) string {
 // pagination nav (present on every page, including the last one, per the
 // site's own "?page=N" links), defaulting to 1 when there is no pagination.
 func extractMaxPage(body []byte) int {
-	max := 1
+	maxPage := 1
 	for _, m := range pageNumRe.FindAllSubmatch(body, -1) {
 		n, _ := strconv.Atoi(string(m[1]))
-		if n > max {
-			max = n
+		if n > maxPage {
+			maxPage = n
 		}
 	}
-	return max
+	return maxPage
 }
 
 // cleanModelURL strips tracking query params and the old ".html" suffix

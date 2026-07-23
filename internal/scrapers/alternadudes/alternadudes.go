@@ -109,14 +109,14 @@ func parseListingPage(body []byte) []listEntry {
 }
 
 func estimateTotal(body []byte, perPage int) int {
-	max := 1
+	maxPage := 1
 	for _, m := range maxPageRe.FindAllSubmatch(body, -1) {
 		n, _ := strconv.Atoi(string(m[1]))
-		if n > max {
-			max = n
+		if n > maxPage {
+			maxPage = n
 		}
 	}
-	return max * perPage
+	return maxPage * perPage
 }
 
 func pageURL(base string, page int) string {

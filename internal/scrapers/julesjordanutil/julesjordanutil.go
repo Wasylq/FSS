@@ -544,13 +544,13 @@ func parseListingJJ(body []byte, base string) []workItem {
 }
 
 func extractMaxPageJJ(body []byte) int {
-	var max int
+	var maxPage int
 	for _, m := range jjMaxPageRe.FindAllSubmatch(body, -1) {
-		if n, _ := strconv.Atoi(string(m[1])); n > max {
-			max = n
+		if n, _ := strconv.Atoi(string(m[1])); n > maxPage {
+			maxPage = n
 		}
 	}
-	return max
+	return maxPage
 }
 
 var (

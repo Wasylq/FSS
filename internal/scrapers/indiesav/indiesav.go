@@ -256,14 +256,14 @@ func parseListingPage(body []byte) []listingItem {
 }
 
 func extractLastPage(body []byte) int {
-	max := 1
+	maxPage := 1
 	for _, m := range pageNumRe.FindAllSubmatch(body, -1) {
 		n, _ := strconv.Atoi(string(m[1]))
-		if n > max {
-			max = n
+		if n > maxPage {
+			maxPage = n
 		}
 	}
-	return max
+	return maxPage
 }
 
 func hasNextPage(body []byte, current int) bool {

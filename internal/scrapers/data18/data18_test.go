@@ -455,10 +455,6 @@ func TestDurationParsing(t *testing.T) {
 			t.Errorf("no duration match in %q", tt.html)
 			continue
 		}
-		mins, _ := fmt.Sscanf(m[1], "%d", new(int))
-		_ = mins
-		min, _ := fmt.Sscan(m[1], new(int))
-		_ = min
 		// Re-use the same logic from fetchDetail
 		minVal := 0
 		_, _ = fmt.Sscanf(m[1], "%d", &minVal)

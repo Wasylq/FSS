@@ -412,14 +412,14 @@ func parseMaxPage(body []byte) int {
 		return n
 	}
 
-	max := 1
+	maxPage := 1
 	for _, m := range pageNumRe.FindAllStringSubmatch(page, -1) {
 		n, _ := strconv.Atoi(m[1])
-		if n > max {
-			max = n
+		if n > maxPage {
+			maxPage = n
 		}
 	}
-	return max
+	return maxPage
 }
 
 // parseDurationText handles "14min", "2 Hour 10min", "1 Hour 15min", etc.

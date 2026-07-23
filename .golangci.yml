@@ -71,15 +71,14 @@ linters:
           - revive
         text: '^(exported|package-comments):'
 
-      # Staged cleanup, not a permanent exemption. These fire ~430 times
-      # across internal/ (275 unused params, 112 builtin shadows, 40 empty
-      # blocks). Mechanical, but too large for one pass. Remove these
-      # exclusions one rule at a time as the cleanup lands — the same rules
-      # are already enforced everywhere outside internal/.
+      # Staged cleanup, not a permanent exemption. Remove these exclusions one
+      # rule at a time as the cleanup lands — the same rules are already
+      # enforced everywhere outside internal/.
+      #   redefines-builtin-id: done, exclusion dropped.
       - path: internal/
         linters:
           - revive
-        text: '^(unused-parameter|redefines-builtin-id|empty-block):'
+        text: '^(unused-parameter|empty-block):'
 
       # Several *util packages export ParseListingPage/ParseSitemap so their
       # external _test packages can drive the parser directly. The returned

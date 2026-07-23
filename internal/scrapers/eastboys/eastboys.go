@@ -288,13 +288,13 @@ func parseMaxPage(body []byte) int {
 		return 0
 	}
 	block := body[i:]
-	max := 0
+	maxPage := 0
 	for _, m := range pageNumRe.FindAllSubmatch(block, -1) {
-		if n, err := strconv.Atoi(string(m[1])); err == nil && n > max {
-			max = n
+		if n, err := strconv.Atoi(string(m[1])); err == nil && n > maxPage {
+			maxPage = n
 		}
 	}
-	return max
+	return maxPage
 }
 
 // parseCategories extracts the scene's category names from the detail page's

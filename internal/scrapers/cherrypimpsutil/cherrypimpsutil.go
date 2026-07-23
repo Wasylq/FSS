@@ -151,14 +151,14 @@ func parseListingPage(body []byte) []sceneItem {
 }
 
 func estimateTotal(body []byte, perPage int) int {
-	max := 1
+	maxPage := 1
 	for _, m := range maxPageRe.FindAllSubmatch(body, -1) {
 		n, _ := strconv.Atoi(string(m[1]))
-		if n > max {
-			max = n
+		if n > maxPage {
+			maxPage = n
 		}
 	}
-	return max * perPage
+	return maxPage * perPage
 }
 
 type listingMode int
@@ -330,14 +330,14 @@ func parseDVDCards(body []byte) []string {
 }
 
 func estimateDVDTotal(body []byte) int {
-	max := 1
+	maxPage := 1
 	for _, m := range dvdPageRe.FindAllSubmatch(body, -1) {
 		n, _ := strconv.Atoi(string(m[1]))
-		if n > max {
-			max = n
+		if n > maxPage {
+			maxPage = n
 		}
 	}
-	return max
+	return maxPage
 }
 
 func (s *Scraper) collectDVDURLs(ctx context.Context, opts scraper.ListOpts) ([]string, error) {

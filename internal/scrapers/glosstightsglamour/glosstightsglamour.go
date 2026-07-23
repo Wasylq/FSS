@@ -202,13 +202,13 @@ func parseListingPage(body []byte, studioURL string) []models.Scene {
 }
 
 func parseMaxPage(body []byte) int {
-	max := 0
+	maxPage := 0
 	for _, m := range lastPgRe.FindAllSubmatch(body, -1) {
-		if n, err := strconv.Atoi(string(m[1])); err == nil && n > max {
-			max = n
+		if n, err := strconv.Atoi(string(m[1])); err == nil && n > maxPage {
+			maxPage = n
 		}
 	}
-	return max
+	return maxPage
 }
 
 func hasNextPage(body []byte, current int) bool {

@@ -446,14 +446,14 @@ func parseMaxPage(body []byte) int {
 	if m == nil {
 		return 1
 	}
-	max := 1
+	maxPage := 1
 	for _, pm := range pageNumRe.FindAllStringSubmatch(m[1], -1) {
 		n, _ := strconv.Atoi(pm[1])
-		if n > max {
-			max = n
+		if n > maxPage {
+			maxPage = n
 		}
 	}
-	return max
+	return maxPage
 }
 
 // ---- detail page parsing ----

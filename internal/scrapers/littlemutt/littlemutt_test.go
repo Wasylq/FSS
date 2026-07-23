@@ -131,8 +131,8 @@ func TestToSceneDropsEchoedDescription(t *testing.T) {
 		t.Errorf("Description = %q, want empty when it just echoes the title", got)
 	}
 
-	real := listItem{id: "2", title: "A Scene", description: "Something else entirely"}
-	if got := real.toScene("x", time.Now()).Description; got != "Something else entirely" {
+	differing := listItem{id: "2", title: "A Scene", description: "Something else entirely"}
+	if got := differing.toScene("x", time.Now()).Description; got != "Something else entirely" {
 		t.Errorf("Description = %q", got)
 	}
 }

@@ -173,14 +173,14 @@ func parseDate(s string) time.Time {
 }
 
 func estimateTotal(body []byte, perPage int) int {
-	max := 1
+	maxPage := 1
 	for _, m := range maxPageRe.FindAllSubmatch(body, -1) {
 		n, _ := strconv.Atoi(string(m[1]))
-		if n > max {
-			max = n
+		if n > maxPage {
+			maxPage = n
 		}
 	}
-	return max * perPage
+	return maxPage * perPage
 }
 
 func (item sceneItem) toScene(studioURL string, now time.Time) models.Scene {

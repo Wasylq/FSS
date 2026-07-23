@@ -293,20 +293,20 @@ func TestExtractModelPagination(t *testing.T) {
 <a href="sets.php?id=2&page=86">86</a>
 </div>`)
 
-	id, max := extractModelPagination(body)
+	id, maxPage := extractModelPagination(body)
 	if id != "2" {
 		t.Errorf("modelID = %q, want 2", id)
 	}
-	if max != 86 {
-		t.Errorf("maxPage = %d, want 86", max)
+	if maxPage != 86 {
+		t.Errorf("maxPage = %d, want 86", maxPage)
 	}
 }
 
 func TestExtractModelPaginationNone(t *testing.T) {
 	body := []byte(`<html><body>no pagination</body></html>`)
-	id, max := extractModelPagination(body)
-	if id != "" || max != 0 {
-		t.Errorf("expected empty id and 0 max, got %q, %d", id, max)
+	id, maxPage := extractModelPagination(body)
+	if id != "" || maxPage != 0 {
+		t.Errorf("expected empty id and 0 max, got %q, %d", id, maxPage)
 	}
 }
 

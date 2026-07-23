@@ -244,14 +244,14 @@ func parseMaxPage(body []byte) int {
 	if m == nil {
 		return 1
 	}
-	max := 1
+	maxPage := 1
 	for _, pm := range pageNumRe.FindAllSubmatch(m[1], -1) {
 		n, _ := strconv.Atoi(string(pm[1]))
-		if n > max {
-			max = n
+		if n > maxPage {
+			maxPage = n
 		}
 	}
-	return max
+	return maxPage
 }
 
 var (
@@ -297,9 +297,9 @@ func parseDetailPage(body []byte) detailData {
 
 	if m := durationRe.FindStringSubmatch(page); m != nil {
 		h, _ := strconv.Atoi(m[1])
-		min, _ := strconv.Atoi(m[2])
+		mins, _ := strconv.Atoi(m[2])
 		sec, _ := strconv.Atoi(m[3])
-		d.duration = h*3600 + min*60 + sec
+		d.duration = h*3600 + mins*60 + sec
 	}
 
 	if m := dateRe.FindStringSubmatch(page); m != nil {

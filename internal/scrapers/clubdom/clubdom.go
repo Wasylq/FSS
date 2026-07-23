@@ -238,17 +238,17 @@ func (s *Scraper) run(ctx context.Context, opts scraper.ListOpts, out chan<- scr
 }
 
 func maxPageNum(body []byte) int {
-	max := 1
+	maxPage := 1
 	for _, m := range pageNumRe.FindAllSubmatch(body, -1) {
 		n := 0
 		for _, c := range m[1] {
 			n = n*10 + int(c-'0')
 		}
-		if n > max {
-			max = n
+		if n > maxPage {
+			maxPage = n
 		}
 	}
-	return max
+	return maxPage
 }
 
 // fetchDetails enriches each listing item from its detail page with a worker

@@ -77,9 +77,9 @@ func TestParseListingPage(t *testing.T) {
 }
 
 func TestExtractMaxPage(t *testing.T) {
-	max := extractMaxPage([]byte(listingHTML))
-	if max != 3 {
-		t.Errorf("maxPage = %d, want 3", max)
+	maxPage := extractMaxPage([]byte(listingHTML))
+	if maxPage != 3 {
+		t.Errorf("maxPage = %d, want 3", maxPage)
 	}
 }
 

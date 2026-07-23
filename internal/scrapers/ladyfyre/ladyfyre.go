@@ -333,14 +333,14 @@ func parseListingEntries(body []byte) []listEntry {
 }
 
 func parseMaxPage(body []byte) int {
-	max := 0
+	maxPage := 0
 	for _, m := range maxPageRe.FindAllSubmatch(body, -1) {
 		n, _ := strconv.Atoi(string(m[1]))
-		if n > max {
-			max = n
+		if n > maxPage {
+			maxPage = n
 		}
 	}
-	return max
+	return maxPage
 }
 
 func hasNextPage(body []byte, current int) bool {

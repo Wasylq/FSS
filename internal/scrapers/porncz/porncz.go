@@ -280,13 +280,13 @@ func parseListingCards(body []byte) []listItem {
 var maxPageRe = regexp.MustCompile(`page=(\d+)`)
 
 func parseTotalPages(body []byte) int {
-	max := 0
+	maxPage := 0
 	for _, m := range maxPageRe.FindAllSubmatch(body, -1) {
-		if n, err := strconv.Atoi(string(m[1])); err == nil && n > max {
-			max = n
+		if n, err := strconv.Atoi(string(m[1])); err == nil && n > maxPage {
+			maxPage = n
 		}
 	}
-	return max
+	return maxPage
 }
 
 func (s *Scraper) fetchDetail(ctx context.Context, item listItem, studioURL string) (models.Scene, error) {

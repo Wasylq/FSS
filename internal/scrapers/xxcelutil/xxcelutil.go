@@ -211,13 +211,13 @@ func (s *Scraper) parseListing(body []byte) []listingScene {
 }
 
 func estimateTotal(body []byte, perPage int) int {
-	max := 1
+	maxPage := 1
 	for _, m := range maxPageRe.FindAllSubmatch(body, -1) {
-		if n, _ := strconv.Atoi(string(m[1])); n > max {
-			max = n
+		if n, _ := strconv.Atoi(string(m[1])); n > maxPage {
+			maxPage = n
 		}
 	}
-	return max * perPage
+	return maxPage * perPage
 }
 
 type detailData struct {

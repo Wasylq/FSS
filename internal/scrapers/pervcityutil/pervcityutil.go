@@ -247,16 +247,16 @@ func (s *Scraper) absURL(u string) string {
 func estimateTotal(body []byte, stem string) int {
 	page := string(body)
 	re := regexp.MustCompile(regexp.QuoteMeta(stem) + `_(\d+)_d\.html`)
-	max := 0
+	maxPage := 0
 	for _, m := range re.FindAllStringSubmatch(page, -1) {
-		if n, _ := strconv.Atoi(m[1]); n > max {
-			max = n
+		if n, _ := strconv.Atoi(m[1]); n > maxPage {
+			maxPage = n
 		}
 	}
-	if max == 0 {
+	if maxPage == 0 {
 		return 0
 	}
-	return max * perPage
+	return maxPage * perPage
 }
 
 func (s *Scraper) fetchPage(ctx context.Context, url string) ([]byte, error) {

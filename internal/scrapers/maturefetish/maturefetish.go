@@ -362,16 +362,16 @@ var (
 )
 
 func parseLastPage(body []byte) int {
-	max := 0
+	maxPage := 0
 	for _, re := range []*regexp.Regexp{updatesPageRe, nichePageRe} {
 		for _, m := range re.FindAllSubmatch(body, -1) {
 			n, _ := strconv.Atoi(string(m[1]))
-			if n > max {
-				max = n
+			if n > maxPage {
+				maxPage = n
 			}
 		}
 	}
-	return max
+	return maxPage
 }
 
 func estimateTotal(body []byte, firstPageCount int) int {

@@ -273,13 +273,13 @@ func (s *Scraper) listURL(page int) string {
 }
 
 func (s *Scraper) maxPageNum(body []byte) int {
-	max := 1
+	maxPage := 1
 	for _, m := range s.pageNumRe().FindAllSubmatch(body, -1) {
-		if n, err := strconv.Atoi(string(m[1])); err == nil && n > max {
-			max = n
+		if n, err := strconv.Atoi(string(m[1])); err == nil && n > maxPage {
+			maxPage = n
 		}
 	}
-	return max
+	return maxPage
 }
 
 // fetchDetails enriches each listing item from its detail page with a worker

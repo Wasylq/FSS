@@ -461,14 +461,14 @@ func parseDate(s string) time.Time {
 
 func parseMaxPage(body []byte) int {
 	page := string(body)
-	max := 1
+	maxPage := 1
 	for _, pm := range pageHrefRe.FindAllStringSubmatch(page, -1) {
 		n, _ := strconv.Atoi(pm[1])
-		if n > max {
-			max = n
+		if n > maxPage {
+			maxPage = n
 		}
 	}
-	return max
+	return maxPage
 }
 
 // ---- detail page parsing ----

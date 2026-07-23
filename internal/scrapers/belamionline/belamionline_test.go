@@ -99,16 +99,16 @@ func TestParseListingPage(t *testing.T) {
 }
 
 func TestParseMaxPage(t *testing.T) {
-	max := parseMaxPage([]byte(listingHTML))
-	if max != 38 {
-		t.Errorf("max page = %d, want 38", max)
+	maxPage := parseMaxPage([]byte(listingHTML))
+	if maxPage != 38 {
+		t.Errorf("max page = %d, want 38", maxPage)
 	}
 }
 
 func TestParseMaxPage_NoPagination(t *testing.T) {
-	max := parseMaxPage([]byte(`<html><body>no pager here</body></html>`))
-	if max != 1 {
-		t.Errorf("max page = %d, want 1", max)
+	maxPage := parseMaxPage([]byte(`<html><body>no pager here</body></html>`))
+	if maxPage != 1 {
+		t.Errorf("max page = %d, want 1", maxPage)
 	}
 }
 
