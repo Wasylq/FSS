@@ -71,14 +71,24 @@ linters:
           - revive
         text: '^(exported|package-comments):'
 
-      # Staged cleanup, not a permanent exemption. Remove these exclusions one
-      # rule at a time as the cleanup lands — the same rules are already
-      # enforced everywhere outside internal/.
+      # Staged cleanup, not a permanent exemption. Remove when it lands; the
+      # same rule is already enforced everywhere outside internal/.
       #   redefines-builtin-id: done, exclusion dropped.
       - path: internal/
         linters:
           - revive
-        text: '^(unused-parameter|empty-block):'
+        text: '^unused-parameter:'
+
+      # Permanent. All 40 empty-block hits under internal/ are `for range ch {}`
+      # — the channel-drain idiom. Each one follows a cancel() and lets the
+      # scraper goroutine finish its sends instead of blocking forever on an
+      # unread channel; deleting them leaks goroutines and hangs tests. revive
+      # has no way to special-case the drain, so the rule is off here rather
+      # than carrying 40 nolint comments.
+      - path: internal/
+        linters:
+          - revive
+        text: '^empty-block:'
 
       # Several *util packages export ParseListingPage/ParseSitemap so their
       # external _test packages can drive the parser directly. The returned
