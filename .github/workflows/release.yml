@@ -262,7 +262,7 @@ jobs:
       # still be re-run from the Actions UI if even the retry fails.
       - name: Publish to AUR (attempt 1)
         id: aur1
-        uses: KSXGitHub/github-actions-deploy-aur@v4.1.3
+        uses: KSXGitHub/github-actions-deploy-aur@v4.2.0
         continue-on-error: true
         with:
           pkgname: fss
@@ -281,7 +281,7 @@ jobs:
 
       - name: Publish to AUR (attempt 2)
         if: steps.aur1.outcome == 'failure'
-        uses: KSXGitHub/github-actions-deploy-aur@v4.1.3
+        uses: KSXGitHub/github-actions-deploy-aur@v4.2.0
         with:
           pkgname: fss
           pkgbuild: ./packaging/aur/PKGBUILD
