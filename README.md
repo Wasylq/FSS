@@ -2,8 +2,9 @@
 
 [![CI](https://github.com/Wasylq/FSS/actions/workflows/ci.yml/badge.svg)](https://github.com/Wasylq/FSS/actions/workflows/ci.yml)
 [![codecov](https://codecov.io/gh/Wasylq/FSS/graph/badge.svg)](https://codecov.io/gh/Wasylq/FSS)
-[![Go Report Card](https://goreportcard.com/badge/github.com/Wasylq/FSS)](https://goreportcard.com/report/github.com/Wasylq/FSS)
 [![Go Reference](https://pkg.go.dev/badge/github.com/Wasylq/FSS.svg)](https://pkg.go.dev/github.com/Wasylq/FSS)
+[![Release](https://img.shields.io/github/v/release/Wasylq/FSS)](https://github.com/Wasylq/FSS/releases/latest)
+[![License](https://img.shields.io/github/license/Wasylq/FSS)](LICENSE)
 
 Scrapes all scenes and metadata from a studio URL. Designed to be easily extended to new sites. Can push scraped metadata into a local [Stash](https://stashapp.cc/) instance.
 
