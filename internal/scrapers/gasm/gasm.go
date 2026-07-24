@@ -23,6 +23,9 @@ import (
 
 const cdnBase = "https://c741b0f4ef.mjedge.net/"
 
+// siteBase is a var so tests can point the scraper at an httptest server.
+var siteBase = "https://www.gasm.com"
+
 var domainToSlug = map[string]string{
 	"buttformation.com":      "buttformation",
 	"cosplaybabes.xxx":       "cosplaybabes",
@@ -237,7 +240,7 @@ type ajaxParams struct {
 }
 
 func (s *Scraper) bootstrap(ctx context.Context, slug string) (userID, videoCount int, err error) {
-	profileURL := "https://www.gasm.com/studio/profile/" + slug
+	profileURL := siteBase + "/studio/profile/" + slug
 	body, err := s.fetchHTML(ctx, profileURL)
 	if err != nil {
 		return 0, 0, err
@@ -305,13 +308,13 @@ func (s *Scraper) fetchListing(ctx context.Context, slug string, userID, page, p
 
 	resp, err := httpx.Do(ctx, s.client, httpx.Request{
 		Method: http.MethodPost,
-		URL:    "https://www.gasm.com/op/results/paginate",
+		URL:    siteBase + "/op/results/paginate",
 		Body:   []byte(form.Encode()),
 		Headers: map[string]string{
 			"Content-Type":     "application/x-www-form-urlencoded",
 			"X-Requested-With": "XMLHttpRequest",
 			"User-Agent":       httpx.UserAgentFirefox,
-			"Referer":          "https://www.gasm.com/studio/profile/" + slug,
+			"Referer":          siteBase + "/studio/profile/" + slug,
 		},
 	})
 	if err != nil {
@@ -398,7 +401,7 @@ type devSpanData struct {
 var devSpanRe = regexp.MustCompile(`dev-span="([^"]+)"`)
 
 func (s *Scraper) fetchDetail(ctx context.Context, id, studioURL, slug string) (models.Scene, error) {
-	detailURL := "https://www.gasm.com/post/details/" + id
+	detailURL := siteBase + "/post/details/" + id
 	body, err := s.fetchHTML(ctx, detailURL)
 	if err != nil {
 		return models.Scene{}, err
