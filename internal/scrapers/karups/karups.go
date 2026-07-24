@@ -80,10 +80,16 @@ func (s *Scraper) ListScenes(ctx context.Context, studioURL string, opts scraper
 }
 
 var (
-	cardRe     = regexp.MustCompile(`(?s)<div class="item-inside">\s*<a href="([^"]+)">\s*<div class="thumb">\s*<img src="([^"]+)"[^>]*>\s*<div class="meta">\s*<span class="title">([^<]+)</span>\s*<span class="date">([^<]+)</span>`)
-	sceneIDRe  = regexp.MustCompile(`-(\d+)\.html`)
-	maxPageRe  = regexp.MustCompile(`href="page(\d+)\.html"`)
-	modelURLRe = regexp.MustCompile(`/model/[^/]+\.html`)
+	cardRe    = regexp.MustCompile(`(?s)<div class="item-inside">\s*<a href="([^"]+)">\s*<div class="thumb">\s*<img src="([^"]+)"[^>]*>\s*<div class="meta">\s*<span class="title">([^<]+)</span>\s*<span class="date">([^<]+)</span>`)
+	sceneIDRe = regexp.MustCompile(`-(\d+)\.html`)
+	maxPageRe = regexp.MustCompile(`href="page(\d+)\.html"`)
+	// Individual model pages are canonically /model/{slug}-{id}.html, but the
+	// site also serves the plural /models/{slug}-{id}.html and 302s it to the
+	// singular form, and links in the wild use both. Requiring the {slug}.html
+	// component is what keeps the bare /models/ index from matching: that page
+	// lists models rather than videos, so it correctly falls through to the
+	// full /videos/ walk instead of being parsed as one model's scenes.
+	modelURLRe = regexp.MustCompile(`/models?/[^/]+\.html`)
 
 	videoSectionRe = regexp.MustCompile(`(?s)<div class="listing-videos[^"]*"[^>]*>(.*)</div>`)
 

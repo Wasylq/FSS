@@ -283,11 +283,34 @@ func TestModelPage(t *testing.T) {
 }
 
 func TestIsModelURL(t *testing.T) {
-	if !isModelURL("https://www.karupsow.com/model/ellie-nova-6952.html") {
-		t.Error("should match model URL")
+	match := []string{
+		// Canonical singular form.
+		"https://www.karupsow.com/model/ellie-nova-6952.html",
+		// Plural alias — the site 302s this to the singular form, and links in
+		// the wild use it. Without it the URL falls through to the paginated
+		// walk and scrapes the whole site instead of the one model.
+		"https://www.karupsow.com/models/ellie-nova-6952.html",
+		"https://www.karupspc.com/models/vitoria-vontese-7267.html",
 	}
-	if isModelURL("https://www.karupsow.com/videos/") {
-		t.Error("should not match videos URL")
+	for _, u := range match {
+		if !isModelURL(u) {
+			t.Errorf("isModelURL(%q) = false, want true", u)
+		}
+	}
+
+	noMatch := []string{
+		"https://www.karupsow.com/videos/",
+		// The bare index lists models, not videos. It must NOT be treated as a
+		// single model page: parsing it that way would yield model cards
+		// instead of scenes. Falling through to the /videos/ walk is correct.
+		"https://www.karupsow.com/models/",
+		"https://www.karupsow.com/model/",
+		"https://www.karupsow.com/",
+	}
+	for _, u := range noMatch {
+		if isModelURL(u) {
+			t.Errorf("isModelURL(%q) = true, want false", u)
+		}
 	}
 }
 
