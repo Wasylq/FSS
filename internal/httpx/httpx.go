@@ -108,8 +108,46 @@ func DecodeJSON(r io.Reader, v any) error {
 }
 
 // DecodeJSONN JSON-decodes from r into v, reading at most maxBytes.
+//
+// Reads one byte past the limit so an oversized body is reported as such
+// rather than surfacing as a confusing "unexpected EOF" from the decoder.
+// A body that decodes successfully within the limit is fine even if bytes
+// remain unread, so the size is only reported when decoding actually failed.
 func DecodeJSONN(r io.Reader, v any, maxBytes int64) error {
-	return json.NewDecoder(io.LimitReader(r, maxBytes)).Decode(v)
+	c := &countingReader{r: io.LimitReader(r, maxBytes+1)}
+	if err := json.NewDecoder(c).Decode(v); err != nil {
+		if c.n > maxBytes {
+			return fmt.Errorf("response body exceeds %d bytes", maxBytes)
+		}
+		return err
+	}
+	return nil
+}
+
+// countingReader tracks how many bytes were consumed, so DecodeJSONN can tell
+// a malformed body apart from one truncated by the limit.
+type countingReader struct {
+	r io.Reader
+	n int64
+}
+
+func (c *countingReader) Read(p []byte) (int, error) {
+	n, err := c.r.Read(p)
+	c.n += int64(n)
+	return n, err
+}
+
+// maxDrainBytes caps how much of a discarded error body we read back. Draining
+// lets net/http return the connection to the pool instead of tearing it down —
+// which matters most on the retry path, where the next attempt goes to the same
+// host — but an error page can be arbitrarily large, so the drain is bounded.
+const maxDrainBytes = 64 * 1024
+
+// drainAndClose discards a bounded amount of an unwanted response body before
+// closing, so the underlying connection stays reusable.
+func drainAndClose(resp *http.Response) {
+	_, _ = io.Copy(io.Discard, io.LimitReader(resp.Body, maxDrainBytes))
+	_ = resp.Body.Close()
 }
 
 type reqIDKey struct{}
@@ -184,12 +222,15 @@ func NewLegacyTLSClient(timeout time.Duration) *http.Client {
 // Request describes a single HTTP call. Method defaults to GET (or POST if
 // Body is non-nil). MaxAttempts defaults to 3.
 type Request struct {
-	Method       string
-	URL          string
-	Body         []byte
-	Headers      map[string]string
-	MaxAttempts  int
-	MaxBytes     int64                                            // per-call body limit; 0 uses MaxPageBytes
+	Method      string
+	URL         string
+	Body        []byte
+	Headers     map[string]string
+	MaxAttempts int
+	// Note: there is deliberately no per-request body limit here. Do returns
+	// the response without reading the body, so it could not enforce one;
+	// bounding the read is the caller's job via ReadBody/ReadBodyN or
+	// DecodeJSON/DecodeJSONN.
 	BackoffSleep func(ctx context.Context, d time.Duration) error // nil uses default (real sleep with ctx)
 }
 
@@ -321,12 +362,12 @@ func doInner(ctx context.Context, client *http.Client, r Request, classifyStatus
 			return resp, nil
 		}
 		if resp.StatusCode == http.StatusTooManyRequests || resp.StatusCode >= 500 {
-			_ = resp.Body.Close()
+			drainAndClose(resp)
 			attemptErrs = append(attemptErrs, fmt.Errorf("attempt %d: %w", attempt+1, &StatusError{StatusCode: resp.StatusCode}))
 			continue
 		}
 		if resp.StatusCode >= 400 {
-			_ = resp.Body.Close()
+			drainAndClose(resp)
 			return nil, &StatusError{StatusCode: resp.StatusCode}
 		}
 		return resp, nil

@@ -85,14 +85,40 @@ type Scene struct {
 	DeletedAt *time.Time `json:"deletedAt,omitempty"`
 }
 
-// AddPrice appends a new PriceSnapshot and updates LowestPrice/LowestPriceDate if the
-// effective price is lower than the current record. Snapshots with no real price
-// information (not free, but zero amount) are still recorded in history but do
-// not affect the lowest-price tracking.
+// sameTerms reports whether two snapshots describe identical pricing, ignoring
+// when they were taken.
+func (p PriceSnapshot) sameTerms(o PriceSnapshot) bool {
+	return p.Regular == o.Regular &&
+		p.Discounted == o.Discounted &&
+		p.IsFree == o.IsFree &&
+		p.IsOnSale == o.IsOnSale &&
+		p.DiscountPercent == o.DiscountPercent
+}
+
+// AddPrice records a PriceSnapshot and updates LowestPrice/LowestPriceDate if the
+// effective price beats the current record.
+//
+// A snapshot whose terms match the previous one is dropped rather than appended:
+// price history is a log of *changes*, and every scrape re-adds the full existing
+// history (see carryOverPriceHistory), so appending unconditionally grows the
+// stored history without bound on a repeating cron --refresh while adding no
+// information. Only consecutive repeats collapse, so a genuine change away and
+// back is still recorded.
+//
+// Snapshots carrying no price information at all (not free, zero amount) are
+// recorded but do not affect lowest-price tracking. A 100%-off sale is the
+// exception: it really does cost zero, so it counts.
 func (s *Scene) AddPrice(p PriceSnapshot) {
+	if n := len(s.PriceHistory); n > 0 && s.PriceHistory[n-1].sameTerms(p) {
+		return
+	}
 	s.PriceHistory = append(s.PriceHistory, p)
+
+	// A zero effective price only counts when it is a real price: explicitly
+	// free, or a 100%-off sale. Otherwise it means "amount unknown".
 	effective := p.Effective()
-	if effective == 0 && !p.IsFree {
+	genuinelyZero := p.IsFree || (p.IsOnSale && p.DiscountPercent == 100)
+	if effective == 0 && !genuinelyZero {
 		return
 	}
 	if s.LowestPriceDate == nil || effective < s.LowestPrice {

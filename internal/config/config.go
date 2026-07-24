@@ -1,6 +1,8 @@
 package config
 
 import (
+	"bytes"
+	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -139,12 +141,43 @@ func Load() (*Config, error) {
 	if err := yaml.Unmarshal(raw, cfg); err != nil {
 		return nil, fmt.Errorf("parsing config %s: %w", path, err)
 	}
+	warnUnknownConfigKeys(raw, path)
 
 	if err := cfg.Validate(); err != nil {
 		return nil, fmt.Errorf("config %s: %w", path, err)
 	}
 
 	return cfg, nil
+}
+
+// warnUnknownConfigKeys reports keys the Config struct does not recognise.
+//
+// A typo like `dealy: 800` is otherwise completely silent: yaml.Unmarshal
+// ignores unknown fields, so the setting appears to have been accepted while
+// the default stays in force. This warns rather than failing, because a config
+// that has worked for months should not suddenly become a hard error — an
+// unknown key may also be a setting from a newer version.
+func warnUnknownConfigKeys(raw []byte, path string) {
+	var probe Config
+	dec := yaml.NewDecoder(bytes.NewReader(raw))
+	dec.KnownFields(true)
+
+	for {
+		err := dec.Decode(&probe)
+		if err == nil {
+			continue
+		}
+		if errors.Is(err, io.EOF) {
+			return
+		}
+		// KnownFields turns unknown keys into a type error listing each one.
+		// Any other parse failure was already reported by the real Unmarshal
+		// above, so it is not worth repeating here.
+		if strings.Contains(err.Error(), "field") {
+			log.Printf("warning: %s: %v (unknown settings are ignored)", path, err)
+		}
+		return
+	}
 }
 
 func (c *Config) Validate() error {

@@ -54,6 +54,9 @@ func WriteCSV(scenes []models.Scene, path string) error {
 			if err != nil {
 				return err
 			}
+			for i := range row {
+				row[i] = escapeCSVFormula(row[i])
+			}
 			if err := w.Write(row); err != nil {
 				return err
 			}
@@ -174,6 +177,29 @@ func atomicWriteFile(path string, writeFn func(io.Writer) error) error {
 		_ = d.Close()
 	}
 	return nil
+}
+
+// escapeCSVFormula defuses spreadsheet formula injection. Scene titles and
+// descriptions are attacker-controlled — they come from scraped pages — and a
+// cell beginning =, +, - or @ is evaluated as a formula by Excel, LibreOffice
+// and Google Sheets when the CSV is opened, which can exfiltrate data or invoke
+// external calls. Leading tab and carriage return are included because they are
+// stripped before the formula check by some spreadsheet parsers.
+//
+// Prefixing a single quote is the standard mitigation: spreadsheets treat the
+// cell as literal text and do not display the quote. The value is unchanged for
+// any other cell, so parsers that read the CSV as data see the original string.
+//
+// Applied in WriteCSV rather than sceneToRow so no future column can bypass it.
+func escapeCSVFormula(s string) string {
+	if s == "" {
+		return s
+	}
+	switch s[0] {
+	case '=', '+', '-', '@', '\t', '\r':
+		return "'" + s
+	}
+	return s
 }
 
 func sanitize(s string) string {

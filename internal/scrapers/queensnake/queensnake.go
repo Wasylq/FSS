@@ -242,7 +242,8 @@ func toScene(ps parsedScene, siteBase, studioURL string, now time.Time) models.S
 		Studio:      "Queensnake",
 		ScrapedAt:   now,
 	}
-	scene.AddPrice(models.PriceSnapshot{Date: now, IsFree: false})
+	// No price snapshot: the site exposes no pricing on these pages, and a
+	// zero-value "not free, amount unknown" entry records nothing.
 	return scene
 }
 
