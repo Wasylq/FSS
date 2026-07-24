@@ -207,6 +207,7 @@ import (
 	_ "github.com/Wasylq/FSS/internal/scrapers/mydirtyhobby"
 	_ "github.com/Wasylq/FSS/internal/scrapers/nadinejansen"
 	_ "github.com/Wasylq/FSS/internal/scrapers/nakednews"
+	_ "github.com/Wasylq/FSS/internal/scrapers/nakedsword"
 	_ "github.com/Wasylq/FSS/internal/scrapers/nastymedia"
 	_ "github.com/Wasylq/FSS/internal/scrapers/naughtyamerica"
 	_ "github.com/Wasylq/FSS/internal/scrapers/newsensations"

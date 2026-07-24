@@ -10,7 +10,7 @@ Scrapes all scenes and metadata from a studio URL. Designed to be easily extende
 
 ## Supported sites
 
-**1633 sites** across 30+ platforms — [full list with URL patterns →](docs/scrapers.md) · [searchable A-Z domain list →](docs/sites.md)
+**1634 sites** across 30+ platforms — [full list with URL patterns →](docs/scrapers.md) · [searchable A-Z domain list →](docs/sites.md)
 
 | Platform | Examples |
 |----------|---------|
@@ -142,7 +142,7 @@ See [docs/docker.md](docs/docker.md) for volume conventions, the bind-mount UID 
 
 ### Option 4 — build from source
 
-Requires Go 1.25+ (matches the `go` directive in `go.mod`).
+Requires Go 1.26+ (matches the `go` directive in `go.mod`).
 
 ```bash
 git clone https://github.com/Wasylq/FSS
