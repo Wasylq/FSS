@@ -424,14 +424,23 @@ func TestFullTraversalFetchesEveryPage(t *testing.T) {
 // serial walk drops peak concurrency to 1 and fails here.
 func TestFullTraversalFetchesPagesConcurrently(t *testing.T) {
 	const totalPages = 20
-	// Hold every list request until enough have arrived to prove overlap, with
-	// a timeout so a serial walk fails the assertion instead of hanging.
+	const barrier = 4
+	// Hold the fan-out pages until `barrier` of them have arrived, so the
+	// assertion observes real overlap rather than whatever incidental overlap
+	// unblocked requests happen to produce. Page 1 is deliberately exempt: the
+	// parallel walk has to fetch it alone to learn totalPages, so counting it
+	// here would make the barrier unreachable and leave the timeout as the only
+	// exit. The timeout stays as the failure path — a serial walk never reaches
+	// the barrier, so it releases after 3s with peak concurrency 1.
 	released := make(chan struct{})
 	var once sync.Once
 	var arrived atomic.Int32
 
-	ts := newMultiPageServer(totalPages, func(int) {
-		if arrived.Add(1) >= 4 {
+	ts := newMultiPageServer(totalPages, func(page int) {
+		if page == 1 {
+			return
+		}
+		if arrived.Add(1) >= barrier {
 			once.Do(func() { close(released) })
 		}
 		select {
