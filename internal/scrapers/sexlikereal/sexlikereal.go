@@ -19,20 +19,31 @@ import (
 const (
 	apiBase  = "https://api.sexlikereal.com"
 	siteBase = "https://www.sexlikereal.com"
-	perPage  = 36
+	// perPage is the API's hard maximum: `perPage=37` returns HTTP 422
+	// ("should be less than or equal to 36"). The full catalogue is therefore
+	// ~1,666 list pages, and there is no cursor or alternate sort to shorten
+	// the walk (`sort` accepts only "recent"; oldest/id/popular all 422).
+	perPage = 36
+
+	// maxPageWorkers bounds the parallel list-page walk. The listing endpoint is
+	// far more expensive upstream than the per-scene detail endpoint — an
+	// uncached page can take 30s while a detail fetch takes ~100ms — so the page
+	// pool is capped independently of --workers rather than scaling with it.
+	maxPageWorkers = 8
 )
 
-// RecommendedDelay is a conservative minimum delay between requests to
-// avoid SexLikeReal's upstream throttling. It is inferred from operator
-// reports of scrapes starting fast (100+ scenes/s) then degrading to
-// request timeouts after ~20-30s at high worker counts with `--delay 0`
-// — not an officially published rate limit. It is **not** silently
-// enforced — the operator's `opts.Delay` is always honoured — but
-// `WarnDelayBelow` will surface a one-shot stderr warning when the
-// configured delay is lower. Because this scraper fans out over a worker
-// pool, `--workers` also drives the effective request rate; the warning
-// text can only speak to delay, so pair a lower delay with a lower
-// `--workers` count if throttling persists.
+// RecommendedDelay is a conservative minimum delay between requests, inferred
+// from operator reports rather than a published rate limit. It is **not**
+// silently enforced — the operator's `opts.Delay` is always honoured — but
+// `WarnDelayBelow` surfaces a one-shot stderr warning when the configured delay
+// is lower.
+//
+// Delay is not the main lever here, though. What bounds a full scrape is
+// upstream listing latency, which is severely fat-tailed: over 60 uncached pages
+// the median was 0.96s but the mean was 28s. A stalled page costs ~96s, since
+// the gateway gives up at ~30s and httpx retries twice on top. The stall rate
+// also rises with concurrency, so pushing harder makes it worse — see
+// maxPageWorkers.
 const RecommendedDelay = 300 * time.Millisecond
 
 type Scraper struct {
@@ -40,9 +51,17 @@ type Scraper struct {
 	apiBaseURL string
 }
 
+// requestTimeout must sit above the API's own ~30s gateway ceiling. A list page
+// that misses the upstream cache is computed at the origin and can return at
+// 30.4s, or be given up on by the gateway as an HTTP 500 at exactly 30.3s. A 30s
+// client timeout races that ceiling and cancels responses that were about to
+// arrive, turning a slow page into a failed one. 60s lets the late-but-valid
+// responses land and leaves the gateway, not us, to decide when to give up.
+const requestTimeout = 60 * time.Second
+
 func New() *Scraper {
 	return &Scraper{
-		client:     httpx.NewClient(30 * time.Second),
+		client:     httpx.NewClient(requestTimeout),
 		apiBaseURL: apiBase,
 	}
 }
@@ -140,92 +159,229 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 	go func() {
 		defer wg.Done()
 		defer close(work)
-
-		totalPages := 0
-		for page := 1; ; page++ {
-			if ctx.Err() != nil {
-				return
-			}
-			if page > 1 && opts.Delay > 0 {
-				select {
-				case <-time.After(opts.Delay):
-				case <-ctx.Done():
-					return
-				}
-			}
-			scraper.Debugf(1, "sexlikereal: fetching page %d", page)
-
-			params := url.Values{
-				"page":    {strconv.Itoa(page)},
-				"perPage": {strconv.Itoa(perPage)},
-				"sort":    {"recent"},
-			}
-			switch mode {
-			case filterStudio:
-				params.Set("studios", filterID)
-			case filterModel:
-				params.Set("models", filterID)
-			}
-
-			apiURL := s.apiBaseURL + "/v3/scenes?" + params.Encode()
-			var resp listResponse
-			if err := s.fetchJSON(ctx, apiURL, &resp); err != nil {
-				select {
-				case out <- scraper.Error(fmt.Errorf("page %d: %w", page, err)):
-				case <-ctx.Done():
-					return
-				}
-				// Once totalPages is known, a transient failure on a single
-				// page must not abandon the rest of the traversal — skip it
-				// and keep going so one bad page doesn't lose thousands of
-				// unreached scenes. Page 1 failing is still fatal: with no
-				// totalPages there is no way to know how many pages remain.
-				if totalPages > 0 && page < totalPages {
-					continue
-				}
-				return
-			}
-
-			if resp.Meta.Pagination.TotalPages > 0 {
-				totalPages = resp.Meta.Pagination.TotalPages
-			}
-
-			if page == 1 && resp.Meta.Pagination.TotalCount > 0 {
-				select {
-				case out <- scraper.Progress(resp.Meta.Pagination.TotalCount):
-				case <-ctx.Done():
-					return
-				}
-			}
-
-			if len(resp.Data) == 0 {
-				return
-			}
-
-			for _, item := range resp.Data {
-				id := strconv.Itoa(item.ID)
-				if opts.KnownIDs[id] {
-					scraper.Debugf(1, "sexlikereal: hit known ID, stopping early")
-					select {
-					case out <- scraper.StoppedEarly():
-					case <-ctx.Done():
-					}
-					return
-				}
-				select {
-				case work <- item:
-				case <-ctx.Done():
-					return
-				}
-			}
-
-			if page >= resp.Meta.Pagination.TotalPages {
-				return
-			}
-		}
+		s.walkPages(ctx, mode, filterID, opts, out, work)
 	}()
 
 	wg.Wait()
+}
+
+// listURL builds the listing request for one page under the active filter.
+func (s *Scraper) listURL(mode filterMode, filterID string, page int) string {
+	params := url.Values{
+		"page":    {strconv.Itoa(page)},
+		"perPage": {strconv.Itoa(perPage)},
+		"sort":    {"recent"},
+	}
+	switch mode {
+	case filterStudio:
+		params.Set("studios", filterID)
+	case filterModel:
+		params.Set("models", filterID)
+	}
+	return s.apiBaseURL + "/v3/scenes?" + params.Encode()
+}
+
+// walkPages traverses the listing and feeds every scene stub into work.
+//
+// It picks one of two strategies. An incremental scrape (KnownIDs populated)
+// walks pages in order so the date-sorted early-stop is meaningful — stopping
+// at the first known ID is the whole point, and it usually means only a handful
+// of pages get fetched. A full traversal (--full / --refresh, no KnownIDs) has
+// no early-stop to preserve and must fetch every page regardless of order, so
+// it fans the walk out over a worker pool.
+//
+// The distinction matters because the listing walk, not the detail fetch, is
+// what bounds a full scrape: perPage is capped at 36, so the catalogue is ~1,666
+// pages, and a serial walk pays every cold-page stall end to end. --workers only
+// ever parallelised the detail fetches, which are not the bottleneck.
+func (s *Scraper) walkPages(ctx context.Context, mode filterMode, filterID string, opts scraper.ListOpts,
+	out chan<- scraper.SceneResult, work chan<- apiScene,
+) {
+	if len(opts.KnownIDs) > 0 {
+		s.walkSerial(ctx, mode, filterID, opts, out, work)
+		return
+	}
+	s.walkParallel(ctx, mode, filterID, opts, out, work)
+}
+
+// walkSerial is the ordered walk used for incremental scrapes, where hitting a
+// known ID must stop the traversal.
+func (s *Scraper) walkSerial(ctx context.Context, mode filterMode, filterID string, opts scraper.ListOpts,
+	out chan<- scraper.SceneResult, work chan<- apiScene,
+) {
+	totalPages := 0
+	for page := 1; ; page++ {
+		if ctx.Err() != nil {
+			return
+		}
+		if page > 1 && opts.Delay > 0 {
+			select {
+			case <-time.After(opts.Delay):
+			case <-ctx.Done():
+				return
+			}
+		}
+		scraper.Debugf(1, "sexlikereal: fetching page %d", page)
+
+		var resp listResponse
+		if err := s.fetchJSON(ctx, s.listURL(mode, filterID, page), &resp); err != nil {
+			select {
+			case out <- scraper.Error(fmt.Errorf("page %d: %w", page, err)):
+			case <-ctx.Done():
+				return
+			}
+			// Once totalPages is known, a transient failure on a single
+			// page must not abandon the rest of the traversal — skip it
+			// and keep going so one bad page doesn't lose thousands of
+			// unreached scenes. Page 1 failing is still fatal: with no
+			// totalPages there is no way to know how many pages remain.
+			if totalPages > 0 && page < totalPages {
+				continue
+			}
+			return
+		}
+
+		if resp.Meta.Pagination.TotalPages > 0 {
+			totalPages = resp.Meta.Pagination.TotalPages
+		}
+
+		if page == 1 && resp.Meta.Pagination.TotalCount > 0 {
+			select {
+			case out <- scraper.Progress(resp.Meta.Pagination.TotalCount):
+			case <-ctx.Done():
+				return
+			}
+		}
+
+		if len(resp.Data) == 0 {
+			return
+		}
+
+		for _, item := range resp.Data {
+			id := strconv.Itoa(item.ID)
+			if opts.KnownIDs[id] {
+				scraper.Debugf(1, "sexlikereal: hit known ID, stopping early")
+				select {
+				case out <- scraper.StoppedEarly():
+				case <-ctx.Done():
+				}
+				return
+			}
+			select {
+			case work <- item:
+			case <-ctx.Done():
+				return
+			}
+		}
+
+		if page >= resp.Meta.Pagination.TotalPages {
+			return
+		}
+	}
+}
+
+// walkParallel fetches page 1 to learn the page count, then fans the remaining
+// pages out over a bounded pool. Used only when there is no KnownIDs early-stop
+// to preserve, so page order carries no meaning.
+func (s *Scraper) walkParallel(ctx context.Context, mode filterMode, filterID string, opts scraper.ListOpts,
+	out chan<- scraper.SceneResult, work chan<- apiScene,
+) {
+	sendScenes := func(items []apiScene) bool {
+		for _, item := range items {
+			select {
+			case work <- item:
+			case <-ctx.Done():
+				return false
+			}
+		}
+		return true
+	}
+
+	scraper.Debugf(1, "sexlikereal: fetching page 1")
+	var first listResponse
+	if err := s.fetchJSON(ctx, s.listURL(mode, filterID, 1), &first); err != nil {
+		select {
+		case out <- scraper.Error(fmt.Errorf("page 1: %w", err)):
+		case <-ctx.Done():
+		}
+		return
+	}
+
+	if first.Meta.Pagination.TotalCount > 0 {
+		select {
+		case out <- scraper.Progress(first.Meta.Pagination.TotalCount):
+		case <-ctx.Done():
+			return
+		}
+	}
+
+	if len(first.Data) == 0 {
+		return
+	}
+	if !sendScenes(first.Data) {
+		return
+	}
+
+	totalPages := first.Meta.Pagination.TotalPages
+	if totalPages <= 1 {
+		return
+	}
+
+	pageWorkers := opts.Workers
+	if pageWorkers <= 0 || pageWorkers > maxPageWorkers {
+		pageWorkers = maxPageWorkers
+	}
+	scraper.Debugf(1, "sexlikereal: walking pages 2-%d with %d page workers", totalPages, pageWorkers)
+
+	pages := make(chan int)
+	var pwg sync.WaitGroup
+	for i := 0; i < pageWorkers; i++ {
+		pwg.Add(1)
+		go func() {
+			defer pwg.Done()
+			for page := range pages {
+				if ctx.Err() != nil {
+					return
+				}
+				if opts.Delay > 0 {
+					select {
+					case <-time.After(opts.Delay):
+					case <-ctx.Done():
+						return
+					}
+				}
+				scraper.Debugf(1, "sexlikereal: fetching page %d", page)
+
+				var resp listResponse
+				if err := s.fetchJSON(ctx, s.listURL(mode, filterID, page), &resp); err != nil {
+					select {
+					case out <- scraper.Error(fmt.Errorf("page %d: %w", page, err)):
+					case <-ctx.Done():
+						return
+					}
+					// One bad page must not abandon the rest of the walk; the
+					// error already marks the traversal incomplete so the cmd
+					// layer falls back to non-destructive merge semantics.
+					continue
+				}
+				if !sendScenes(resp.Data) {
+					return
+				}
+			}
+		}()
+	}
+
+	for page := 2; page <= totalPages; page++ {
+		select {
+		case pages <- page:
+		case <-ctx.Done():
+			close(pages)
+			pwg.Wait()
+			return
+		}
+	}
+	close(pages)
+	pwg.Wait()
 }
 
 func (s *Scraper) fetchAndBuild(ctx context.Context, item apiScene, studioURL string, delay time.Duration) (models.Scene, error) {
