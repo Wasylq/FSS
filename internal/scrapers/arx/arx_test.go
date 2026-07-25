@@ -242,18 +242,11 @@ func TestTitleCaseSlug(t *testing.T) {
 // ---- end-to-end ----
 
 func TestListScenes(t *testing.T) {
-	sitemap := readFixture(t, "sitemap.xml")
-	detail := readFixture(t, "detail.html")
-
-	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path == "/sitemap.xml" {
-			w.Header().Set("Content-Type", "application/xml")
-			_, _ = w.Write(sitemap)
-			return
-		}
-		_, _ = w.Write(detail)
-	}))
-	defer srv.Close()
+	// fetchSitemap follows each <loc> verbatim, so the fixture's live host must
+	// be rewritten to this server. Setting s.base only redirects the sitemap
+	// request; the detail fetches would still go to honeytrans.com.
+	srv := testutil.SitemapServer(t, "https://honeytrans.com",
+		readFixture(t, "sitemap.xml"), readFixture(t, "detail.html"))
 
 	s := newScraper(siteByID(t, "honeytrans"))
 	s.Client = srv.Client()
@@ -269,6 +262,11 @@ func TestListScenes(t *testing.T) {
 		t.Fatalf("got %d scenes, want 3", len(scenes))
 	}
 	for _, sc := range scenes {
+		// scene.URL is the URL that was actually fetched — if it is not on the
+		// test server, this test just scraped the live site.
+		if !strings.HasPrefix(sc.URL, srv.URL) {
+			t.Errorf("scene %s fetched %q, which is not the test server", sc.ID, sc.URL)
+		}
 		if sc.Title == "" || sc.Date.IsZero() || len(sc.Performers) == 0 {
 			t.Errorf("scene %s incomplete: %+v", sc.ID, sc)
 		}

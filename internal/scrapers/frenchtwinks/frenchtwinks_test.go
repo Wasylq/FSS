@@ -232,18 +232,11 @@ func TestApplyDetailNoJSONLD(t *testing.T) {
 // ---- end-to-end ----
 
 func TestListScenes(t *testing.T) {
-	sitemap := readFixture(t, "sitemap.xml")
-	detail := readFixture(t, "detail.html")
-
-	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path == "/sitemap.xml" {
-			w.Header().Set("Content-Type", "application/xml")
-			_, _ = w.Write(sitemap)
-			return
-		}
-		_, _ = w.Write(detail)
-	}))
-	defer srv.Close()
+	// The scraper fetches each <loc> verbatim, so the fixture's live host must
+	// be rewritten to this server. Overriding siteBase only redirects the
+	// sitemap request; the detail fetches would still go to french-twinks.com.
+	srv := testutil.SitemapServer(t, "https://www.french-twinks.com",
+		readFixture(t, "sitemap.xml"), readFixture(t, "detail.html"))
 
 	orig := siteBase
 	siteBase = srv.URL
@@ -262,6 +255,11 @@ func TestListScenes(t *testing.T) {
 		t.Fatalf("got %d scenes, want 2", len(scenes))
 	}
 	for _, sc := range scenes {
+		// scene.URL is the URL that was actually fetched — if it is not on the
+		// test server, this test just scraped the live site.
+		if !strings.HasPrefix(sc.URL, srv.URL) {
+			t.Errorf("scene %s fetched %q, which is not the test server", sc.ID, sc.URL)
+		}
 		if sc.SiteID != siteID || sc.Studio != studioName {
 			t.Errorf("scene %s: SiteID=%q Studio=%q", sc.ID, sc.SiteID, sc.Studio)
 		}

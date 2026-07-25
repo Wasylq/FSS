@@ -195,6 +195,54 @@ What to test:
 - Pagination (multi-page responses, empty last page)
 - `KnownIDs` early stopping
 
+#### Offline means offline: sitemap fixtures leak to the live site
+
+Pointing the scraper's base URL at `ts.URL` is **not** enough to make a
+sitemap-driven test offline. Sitemap fixtures are captured verbatim, so their
+`<loc>` entries are absolute URLs on the real site:
+
+```xml
+<loc>https://honeytrans.com/scenes/1310/latina-transsexual-returns-to-toy-ass</loc>
+```
+
+A scraper that fetches those URLs as given (`sceneRef{url: u.Loc}`) walks
+straight out of the test. Overriding `siteBase` / `s.base` redirects only the
+sitemap request; every detail fetch that follows still hits production, the
+`httptest` handler never serves `detail.html`, and the assertions grade live
+markup instead of the fixture.
+
+Such a test passes on a dev machine and fails on a sandboxed CI runner, on a
+page nobody touched. It also means a green run tells you nothing about your
+parser. Use `testutil.SitemapServer`, which rewrites the fixture's host to the
+test server before serving it:
+
+```go
+// Rewrites https://honeytrans.com → the test server; serves the sitemap for
+// any "sitemap"-ish path and detail for everything else.
+srv := testutil.SitemapServer(t, "https://honeytrans.com",
+    readFixture(t, "sitemap.xml"), readFixture(t, "detail.html"))
+```
+
+Then assert the fetches stayed local. `scene.URL` is the URL that was actually
+requested, so this is a direct check:
+
+```go
+if !strings.HasPrefix(sc.URL, srv.URL) {
+    t.Errorf("scene %s fetched %q, which is not the test server", sc.ID, sc.URL)
+}
+```
+
+`SitemapServer` also fails the test if the fixture no longer contains the host
+you passed — otherwise a refreshed fixture would silently turn the rewrite into
+a no-op and re-enable live fetches. Scrapers that extract only the slug from
+`<loc>` and rebuild it against their base (`joybear`, `producersfun`) are not
+exposed to this; ones that follow `u.Loc` directly (`arx`, `kristenbjorn`,
+`frenchtwinks`, `lustreality`) are.
+
+A quick way to spot the problem in an existing test: an offline `TestListScenes`
+should run in ~0.00s. If it takes hundreds of milliseconds, it is talking to
+something.
+
 For live integration smoke tests that hit the real site, use the shared `testutil` helper. Each scraper has an `integration_test.go` like:
 
 ```go
