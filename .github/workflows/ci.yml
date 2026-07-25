@@ -34,6 +34,14 @@ jobs:
         run: go install gotest.tools/gotestsum@v1.13.0
 
       - name: Test with coverage
+        # `shell: bash` for pipefail. The default Linux shell is `bash -e` with
+        # NO pipefail, so the step would exit with tee's status (always 0) and a
+        # failing test would go green — that masked a flaky sexlikereal test.
+        # The pipe itself is load-bearing: the coverage-summary step below reads
+        # test-output.txt. Set here rather than as a job-level default because
+        # the summary step pipes `grep | while`, and grep matching nothing under
+        # pipefail would fail that step spuriously.
+        shell: bash
         run: gotestsum --junitfile junit.xml -- -race -count=1 -coverprofile=coverage.out -covermode=atomic ./... 2>&1 | tee test-output.txt
 
       - name: Fuzz tests (seed corpus)
