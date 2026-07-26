@@ -7,6 +7,7 @@ package testutil
 
 import (
 	"context"
+	"fmt"
 	"net/url"
 	"strings"
 	"testing"
@@ -24,35 +25,55 @@ import (
 func ValidateScene(t *testing.T, s models.Scene) {
 	t.Helper()
 
+	for _, problem := range sceneProblems(s) {
+		t.Error(problem)
+	}
+	for _, note := range sceneNotes(s) {
+		t.Log(note)
+	}
+}
+
+// sceneProblems returns one message per shape check the scene fails, or nil if
+// it passes. Split out from ValidateScene so the rules are unit-testable
+// without a failing *testing.T.
+func sceneProblems(s models.Scene) []string {
+	var out []string
 	if s.ID == "" {
-		t.Errorf("scene has empty ID")
+		out = append(out, "scene has empty ID")
 	}
 	if s.SiteID == "" {
-		t.Errorf("scene %q has empty SiteID", s.ID)
+		out = append(out, fmt.Sprintf("scene %q has empty SiteID", s.ID))
 	}
 	if s.Title == "" {
-		t.Errorf("scene %q has empty Title", s.ID)
+		out = append(out, fmt.Sprintf("scene %q has empty Title", s.ID))
 	}
 	if s.URL == "" {
-		t.Errorf("scene %q has empty URL", s.ID)
+		out = append(out, fmt.Sprintf("scene %q has empty URL", s.ID))
 	} else if u, err := url.Parse(s.URL); err != nil || u.Scheme == "" || u.Host == "" {
-		t.Errorf("scene %q has malformed URL %q", s.ID, s.URL)
-	}
-	// Date is unavailable on some sites (e.g. AlternaDudes); warn but don't fail.
-	if s.Date.IsZero() {
-		t.Logf("scene %q has zero Date", s.ID)
+		out = append(out, fmt.Sprintf("scene %q has malformed URL %q", s.ID, s.URL))
 	}
 	// Duration is sometimes unavailable from list endpoints; warn but don't fail.
 	// Cap is 7 days — generous but catches overflow/unit bugs. JAV compilations can exceed 40h.
 	if s.Duration < 0 || s.Duration > 7*24*60*60 {
-		t.Errorf("scene %q has implausible Duration %d (expected 0..604800)", s.ID, s.Duration)
+		out = append(out, fmt.Sprintf("scene %q has implausible Duration %d (expected 0..604800)", s.ID, s.Duration))
 	}
 	if len(s.Performers) == 0 && s.Studio == "" {
-		t.Errorf("scene %q has neither Performers nor Studio", s.ID)
+		out = append(out, fmt.Sprintf("scene %q has neither Performers nor Studio", s.ID))
 	}
 	if s.ScrapedAt.IsZero() {
-		t.Errorf("scene %q has zero ScrapedAt", s.ID)
+		out = append(out, fmt.Sprintf("scene %q has zero ScrapedAt", s.ID))
 	}
+	return out
+}
+
+// sceneNotes returns advisory messages that must not fail a test.
+func sceneNotes(s models.Scene) []string {
+	var out []string
+	// Date is unavailable on some sites (e.g. AlternaDudes); warn but don't fail.
+	if s.Date.IsZero() {
+		out = append(out, fmt.Sprintf("scene %q has zero Date", s.ID))
+	}
+	return out
 }
 
 // RunLiveScrape exercises a scraper against a live URL and validates the
@@ -151,8 +172,17 @@ func CollectScenesWithStop(t *testing.T, ch <-chan scraper.SceneResult) ([]model
 
 func collectAll(t *testing.T, ch <-chan scraper.SceneResult) ([]models.Scene, bool) {
 	t.Helper()
-	var scenes []models.Scene
-	stoppedEarly := false
+	scenes, stoppedEarly, errs := drain(ch)
+	for _, err := range errs {
+		t.Errorf("unexpected error: %v", err)
+	}
+	return scenes, stoppedEarly
+}
+
+// drain reads a SceneResult channel to completion, separating scenes, the
+// StoppedEarly signal, and errors. Split out from collectAll so the channel
+// bookkeeping is unit-testable without a failing *testing.T.
+func drain(ch <-chan scraper.SceneResult) (scenes []models.Scene, stoppedEarly bool, errs []error) {
 	for r := range ch {
 		switch r.Kind {
 		case scraper.KindTotal:
@@ -161,13 +191,13 @@ func collectAll(t *testing.T, ch <-chan scraper.SceneResult) ([]models.Scene, bo
 			stoppedEarly = true
 			continue
 		case scraper.KindError:
-			t.Errorf("unexpected error: %v", r.Err)
+			errs = append(errs, r.Err)
 			continue
 		case scraper.KindScene:
 			scenes = append(scenes, r.Scene)
 		}
 	}
-	return scenes, stoppedEarly
+	return scenes, stoppedEarly, errs
 }
 
 // SkipIfPlaceholder skips the test if the URL still looks like a placeholder
@@ -175,7 +205,11 @@ func collectAll(t *testing.T, ch <-chan scraper.SceneResult) ([]models.Scene, bo
 // yet picked a verified live URL.
 func SkipIfPlaceholder(t *testing.T, studioURL string) {
 	t.Helper()
-	if strings.Contains(studioURL, "REPLACE-ME") {
+	if isPlaceholder(studioURL) {
 		t.Skipf("placeholder URL — edit liveStudioURL in this file with a verified studio URL")
 	}
+}
+
+func isPlaceholder(studioURL string) bool {
+	return strings.Contains(studioURL, "REPLACE-ME")
 }

@@ -2,6 +2,7 @@ package testutil
 
 import (
 	"bytes"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -27,17 +28,14 @@ import (
 func SitemapServer(t *testing.T, liveHost string, sitemap, detail []byte) *httptest.Server {
 	t.Helper()
 
-	// Tripwire: if a refreshed fixture ever uses a different host, the rewrite
-	// below becomes a silent no-op and the detail fetches go live again.
-	if !bytes.Contains(sitemap, []byte(liveHost)) {
-		t.Fatalf("sitemap fixture contains no %q — the host rewrite would be a no-op "+
-			"and detail fetches would hit the live site", liveHost)
-	}
-
 	// Unstarted, so the listener address is known before the body is rewritten
 	// and no request can observe the pre-rewrite bytes.
 	srv := httptest.NewUnstartedServer(nil)
-	local := bytes.ReplaceAll(sitemap, []byte(liveHost), []byte("http://"+srv.Listener.Addr().String()))
+	local, err := rewriteSitemapHost(sitemap, liveHost, "http://"+srv.Listener.Addr().String())
+	if err != nil {
+		srv.Close()
+		t.Fatal(err)
+	}
 
 	srv.Config.Handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Any "sitemap"-ish path: callers use /sitemap.xml, /sitemap_video.xml,
@@ -52,4 +50,17 @@ func SitemapServer(t *testing.T, liveHost string, sitemap, detail []byte) *httpt
 	srv.Start()
 	t.Cleanup(srv.Close)
 	return srv
+}
+
+// rewriteSitemapHost replaces every occurrence of liveHost in the fixture with
+// localHost. It errors rather than returning the body unchanged when liveHost
+// is absent: a silent no-op would leave the detail fetches pointing at the live
+// site, which is the exact failure this helper exists to prevent. Split out
+// from SitemapServer so the tripwire is unit-testable.
+func rewriteSitemapHost(sitemap []byte, liveHost, localHost string) ([]byte, error) {
+	if !bytes.Contains(sitemap, []byte(liveHost)) {
+		return nil, fmt.Errorf("sitemap fixture contains no %q — the host rewrite would be a no-op "+
+			"and detail fetches would hit the live site", liveHost)
+	}
+	return bytes.ReplaceAll(sitemap, []byte(liveHost), []byte(localHost)), nil
 }
