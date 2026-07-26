@@ -26,13 +26,6 @@ var sites = []SiteConfig{
 		MatchRe:  regexp.MustCompile(`(?i)^https?://(?:www\.)?goddessfootdomination\.com\b`),
 	},
 	{
-		ID:       "jerktomyfeet",
-		BaseURL:  "https://www.jerktomyfeet.com",
-		SiteName: "Jerk to My Feet",
-		Patterns: []string{"https://www.jerktomyfeet.com/"},
-		MatchRe:  regexp.MustCompile(`(?i)^https?://(?:www\.)?jerktomyfeet\.com\b`),
-	},
-	{
 		ID:       "footfetishcardates",
 		BaseURL:  "https://www.footfetishcardates.com",
 		SiteName: "Foot Fetish Car Dates",

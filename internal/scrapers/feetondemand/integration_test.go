@@ -8,17 +8,11 @@ import (
 	"github.com/Wasylq/FSS/internal/scrapers/testutil"
 )
 
-// One live smoke per site is overkill — all 5 share the same AJAX
-// template + parser. Two representative smokes (the biggest catalogue
-// — Goddess Foot Domination with ~1280 scenes; and a smaller one) are
-// enough to validate the wiring.
+// One live smoke per site is overkill — all 4 share the same AJAX
+// template + parser. One smoke against the biggest catalogue (Goddess
+// Foot Domination, ~1280 scenes) validates the shared wiring.
 func TestLiveGoddessFootDomination(t *testing.T) {
 	cfg := findSite(t, "goddessfootdomination")
-	testutil.RunLiveScrape(t, New(cfg), cfg.BaseURL+"/", 4)
-}
-
-func TestLiveJerkToMyFeet(t *testing.T) {
-	cfg := findSite(t, "jerktomyfeet")
 	testutil.RunLiveScrape(t, New(cfg), cfg.BaseURL+"/", 4)
 }
 

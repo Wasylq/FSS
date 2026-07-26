@@ -130,8 +130,10 @@ func TestSitesTable(t *testing.T) {
 			t.Errorf("site %q has empty config: %+v", cfg.ID, cfg)
 		}
 	}
-	if len(sites) != 5 {
-		t.Errorf("expected 5 sites, got %d", len(sites))
+	// 4 since jerktomyfeet.com went dead (HTTP redirects to the CMS vendor's
+	// parked page, HTTPS serves a cert for plusvip33.privatemediacloud.com).
+	if len(sites) != 4 {
+		t.Errorf("expected 4 sites, got %d", len(sites))
 	}
 }
 
@@ -150,8 +152,7 @@ func TestMatchesURL(t *testing.T) {
 	}{
 		{"goddessfootdomination", "https://www.goddessfootdomination.com/", true},
 		{"goddessfootdomination", "https://goddessfootdomination.com/index.php?mb=VmlkZW9zfHw=&p=1260", true},
-		{"goddessfootdomination", "https://www.jerktomyfeet.com/", false},
-		{"jerktomyfeet", "https://www.jerktomyfeet.com/?mb=VmlkZW9zfHw=", true},
+		{"goddessfootdomination", "https://www.footfetishcardates.com/", false},
 		{"footfetishcardates", "https://www.footfetishcardates.com/", true},
 		{"footfetishaffiliates", "https://footfetishaffiliates.com/", true},
 		{"goddessbrianna", "https://www.goddessbrianna.net/index.php?mb=VmlkZW9zfHw=&p=435", true},
