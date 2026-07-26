@@ -346,6 +346,7 @@ import (
 	_ "github.com/Wasylq/FSS/internal/scrapers/xevbellringer"
 	_ "github.com/Wasylq/FSS/internal/scrapers/xsinsvr"
 	_ "github.com/Wasylq/FSS/internal/scrapers/xxcel"
+	_ "github.com/Wasylq/FSS/internal/scrapers/xxxfollow"
 	_ "github.com/Wasylq/FSS/internal/scrapers/yourvids"
 	_ "github.com/Wasylq/FSS/internal/scrapers/youthlust"
 	_ "github.com/Wasylq/FSS/internal/scrapers/yummygirl"
