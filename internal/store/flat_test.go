@@ -469,6 +469,13 @@ func TestFlatJSONStructure(t *testing.T) {
 }
 
 func TestFlatSaveReadOnlyDir(t *testing.T) {
+	// Root bypasses DAC permission checks, so a 0555 directory is still
+	// writable and Save would succeed. That is the default in many CI
+	// container images and under `docker run` without --user.
+	if os.Geteuid() == 0 {
+		t.Skip("running as root: permission bits are not enforced, so this cannot fail")
+	}
+
 	dir := filepath.Join(t.TempDir(), "readonly")
 	if err := os.MkdirAll(dir, 0o555); err != nil {
 		t.Fatal(err)
