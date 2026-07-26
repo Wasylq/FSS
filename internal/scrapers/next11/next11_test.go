@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"github.com/Wasylq/FSS/internal/scrapers/testutil"
@@ -162,7 +163,18 @@ func newTestServer(items []listingItem) *httptest.Server {
 			}
 			_, _ = fmt.Fprintf(w, `<span class="pagenumber">%d</span>件%s`, len(items), listing)
 		default:
-			_, _ = fmt.Fprint(w, detailHTML)
+			// Serve a detail page whose product code matches the requested
+			// product. A single shared fixture would give every scene the same
+			// ID, hiding the fact that the ID comes from the detail page.
+			body := detailHTML
+			pid := r.URL.Query().Get("product_id")
+			for _, item := range items {
+				if item.productID == pid {
+					body = strings.ReplaceAll(detailHTML, "DOKI-033", item.code)
+					break
+				}
+			}
+			_, _ = fmt.Fprint(w, body)
 		}
 	}))
 }
@@ -184,6 +196,13 @@ func TestRun(t *testing.T) {
 	scenes := testutil.CollectScenes(t, ch)
 	if len(scenes) != 2 {
 		t.Fatalf("got %d scenes, want 2", len(scenes))
+	}
+
+	// The ID comes from the detail page's productID, so each product must
+	// yield its own — a shared detail fixture previously gave both the same.
+	gotIDs := map[string]bool{scenes[0].ID: true, scenes[1].ID: true}
+	if !gotIDs["ABC-001"] || !gotIDs["DEF-002"] {
+		t.Errorf("scene IDs = %q/%q, want ABC-001 and DEF-002", scenes[0].ID, scenes[1].ID)
 	}
 
 	for _, sc := range scenes {

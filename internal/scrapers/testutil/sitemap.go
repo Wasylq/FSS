@@ -27,6 +27,18 @@ import (
 // any path ending in "sitemap.xml" and detail for everything else.
 func SitemapServer(t *testing.T, liveHost string, sitemap, detail []byte) *httptest.Server {
 	t.Helper()
+	return SitemapServerFunc(t, liveHost, sitemap, func(string) []byte { return detail })
+}
+
+// SitemapServerFunc is SitemapServer with a per-path detail body, for fixtures
+// whose scenes must not share an id.
+//
+// A single shared detail body gives every scene the same parsed id, and since
+// the store is keyed on (id, site_id) those scenes silently collapse into one
+// at Save — so a test that serves one body cannot tell "three scenes" from
+// "one scene three times". detail receives the request path.
+func SitemapServerFunc(t *testing.T, liveHost string, sitemap []byte, detail func(path string) []byte) *httptest.Server {
+	t.Helper()
 
 	// Unstarted, so the listener address is known before the body is rewritten
 	// and no request can observe the pre-rewrite bytes.
@@ -45,7 +57,7 @@ func SitemapServer(t *testing.T, liveHost string, sitemap, detail []byte) *httpt
 			_, _ = w.Write(local)
 			return
 		}
-		_, _ = w.Write(detail)
+		_, _ = w.Write(detail(r.URL.Path))
 	})
 	srv.Start()
 	t.Cleanup(srv.Close)

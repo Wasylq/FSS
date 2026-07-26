@@ -124,6 +124,7 @@ func runOnce(t *testing.T, s scraper.StudioScraper, studioURL string, limit int,
 	}
 
 	count := 0
+	var seen []models.Scene
 	for result := range ch {
 		switch result.Kind {
 		case scraper.KindError:
@@ -139,6 +140,7 @@ func runOnce(t *testing.T, s scraper.StudioScraper, studioURL string, limit int,
 			t.Logf("first scene from %s: %+v", s.ID(), result.Scene)
 		}
 
+		seen = append(seen, result.Scene)
 		ValidateScene(t, result.Scene)
 
 		if count >= limit {
@@ -148,6 +150,12 @@ func runOnce(t *testing.T, s scraper.StudioScraper, studioURL string, limit int,
 	}
 
 	for range ch {
+	}
+
+	// Not gated on tolerateErrors: a repeated ID is a scraper bug, not a
+	// transient network failure, so retrying cannot change it.
+	for _, id := range duplicateIDs(seen) {
+		t.Errorf("%s: scene ID %q emitted more than once", s.ID(), id)
 	}
 
 	t.Logf("%s: validated %d scenes (limit %d)", s.ID(), count, limit)
@@ -176,7 +184,32 @@ func collectAll(t *testing.T, ch <-chan scraper.SceneResult) ([]models.Scene, bo
 	for _, err := range errs {
 		t.Errorf("unexpected error: %v", err)
 	}
+	for _, id := range duplicateIDs(scenes) {
+		t.Errorf("scene ID %q emitted more than once", id)
+	}
 	return scenes, stoppedEarly
+}
+
+// duplicateIDs returns every scene ID that appears more than once, in order of
+// first repeat.
+//
+// The store is keyed on (id, site_id), so two scenes sharing an ID silently
+// collapse into one at Save: the scrape reports N scenes and the file holds
+// fewer, with no error anywhere. That makes a non-unique ID — a slug collision,
+// a fallback to a constant, a listing that repeats across pages — a data-loss
+// bug that no other check catches.
+func duplicateIDs(scenes []models.Scene) []string {
+	seen := make(map[string]bool, len(scenes))
+	reported := make(map[string]bool)
+	var dupes []string
+	for _, sc := range scenes {
+		if seen[sc.ID] && !reported[sc.ID] {
+			reported[sc.ID] = true
+			dupes = append(dupes, sc.ID)
+		}
+		seen[sc.ID] = true
+	}
+	return dupes
 }
 
 // drain reads a SceneResult channel to completion, separating scenes, the

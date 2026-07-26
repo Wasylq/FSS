@@ -178,6 +178,12 @@ func TestIDFallsBackToSlug(t *testing.T) {
 
 // ---- end-to-end over the sitemap ----
 
+// postIDs gives each fixture URL a distinct WP post id.
+var postIDs = map[string]string{
+	"cuban-in-the-cupboard": "117",
+	"red-light-green-light": "118",
+}
+
 func TestListScenes(t *testing.T) {
 	post := readFixture(t)
 
@@ -192,7 +198,14 @@ func TestListScenes(t *testing.T) {
 </urlset>`, srv.URL, srv.URL)
 			return
 		}
-		_, _ = w.Write(post)
+		// Give each sitemap entry its own post id. Serving the fixture verbatim
+		// gave both scenes id 117, which hid that the id is parsed per page
+		// (and would collapse them into one at Save).
+		body := post
+		if id, ok := postIDs[strings.Trim(r.URL.Path, "/")]; ok {
+			body = []byte(strings.ReplaceAll(string(post), "postid-117", "postid-"+id))
+		}
+		_, _ = w.Write(body)
 	}))
 	defer srv.Close()
 

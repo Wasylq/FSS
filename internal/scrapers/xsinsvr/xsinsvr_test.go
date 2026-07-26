@@ -150,6 +150,14 @@ func TestParseListingEmpty(t *testing.T) {
 
 // ---- end-to-end ----
 
+// detailSceneIDs gives each listing slug a distinct data-scene id, so the
+// three fixture scenes do not collapse onto one id.
+var detailSceneIDs = map[string]string{
+	"morning-love":          "1507", // keeps the fixture's own id
+	"anal-reward-2":         "1508",
+	"the-committed-thruple": "1509",
+}
+
 func newTestSite(t *testing.T) (*Scraper, *httptest.Server, *atomic.Int32) {
 	t.Helper()
 	listing := readFixture(t, "listing.html")
@@ -162,7 +170,16 @@ func newTestSite(t *testing.T) (*Scraper, *httptest.Server, *atomic.Int32) {
 			_, _ = w.Write(listing)
 		case strings.HasPrefix(r.URL.Path, "/video/"):
 			detailHits.Add(1)
-			_, _ = w.Write(detail)
+			// Give each slug its own scene id. Serving the fixture verbatim
+			// gave every scene the fixture's id (1507), which hid that the id
+			// is parsed from the detail page (sceneIDRe wants digits, so the
+			// substitute has to be numeric too).
+			slug := strings.TrimPrefix(r.URL.Path, "/video/")
+			id, ok := detailSceneIDs[slug]
+			if !ok {
+				id = "1507"
+			}
+			_, _ = w.Write([]byte(strings.ReplaceAll(string(detail), "1507", id)))
 		case strings.HasPrefix(r.URL.Path, "/model/"),
 			strings.HasPrefix(r.URL.Path, "/studio/"),
 			strings.HasPrefix(r.URL.Path, "/tag/"):
@@ -201,6 +218,15 @@ func TestListScenes(t *testing.T) {
 	// Every scene needs a detail fetch: the id lives only there.
 	if got := detailHits.Load(); got != 3 {
 		t.Errorf("detail fetches = %d, want 3", got)
+	}
+	// Each scene must carry its own id. The store is keyed on (id, site_id),
+	// so repeats would silently collapse three scenes into one at Save.
+	ids := map[string]bool{}
+	for _, sc := range scenes {
+		if ids[sc.ID] {
+			t.Errorf("scene id %q repeated", sc.ID)
+		}
+		ids[sc.ID] = true
 	}
 
 	sc := scenes[0]

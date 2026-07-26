@@ -212,3 +212,18 @@ func httpGet(t *testing.T, u string) string {
 	}
 	return string(b)
 }
+
+func TestDuplicateIDs(t *testing.T) {
+	sc := func(id string) models.Scene { return models.Scene{ID: id} }
+
+	if got := duplicateIDs([]models.Scene{sc("a"), sc("b"), sc("c")}); len(got) != 0 {
+		t.Errorf("duplicateIDs(unique) = %v, want none", got)
+	}
+	if got := duplicateIDs(nil); len(got) != 0 {
+		t.Errorf("duplicateIDs(nil) = %v, want none", got)
+	}
+	got := duplicateIDs([]models.Scene{sc("a"), sc("b"), sc("a"), sc("b"), sc("a")})
+	if len(got) != 2 || got[0] != "a" || got[1] != "b" {
+		t.Errorf("duplicateIDs = %v, want [a b] (each reported once, in first-repeat order)", got)
+	}
+}

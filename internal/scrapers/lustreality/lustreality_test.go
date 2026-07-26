@@ -206,8 +206,23 @@ func TestListScenes(t *testing.T) {
 	// The scraper fetches each <loc> verbatim, so the fixture's live host must
 	// be rewritten to this server. Overriding siteBase only redirects the
 	// sitemap request; the detail fetches would still go to lustreality.com.
-	srv := testutil.SitemapServer(t, "https://www.lustreality.com",
-		readFixture(t, "sitemap.xml"), readFixture(t, "detail.html"))
+	// Per-path detail bodies: the shared fixture carries one uuid, so serving
+	// it verbatim gave all three scenes the same id — which would collapse
+	// them into one at Save, and hid that the id is parsed per page.
+	detail := readFixture(t, "detail.html")
+	sceneUUIDs := map[string]string{
+		"/en/nothing-to-dress":                 "019f02cf-19a1-731d-bae4-dd707a75ad67",
+		"/en/daddy-fuck-my-slut-friend-and-me": "019f02cf-19a1-731d-bae4-dd707a75ad68",
+		"/en/candee-feels-horny-today":         "019f02cf-19a1-731d-bae4-dd707a75ad69",
+	}
+	srv := testutil.SitemapServerFunc(t, "https://www.lustreality.com",
+		readFixture(t, "sitemap.xml"), func(path string) []byte {
+			id, ok := sceneUUIDs[path]
+			if !ok {
+				return detail
+			}
+			return []byte(strings.ReplaceAll(string(detail), "019f02cf-19a1-731d-bae4-dd707a75ad67", id))
+		})
 
 	orig := siteBase
 	siteBase = srv.URL
