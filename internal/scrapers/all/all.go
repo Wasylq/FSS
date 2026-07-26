@@ -51,6 +51,7 @@ import (
 	_ "github.com/Wasylq/FSS/internal/scrapers/britishbratz"
 	_ "github.com/Wasylq/FSS/internal/scrapers/bronetwork"
 	_ "github.com/Wasylq/FSS/internal/scrapers/brutalmaster"
+	_ "github.com/Wasylq/FSS/internal/scrapers/camsoda"
 	_ "github.com/Wasylq/FSS/internal/scrapers/caribbeancom"
 	_ "github.com/Wasylq/FSS/internal/scrapers/carnalplus"
 	_ "github.com/Wasylq/FSS/internal/scrapers/cearalynch"
