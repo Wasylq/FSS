@@ -94,6 +94,49 @@ jobs:
             done
           } >> $GITHUB_STEP_SUMMARY
 
+  offline:
+    name: Offline test isolation
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Set up Go
+        uses: actions/setup-go@v7
+        with:
+          go-version-file: go.mod
+
+      - name: Run the unit suite with no network
+        # Enforces CONTRIBUTING § "Offline means offline". The normal Test job
+        # runs with network, so a unit test that reaches a live site passes
+        # there and hides a scraper that is actually broken — maturefetish did
+        # exactly this, grading live markup instead of its own fixture and
+        # failing only on a network-less runner.
+        #
+        # A new network namespace with only loopback up: httptest still binds
+        # 127.0.0.1, every outbound request fails immediately. `ip link set lo
+        # up` is load-bearing — without it httptest cannot bind and every
+        # package fails for the wrong reason.
+        #
+        # `sudo unshare` rather than `unshare -r` because Ubuntu restricts
+        # unprivileged user namespaces via AppArmor; runners have passwordless
+        # sudo. We drop straight back to the normal user so the Go caches
+        # populated by setup-go are reused — HOME/GOCACHE/GOMODCACHE must be
+        # passed explicitly because sudo resets HOME even with --preserve-env.
+        #
+        # Integration tests are excluded by their build tag, so nothing here
+        # tries to reach a real site on purpose.
+        run: |
+          GOCACHE=$(go env GOCACHE)
+          GOMODCACHE=$(go env GOMODCACHE)
+          sudo unshare --net sh -c "
+            ip link set lo up
+            exec sudo -u '$USER' env \
+              HOME='$HOME' GOCACHE='$GOCACHE' GOMODCACHE='$GOMODCACHE' PATH='$PATH' \
+              go test -count=1 ./...
+          "
+
   lint:
     name: Lint
     runs-on: ubuntu-latest
