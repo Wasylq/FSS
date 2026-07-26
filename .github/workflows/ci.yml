@@ -55,13 +55,22 @@ jobs:
         uses: codecov/codecov-action@v7
         with:
           files: coverage.out
+          disable_search: true
           fail_ci_if_error: false
           token: ${{ secrets.CODECOV_TOKEN }}
 
       - name: Upload test results to Codecov
+        # test-results-action@v1 is deprecated; codecov-action does both jobs,
+        # distinguished by report_type. Runs on `!cancelled()` so a failing
+        # suite still reports which tests failed — that is the whole point of
+        # the junit upload, and with pipefail the test step now does fail.
         if: ${{ !cancelled() }}
-        uses: codecov/test-results-action@v1
+        uses: codecov/codecov-action@v7
         with:
+          report_type: test_results
+          files: junit.xml
+          disable_search: true
+          fail_ci_if_error: false
           token: ${{ secrets.CODECOV_TOKEN }}
 
       - name: Generate coverage summary
