@@ -4,7 +4,17 @@
 
 GO       ?= go
 PKGS     := ./...
-SMOKE_TIMEOUT ?= 5m
+# `go test -timeout` applies per test binary, i.e. per package — not to the run
+# as a whole. Packages differ enormously in how many live scrapes they pack in:
+# gamma has 45 RunLiveScrape calls, dirtyflix 16. Worst case per call is ~183s
+# (a 90s context, a 3s pause, then a 90s retry), so a couple of slow sites in
+# gamma can blow a 5m budget — and Go panics the whole binary on timeout,
+# losing every result in the package rather than just the slow one.
+#
+# Measured across a full run: median package 2.9s, only 3 over 150s. This bound
+# exists to stop a runaway package, not to pace healthy ones, so it is set well
+# clear of the worst observed case.
+SMOKE_TIMEOUT ?= 20m
 GOLINT   ?= golangci-lint
 
 # Use bash for all recipes (need PIPESTATUS, [[ ]], etc. in the smoke target).
