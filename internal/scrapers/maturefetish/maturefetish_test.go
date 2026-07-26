@@ -217,7 +217,7 @@ func TestPaginatedScrape(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	s := &Scraper{client: ts.Client()}
+	s := &Scraper{client: ts.Client(), base: ts.URL}
 	out := make(chan scraper.SceneResult)
 	go func() {
 		defer close(out)
@@ -228,10 +228,22 @@ func TestPaginatedScrape(t *testing.T) {
 
 	scenes := testutil.CollectScenes(t, out)
 	if len(scenes) != 2 {
-		t.Errorf("got %d scenes, want 2", len(scenes))
+		t.Fatalf("got %d scenes, want 2", len(scenes))
 	}
-	if len(scenes) > 0 && scenes[0].SiteID != "maturefetish" {
+	if scenes[0].SiteID != "maturefetish" {
 		t.Errorf("SiteID = %q, want maturefetish", scenes[0].SiteID)
+	}
+	// Offline means offline: every scene URL must point at the test server.
+	// Before base was overridable these came from the siteBase const, so the
+	// detail fetches silently scraped production.
+	for _, sc := range scenes {
+		if !strings.HasPrefix(sc.URL, ts.URL) {
+			t.Errorf("scene %q URL %q escaped the test server", sc.ID, sc.URL)
+		}
+	}
+	// The fixture is what should have been parsed, not live markup.
+	if scenes[0].Title == "" {
+		t.Error("scene has empty Title — detail fixture was not parsed")
 	}
 }
 
@@ -249,7 +261,7 @@ func TestKnownIDsStopsEarly(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	s := &Scraper{client: ts.Client()}
+	s := &Scraper{client: ts.Client(), base: ts.URL}
 	out := make(chan scraper.SceneResult)
 	opts := scraper.ListOpts{
 		Workers:  1,

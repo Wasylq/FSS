@@ -21,10 +21,15 @@ const siteBase = "https://maturefetish.com"
 
 type Scraper struct {
 	client *http.Client
+	// base is the site root. Overridable so offline tests can point every
+	// fetch — listing *and* detail — at an httptest server. Without it the
+	// detail fetches keep using the siteBase const and walk out of the test
+	// onto the live site.
+	base string
 }
 
 func New() *Scraper {
-	return &Scraper{client: httpx.NewClient(30 * time.Second)}
+	return &Scraper{client: httpx.NewClient(30 * time.Second), base: siteBase}
 }
 
 var _ scraper.StudioScraper = (*Scraper)(nil)
@@ -91,11 +96,11 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 		s.runIDList(ctx, studioURL, studioURL, opts, out)
 	case kindNiche:
 		s.runPaginated(ctx, studioURL, opts, out, func(page int) string {
-			return fmt.Sprintf("%s/en/niche/%s/%d", siteBase, id, page)
+			return fmt.Sprintf("%s/en/niche/%s/%d", s.base, id, page)
 		})
 	default:
 		s.runPaginated(ctx, studioURL, opts, out, func(page int) string {
-			return fmt.Sprintf("%s/en/updates/%d", siteBase, page)
+			return fmt.Sprintf("%s/en/updates/%d", s.base, page)
 		})
 	}
 }
@@ -310,7 +315,7 @@ func (s *Scraper) fetch(ctx context.Context, url string) ([]byte, error) {
 
 func (s *Scraper) fetchDetailScene(ctx context.Context, studioURL string, updateID string) (models.Scene, error) {
 	now := time.Now().UTC()
-	url := fmt.Sprintf("%s/en/update/%s", siteBase, updateID)
+	url := fmt.Sprintf("%s/en/update/%s", s.base, updateID)
 
 	body, err := s.fetch(ctx, url)
 	if err != nil {
