@@ -1,13 +1,18 @@
 package cmd
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
+	"net/http"
+	"net/http/httptest"
 	"os"
 	"path/filepath"
 	"reflect"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -711,5 +716,148 @@ func TestDiffScene_nilFieldFilterAllowsAll(t *testing.T) {
 	got, _, _ := diffScene(ss, merged, importOpts{tagName: "FSS", allowedFields: nil})
 	if _, ok := got["title"]; !ok {
 		t.Errorf("nil allowedFields dropped a change: %v", got)
+	}
+}
+
+// --- applyScene --------------------------------------------------------------
+//
+// applyScene is what `stash import --apply` actually writes to a user's
+// library. fakeStash stands in for the GraphQL endpoint so the write path can
+// be driven without a live Stash: it answers every find* with "not found",
+// every create* with an id, and records which operations were requested.
+
+type fakeStash struct {
+	srv  *httptest.Server
+	mu   sync.Mutex
+	ops  []string
+	last map[string]any // variables of the last sceneUpdate
+}
+
+func newFakeStash(t *testing.T) *fakeStash {
+	t.Helper()
+	f := &fakeStash{}
+	f.srv = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		var req struct {
+			Query     string         `json:"query"`
+			Variables map[string]any `json:"variables"`
+		}
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		q := req.Query
+
+		op, resp := "unknown", `{}`
+		switch {
+		case strings.Contains(q, "findTags"):
+			op, resp = "findTags", `{"findTags":{"tags":[]}}`
+		case strings.Contains(q, "tagCreate"):
+			op, resp = "tagCreate", `{"tagCreate":{"id":"t1"}}`
+		case strings.Contains(q, "findPerformers"):
+			op, resp = "findPerformers", `{"findPerformers":{"performers":[]}}`
+		case strings.Contains(q, "performerCreate"):
+			op, resp = "performerCreate", `{"performerCreate":{"id":"p1"}}`
+		case strings.Contains(q, "findStudios"):
+			op, resp = "findStudios", `{"findStudios":{"studios":[]}}`
+		case strings.Contains(q, "studioCreate"):
+			op, resp = "studioCreate", `{"studioCreate":{"id":"s1"}}`
+		case strings.Contains(q, "sceneUpdate"):
+			op, resp = "sceneUpdate", `{"sceneUpdate":{"id":"1"}}`
+		}
+
+		f.mu.Lock()
+		f.ops = append(f.ops, op)
+		if op == "sceneUpdate" {
+			f.last = req.Variables
+		}
+		f.mu.Unlock()
+
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = fmt.Fprintf(w, `{"data":%s}`, resp)
+	}))
+	t.Cleanup(f.srv.Close)
+	return f
+}
+
+func (f *fakeStash) client() *stash.Client { return stash.NewClient(f.srv.URL, "") }
+
+func (f *fakeStash) sawOp(name string) bool {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	for _, o := range f.ops {
+		if o == name {
+			return true
+		}
+	}
+	return false
+}
+
+// The whole point of --fields is that nothing outside the listed fields is
+// touched. A leak here silently creates tags, performers and studios in a
+// library the user asked not to modify.
+func TestApplyScene_fieldFilterSuppressesWrites(t *testing.T) {
+	f := newFakeStash(t)
+	ss := stash.StashScene{ID: "1", Files: []stash.StashFile{{Path: "/v/a.mp4"}}}
+	merged := match.MergedScene{Title: "T", Performers: []string{"P"}, Studio: "S"}
+	o := importOpts{apply: true, allowedFields: map[string]bool{"title": true}}
+
+	failures, err := applyScene(context.Background(), f.client(), ss, merged,
+		[]string{"tag-a"}, nil, "imp1", o)
+	if err != nil {
+		t.Fatalf("applyScene: %v", err)
+	}
+	if len(failures) != 0 {
+		t.Errorf("failures = %v, want none", failures)
+	}
+	if !f.sawOp("sceneUpdate") {
+		t.Error("scene was never updated")
+	}
+	for _, op := range []string{"findTags", "tagCreate", "findPerformers", "performerCreate", "findStudios", "studioCreate"} {
+		if f.sawOp(op) {
+			t.Errorf("%s was called even though --fields allowed only title", op)
+		}
+	}
+}
+
+// With no --fields, tags/performers/studio are all resolved and written.
+func TestApplyScene_writesAllFieldsByDefault(t *testing.T) {
+	f := newFakeStash(t)
+	ss := stash.StashScene{ID: "1", Files: []stash.StashFile{{Path: "/v/a.mp4"}}}
+	merged := match.MergedScene{Title: "T", Performers: []string{"P"}, Studio: "S"}
+
+	if _, err := applyScene(context.Background(), f.client(), ss, merged,
+		[]string{"tag-a"}, nil, "imp1", importOpts{apply: true}); err != nil {
+		t.Fatalf("applyScene: %v", err)
+	}
+	for _, op := range []string{"findTags", "tagCreate", "findPerformers", "performerCreate", "findStudios", "studioCreate", "sceneUpdate"} {
+		if !f.sawOp(op) {
+			t.Errorf("%s was not called", op)
+		}
+	}
+}
+
+// A scene with StashIDs gets the stashbox tag; `stash revert` keys off it, so
+// applying it to the wrong scenes makes a revert overreach.
+func TestApplyScene_stashboxTagOnlyForScenesWithStashIDs(t *testing.T) {
+	ss := stash.StashScene{ID: "1", Files: []stash.StashFile{{Path: "/v/a.mp4"}}}
+	merged := match.MergedScene{Title: "T"}
+	o := importOpts{apply: true, stashboxTag: "FSS: StashDB"}
+
+	withIDs := newFakeStash(t)
+	ssWith := ss
+	ssWith.StashIDs = []stash.StashID{{StashID: "abc"}}
+	if _, err := applyScene(context.Background(), withIDs.client(), ssWith, merged, nil, nil, "imp1", o); err != nil {
+		t.Fatalf("applyScene: %v", err)
+	}
+	if !withIDs.sawOp("findTags") {
+		t.Error("stashbox tag was not resolved for a scene with StashIDs")
+	}
+
+	without := newFakeStash(t)
+	if _, err := applyScene(context.Background(), without.client(), ss, merged, nil, nil, "imp1", o); err != nil {
+		t.Fatalf("applyScene: %v", err)
+	}
+	if without.sawOp("findTags") {
+		t.Error("stashbox tag was resolved for a scene with no StashIDs")
 	}
 }
