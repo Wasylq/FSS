@@ -599,3 +599,117 @@ func TestBuildChanges_addedTags(t *testing.T) {
 		t.Errorf("got added=%v, want %v", diff.Added, want)
 	}
 }
+
+// --- diffScene ---------------------------------------------------------------
+//
+// diffScene is the layer above buildChanges: it assembles the tag set, merges
+// URLs, and applies the --fields filter. It decides what `stash import --apply`
+// writes to a real library, so each of those responsibilities is pinned here.
+
+func hasTag(tags []string, want string) bool {
+	for _, t := range tags {
+		if t == want {
+			return true
+		}
+	}
+	return false
+}
+
+func TestDiffScene_assemblesTagsFromMergedSceneAndImportTag(t *testing.T) {
+	ss := stash.StashScene{ID: "1"}
+	merged := match.MergedScene{
+		Title:      "T",
+		Tags:       []string{"tag-a"},
+		Categories: []string{"cat-b"},
+	}
+	o := importOpts{tagName: "FSS", stashboxTag: "FSS: StashDB"}
+
+	_, allTags, _ := diffScene(ss, merged, o)
+
+	for _, want := range []string{"tag-a", "cat-b", "FSS"} {
+		if !hasTag(allTags, want) {
+			t.Errorf("allTags %v missing %q", allTags, want)
+		}
+	}
+	// No StashIDs on the scene, so the stashbox tag must not be applied.
+	if hasTag(allTags, "FSS: StashDB") {
+		t.Errorf("allTags %v contains the stashbox tag for a scene with no StashIDs", allTags)
+	}
+}
+
+// The stashbox tag marks scenes that already carry StashDB metadata; applying
+// it to a scene without StashIDs would mislabel it, and `stash revert` keys off
+// that tag.
+func TestDiffScene_stashboxTagOnlyWhenSceneHasStashIDs(t *testing.T) {
+	ss := stash.StashScene{ID: "1", StashIDs: []stash.StashID{{StashID: "abc"}}}
+	merged := match.MergedScene{Title: "T"}
+	o := importOpts{tagName: "FSS", stashboxTag: "FSS: StashDB"}
+
+	_, allTags, _ := diffScene(ss, merged, o)
+	if !hasTag(allTags, "FSS: StashDB") {
+		t.Errorf("allTags %v missing the stashbox tag for a scene with StashIDs", allTags)
+	}
+}
+
+func TestDiffScene_resolutionTagsGatedOnFlag(t *testing.T) {
+	ss := stash.StashScene{ID: "1"}
+	merged := match.MergedScene{Title: "T", Width: 3840}
+
+	_, off, _ := diffScene(ss, merged, importOpts{tagName: "FSS"})
+	if hasTag(off, "4K Available") {
+		t.Errorf("resolution tag applied without --resolution-tags: %v", off)
+	}
+
+	_, on, _ := diffScene(ss, merged, importOpts{tagName: "FSS", resolutionTags: true})
+	if !hasTag(on, "4K Available") {
+		t.Errorf("allTags %v missing the resolution tag", on)
+	}
+}
+
+func TestDiffScene_mergesURLsWithExisting(t *testing.T) {
+	ss := stash.StashScene{ID: "1", URLs: []string{"https://a.example/1"}}
+	merged := match.MergedScene{Title: "T", URLs: []string{"https://b.example/2", "https://a.example/1"}}
+
+	_, _, urls := diffScene(ss, merged, importOpts{tagName: "FSS"})
+	if len(urls) != 2 {
+		t.Fatalf("mergedURLs = %v, want the 2-entry union", urls)
+	}
+	if urls[0] != "https://a.example/1" {
+		t.Errorf("mergedURLs = %v, want the existing URL retained first", urls)
+	}
+}
+
+// --fields is the guard a user reaches for when they only want some metadata
+// touched. If the filter leaks, --apply writes fields they explicitly excluded.
+func TestDiffScene_fieldFilterDropsDisallowedChanges(t *testing.T) {
+	ss := stash.StashScene{ID: "1", Title: "Old", Details: "OldDetails"}
+	merged := match.MergedScene{Title: "New", Description: "NewDetails"}
+
+	all, _, _ := diffScene(ss, merged, importOpts{tagName: "FSS"})
+	if _, ok := all["title"]; !ok {
+		t.Fatal("unfiltered diff should contain a title change")
+	}
+	if _, ok := all["details"]; !ok {
+		t.Fatal("unfiltered diff should contain a details change")
+	}
+
+	only := importOpts{tagName: "FSS", allowedFields: map[string]bool{"title": true}}
+	got, _, _ := diffScene(ss, merged, only)
+	if _, ok := got["title"]; !ok {
+		t.Error("title was allowed but is missing from the diff")
+	}
+	if _, ok := got["details"]; ok {
+		t.Errorf("details was not in --fields but survived the filter: %v", got)
+	}
+}
+
+// A nil allowedFields means "no --fields given", which must allow everything
+// rather than nothing.
+func TestDiffScene_nilFieldFilterAllowsAll(t *testing.T) {
+	ss := stash.StashScene{ID: "1", Title: "Old"}
+	merged := match.MergedScene{Title: "New"}
+	got, _, _ := diffScene(ss, merged, importOpts{tagName: "FSS", allowedFields: nil})
+	if _, ok := got["title"]; !ok {
+		t.Errorf("nil allowedFields dropped a change: %v", got)
+	}
+}
