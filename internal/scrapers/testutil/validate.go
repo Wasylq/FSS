@@ -132,10 +132,12 @@ func runOnce(t *testing.T, s scraper.StudioScraper, studioURL string, limit int,
 	}
 
 	count := 0
+	errCount := 0
 	var seen []models.Scene
 	for result := range ch {
 		switch result.Kind {
 		case scraper.KindError:
+			errCount++
 			t.Logf("scene error: %v", result.Err)
 			continue
 		case scraper.KindTotal, scraper.KindStoppedEarly:
@@ -166,7 +168,19 @@ func runOnce(t *testing.T, s scraper.StudioScraper, studioURL string, limit int,
 		t.Errorf("%s: scene ID %q emitted more than once", s.ID(), id)
 	}
 
-	t.Logf("%s: validated %d scenes (limit %d)", s.ID(), count, limit)
+	// Errors used to be logged and nothing more, so a scraper erroring on most
+	// of its fetches still passed as long as `limit` scenes survived — the
+	// suite detected "dead" but not "degraded". Failing on *any* error would be
+	// too strict (a single bad detail page among thousands is normal), so the
+	// signal is: errors occurred AND the scrape could not even reach `limit`.
+	// A site with genuinely fewer than `limit` scenes produces no errors, so it
+	// is unaffected.
+	if !tolerateErrors && errCount > 0 && count < limit {
+		t.Errorf("%s: %d scene error(s) and only %d/%d scenes — the scrape is degraded, not just slow",
+			s.ID(), errCount, count, limit)
+	}
+
+	t.Logf("%s: validated %d scenes (limit %d, %d error(s))", s.ID(), count, limit, errCount)
 	return count
 }
 
