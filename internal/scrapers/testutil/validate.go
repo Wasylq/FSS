@@ -233,6 +233,54 @@ func drain(ch <-chan scraper.SceneResult) (scenes []models.Scene, stoppedEarly b
 	return scenes, stoppedEarly, errs
 }
 
+// AssertCancellable checks that a scraper stops when its context is cancelled.
+//
+// Every scraper must select on ctx.Done() in the sends to its output channel,
+// and helper loops must check ctx.Err() each iteration — otherwise a cancelled
+// scrape leaks a goroutine that keeps fetching pages nobody reads. Deleting
+// that select breaks nothing any other test asserts, which is why this exists.
+//
+// The scraper must already be pointed at a test server; studioURL is passed
+// through untouched. It cancels after the first result and fails if the
+// scraper's channel has not closed shortly afterwards.
+//
+// Not usable on scrapers that fetch everything in one request and then stream
+// from memory — those have nothing left to cancel — so it is a check to add
+// where a scrape does real work between sends.
+func AssertCancellable(t *testing.T, s scraper.StudioScraper, studioURL string, opts scraper.ListOpts) {
+	t.Helper()
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	ch, err := s.ListScenes(ctx, studioURL, opts)
+	if err != nil {
+		t.Fatalf("ListScenes(%s): %v", studioURL, err)
+	}
+
+	// Wait for the scrape to actually start before cancelling, so this tests
+	// mid-flight cancellation rather than a cancel that lands before the first
+	// fetch. A closed channel here just means the scrape finished first.
+	if _, ok := <-ch; !ok {
+		t.Skip("scraper finished before it could be cancelled — nothing to assert")
+	}
+	cancel()
+
+	drained := make(chan struct{})
+	go func() {
+		defer close(drained)
+		for range ch {
+		}
+	}()
+
+	select {
+	case <-drained:
+	case <-time.After(10 * time.Second):
+		t.Fatalf("%s: channel still open 10s after cancellation — the scraper is "+
+			"not selecting on ctx.Done() and leaks a goroutine per cancelled scrape", s.ID())
+	}
+}
+
 // SkipIfPlaceholder skips the test if the URL still looks like a placeholder
 // (contains "REPLACE-ME"). Use this for scrapers where the maintainer hasn't
 // yet picked a verified live URL.

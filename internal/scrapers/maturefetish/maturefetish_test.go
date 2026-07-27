@@ -286,3 +286,20 @@ func TestKnownIDsStopsEarly(t *testing.T) {
 func TestScraperInterface(t *testing.T) {
 	var _ scraper.StudioScraper = (*Scraper)(nil)
 }
+
+// Worker-pool shape: a cancelled scrape must stop the page walk and let the
+// detail workers exit, rather than keep fetching for a reader that has gone.
+func TestCancellation(t *testing.T) {
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if strings.HasPrefix(r.URL.Path, "/en/update/") {
+			_, _ = fmt.Fprint(w, detailHTML)
+			return
+		}
+		// Never runs out of listing pages, so only the context ends the walk.
+		_, _ = fmt.Fprint(w, listingHTML)
+	}))
+	defer ts.Close()
+
+	s := &Scraper{client: ts.Client(), base: ts.URL}
+	testutil.AssertCancellable(t, s, ts.URL+"/en/updates", scraper.ListOpts{Workers: 2})
+}

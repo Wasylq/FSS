@@ -1,9 +1,11 @@
 package testutil
 
 import (
+	"context"
 	"errors"
 	"io"
 	"net/http"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -225,5 +227,74 @@ func TestDuplicateIDs(t *testing.T) {
 	got := duplicateIDs([]models.Scene{sc("a"), sc("b"), sc("a"), sc("b"), sc("a")})
 	if len(got) != 2 || got[0] != "a" || got[1] != "b" {
 		t.Errorf("duplicateIDs = %v, want [a b] (each reported once, in first-repeat order)", got)
+	}
+}
+
+// leakyScraper ignores ctx entirely: it keeps sending until its buffer drains,
+// modelling a scraper whose channel sends are not guarded by a select on
+// ctx.Done(). AssertCancellable must catch it.
+type leakyScraper struct{ block chan struct{} }
+
+func (l *leakyScraper) ID() string         { return "leaky" }
+func (l *leakyScraper) Patterns() []string { return []string{"leaky.test"} }
+func (l *leakyScraper) MatchesURL(string) bool {
+	return true
+}
+func (l *leakyScraper) ListScenes(_ context.Context, _ string, _ scraper.ListOpts) (<-chan scraper.SceneResult, error) {
+	out := make(chan scraper.SceneResult)
+	go func() {
+		defer close(out)
+		out <- scraper.Scene(models.Scene{ID: "1"})
+		<-l.block // never returns until the test releases it
+	}()
+	return out, nil
+}
+
+// goodScraper exits promptly once its context is cancelled.
+type goodScraper struct{}
+
+func (goodScraper) ID() string             { return "good" }
+func (goodScraper) Patterns() []string     { return []string{"good.test"} }
+func (goodScraper) MatchesURL(string) bool { return true }
+func (goodScraper) ListScenes(ctx context.Context, _ string, _ scraper.ListOpts) (<-chan scraper.SceneResult, error) {
+	out := make(chan scraper.SceneResult)
+	go func() {
+		defer close(out)
+		for i := 0; ; i++ {
+			select {
+			case out <- scraper.Scene(models.Scene{ID: strconv.Itoa(i)}):
+			case <-ctx.Done():
+				return
+			}
+		}
+	}()
+	return out, nil
+}
+
+func TestAssertCancellablePassesForACancellableScraper(t *testing.T) {
+	AssertCancellable(t, goodScraper{}, "https://good.test/", scraper.ListOpts{})
+}
+
+// The helper is only worth having if it fails on a scraper that ignores
+// cancellation — verified here by running it against one and asserting it
+// reports a failure, rather than trusting that it would.
+func TestAssertCancellableCatchesALeak(t *testing.T) {
+	l := &leakyScraper{block: make(chan struct{})}
+	defer close(l.block)
+
+	fake := &testing.T{}
+	done := make(chan struct{})
+	go func() {
+		defer close(done)
+		AssertCancellable(fake, l, "https://leaky.test/", scraper.ListOpts{})
+	}()
+
+	select {
+	case <-done:
+	case <-time.After(30 * time.Second):
+		t.Fatal("AssertCancellable never returned")
+	}
+	if !fake.Failed() {
+		t.Error("AssertCancellable passed a scraper that ignores context cancellation")
 	}
 }

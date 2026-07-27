@@ -394,3 +394,22 @@ func TestFreePostPrice(t *testing.T) {
 		t.Errorf("LowestPrice = %v (date %v), want a recorded zero", sc.LowestPrice, sc.LowestPriceDate)
 	}
 }
+
+// A cancelled scrape must stop, not keep walking pages nobody reads. The
+// server below never runs out of pages, so the only thing that ends the walk
+// is the context.
+func TestCancellation(t *testing.T) {
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		page, _ := strconv.Atoi(r.URL.Query().Get("page"))
+		if page < 1 {
+			page = 1
+		}
+		// Unique IDs per page so Paginate's repeat-page guard never trips.
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(listResponse{List: makePosts(perPage, page*1000)})
+	}))
+	defer ts.Close()
+
+	s := &Scraper{client: ts.Client(), base: ts.URL}
+	testutil.AssertCancellable(t, s, ts.URL+"/katanakombat/premium", scraper.ListOpts{})
+}
