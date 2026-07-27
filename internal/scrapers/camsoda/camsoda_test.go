@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 
@@ -397,5 +399,103 @@ func TestUnsupportedURLIsRejected(t *testing.T) {
 		} else if !strings.Contains(err.Error(), "camsoda") {
 			t.Errorf("error = %v, want it to name the scraper", err)
 		}
+	}
+}
+
+// --- golden fixtures ---------------------------------------------------------
+//
+// The other tests here marshal the same structs the scraper unmarshals, so a
+// renamed json tag round-trips and passes. These two serve payloads captured
+// verbatim from the live site, so a tag break fails here.
+
+func TestGoldenModelMedia(t *testing.T) {
+	body, err := os.ReadFile(filepath.Join("testdata", "user_media.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/api/v1/user/autumnfalls/media" {
+			http.NotFound(w, r)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write(body)
+	}))
+	defer ts.Close()
+
+	s := &Scraper{client: ts.Client(), base: ts.URL}
+	ch, err := s.ListScenes(context.Background(), ts.URL+"/autumnfalls", scraper.ListOpts{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	scenes := testutil.CollectScenes(t, ch)
+	if len(scenes) == 0 {
+		t.Fatal("no scenes parsed from the captured payload — is_video or mediaList tag broken?")
+	}
+	for _, sc := range scenes {
+		if sc.ID == "" {
+			t.Error("empty ID (mediaList[].id)")
+		}
+		if sc.Title == "" {
+			t.Errorf("scene %q has empty Title (mediaList[].name)", sc.ID)
+		}
+		if sc.Date.IsZero() {
+			t.Errorf("scene %q has zero Date (mediaList[].created_at)", sc.ID)
+		}
+		if sc.Duration == 0 {
+			t.Errorf("scene %q has zero Duration (mediaList[].duration)", sc.ID)
+		}
+		if sc.Thumbnail == "" {
+			t.Errorf("scene %q has empty Thumbnail (mediaList[].thumbnail_url)", sc.ID)
+		}
+		if !strings.Contains(sc.URL, "/autumnfalls/media/") {
+			t.Errorf("scene %q URL = %q (mediaList[].slug)", sc.ID, sc.URL)
+		}
+		if len(sc.Performers) == 0 {
+			t.Errorf("scene %q has no Performers (mediaList[].user_display_name)", sc.ID)
+		}
+	}
+}
+
+func TestGoldenExclusiveVideos(t *testing.T) {
+	body, err := os.ReadFile(filepath.Join("testdata", "exclusive_videos.html"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	ts := newExclusiveServer(t, string(body))
+	defer ts.Close()
+
+	s := &Scraper{client: ts.Client(), base: ts.URL}
+	ch, err := s.ListScenes(context.Background(), ts.URL+"/exclusive-videos", scraper.ListOpts{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	scenes := testutil.CollectScenes(t, ch)
+	if len(scenes) != 2 {
+		t.Fatalf("got %d scenes, want 2 — __PRELOADED_STATE__ shape may have drifted", len(scenes))
+	}
+
+	sc := scenes[0]
+	if sc.ID != "veronica-rodriguez-first-time-anal" {
+		t.Errorf("ID = %q (videoList[].id)", sc.ID)
+	}
+	if sc.Title != "Veronica Rodriguez First Time Anal" {
+		t.Errorf("Title = %q (videoList[].title)", sc.Title)
+	}
+	if sc.Description == "" {
+		t.Error("Description is empty (videoList[].desc)")
+	}
+	if sc.Thumbnail == "" {
+		t.Error("Thumbnail is empty (videoList[].thumb_name)")
+	}
+	if sc.Preview == "" {
+		t.Error("Preview is empty (videoList[].video_name)")
+	}
+	if sc.Width == 0 || sc.Height == 0 {
+		t.Errorf("dimensions = %dx%d (videoList[].video_width/height)", sc.Width, sc.Height)
+	}
+	// The second entry is the one fixture video that carries a models[] array.
+	if got := scenes[1].Performers; len(got) != 2 || got[0] != "Vanessa Veracruz" {
+		t.Errorf("Performers = %v (videoList[].models[].name)", got)
 	}
 }

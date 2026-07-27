@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"testing"
@@ -412,4 +414,73 @@ func TestCancellation(t *testing.T) {
 
 	s := &Scraper{client: ts.Client(), base: ts.URL}
 	testutil.AssertCancellable(t, s, ts.URL+"/katanakombat/premium", scraper.ListOpts{})
+}
+
+// --- golden fixture ----------------------------------------------------------
+//
+// Every other test in this file builds its server response by marshalling the
+// same structs the scraper unmarshals, so encode and decode share the struct
+// tag and a wrong tag round-trips perfectly. This one serves a payload captured
+// verbatim from the live API, so a renamed or mistyped `json:"..."` tag fails
+// here even though it would pass everywhere else.
+
+func TestGoldenPremiumPage(t *testing.T) {
+	body, err := os.ReadFile(filepath.Join("testdata", "premium_page.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write(body)
+	}))
+	defer ts.Close()
+
+	s := &Scraper{client: ts.Client(), base: ts.URL}
+	ch, err := s.ListScenes(context.Background(), ts.URL+"/katanakombat/premium", scraper.ListOpts{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	scenes := testutil.CollectScenes(t, ch)
+	if len(scenes) != 2 {
+		t.Fatalf("got %d scenes, want 2", len(scenes))
+	}
+
+	sc := scenes[0]
+	// Each assertion pins one json tag against the real payload.
+	if sc.ID != "1261687" {
+		t.Errorf("ID = %q (post.id)", sc.ID)
+	}
+	if sc.Title != "sold these panties and bra" {
+		t.Errorf("Title = %q (post.text)", sc.Title)
+	}
+	if want := ts.URL + "/katanakombat/premium/sold-these-panties-and-bra"; sc.URL != want {
+		t.Errorf("URL = %q (post.slug), want %q", sc.URL, want)
+	}
+	if sc.Date.Format("2006-01-02T15:04:05") != "2026-06-04T19:14:04" {
+		t.Errorf("Date = %v (post.created_at)", sc.Date)
+	}
+	if sc.Duration != 140 {
+		t.Errorf("Duration = %d (post.video_duration_total)", sc.Duration)
+	}
+	if sc.Width != 720 || sc.Height != 1280 {
+		t.Errorf("dimensions = %dx%d (media[].width/height)", sc.Width, sc.Height)
+	}
+	if len(sc.Performers) != 1 || sc.Performers[0] != "Katana Kombat" {
+		t.Errorf("Performers = %v (post.user.display_name)", sc.Performers)
+	}
+	if len(sc.PriceHistory) != 1 || sc.PriceHistory[0].Regular != 7 {
+		t.Errorf("PriceHistory = %+v (post.amount_usd)", sc.PriceHistory)
+	}
+	if sc.Thumbnail == "" {
+		t.Error("Thumbnail is empty (post.preview.url / media[].blur_url)")
+	}
+	if sc.Preview == "" {
+		t.Error("Preview is empty (media[].preview_url)")
+	}
+	// media_count.video drives the videos-only filter; if its tag broke, both
+	// fixture posts would have been dropped and the count check above would
+	// already have failed.
+	if scenes[1].ID != "1164932" {
+		t.Errorf("second scene ID = %q, want 1164932", scenes[1].ID)
+	}
 }
