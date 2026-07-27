@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/Wasylq/FSS/internal/scrapers/testutil"
 	"github.com/Wasylq/FSS/scraper"
@@ -278,8 +279,13 @@ func TestModelMedia(t *testing.T) {
 	if want := ts.URL + "/nicollemeyer/media/braces/6298032"; sc.URL != want {
 		t.Errorf("URL = %q, want %q", sc.URL, want)
 	}
-	if sc.Date.Format("2006-01-02T15:04:05Z") != "2019-06-23T20:14:22Z" {
-		t.Errorf("Date = %v", sc.Date)
+	// Both the instant and the location: a bare "Z" in a layout is a literal,
+	// and time.Equal ignores location, so neither would catch a dropped .UTC().
+	if want := time.Date(2019, 6, 23, 20, 14, 22, 0, time.UTC); !sc.Date.Equal(want) {
+		t.Errorf("Date = %v, want %v", sc.Date, want)
+	}
+	if sc.Date.Location() != time.UTC {
+		t.Errorf("Date location = %v, want UTC", sc.Date.Location())
 	}
 	if sc.Duration != 312 {
 		t.Errorf("Duration = %d", sc.Duration)

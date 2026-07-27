@@ -11,6 +11,7 @@ import (
 	"strconv"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/Wasylq/FSS/internal/scrapers/testutil"
 	"github.com/Wasylq/FSS/scraper"
@@ -182,9 +183,7 @@ func TestListScenes(t *testing.T) {
 	if want := ts.URL + "/katanakombat/premium/scene-1"; sc.URL != want {
 		t.Errorf("URL = %q, want %q", sc.URL, want)
 	}
-	if sc.Date.Format("2006-01-02T15:04:05Z") != "2026-06-04T19:14:04Z" {
-		t.Errorf("Date = %v", sc.Date)
-	}
+	assertUTC(t, sc.Date, time.Date(2026, 6, 4, 19, 14, 4, 0, time.UTC))
 	if sc.Duration != 140 {
 		t.Errorf("Duration = %d, want 140", sc.Duration)
 	}
@@ -456,9 +455,7 @@ func TestGoldenPremiumPage(t *testing.T) {
 	if want := ts.URL + "/katanakombat/premium/sold-these-panties-and-bra"; sc.URL != want {
 		t.Errorf("URL = %q (post.slug), want %q", sc.URL, want)
 	}
-	if sc.Date.Format("2006-01-02T15:04:05") != "2026-06-04T19:14:04" {
-		t.Errorf("Date = %v (post.created_at)", sc.Date)
-	}
+	assertUTC(t, sc.Date, time.Date(2026, 6, 4, 19, 14, 4, 0, time.UTC))
 	if sc.Duration != 140 {
 		t.Errorf("Duration = %d (post.video_duration_total)", sc.Duration)
 	}
@@ -482,5 +479,22 @@ func TestGoldenPremiumPage(t *testing.T) {
 	// already have failed.
 	if scenes[1].ID != "1164932" {
 		t.Errorf("second scene ID = %q, want 1164932", scenes[1].ID)
+	}
+}
+
+// assertUTC checks both the instant and the location.
+//
+// A layout ending in a bare "Z" does NOT assert UTC — in a Go layout that Z is
+// a literal, not a zone verb (only Z07:00/Z0700 are), so it prints the wall
+// clock plus a hard-coded Z whatever the zone is. time.Equal alone is no better:
+// it compares instants and ignores location. Only Location() catches a dropped
+// .UTC().
+func assertUTC(t *testing.T, got, want time.Time) {
+	t.Helper()
+	if !got.Equal(want) {
+		t.Errorf("Date = %v, want %v", got, want)
+	}
+	if got.Location() != time.UTC {
+		t.Errorf("Date location = %v, want UTC", got.Location())
 	}
 }
