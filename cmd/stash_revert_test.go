@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"context"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -325,5 +326,100 @@ func TestLoadChangelog_roundTrip(t *testing.T) {
 	}
 	if got[0].StashSceneID != "1" || got[0].Changes["title"].From != "old" {
 		t.Errorf("round-trip mismatch: %+v", got)
+	}
+}
+
+// --- revert id arithmetic ----------------------------------------------------
+//
+// `stash revert` works by subtracting the IDs an import added from whatever the
+// scene carries now. Getting that arithmetic wrong either strips tags the user
+// added by hand or leaves imported ones behind, and until now none of it was
+// covered.
+
+func TestSubtractIDs(t *testing.T) {
+	cases := []struct {
+		name         string
+		from, remove []string
+		want         []string
+	}{
+		{"removes the listed ids", []string{"1", "2", "3"}, []string{"2"}, []string{"1", "3"}},
+		{"nothing to remove", []string{"1", "2"}, nil, []string{"1", "2"}},
+		{"removing an absent id is a no-op", []string{"1"}, []string{"9"}, []string{"1"}},
+		{"removing everything empties it", []string{"1", "2"}, []string{"1", "2"}, []string{}},
+		{"empty source stays empty", nil, []string{"1"}, []string{}},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			got := subtractIDs(c.from, c.remove)
+			if len(got) != len(c.want) {
+				t.Fatalf("subtractIDs(%v, %v) = %v, want %v", c.from, c.remove, got, c.want)
+			}
+			for i := range got {
+				if got[i] != c.want[i] {
+					t.Errorf("subtractIDs(%v, %v) = %v, want %v", c.from, c.remove, got, c.want)
+					break
+				}
+			}
+		})
+	}
+}
+
+// Order is preserved so a revert does not reshuffle the user's tag list.
+func TestSubtractIDsPreservesOrder(t *testing.T) {
+	got := subtractIDs([]string{"c", "a", "b", "d"}, []string{"b"})
+	want := []string{"c", "a", "d"}
+	for i := range want {
+		if got[i] != want[i] {
+			t.Fatalf("subtractIDs = %v, want %v", got, want)
+		}
+	}
+}
+
+func TestCurrentTagAndPerfIDs(t *testing.T) {
+	ss := stash.StashScene{
+		Tags:       []stash.StashTag{{ID: "t1"}, {ID: "t2"}},
+		Performers: []stash.StashPerf{{ID: "p1"}},
+	}
+	if got := currentTagIDs(ss); len(got) != 2 || got[0] != "t1" || got[1] != "t2" {
+		t.Errorf("currentTagIDs = %v", got)
+	}
+	if got := currentPerfIDs(ss); len(got) != 1 || got[0] != "p1" {
+		t.Errorf("currentPerfIDs = %v", got)
+	}
+	empty := stash.StashScene{}
+	if got := currentTagIDs(empty); len(got) != 0 {
+		t.Errorf("currentTagIDs(empty) = %v", got)
+	}
+	if got := currentPerfIDs(empty); len(got) != 0 {
+		t.Errorf("currentPerfIDs(empty) = %v", got)
+	}
+}
+
+// A tag named in the changelog may have been deleted from Stash since the
+// import. Those names must be dropped silently — there is nothing to remove —
+// rather than failing the revert.
+func TestResolveExistingTagIDsDropsUnknownNames(t *testing.T) {
+	f := newFakeStash(t)
+	f.existingTags = map[string]string{"FSS": "t9"}
+
+	ids, err := resolveExistingTagIDs(context.Background(), f.client(), []string{"FSS", "deleted-since-import"})
+	if err != nil {
+		t.Fatalf("resolveExistingTagIDs: %v", err)
+	}
+	if len(ids) != 1 || ids[0] != "t9" {
+		t.Errorf("ids = %v, want just the tag that still exists", ids)
+	}
+}
+
+func TestResolveExistingPerfIDsDropsUnknownNames(t *testing.T) {
+	f := newFakeStash(t)
+	f.existingPerf = map[string]string{"Someone": "p9"}
+
+	ids, err := resolveExistingPerfIDs(context.Background(), f.client(), []string{"Someone", "gone"})
+	if err != nil {
+		t.Fatalf("resolveExistingPerfIDs: %v", err)
+	}
+	if len(ids) != 1 || ids[0] != "p9" {
+		t.Errorf("ids = %v, want just the performer that still exists", ids)
 	}
 }

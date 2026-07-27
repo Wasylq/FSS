@@ -731,6 +731,10 @@ type fakeStash struct {
 	mu   sync.Mutex
 	ops  []string
 	last map[string]any // variables of the last sceneUpdate
+	// existingTags/Performers make find* return a hit for these names, so the
+	// "already exists" branches can be exercised as well as the create ones.
+	existingTags map[string]string
+	existingPerf map[string]string
 }
 
 func newFakeStash(t *testing.T) *fakeStash {
@@ -750,11 +754,19 @@ func newFakeStash(t *testing.T) *fakeStash {
 		op, resp := "unknown", `{}`
 		switch {
 		case strings.Contains(q, "findTags"):
-			op, resp = "findTags", `{"findTags":{"tags":[]}}`
+			op = "findTags"
+			resp = `{"findTags":{"tags":[]}}`
+			if id, ok := f.existingTags[fmt.Sprint(req.Variables["name"])]; ok {
+				resp = fmt.Sprintf(`{"findTags":{"tags":[{"id":%q,"name":%q}]}}`, id, req.Variables["name"])
+			}
 		case strings.Contains(q, "tagCreate"):
 			op, resp = "tagCreate", `{"tagCreate":{"id":"t1"}}`
 		case strings.Contains(q, "findPerformers"):
-			op, resp = "findPerformers", `{"findPerformers":{"performers":[]}}`
+			op = "findPerformers"
+			resp = `{"findPerformers":{"performers":[]}}`
+			if id, ok := f.existingPerf[fmt.Sprint(req.Variables["name"])]; ok {
+				resp = fmt.Sprintf(`{"findPerformers":{"performers":[{"id":%q,"name":%q}]}}`, id, req.Variables["name"])
+			}
 		case strings.Contains(q, "performerCreate"):
 			op, resp = "performerCreate", `{"performerCreate":{"id":"p1"}}`
 		case strings.Contains(q, "findStudios"):
