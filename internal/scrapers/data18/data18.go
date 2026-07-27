@@ -25,13 +25,17 @@ const (
 
 type Scraper struct {
 	client *http.Client
+	// base is the site root. Overridable so offline tests can point the
+	// listing, captcha and detail fetches at one test server — with a const
+	// they could not, which is why the end-to-end test was a stub.
+	base string
 }
 
 func New() *Scraper {
 	jar, _ := cookiejar.New(nil)
 	c := httpx.NewClient(30 * time.Second)
 	c.Jar = jar
-	return &Scraper{client: c}
+	return &Scraper{client: c, base: siteBase}
 }
 
 var _ scraper.StudioScraper = (*Scraper)(nil)
@@ -101,14 +105,14 @@ func classifyURL(rawURL string) listingConfig {
 	return listingConfig{kind: kindStudio}
 }
 
-func (lc listingConfig) ajaxURL(page int) string {
+func (lc listingConfig) ajaxURL(base string, page int) string {
 	return fmt.Sprintf("%s/sys/page.php?t=%d&b=1&o=0&html=%s&html2=%s&total=&doquery=1&spage=%d&dopage=1",
-		siteBase, lc.kind, lc.slug, lc.slug2, page)
+		base, lc.kind, lc.slug, lc.slug2, page)
 }
 
 func (s *Scraper) bootstrap(ctx context.Context) error {
 	resp, err := httpx.Do(ctx, s.client, httpx.Request{
-		URL:     siteBase + "/sys/captcha",
+		URL:     s.base + "/sys/captcha",
 		Headers: httpx.BrowserHeaders(httpx.UserAgentFirefox),
 	})
 	if err != nil {
@@ -185,7 +189,7 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 	}
 
 	// Page 1: parse from initial page load.
-	entries := parseSceneCards(initialBody)
+	entries := parseSceneCards(s.base, initialBody)
 	total := extractTotal(initialBody)
 	if total == 0 {
 		total = len(entries)
@@ -228,7 +232,7 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 		}
 		scraper.Debugf(1, "data18: fetching page %d", page)
 
-		body, err := s.fetchAjax(ctx, lc.ajaxURL(page), studioURL)
+		body, err := s.fetchAjax(ctx, lc.ajaxURL(s.base, page), studioURL)
 		if err != nil {
 			select {
 			case out <- scraper.Error(fmt.Errorf("page %d: %w", page, err)):
@@ -237,7 +241,7 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 			break
 		}
 
-		entries := parseSceneCards(body)
+		entries := parseSceneCards(s.base, body)
 		if len(entries) == 0 {
 			break
 		}
@@ -293,7 +297,7 @@ var (
 	listStudioLinkRe = regexp.MustCompile(`(?:Webserie|Site):\s*<a\s+href="(?:https?://(?:www\.)?data18\.com)?/studios/[^"]*"[^>]*>([^<]+)</a>`)
 )
 
-func parseSceneCards(body []byte) []listEntry {
+func parseSceneCards(base string, body []byte) []listEntry {
 	s := string(body)
 	locs := itemDivRe.FindAllStringIndex(s, -1)
 	if len(locs) == 0 {
@@ -323,7 +327,7 @@ func parseSceneCards(body []byte) []listEntry {
 
 		e := listEntry{
 			id:  id,
-			url: fmt.Sprintf("%s/scenes/%s", siteBase, id),
+			url: fmt.Sprintf("%s/scenes/%s", base, id),
 		}
 
 		if m := sceneTitleRe.FindStringSubmatch(block); m != nil {

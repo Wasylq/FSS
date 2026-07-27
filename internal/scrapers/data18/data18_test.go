@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 	"time"
 
@@ -61,14 +62,14 @@ func TestClassifyURL(t *testing.T) {
 
 func TestAjaxURL(t *testing.T) {
 	lc := listingConfig{kind: kindStudio, slug: "mylf", slug2: ""}
-	got := lc.ajaxURL(2)
+	got := lc.ajaxURL(siteBase, 2)
 	want := "https://www.data18.com/sys/page.php?t=3&b=1&o=0&html=mylf&html2=&total=&doquery=1&spage=2&dopage=1"
 	if got != want {
 		t.Errorf("ajaxURL(2) = %q, want %q", got, want)
 	}
 
 	lc2 := listingConfig{kind: kindPerformer, slug: "annie-king"}
-	got2 := lc2.ajaxURL(1)
+	got2 := lc2.ajaxURL(siteBase, 1)
 	want2 := "https://www.data18.com/sys/page.php?t=2&b=1&o=0&html=annie-king&html2=&total=&doquery=1&spage=1&dopage=1"
 	if got2 != want2 {
 		t.Errorf("ajaxURL(1) = %q, want %q", got2, want2)
@@ -161,7 +162,7 @@ const listingHTML = `
 </div>`
 
 func TestParseSceneCards(t *testing.T) {
-	entries := parseSceneCards([]byte(listingHTML))
+	entries := parseSceneCards(siteBase, []byte(listingHTML))
 	if len(entries) != 2 {
 		t.Fatalf("got %d entries, want 2", len(entries))
 	}
@@ -240,7 +241,7 @@ func TestParseSceneCardsDeduplicate(t *testing.T) {
   <a href="/scenes/111"><img/></a>
   <a href="/scenes/111" class="gen12 bold" style="color: white;">Title Dup</a>
 </div>`
-	entries := parseSceneCards([]byte(html))
+	entries := parseSceneCards(siteBase, []byte(html))
 	if len(entries) != 1 {
 		t.Errorf("expected dedup to 1 entry, got %d", len(entries))
 	}
@@ -351,6 +352,10 @@ func TestEndToEnd(t *testing.T) {
 		case "/sys/captcha":
 			http.SetCookie(w, &http.Cookie{Name: "data_user_captcha", Value: "1"})
 			w.WriteHeader(http.StatusOK)
+		case "/studio/mylf":
+			// The scraper loads the studio page first to seed cookies and take
+			// page 1 from it.
+			_, _ = fmt.Fprint(w, listingHTML)
 		case "/sys/page.php":
 			page := r.URL.Query().Get("spage")
 			if page == "1" {
@@ -372,11 +377,46 @@ Duration: <b>22 min, 30 sec</b>
 	}))
 	defer ts.Close()
 
-	// Patch siteBase for test — we can't easily override the const,
-	// so we test the subcomponents individually above.
-	// This test validates the scraper interface works end-to-end
-	// using the live integration test pattern instead.
-	_ = ts
+	s := New()
+	s.client = ts.Client()
+	s.base = ts.URL
+
+	ch, err := s.ListScenes(context.Background(), ts.URL+"/studio/mylf", scraper.ListOpts{Workers: 2})
+	if err != nil {
+		t.Fatal(err)
+	}
+	scenes := testutil.CollectScenes(t, ch)
+	if len(scenes) != 2 {
+		t.Fatalf("got %d scenes, want 2", len(scenes))
+	}
+
+	// Offline means offline: every fetched URL must be on the test server.
+	for _, sc := range scenes {
+		if !strings.HasPrefix(sc.URL, ts.URL) {
+			t.Errorf("scene %q fetched %q, which is not the test server", sc.ID, sc.URL)
+		}
+		if sc.SiteID != "data18" {
+			t.Errorf("scene %q SiteID = %q", sc.ID, sc.SiteID)
+		}
+		if sc.Title == "" {
+			t.Errorf("scene %q has empty Title", sc.ID)
+		}
+	}
+
+	byID := map[string]models.Scene{}
+	for _, sc := range scenes {
+		byID[sc.ID] = sc
+	}
+	if _, ok := byID["1234567"]; !ok {
+		t.Errorf("scene 1234567 missing; got %v", byID)
+	}
+	// The second scene's detail page is a different fixture, so its duration
+	// proves each scene was parsed from its own page rather than a shared one.
+	if sc, ok := byID["7654321"]; !ok {
+		t.Errorf("scene 7654321 missing; got %v", byID)
+	} else if sc.Duration != 22*60+30 {
+		t.Errorf("scene 7654321 Duration = %d, want %d", sc.Duration, 22*60+30)
+	}
 }
 
 func TestListScenesInterface(t *testing.T) {
@@ -394,7 +434,7 @@ func TestListScenesInterface(t *testing.T) {
 }
 
 func TestParseSceneCardsEmpty(t *testing.T) {
-	entries := parseSceneCards([]byte(`<div>no scenes here</div>`))
+	entries := parseSceneCards(siteBase, []byte(`<div>no scenes here</div>`))
 	if len(entries) != 0 {
 		t.Errorf("expected 0 entries from empty listing, got %d", len(entries))
 	}
@@ -417,6 +457,10 @@ func TestKnownIDsStopsEarly(t *testing.T) {
 		switch r.URL.Path {
 		case "/sys/captcha":
 			w.WriteHeader(http.StatusOK)
+		case "/studio/mylf":
+			// The scraper loads the studio page first to seed cookies and take
+			// page 1 from it.
+			_, _ = fmt.Fprint(w, listingHTML)
 		case "/sys/page.php":
 			_, _ = fmt.Fprint(w, listingHTML)
 		default:
@@ -429,7 +473,7 @@ func TestKnownIDsStopsEarly(t *testing.T) {
 	// parseSceneCards + KnownIDs interaction via the integration test.
 	// This test verifies that the parsing layer correctly identifies
 	// scene IDs that the run loop would check against KnownIDs.
-	entries := parseSceneCards([]byte(listingHTML))
+	entries := parseSceneCards(siteBase, []byte(listingHTML))
 	known := map[string]bool{"1234567": true}
 	for _, e := range entries {
 		if known[e.id] {
@@ -474,6 +518,10 @@ func TestCollectScenesFromFixture(t *testing.T) {
 		switch r.URL.Path {
 		case "/sys/captcha":
 			w.WriteHeader(http.StatusOK)
+		case "/studio/mylf":
+			// The scraper loads the studio page first to seed cookies and take
+			// page 1 from it.
+			_, _ = fmt.Fprint(w, listingHTML)
 		case "/sys/page.php":
 			_, _ = fmt.Fprint(w, listingHTML)
 		case "/scenes/1234567":
@@ -495,7 +543,7 @@ Duration: <b>22 min</b>
 	// Full end-to-end requires the integration test against the live site.
 
 	// Verify fixture parsing produces valid scenes.
-	entries := parseSceneCards([]byte(listingHTML))
+	entries := parseSceneCards(siteBase, []byte(listingHTML))
 	if len(entries) != 2 {
 		t.Fatalf("expected 2 scenes, got %d", len(entries))
 	}
