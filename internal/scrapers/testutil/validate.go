@@ -73,6 +73,14 @@ func sceneNotes(s models.Scene) []string {
 	if s.Date.IsZero() {
 		out = append(out, fmt.Sprintf("scene %q has zero Date", s.ID))
 	}
+	// Two scrapers (grandparentsx, seemomsuck) independently hand-rolled their
+	// own validation specifically to assert this, which is a good sign the
+	// shared harness should. Advisory for now: some sites genuinely publish no
+	// thumbnail, and the blast radius across ~1600 sites has not been measured.
+	// Promote to a hard failure once a full `make smoke` shows what it catches.
+	if s.Thumbnail == "" {
+		out = append(out, fmt.Sprintf("scene %q has empty Thumbnail", s.ID))
+	}
 	return out
 }
 

@@ -89,15 +89,31 @@ func TestSceneProblemsToleratesMissingDurationAndDate(t *testing.T) {
 	if got := sceneProblems(s); len(got) != 0 {
 		t.Errorf("sceneProblems = %v, want none (Duration/Date are advisory)", got)
 	}
-	notes := sceneNotes(s)
-	if len(notes) != 1 || !strings.Contains(notes[0], "zero Date") {
-		t.Errorf("sceneNotes = %v, want a zero-Date note", notes)
+	notes := strings.Join(sceneNotes(s), "; ")
+	if !strings.Contains(notes, "zero Date") {
+		t.Errorf("sceneNotes = %q, want a zero-Date note", notes)
 	}
 }
 
 func TestSceneNotesSilentOnGoodScene(t *testing.T) {
-	if got := sceneNotes(goodScene()); len(got) != 0 {
+	s := goodScene()
+	s.Thumbnail = "https://example.com/t.jpg"
+	if got := sceneNotes(s); len(got) != 0 {
 		t.Errorf("sceneNotes = %v, want none", got)
+	}
+}
+
+// A missing thumbnail is advisory, not a failure: promoting it to an error
+// before the blast radius across ~1600 sites is measured would break smoke runs
+// for sites that legitimately publish none.
+func TestMissingThumbnailIsAdvisoryOnly(t *testing.T) {
+	s := goodScene() // no Thumbnail set
+	if got := sceneProblems(s); len(got) != 0 {
+		t.Errorf("sceneProblems = %v, want none (Thumbnail must not fail a test yet)", got)
+	}
+	notes := strings.Join(sceneNotes(s), "; ")
+	if !strings.Contains(notes, "empty Thumbnail") {
+		t.Errorf("sceneNotes = %q, want an empty-Thumbnail note", notes)
 	}
 }
 
