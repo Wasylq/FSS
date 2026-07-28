@@ -69,9 +69,8 @@ import (
 )
 
 const (
-	defaultBase = "https://porngutter.com"
-	scraperID   = "porngutter"
-	studioName  = "Porn Gutter"
+	scraperID  = "porngutter"
+	studioName = "Porn Gutter"
 )
 
 type Scraper struct {

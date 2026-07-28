@@ -63,9 +63,8 @@ import (
 )
 
 const (
-	defaultBase = "https://www.sindrive.com"
-	studioName  = "SinDrive"
-	scraperID   = "sindrive"
+	studioName = "SinDrive"
+	scraperID  = "sindrive"
 )
 
 type Scraper struct {
