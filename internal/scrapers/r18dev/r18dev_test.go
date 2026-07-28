@@ -6,6 +6,9 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"os"
+	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 
@@ -388,5 +391,76 @@ func TestListScenesDedup(t *testing.T) {
 	}
 	if scenes != 2 {
 		t.Errorf("got %d scenes, want 2 (dedup should remove duplicate)", scenes)
+	}
+}
+
+// --- golden fixture ----------------------------------------------------------
+//
+// Every other test here builds detailResponse in Go, so encode/decode share the
+// struct tag and a renamed tag round-trips unnoticed. This one unmarshals a
+// payload captured verbatim from r18.dev and runs it through toScene, so a tag
+// break fails. Each assertion names the field it pins.
+//
+// r18.dev is unusually tag-dense — most fields are *string pointers and the
+// credits are nested objects with romaji/kanji/kana variants — which makes it
+// exactly the kind of decoder a struct-built fixture cannot vouch for.
+func TestGoldenDetailCombined(t *testing.T) {
+	body, err := os.ReadFile(filepath.Join("testdata", "detail_combined.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	var dr detailResponse
+	if err := json.Unmarshal(body, &dr); err != nil {
+		t.Fatalf("decoding captured payload: %v", err)
+	}
+
+	sc := toScene("https://r18.dev/", dr)
+
+	// dvd_id wins over content_id for the ID.
+	if sc.ID != "SSIS-001" {
+		t.Errorf("ID = %q (dvd_id), want SSIS-001", sc.ID)
+	}
+	// title_ja wins when present; title_en is the fallback.
+	if !strings.Contains(sc.Title, "一ヶ月間の禁欲") {
+		t.Errorf("Title = %q (title_ja), want the Japanese title", sc.Title)
+	}
+	if dr.TitleEN == nil || !strings.Contains(*dr.TitleEN, "Abstaining From Sex") {
+		t.Errorf("title_en did not decode: %v", dr.TitleEN)
+	}
+	if sc.Date.Format("2006-01-02") != "2021-02-19" {
+		t.Errorf("Date = %v (release_date), want 2021-02-19", sc.Date)
+	}
+	// runtime_mins is minutes; Scene.Duration is seconds.
+	if sc.Duration != 147*60 {
+		t.Errorf("Duration = %d (runtime_mins 147), want %d", sc.Duration, 147*60)
+	}
+	if sc.Studio != "S1 NO.1 STYLE" {
+		t.Errorf("Studio = %q (maker_name_en / label_name_en)", sc.Studio)
+	}
+	if sc.Thumbnail == "" {
+		t.Error("Thumbnail is empty (jacket_full_url / jacket_thumb_url)")
+	}
+	// actresses[].name_romaji, not name_kanji or the raw object.
+	var hasAoi bool
+	for _, p := range sc.Performers {
+		if p == "Tsukasa Aoi" {
+			hasAoi = true
+		}
+	}
+	if !hasAoi {
+		t.Errorf("Performers = %v (actresses[].name_romaji), want Tsukasa Aoi among them", sc.Performers)
+	}
+	// categories[].name_en
+	var hasCat bool
+	for _, tag := range sc.Tags {
+		if tag == "Beautiful Tits" {
+			hasCat = true
+		}
+	}
+	if !hasCat {
+		t.Errorf("Tags = %v (categories[].name_en)", sc.Tags)
+	}
+	if sc.Director == "" {
+		t.Error("Director is empty (directors[].name_romaji)")
 	}
 }
