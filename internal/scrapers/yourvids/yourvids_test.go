@@ -4,13 +4,16 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-
 	"net/http"
 	"net/http/httptest"
+	"os"
+	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 
 	"github.com/Wasylq/FSS/internal/scrapers/testutil"
+	"github.com/Wasylq/FSS/models"
 	"github.com/Wasylq/FSS/parseutil"
 	"github.com/Wasylq/FSS/scraper"
 )
@@ -299,4 +302,88 @@ func TestListScenesKnownIDs(t *testing.T) {
 
 func fixedTime() time.Time {
 	return time.Date(2026, 4, 26, 12, 0, 0, 0, time.UTC)
+}
+
+// --- golden fixture ----------------------------------------------------------
+//
+// The other tests marshal the same structs the scraper unmarshals, so a renamed
+// json tag round-trips and passes. This one serves a creator page captured
+// verbatim from the live API. Each assertion names the field it pins.
+//
+// yourvids is a priced storefront, so the money fields matter most: `price` and
+// `original_price` arrive as *strings* and `original_price` is null when nothing
+// is discounted — a shape easy to mis-model and impossible to catch with a
+// struct-built fixture.
+func TestGoldenCreatorVideos(t *testing.T) {
+	body, err := os.ReadFile(filepath.Join("testdata", "creator_videos.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		if strings.Contains(r.URL.Path, "/api/creators/") {
+			// Only page 1 has content; later pages are empty so the walk ends.
+			// Serving the same page for every request would loop forever.
+			if r.URL.Query().Get("page") != "1" {
+				_, _ = w.Write([]byte(`{"success":true,"data":{"videos":[]}}`))
+				return
+			}
+			_, _ = w.Write(body)
+			return
+		}
+		// Detail fetches: the scraper tolerates these failing.
+		http.NotFound(w, r)
+	}))
+	defer ts.Close()
+
+	s := &Scraper{client: ts.Client(), apiBase: ts.URL}
+	ch, err := s.ListScenes(context.Background(), ts.URL+"/creators/bettie-bondage", scraper.ListOpts{Workers: 1})
+	if err != nil {
+		t.Fatal(err)
+	}
+	scenes := testutil.CollectScenes(t, ch)
+	if len(scenes) != 2 {
+		t.Fatalf("got %d scenes from the captured page, want 2", len(scenes))
+	}
+
+	var sc *models.Scene
+	for i := range scenes {
+		if scenes[i].ID == "128709" {
+			sc = &scenes[i]
+		}
+	}
+	if sc == nil {
+		t.Fatalf("scene 128709 missing (data.videos[].id); got %v", scenes)
+	}
+	if sc.Title != "Ending Your Semen Retention" {
+		t.Errorf("Title = %q (data.videos[].title)", sc.Title)
+	}
+	if sc.Date.IsZero() {
+		t.Error("Date is zero (data.videos[].created_at)")
+	}
+	// duration arrives as "43:43", not seconds.
+	if sc.Duration != 43*60+43 {
+		t.Errorf("Duration = %d (data.videos[].duration \"43:43\"), want %d", sc.Duration, 43*60+43)
+	}
+	if !strings.Contains(sc.URL, "ending-your-semen-retention") {
+		t.Errorf("URL = %q (data.videos[].video_url)", sc.URL)
+	}
+	if sc.Thumbnail == "" {
+		t.Error("Thumbnail is empty (data.videos[].thumbnail)")
+	}
+	if sc.Views != 2345 || sc.Likes != 15 {
+		t.Errorf("Views/Likes = %d/%d (data.videos[].views/.likes), want 2345/15", sc.Views, sc.Likes)
+	}
+	// price is a string; original_price is null here, so this must not be read
+	// as a sale.
+	if len(sc.PriceHistory) != 1 {
+		t.Fatalf("PriceHistory = %+v, want one snapshot (data.videos[].price)", sc.PriceHistory)
+	}
+	p := sc.PriceHistory[0]
+	if p.Regular != 33.99 {
+		t.Errorf("Regular = %v (data.videos[].price \"33.99\")", p.Regular)
+	}
+	if p.IsOnSale {
+		t.Errorf("IsOnSale = true, but original_price is null (data.videos[].is_on_sale)")
+	}
 }

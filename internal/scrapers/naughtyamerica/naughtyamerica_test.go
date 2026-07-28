@@ -5,6 +5,9 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"os"
+	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 
@@ -266,4 +269,73 @@ func TestListScenesPerformer(t *testing.T) {
 func fixedTime() (t time.Time) {
 	t, _ = time.Parse(time.RFC3339, "2026-04-24T12:00:00Z")
 	return
+}
+
+// --- golden fixture ----------------------------------------------------------
+//
+// The other tests here build the API response by marshalling the same structs
+// the scraper unmarshals, so encode and decode share the struct tag and a
+// renamed tag round-trips unnoticed. This one serves a page captured verbatim
+// from api.naughtyapi.com, so a tag break fails here. Each assertion names the
+// field it pins.
+func TestGoldenScenesPage(t *testing.T) {
+	body, err := os.ReadFile(filepath.Join("testdata", "scenes_page.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write(body)
+	}))
+	defer ts.Close()
+
+	s := &Scraper{client: ts.Client(), apiURL: ts.URL}
+	ch, err := s.ListScenes(context.Background(), "https://www.naughtyamerica.com", scraper.ListOpts{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	scenes := testutil.CollectScenes(t, ch)
+	if len(scenes) != 2 {
+		t.Fatalf("got %d scenes from the captured page, want 2", len(scenes))
+	}
+
+	sc := scenes[0]
+	if sc.ID != "33920" {
+		t.Errorf("ID = %q (data[].id)", sc.ID)
+	}
+	if sc.Title != "Sexy Saleswoman Sarah Jessie has some fun in the back office" {
+		t.Errorf("Title = %q (data[].title)", sc.Title)
+	}
+	if sc.Duration != 2282 {
+		t.Errorf("Duration = %d (data[].length), want 2282", sc.Duration)
+	}
+	if sc.Date.IsZero() {
+		t.Error("Date is zero (data[].published_date)")
+	}
+	if sc.Studio != "Naughty Office" {
+		t.Errorf("Studio = %q (data[].site_name)", sc.Studio)
+	}
+	if !strings.Contains(sc.URL, "sexy-saleswoman-sarah-jessie") {
+		t.Errorf("URL = %q (data[].scene_url)", sc.URL)
+	}
+	// performers is an object of gender-keyed arrays, not a flat list — the
+	// shape most likely to be mis-modelled.
+	var hasFemale, hasMale bool
+	for _, p := range sc.Performers {
+		switch p {
+		case "Sarah Jessie":
+			hasFemale = true
+		case "Oliver Faze":
+			hasMale = true
+		}
+	}
+	if !hasFemale || !hasMale {
+		t.Errorf("Performers = %v (data[].performers.female/.male), want both", sc.Performers)
+	}
+	if len(sc.Tags) == 0 {
+		t.Error("Tags is empty (data[].tags)")
+	}
+	if sc.Description == "" {
+		t.Error("Description is empty (data[].synopsis)")
+	}
 }
