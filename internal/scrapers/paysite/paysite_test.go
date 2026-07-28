@@ -238,3 +238,19 @@ func TestKnownIDsStopsEarly(t *testing.T) {
 		t.Errorf("got IDs %v, want [10]", results)
 	}
 }
+
+// Config-only wrapper: parsing tests live in the *util it delegates to. What is
+// not covered there is this table's own integrity — see testutil.CheckSiteTable.
+func TestSiteTableIntegrity(t *testing.T) {
+	// This config carries no studio/name field; CheckSiteTable skips the
+	// Studio check when no row sets one.
+	rows := make([]testutil.SiteRow, 0, len(sites))
+	for _, c := range sites {
+		rows = append(rows, testutil.SiteRow{
+			ID: c.ID, Base: c.SiteBase,
+			Patterns: c.Patterns, MatchRe: c.MatchRe,
+		})
+	}
+	testutil.CheckSiteTable(t, rows)
+	testutil.CheckSiteTableDomains(t, rows)
+}

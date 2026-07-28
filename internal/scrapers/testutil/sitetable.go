@@ -71,6 +71,18 @@ func (r SiteRow) label() string {
 
 func checkComplete(t *testing.T, rows []SiteRow) {
 	t.Helper()
+
+	// Some configs carry no studio/name field at all (paysite), so an entirely
+	// empty column is a design choice rather than a bug. A *partly* filled one
+	// is the bug: it means a row was added without it.
+	withStudio := 0
+	for _, r := range rows {
+		if r.Studio != "" {
+			withStudio++
+		}
+	}
+	requireStudio := withStudio > 0
+
 	for _, r := range rows {
 		if r.ID == "" {
 			t.Errorf("%s: entry with empty ID (base %q)", r.Table, r.Base)
@@ -79,8 +91,8 @@ func checkComplete(t *testing.T, rows []SiteRow) {
 		if r.Base == "" {
 			t.Errorf("%s: empty Base", r.label())
 		}
-		if r.Studio == "" {
-			t.Errorf("%s: empty Studio", r.label())
+		if requireStudio && r.Studio == "" {
+			t.Errorf("%s: empty Studio (other rows in this table set one)", r.label())
 		}
 		if len(r.Patterns) == 0 {
 			t.Errorf("%s: no Patterns — it would be invisible in `fss list-scrapers`", r.label())
