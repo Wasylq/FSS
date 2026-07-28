@@ -176,3 +176,65 @@ func checkBases(t *testing.T, rows []SiteRow) {
 		}
 	}
 }
+
+// DomainRow is one entry of a table-driven scraper keyed on a bare hostname
+// rather than a full base URL and regex. Several packages build both the base
+// (`"https://www." + domain`) and the URL match from that one field, so the
+// hostname is the whole configuration and the only thing worth checking.
+type DomainRow struct {
+	Table  string
+	ID     string
+	Domain string
+	Studio string
+}
+
+// CheckSiteDomainTable runs integrity checks over a domain-keyed site table.
+//
+// The failure mode differs from CheckSiteTable's: with no regex to get wrong,
+// what a copy-pasted row breaks here is the *hostname* — a duplicate makes two
+// scrapers claim the same site, and a hostname carrying a scheme or path yields
+// a malformed base like "https://www.https://x.com".
+func CheckSiteDomainTable(t *testing.T, rows []DomainRow) {
+	t.Helper()
+
+	if len(rows) == 0 {
+		t.Fatal("site table is empty")
+	}
+	seenID := map[string]bool{}
+	seenDomain := map[string]string{}
+	for _, r := range rows {
+		label := r.ID
+		if r.Table != "" {
+			label = r.Table + "/" + r.ID
+		}
+		if r.ID == "" {
+			t.Errorf("%s: entry with empty ID (domain %q)", r.Table, r.Domain)
+			continue
+		}
+		if seenID[r.ID] {
+			t.Errorf("duplicate site ID %q", r.ID)
+		}
+		seenID[r.ID] = true
+
+		if r.Studio == "" {
+			t.Errorf("%s: empty Studio", label)
+		}
+		switch {
+		case r.Domain == "":
+			t.Errorf("%s: empty Domain", label)
+			continue
+		case strings.Contains(r.Domain, "://"):
+			t.Errorf("%s: Domain %q includes a scheme — callers prefix it themselves", label, r.Domain)
+		case strings.ContainsAny(r.Domain, "/ "):
+			t.Errorf("%s: Domain %q is not a bare hostname", label, r.Domain)
+		case !strings.Contains(r.Domain, "."):
+			t.Errorf("%s: Domain %q has no dot", label, r.Domain)
+		case r.Domain != strings.ToLower(r.Domain):
+			t.Errorf("%s: Domain %q is not lowercase", label, r.Domain)
+		}
+		if prev, ok := seenDomain[r.Domain]; ok {
+			t.Errorf("%s: Domain %q is already used by %s — both would claim the same site", label, r.Domain, prev)
+		}
+		seenDomain[r.Domain] = r.ID
+	}
+}
