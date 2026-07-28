@@ -6,10 +6,14 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"os"
+	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 
 	"github.com/Wasylq/FSS/internal/scrapers/testutil"
+	"github.com/Wasylq/FSS/models"
 	"github.com/Wasylq/FSS/scraper"
 )
 
@@ -293,5 +297,80 @@ func TestListScenesKnownIDs(t *testing.T) {
 	}
 	if results[0].ID != "100" || results[1].ID != "99" {
 		t.Errorf("scenes = %v, %v", results[0].ID, results[1].ID)
+	}
+}
+
+// --- golden fixture ----------------------------------------------------------
+//
+// The other tests build the API response from apiVideo values, so encode and
+// decode share the struct tag and a renamed tag round-trips unnoticed. This one
+// serves a response captured verbatim from members.africancasting.com.
+//
+// The payload is full of shapes a hand-built fixture gets right by accident:
+// `id` and `length` arrive as JSON *strings* rather than numbers, and
+// `models`/`channels`/`keywords` are comma-separated strings rather than arrays.
+// The publish date is not in the payload at all — it is scraped out of the
+// thumbnail filename, which only real data exercises.
+func TestGoldenMediaNewest(t *testing.T) {
+	body, err := os.ReadFile(filepath.Join("testdata", "media_newest.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Query().Get("offset") != "0" {
+			// End the walk; the captured page is the only one.
+			_, _ = w.Write([]byte(`{"success":true,"total_results":0,"data":[]}`))
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write(body)
+	}))
+	defer ts.Close()
+
+	s := &Scraper{client: ts.Client(), base: ts.URL}
+	ch, err := s.ListScenes(context.Background(), "https://africancasting.com/", scraper.ListOpts{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	scenes := testutil.CollectScenes(t, ch)
+	if len(scenes) == 0 {
+		t.Fatal("no scenes parsed from the captured payload")
+	}
+
+	var sc *models.Scene
+	for i := range scenes {
+		if scenes[i].ID == "2639" {
+			sc = &scenes[i]
+		}
+	}
+	if sc == nil {
+		t.Fatalf("scene 2639 missing (data[].id, a JSON string); got %d scenes", len(scenes))
+	}
+	if !strings.Contains(sc.Title, "Spicy Doll") {
+		t.Errorf("Title = %q (data[].title)", sc.Title)
+	}
+	// length is the string "3785".
+	if sc.Duration != 3785 {
+		t.Errorf("Duration = %d (data[].length, a JSON string), want 3785", sc.Duration)
+	}
+	if sc.Description == "" {
+		t.Error("Description is empty (data[].description)")
+	}
+	if !strings.Contains(sc.URL, "spicy-doll-can-t-keep-it-professional-2639") {
+		t.Errorf("URL = %q (data[].url)", sc.URL)
+	}
+	if sc.Thumbnail == "" {
+		t.Error("Thumbnail is empty (data[].main_thumb)")
+	}
+	// models is "Spicy Doll" — one comma-separated string, not a list.
+	if len(sc.Performers) != 1 || sc.Performers[0] != "Spicy Doll" {
+		t.Errorf("Performers = %v (data[].models, comma-separated)", sc.Performers)
+	}
+	if len(sc.Tags) == 0 {
+		t.Error("Tags is empty (data[].channels, comma-separated)")
+	}
+	// The date lives only in the thumbnail filename (…-2022-08-22-spicy-doll-…).
+	if sc.Date.Format("2006-01-02") != "2022-08-22" {
+		t.Errorf("Date = %v, want 2022-08-22 parsed out of main_thumb", sc.Date)
 	}
 }
