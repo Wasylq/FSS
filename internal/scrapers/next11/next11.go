@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"net/url"
 	"regexp"
 	"strconv"
 	"strings"
@@ -19,7 +20,9 @@ const (
 	siteID      = "next11"
 	defaultBase = "https://next11.co.jp"
 	studioName  = "NEXT"
-	pageSize    = 20
+	// pageSize is the largest value the site's own disp_number selector offers
+	// (20/50/100). At 100 the ~6.7k catalogue is 68 pages instead of 338.
+	pageSize = 100
 )
 
 var matchRe = regexp.MustCompile(`^https?://(?:www\.)?next11\.co\.jp(?:/|$)`)
@@ -186,7 +189,7 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 	defer close(out)
 
 	scraper.Debugf(1, "%s: fetching first page", siteID)
-	body, err := s.fetchPage(ctx, s.siteBase+"/products/list.php?pageno=1&orderby=date")
+	body, err := s.fetchListing(ctx, 1)
 	if err != nil {
 		select {
 		case out <- scraper.Error(fmt.Errorf("fetch listing: %w", err)):
@@ -264,7 +267,7 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 		}
 
 		scraper.Debugf(1, "%s: fetching page %d/%d", siteID, page, pages)
-		body, err := s.fetchPage(ctx, fmt.Sprintf("%s/products/list.php?pageno=%d&orderby=date", s.siteBase, page))
+		body, err := s.fetchListing(ctx, page)
 		if err != nil {
 			select {
 			case out <- scraper.Error(fmt.Errorf("fetch page %d: %w", page, err)):
@@ -356,6 +359,41 @@ func (s *Scraper) fetchDetail(ctx context.Context, studioURL string, item listin
 	}
 
 	return scene, nil
+}
+
+// fetchListing requests one page of the product listing.
+//
+// The listing paginates by POSTing the page's own form1 — the `?pageno=N` query
+// parameter is *ignored* by the site, so every GET returns page 1. The scraper
+// used to walk `ceil(total/20)` GETs and receive the same 20 products every
+// time; because the store is keyed on (id, site_id) those duplicates collapsed
+// at Save, so a --full run reported thousands of scenes and stored 20.
+//
+// disp_number is the site's own per-page selector; 100 is the largest option it
+// offers.
+func (s *Scraper) fetchListing(ctx context.Context, page int) ([]byte, error) {
+	form := url.Values{
+		"pageno":      {strconv.Itoa(page)},
+		"mode":        {""},
+		"orderby":     {"date"},
+		"disp_number": {strconv.Itoa(pageSize)},
+	}
+	headers := httpx.BrowserHeaders(httpx.UserAgentChrome)
+	headers["Cookie"] = "adult_check=1"
+	headers["Content-Type"] = "application/x-www-form-urlencoded"
+	headers["Referer"] = s.siteBase + "/products/list.php"
+
+	resp, err := httpx.Do(ctx, s.client, httpx.Request{
+		Method:  http.MethodPost,
+		URL:     s.siteBase + "/products/list.php",
+		Body:    []byte(form.Encode()),
+		Headers: headers,
+	})
+	if err != nil {
+		return nil, err
+	}
+	defer func() { _ = resp.Body.Close() }()
+	return httpx.ReadBody(resp.Body)
 }
 
 func (s *Scraper) fetchPage(ctx context.Context, pageURL string) ([]byte, error) {

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"strconv"
 	"strings"
 	"testing"
 
@@ -145,12 +146,35 @@ func TestParseDetailPageMissingFields(t *testing.T) {
 	}
 }
 
-func newTestServer(items []listingItem) *httptest.Server {
+// newTestServer serves the product listing, paginating `pages` the way the real
+// site does: by the POSTed form1 fields, NOT by the query string. A server that
+// ignored pageno could not tell a working scraper from the broken one this
+// replaced, which walked every page and got page 1 back each time.
+func newTestServer(pages [][]listingItem) *httptest.Server {
+	total := 0
+	for _, p := range pages {
+		total += len(p)
+	}
 	return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 
 		switch r.URL.Path {
 		case "/products/list.php":
+			if r.Method != http.MethodPost {
+				// The real site ignores ?pageno= on GET and always returns page
+				// one; refuse outright so a regression to GET fails loudly.
+				http.Error(w, "listing must be POSTed", http.StatusMethodNotAllowed)
+				return
+			}
+			_ = r.ParseForm()
+			page, _ := strconv.Atoi(r.PostFormValue("pageno"))
+			if page < 1 {
+				page = 1
+			}
+			var items []listingItem
+			if page <= len(pages) {
+				items = pages[page-1]
+			}
 			var listing string
 			for _, item := range items {
 				listing += fmt.Sprintf(`<div class="listphoto">
@@ -161,17 +185,18 @@ func newTestServer(items []listingItem) *httptest.Server {
 </div>
 </li>`, item.productID, item.code)
 			}
-			_, _ = fmt.Fprintf(w, `<span class="pagenumber">%d</span>件%s`, len(items), listing)
+			_, _ = fmt.Fprintf(w, `<span class="pagenumber">%d</span>件%s`, total, listing)
 		default:
 			// Serve a detail page whose product code matches the requested
 			// product. A single shared fixture would give every scene the same
 			// ID, hiding the fact that the ID comes from the detail page.
 			body := detailHTML
 			pid := r.URL.Query().Get("product_id")
-			for _, item := range items {
-				if item.productID == pid {
-					body = strings.ReplaceAll(detailHTML, "DOKI-033", item.code)
-					break
+			for _, page := range pages {
+				for _, item := range page {
+					if item.productID == pid {
+						body = strings.ReplaceAll(detailHTML, "DOKI-033", item.code)
+					}
 				}
 			}
 			_, _ = fmt.Fprint(w, body)
@@ -184,7 +209,7 @@ func TestRun(t *testing.T) {
 		{productID: "100", code: "ABC-001"},
 		{productID: "200", code: "DEF-002"},
 	}
-	ts := newTestServer(items)
+	ts := newTestServer([][]listingItem{items})
 	defer ts.Close()
 
 	s := &Scraper{client: ts.Client(), siteBase: ts.URL}
@@ -224,7 +249,7 @@ func TestRunKnownIDs(t *testing.T) {
 		{productID: "200", code: "DEF-002"},
 		{productID: "300", code: "GHI-003"},
 	}
-	ts := newTestServer(items)
+	ts := newTestServer([][]listingItem{items})
 	defer ts.Close()
 
 	s := &Scraper{client: ts.Client(), siteBase: ts.URL}
@@ -242,5 +267,85 @@ func TestRunKnownIDs(t *testing.T) {
 	}
 	if len(scenes) != 1 {
 		t.Fatalf("got %d scenes, want 1", len(scenes))
+	}
+}
+
+// The regression test for the pagination bug: the listing paginates by POSTed
+// form fields, not by `?pageno=`. Before the fix the scraper GET-walked every
+// page and the site returned page one each time, so a --full run emitted the
+// same products repeatedly — they collapsed at Save (keyed on id, site_id) and
+// the store kept only the first page.
+func TestRunWalksAllPages(t *testing.T) {
+	// The page count comes from the site's reported total divided by pageSize,
+	// so a multi-page fixture needs a full first page — anything smaller is
+	// legitimately one page and would prove nothing.
+	mkPage := func(prefix string, base, n int) []listingItem {
+		out := make([]listingItem, n)
+		for i := range out {
+			// productID must be numeric — pidRe is product_id=(\d+).
+			out[i] = listingItem{
+				productID: fmt.Sprintf("%d%03d", base, i),
+				code:      fmt.Sprintf("%s-%03d", prefix, i),
+			}
+		}
+		return out
+	}
+	pages := [][]listingItem{mkPage("AAA", 1, pageSize), mkPage("BBB", 2, 3)}
+	ts := newTestServer(pages)
+	defer ts.Close()
+
+	s := &Scraper{client: ts.Client(), siteBase: ts.URL}
+	ch, err := s.ListScenes(context.Background(), ts.URL, scraper.ListOpts{Workers: 1})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	scenes := testutil.CollectScenes(t, ch)
+	// CollectScenes also fails on duplicate IDs, so a scraper that re-read page
+	// one would trip that as well as the count.
+	want := pageSize + 3
+	if len(scenes) != want {
+		t.Fatalf("got %d scenes, want %d across 2 pages", len(scenes), want)
+	}
+	got := map[string]bool{}
+	for _, sc := range scenes {
+		got[sc.ID] = true
+	}
+	// One from each page: page 2 is only reached if pagination works.
+	for _, id := range []string{"AAA-000", "BBB-000", "BBB-002"} {
+		if !got[id] {
+			t.Errorf("scene %q missing — the page walk did not reach it", id)
+		}
+	}
+}
+
+// A GET to the listing must not be how pages are fetched: the real site ignores
+// the query string there, which is what made the old walk silently useless.
+func TestListingIsFetchedByPost(t *testing.T) {
+	var methods []string
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/products/list.php" {
+			methods = append(methods, r.Method)
+		}
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		_, _ = fmt.Fprint(w, `<span class="pagenumber">0</span>件`)
+	}))
+	defer ts.Close()
+
+	s := &Scraper{client: ts.Client(), siteBase: ts.URL}
+	ch, err := s.ListScenes(context.Background(), ts.URL, scraper.ListOpts{Workers: 1})
+	if err != nil {
+		t.Fatal(err)
+	}
+	for range ch {
+	}
+
+	if len(methods) == 0 {
+		t.Fatal("listing was never fetched")
+	}
+	for _, m := range methods {
+		if m != http.MethodPost {
+			t.Errorf("listing fetched with %s, want POST", m)
+		}
 	}
 }
