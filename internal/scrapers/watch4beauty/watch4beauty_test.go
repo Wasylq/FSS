@@ -6,6 +6,9 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"os"
+	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 
@@ -349,5 +352,76 @@ func TestRunListing(t *testing.T) {
 	}
 	if len(scenes) != 1 || scenes[0] != "Sweet Street Sin" {
 		t.Errorf("scenes = %v", scenes)
+	}
+}
+
+// --- golden fixture ----------------------------------------------------------
+//
+// The other tests build `issue` values in Go, so encode and decode share the
+// struct tag and a renamed tag round-trips unnoticed. This one decodes a page
+// captured verbatim from /api/issues and runs it through toScene, so a tag break
+// fails here. Each assertion names the field it pins.
+//
+// The payload's awkward parts: `issue_tags` is a comma-separated string rather
+// than an array, `issue_video_present` is an int flag rather than a bool, and the
+// cover URL is assembled from `cdn_host` + `prefix` + a key of the `cover_files`
+// map — three fields that must all decode for a thumbnail to exist.
+func TestGoldenIssues(t *testing.T) {
+	body, err := os.ReadFile(filepath.Join("testdata", "issues.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	var issues []issue
+	if err := json.Unmarshal(body, &issues); err != nil {
+		t.Fatalf("decoding captured payload: %v", err)
+	}
+	if len(issues) != 2 {
+		t.Fatalf("decoded %d issues, want 2", len(issues))
+	}
+
+	iss := issues[0]
+	if iss.ID != 7924 {
+		t.Errorf("ID = %d (issue_id), want 7924", iss.ID)
+	}
+	if iss.Tags != "latina, teen, tattoo, masturbation, dildo" {
+		t.Errorf("Tags = %q (issue_tags, comma-separated string)", iss.Tags)
+	}
+	if iss.CDNHost == "" {
+		t.Error("CDNHost is empty (cdn_host)")
+	}
+	if len(iss.CoverFiles) == 0 {
+		t.Error("CoverFiles is empty (cover_files, a map)")
+	}
+
+	now := time.Date(2026, 7, 26, 0, 0, 0, 0, time.UTC)
+	sc := toScene("https://www.watch4beauty.com/", iss, now)
+
+	if sc.ID != "7924" {
+		t.Errorf("scene ID = %q (issue_id)", sc.ID)
+	}
+	if sc.Title != "Pussy Power" {
+		t.Errorf("Title = %q (issue_title)", sc.Title)
+	}
+	if sc.Date.Format("2006-01-02") != "2026-07-25" {
+		t.Errorf("Date = %v (issue_datetime), want 2026-07-25", sc.Date)
+	}
+	if !strings.Contains(sc.URL, "pussy-power") {
+		t.Errorf("URL = %q (issue_simple_title)", sc.URL)
+	}
+	if sc.Description == "" {
+		t.Error("Description is empty (issue_text)")
+	}
+	// issue_tags splits into individual tags.
+	var hasLatina bool
+	for _, tag := range sc.Tags {
+		if tag == "latina" {
+			hasLatina = true
+		}
+	}
+	if !hasLatina {
+		t.Errorf("Tags = %v (issue_tags split), want latina among them", sc.Tags)
+	}
+	if sc.Thumbnail == "" {
+		t.Error("Thumbnail is empty (cdn_host + prefix + cover_files)")
 	}
 }
