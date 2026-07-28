@@ -3,12 +3,16 @@ package manyvids
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 	"time"
 
+	"github.com/Wasylq/FSS/internal/scrapers/testutil"
 	"github.com/Wasylq/FSS/models"
 	"github.com/Wasylq/FSS/parseutil"
 	"github.com/Wasylq/FSS/scraper"
@@ -406,5 +410,110 @@ func TestListScenesKnownIDs(t *testing.T) {
 	}
 	if !sawStoppedEarly {
 		t.Error("expected StoppedEarly signal, got none")
+	}
+}
+
+// --- golden fixture ----------------------------------------------------------
+//
+// The other tests build the API response from Go structs, so encode and decode
+// share the struct tag and a renamed tag round-trips unnoticed. This one serves
+// a page captured verbatim from api.manyvids.com. Each assertion names the field
+// it pins.
+//
+// The awkward parts, all of which a hand-built fixture gets right by accident:
+// `id` is a JSON *string*, `duration` is "34:33" rather than seconds, and `price`
+// is a nested object whose `regular` is also a string.
+func TestGoldenStoreVideos(t *testing.T) {
+	body, err := os.ReadFile(filepath.Join("testdata", "store_videos.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	// Each scene needs its own detail payload — the listing supplies only the id
+	// and preview, and toScene reads everything else from the detail response.
+	details := map[string]string{}
+	for _, id := range []string{"7600563", "7586301"} {
+		b, err := os.ReadFile(filepath.Join("testdata", "store_video_"+id+".json"))
+		if err != nil {
+			t.Fatal(err)
+		}
+		details["/store/video/"+id] = string(b)
+	}
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		if d, ok := details[r.URL.Path]; ok {
+			_, _ = fmt.Fprint(w, d)
+			return
+		}
+		if r.URL.Query().Get("page") != "1" {
+			_, _ = w.Write([]byte(`{"statusCode":200,"data":[],"pagination":{"totalPages":1,"currentPage":2}}`))
+			return
+		}
+		_, _ = w.Write(body)
+	}))
+	defer ts.Close()
+
+	s := &Scraper{client: ts.Client(), apiBase: ts.URL, siteBase: defaultSiteBase}
+	ch, err := s.ListScenes(context.Background(),
+		"https://www.manyvids.com/Profile/590705/bettie-bondage/Store/Videos", scraper.ListOpts{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	scenes := testutil.CollectScenes(t, ch)
+	if len(scenes) != 2 {
+		t.Fatalf("got %d scenes from the captured page, want 2", len(scenes))
+	}
+
+	var sc *models.Scene
+	for i := range scenes {
+		if scenes[i].ID == "7600563" {
+			sc = &scenes[i]
+		}
+	}
+	if sc == nil {
+		t.Fatalf("scene 7600563 missing (data[].id, a JSON string); got %v", scenes)
+	}
+	if sc.Title != "Tricking Your Best Friend's Wife" {
+		t.Errorf("Title = %q (data[].title)", sc.Title)
+	}
+	// duration is "34:33".
+	if sc.Duration != 34*60+33 {
+		t.Errorf("Duration = %d (data[].duration \"34:33\"), want %d", sc.Duration, 34*60+33)
+	}
+	if sc.Date.Format("2006-01-02") != "2026-06-18" {
+		t.Errorf("Date = %v (data[].launchDate), want 2026-06-18", sc.Date)
+	}
+	if !strings.Contains(sc.URL, "tricking-your-best-friends-wife") {
+		t.Errorf("URL = %q (data[].slug)", sc.URL)
+	}
+	if sc.Thumbnail == "" {
+		t.Error("Thumbnail is empty (data[].thumbnail.url)")
+	}
+	// The detail payload sends views as the *string* "6.3K" and likes as "25",
+	// with numeric viewsRaw/likesRaw alongside — an easy pair to mix up.
+	if sc.Likes != 25 {
+		t.Errorf("Likes = %d (detail likes/likesRaw), want 25", sc.Likes)
+	}
+	if sc.Views == 0 {
+		t.Error("Views is 0 (detail views \"6.3K\" / viewsRaw)")
+	}
+	if sc.Width != 3840 || sc.Height != 2160 {
+		t.Errorf("dimensions = %dx%d (detail width/height), want 3840x2160", sc.Width, sc.Height)
+	}
+	if len(sc.Tags) == 0 {
+		t.Error("Tags is empty (detail tagList[].label)")
+	}
+	if len(sc.Performers) == 0 {
+		t.Error("Performers is empty (detail model.displayName)")
+	}
+	// price.regular is the string "29.99"; free/onSale are both false here.
+	if len(sc.PriceHistory) != 1 {
+		t.Fatalf("PriceHistory = %+v, want one snapshot (data[].price)", sc.PriceHistory)
+	}
+	p := sc.PriceHistory[0]
+	if p.Regular != 29.99 {
+		t.Errorf("Regular = %v (data[].price.regular \"29.99\")", p.Regular)
+	}
+	if p.IsFree || p.IsOnSale {
+		t.Errorf("IsFree/IsOnSale = %v/%v, want both false (data[].price.free/.onSale)", p.IsFree, p.IsOnSale)
 	}
 }
