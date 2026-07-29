@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"os"
+	"path/filepath"
 	"testing"
 	"time"
 )
@@ -350,5 +352,75 @@ func TestActorURLParsing(t *testing.T) {
 		if got != c.want {
 			t.Errorf("actorURLRe(%q) = %q, want %q", c.url, got, c.want)
 		}
+	}
+}
+
+// --- golden fixture ----------------------------------------------------------
+//
+// The other tests build AlgoliaHit values in Go, so encode and decode share the
+// struct tag and a renamed tag round-trips unnoticed. This one serves a response
+// captured verbatim from the live Algolia index (the search key is scraped from
+// the site's own page source at runtime, so no credential is involved).
+//
+// Only Algolia's generated `_highlightResult` blob was dropped — the scraper never
+// reads it and it tripled the fixture size. Every field AlgoliaHit decodes is
+// verbatim.
+//
+// Notable shapes: `clip_length` is "00:58:20" alongside a numeric `length`,
+// `actor_id`/`category_id` are JSON *strings* inside otherwise numeric records,
+// and `pictures` is a deeply nested map keyed by resolution.
+func TestGoldenAlgoliaQuery(t *testing.T) {
+	body, err := os.ReadFile(filepath.Join("testdata", "algolia_query.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	var resp AlgoliaResponse
+	if err := json.Unmarshal(body, &resp); err != nil {
+		t.Fatalf("decoding captured payload: %v", err)
+	}
+	if len(resp.Hits) != 2 {
+		t.Fatalf("decoded %d hits, want 2", len(resp.Hits))
+	}
+	if resp.NbHits == 0 {
+		t.Error("NbHits is 0 (nbHits) — pagination depends on it")
+	}
+
+	h := resp.Hits[0]
+	if h.ClipID != 287715 {
+		t.Errorf("ClipID = %d (clip_id), want 287715", h.ClipID)
+	}
+	if h.Title == "" {
+		t.Error("Title is empty (title)")
+	}
+	if h.ClipLength != "00:58:20" {
+		t.Errorf("ClipLength = %q (clip_length)", h.ClipLength)
+	}
+	if h.Length != 3500 {
+		t.Errorf("Length = %d (length), want 3500", h.Length)
+	}
+	if h.ReleaseDate != "2026-07-03" {
+		t.Errorf("ReleaseDate = %q (release_date)", h.ReleaseDate)
+	}
+	if h.SiteName != "wicked" || h.SiteNamePretty != "Wicked" {
+		t.Errorf("sitename/sitename_pretty = %q/%q", h.SiteName, h.SiteNamePretty)
+	}
+	if h.URLTitle == "" {
+		t.Error("URLTitle is empty (url_title) — the scene URL is built from it")
+	}
+	if h.ObjectID == "" {
+		t.Error("ObjectID is empty (objectID)")
+	}
+	// actor_id is a string inside an otherwise numeric-looking record.
+	if len(h.Actors) == 0 || h.Actors[0].Name == "" || h.Actors[0].ActorID == "" {
+		t.Errorf("Actors = %+v (actors[].name/.actor_id)", h.Actors)
+	}
+	if len(h.Directors) == 0 || h.Directors[0].Name == "" {
+		t.Errorf("Directors = %+v (directors[].name)", h.Directors)
+	}
+	if len(h.Categories) == 0 || h.Categories[0].Name == "" {
+		t.Errorf("Categories = %+v (categories[].name)", h.Categories)
+	}
+	if h.RatingsUp == 0 {
+		t.Error("RatingsUp is 0 (ratings_up)")
 	}
 }

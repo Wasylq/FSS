@@ -1,0 +1,705 @@
+{
+ "hits": [
+  {
+   "clip_lw_size": "0",
+   "clip_med_size": "0",
+   "subtitle_id": null,
+   "clip_id": 287715,
+   "title": "The Doctor Will See You Now ",
+   "description": "A one-night stand between a lonely young woman, Ava (Blake Blossom), and a magnetic stranger (Seth Gamble) leads to an unexpected pregnancy... and an even bigger shock when she discovers he's her doctor. As he and his alluring nurse Cara (Melissa Stratton) offer her a world of care, Ava must decide if she's ready to surrender to an unconventional kind of love.",
+   "clip_type": "none",
+   "clip_length": "00:58:20",
+   "clip_path": "162020_01",
+   "source_clip_id": 0,
+   "length": 3500,
+   "release_date": "2026-07-03",
+   "upcoming": 0,
+   "movie_id": 162020,
+   "movie_title": "The Doctor Will See You Now",
+   "movie_desc": "",
+   "movie_date_created": "2026-01-27",
+   "compilation": "0",
+   "site_id": 371,
+   "sitename": "wicked",
+   "sitename_pretty": "Wicked",
+   "segment": "wicked",
+   "serie_id": 12123,
+   "serie_name": "Wicked",
+   "studio_id": 365,
+   "studio_name": "Wicked",
+   "vr_format": "",
+   "category_ids": "10843|10889|10897|10907|10919|10925|10933|10940|10947|10963|10964|10966|10970|10972|10973|10975|10976|10981|10982|10996|11056|11060|11838|11846",
+   "directors": [
+    {
+     "name": "Bree Mills",
+     "url_name": "Bree-Mills"
+    }
+   ],
+   "network_name": "wicked",
+   "network_id": "35",
+   "original": "0",
+   "segment_site_id": "371",
+   "availableOnSite": [
+    "wicked"
+   ],
+   "isVR": 0,
+   "video_formats": [
+    {
+     "codec": "h264",
+     "format": "288p",
+     "size": "203561856",
+     "slug": "288p-h264",
+     "trailer_url": "https://trailers-fame.gammacdn.com/0/2/0/2/6/c162020/trailers/tr_162020_sm.mp4"
+    },
+    {
+     "codec": "h264",
+     "format": "432p",
+     "size": "316012630",
+     "slug": "432p-h264",
+     "trailer_url": "https://trailers-fame.gammacdn.com/0/2/0/2/6/c162020/trailers/tr_162020_big.mp4"
+    },
+    {
+     "codec": "h264",
+     "format": "576p",
+     "size": "458092502",
+     "slug": "576p-h264",
+     "trailer_url": "https://trailers-fame.gammacdn.com/0/2/0/2/6/c162020/trailers/tr_162020_hd.mp4"
+    },
+    {
+     "codec": "h264",
+     "format": "720p",
+     "size": "575380967",
+     "slug": "720p-h264",
+     "trailer_url": "https://trailers-fame.gammacdn.com/0/2/0/2/6/c162020/trailers/tr_162020_720p.mp4"
+    },
+    {
+     "codec": "h264",
+     "format": "1080p",
+     "size": "1101421106",
+     "slug": "1080p-h264",
+     "trailer_url": "https://trailers-fame.gammacdn.com/0/2/0/2/6/c162020/trailers/tr_162020_1080p.mp4"
+    },
+    {
+     "codec": "h264",
+     "format": "2160p",
+     "size": "3261893478",
+     "slug": "2160p-h264",
+     "trailer_url": "https://trailers-fame.gammacdn.com/0/2/0/2/6/c162020/trailers/tr_162020_4k.mp4"
+    }
+   ],
+   "scrubbers": {
+    "full": {
+     "url": "https://images04-fame.gammacdn.com/videopreviews/328591/328591_grid_100x56-625-25.jpg",
+     "thumbWidth": "100",
+     "thumbHeight": "56"
+    },
+    "trailer": {
+     "url": "https://images04-fame.gammacdn.com/videopreviews/328593/328593_grid_100x56-625-25.jpg",
+     "thumbWidth": "100",
+     "thumbHeight": "56"
+    }
+   },
+   "trailers": {
+    "240p": "https://trailers-fame.gammacdn.com/0/2/0/2/6/c162020/trailers/tr_162020_hd.mp4",
+    "480p": "https://trailers-fame.gammacdn.com/0/2/0/2/6/c162020/trailers/tr_162020_hd.mp4",
+    "540p": "https://trailers-fame.gammacdn.com/0/2/0/2/6/c162020/trailers/tr_162020_hd.mp4",
+    "720p": "https://trailers-fame.gammacdn.com/0/2/0/2/6/c162020/trailers/tr_162020_hd.mp4",
+    "1080p": "https://trailers-fame.gammacdn.com/0/2/0/2/6/c162020/trailers/tr_162020_hd.mp4",
+    "4k": "https://trailers-fame.gammacdn.com/0/2/0/2/6/c162020/trailers/tr_162020_hd.mp4"
+   },
+   "url_title": "The-Doctor-Will-See-You-Now-",
+   "url_movie_title": "The-Doctor-Will-See-You-Now",
+   "length_range_15min": "45 - 60 Min",
+   "photoset_id": "150863",
+   "photoset_name": "The Doctor Will See You Now",
+   "photoset_url_name": "The-Doctor-Will-See-You-Now",
+   "network": {
+    "lvl0": "Wicked",
+    "lvl1": "Wicked > Wicked"
+   },
+   "date": 1783051200,
+   "actors": [
+    {
+     "actor_id": "58947",
+     "name": "Seth Gamble",
+     "gender": "male",
+     "url_name": "Seth-Gamble"
+    },
+    {
+     "actor_id": "94782",
+     "name": "Blake Blossom",
+     "gender": "female",
+     "url_name": "Blake-Blossom"
+    },
+    {
+     "actor_id": "108118",
+     "name": "Melissa Stratton",
+     "gender": "female",
+     "url_name": "Melissa-Stratton"
+    }
+   ],
+   "female_actors": [
+    {
+     "actor_id": "94782",
+     "name": "Blake Blossom",
+     "gender": "female",
+     "url_name": "Blake-Blossom"
+    },
+    {
+     "actor_id": "108118",
+     "name": "Melissa Stratton",
+     "gender": "female",
+     "url_name": "Melissa-Stratton"
+    }
+   ],
+   "categories": [
+    {
+     "category_id": "10843",
+     "name": "Feature",
+     "url_name": "Feature"
+    },
+    {
+     "category_id": "10889",
+     "name": "Caucasian",
+     "url_name": "Caucasian"
+    },
+    {
+     "category_id": "10897",
+     "name": "Blonde",
+     "url_name": "Blonde"
+    },
+    {
+     "category_id": "10907",
+     "name": "MILF",
+     "url_name": "MILF"
+    },
+    {
+     "category_id": "10919",
+     "name": "Lingerie",
+     "url_name": "Lingerie"
+    },
+    {
+     "category_id": "10925",
+     "name": "Uniform",
+     "url_name": "Uniform"
+    },
+    {
+     "category_id": "10933",
+     "name": "Threesome",
+     "url_name": "Threesome"
+    },
+    {
+     "category_id": "10940",
+     "name": "Big Tits",
+     "url_name": "Big-Tits"
+    },
+    {
+     "category_id": "10947",
+     "name": "Natural Tits",
+     "url_name": "Natural-Tits"
+    },
+    {
+     "category_id": "10963",
+     "name": "Blowjob",
+     "url_name": "Blowjob"
+    },
+    {
+     "category_id": "10964",
+     "name": "Deepthroat",
+     "url_name": "Deepthroat"
+    },
+    {
+     "category_id": "10966",
+     "name": "Double Blowjob",
+     "url_name": "Double-Blowjob"
+    },
+    {
+     "category_id": "10970",
+     "name": "Face Fuck",
+     "url_name": "Face-Fuck"
+    },
+    {
+     "category_id": "10972",
+     "name": "Fingering",
+     "url_name": "Fingering"
+    },
+    {
+     "category_id": "10973",
+     "name": "Gagging",
+     "url_name": "Gagging"
+    },
+    {
+     "category_id": "10975",
+     "name": "Handjob",
+     "url_name": "Handjob"
+    },
+    {
+     "category_id": "10976",
+     "name": "Kissing",
+     "url_name": "Kissing"
+    },
+    {
+     "category_id": "10981",
+     "name": "Pussy Eating",
+     "url_name": "Pussy-Eating"
+    },
+    {
+     "category_id": "10982",
+     "name": "Pussy to Mouth",
+     "url_name": "Pussy-to-Mouth"
+    },
+    {
+     "category_id": "10996",
+     "name": "Doggystyle",
+     "url_name": "Doggystyle"
+    },
+    {
+     "category_id": "11056",
+     "name": "Cum on Pussy",
+     "url_name": "Cum-on-Pussy"
+    },
+    {
+     "category_id": "11060",
+     "name": "Cumshot",
+     "url_name": "Cumshot"
+    },
+    {
+     "category_id": "11838",
+     "name": "FFM",
+     "url_name": "FFM"
+    },
+    {
+     "category_id": "11846",
+     "name": "Straight",
+     "url_name": "Straight"
+    },
+    {
+     "category_id": "0",
+     "name": "Wicked Originals",
+     "url_name": "Wicked-Originals"
+    }
+   ],
+   "master_categories": [
+    "4k"
+   ],
+   "award_winning": [],
+   "male": 1,
+   "female": 1,
+   "shemale": 0,
+   "pictures_qualifier": [
+    "nsfw"
+   ],
+   "pictures": {
+    "nsfw": {
+     "top": {
+      "1920x1080": "/162020/162020_01/previews/2/371/top_1_1920x1080/162020_01_01.jpg"
+     }
+    },
+    "1920x1080": "/162020/162020_01/previews/2/371/top_1_1920x1080/162020_01_01.jpg",
+    "resized": "/162020/162020_01/previews/2/371/top_1_resized/162020_01_01.jpg"
+   },
+   "download_file_sizes": {
+    "240p": 203561856,
+    "480p": 316012630,
+    "540p": 458092502,
+    "720p": 575380967,
+    "1080p": 1101421106,
+    "4k": 3261893478
+   },
+   "download_sizes": [
+    "240p",
+    "480p",
+    "540p",
+    "720p",
+    "1080p",
+    "4k"
+   ],
+   "content_tags": [
+    "straight"
+   ],
+   "lesbian": 0,
+   "bisex": 0,
+   "trans": 0,
+   "hasSubtitle": 0,
+   "hasPpu": 0,
+   "channels": [
+    {
+     "id": "features",
+     "name": "Wicked Features",
+     "type": "genres"
+    }
+   ],
+   "mainChannel": {
+    "id": "features",
+    "name": "Wicked Features",
+    "type": "genres"
+   },
+   "plays_365days": 598,
+   "plays_30days": 598,
+   "plays_7days": 125,
+   "plays_24hours": 24,
+   "engagement_score": 321.5547,
+   "rating_rank": null,
+   "ratings_up": 27,
+   "ratings_down": 0,
+   "views": 1381,
+   "single_site_views": 1381,
+   "objectID": "287715-371-371"
+  },
+  {
+   "clip_lw_size": "0",
+   "clip_med_size": "0",
+   "subtitle_id": null,
+   "clip_id": 288612,
+   "title": "Sweet Juggs Of Justice",
+   "description": "Sweet Charlotte (Sophia Locke) is still furious with Myron (Victor Ray). After all, he left her for that vixen Sweet Syren (Elizabeth Skylar), and now to make things worse, he has a bounty on his head! Myron says he's sorry for breaking Sweet Charlotte's heart, but insists he's innocent of everything else... and he's pretty sure he's been framed by Sheriff Johnson (Dick Chibbles).</br></br>Just then, the bounty hunters Sweet Charity (Angel Youngs), Sweet Sue (Octavia Red), Sweet Pie (Rissa May), and Sweet Melissa (Vanna Bardot) show up to get to the bottom of this mystery once and for all. Also, Sweet Charity is mighty horny, because everyone's gotten to fuck except for her... so now it's finally her turn! Don't miss this stunning and sexy conclusion to Sweet Juggs of Justice!",
+   "clip_type": "none",
+   "clip_length": "00:38:41",
+   "clip_path": "162397_04",
+   "source_clip_id": 0,
+   "length": 2321,
+   "release_date": "2026-06-26",
+   "upcoming": 0,
+   "movie_id": 162397,
+   "movie_title": "Sweet Juggs Of Justice",
+   "movie_desc": "",
+   "movie_date_created": "2026-02-25",
+   "compilation": "0",
+   "site_id": 371,
+   "sitename": "wicked",
+   "sitename_pretty": "Wicked",
+   "segment": "wicked",
+   "serie_id": 14644,
+   "serie_name": "Sweet Juggs Of Justice",
+   "studio_id": 365,
+   "studio_name": "Wicked",
+   "vr_format": "",
+   "category_ids": "10843|10889|10892|10894|10901|10903|10939|10940|10947|10953|10963|10964|10970|10972|10973|10975|10981|10982|10983|10990|10994|10996|11057|11060|11074|11840|11846",
+   "directors": [
+    {
+     "name": "Seth Gamble",
+     "url_name": "Seth-Gamble"
+    }
+   ],
+   "network_name": "wicked",
+   "network_id": "35",
+   "original": "0",
+   "segment_site_id": "371",
+   "availableOnSite": [
+    "wicked"
+   ],
+   "isVR": 0,
+   "video_formats": [
+    {
+     "codec": "h264",
+     "format": "288p",
+     "size": "128507469",
+     "slug": "288p-h264",
+     "trailer_url": "https://trailers-fame.gammacdn.com/7/9/3/2/6/c162397/trailers/tr_162397_sm.mp4"
+    },
+    {
+     "codec": "h264",
+     "format": "432p",
+     "size": "197323025",
+     "slug": "432p-h264",
+     "trailer_url": "https://trailers-fame.gammacdn.com/7/9/3/2/6/c162397/trailers/tr_162397_big.mp4"
+    },
+    {
+     "codec": "h264",
+     "format": "576p",
+     "size": "283083016",
+     "slug": "576p-h264",
+     "trailer_url": "https://trailers-fame.gammacdn.com/7/9/3/2/6/c162397/trailers/tr_162397_hd.mp4"
+    },
+    {
+     "codec": "h264",
+     "format": "720p",
+     "size": "344594794",
+     "slug": "720p-h264",
+     "trailer_url": "https://trailers-fame.gammacdn.com/7/9/3/2/6/c162397/trailers/tr_162397_720p.mp4"
+    },
+    {
+     "codec": "h264",
+     "format": "1080p",
+     "size": "701747336",
+     "slug": "1080p-h264",
+     "trailer_url": "https://trailers-fame.gammacdn.com/7/9/3/2/6/c162397/trailers/tr_162397_1080p.mp4"
+    },
+    {
+     "codec": "h264",
+     "format": "2160p",
+     "size": "4272910050",
+     "slug": "2160p-h264",
+     "trailer_url": "https://trailers-fame.gammacdn.com/7/9/3/2/6/c162397/trailers/tr_162397_4k.mp4"
+    }
+   ],
+   "scrubbers": {
+    "full": {
+     "url": "https://images04-fame.gammacdn.com/videopreviews/328439/328439_grid_100x56-625-25.jpg",
+     "thumbWidth": "100",
+     "thumbHeight": "56"
+    },
+    "trailer": {
+     "url": "https://images04-fame.gammacdn.com/videopreviews/328434/328434_grid_100x56-625-25.jpg",
+     "thumbWidth": "100",
+     "thumbHeight": "56"
+    }
+   },
+   "trailers": {
+    "240p": "https://trailers-fame.gammacdn.com/7/9/3/2/6/c162397/trailers/tr_162397_hd.mp4",
+    "480p": "https://trailers-fame.gammacdn.com/7/9/3/2/6/c162397/trailers/tr_162397_hd.mp4",
+    "540p": "https://trailers-fame.gammacdn.com/7/9/3/2/6/c162397/trailers/tr_162397_hd.mp4",
+    "720p": "https://trailers-fame.gammacdn.com/7/9/3/2/6/c162397/trailers/tr_162397_hd.mp4",
+    "1080p": "https://trailers-fame.gammacdn.com/7/9/3/2/6/c162397/trailers/tr_162397_hd.mp4",
+    "4k": "https://trailers-fame.gammacdn.com/7/9/3/2/6/c162397/trailers/tr_162397_hd.mp4"
+   },
+   "url_title": "Sweet-Juggs-Of-Justice",
+   "url_movie_title": "Sweet-Juggs-Of-Justice",
+   "length_range_15min": "30 - 45 Min",
+   "photoset_id": "150606",
+   "photoset_name": "Sweet Juggs Of Justice",
+   "photoset_url_name": "Sweet-Juggs-Of-Justice",
+   "network": {
+    "lvl0": "Wicked",
+    "lvl1": "Wicked > Wicked"
+   },
+   "date": 1782446400,
+   "actors": [
+    {
+     "actor_id": "115241",
+     "name": "Victor Ray",
+     "gender": "male",
+     "url_name": "Victor-Ray"
+    },
+    {
+     "actor_id": "125060",
+     "name": "Angel Youngs",
+     "gender": "female",
+     "url_name": "Angel-Youngs"
+    }
+   ],
+   "female_actors": [
+    {
+     "actor_id": "125060",
+     "name": "Angel Youngs",
+     "gender": "female",
+     "url_name": "Angel-Youngs"
+    }
+   ],
+   "categories": [
+    {
+     "category_id": "10843",
+     "name": "Feature",
+     "url_name": "Feature"
+    },
+    {
+     "category_id": "10889",
+     "name": "Caucasian",
+     "url_name": "Caucasian"
+    },
+    {
+     "category_id": "10892",
+     "name": "Interracial",
+     "url_name": "Interracial"
+    },
+    {
+     "category_id": "10894",
+     "name": "Latino",
+     "url_name": "Latino"
+    },
+    {
+     "category_id": "10901",
+     "name": "RedHead",
+     "url_name": "RedHead"
+    },
+    {
+     "category_id": "10903",
+     "name": "College",
+     "url_name": "College"
+    },
+    {
+     "category_id": "10939",
+     "name": "Big Dick",
+     "url_name": "Big-Dick"
+    },
+    {
+     "category_id": "10940",
+     "name": "Big Tits",
+     "url_name": "Big-Tits"
+    },
+    {
+     "category_id": "10947",
+     "name": "Natural Tits",
+     "url_name": "Natural-Tits"
+    },
+    {
+     "category_id": "10953",
+     "name": "Tattoos",
+     "url_name": "Tattoos"
+    },
+    {
+     "category_id": "10963",
+     "name": "Blowjob",
+     "url_name": "Blowjob"
+    },
+    {
+     "category_id": "10964",
+     "name": "Deepthroat",
+     "url_name": "Deepthroat"
+    },
+    {
+     "category_id": "10970",
+     "name": "Face Fuck",
+     "url_name": "Face-Fuck"
+    },
+    {
+     "category_id": "10972",
+     "name": "Fingering",
+     "url_name": "Fingering"
+    },
+    {
+     "category_id": "10973",
+     "name": "Gagging",
+     "url_name": "Gagging"
+    },
+    {
+     "category_id": "10975",
+     "name": "Handjob",
+     "url_name": "Handjob"
+    },
+    {
+     "category_id": "10981",
+     "name": "Pussy Eating",
+     "url_name": "Pussy-Eating"
+    },
+    {
+     "category_id": "10982",
+     "name": "Pussy to Mouth",
+     "url_name": "Pussy-to-Mouth"
+    },
+    {
+     "category_id": "10983",
+     "name": "Rimming",
+     "url_name": "Rimming"
+    },
+    {
+     "category_id": "10990",
+     "name": "Titty Fuck",
+     "url_name": "Titty-Fuck"
+    },
+    {
+     "category_id": "10994",
+     "name": "69",
+     "url_name": "69"
+    },
+    {
+     "category_id": "10996",
+     "name": "Doggystyle",
+     "url_name": "Doggystyle"
+    },
+    {
+     "category_id": "11057",
+     "name": "Cum on Tits",
+     "url_name": "Cum-on-Tits"
+    },
+    {
+     "category_id": "11060",
+     "name": "Cumshot",
+     "url_name": "Cumshot"
+    },
+    {
+     "category_id": "11074",
+     "name": "Western",
+     "url_name": "Western"
+    },
+    {
+     "category_id": "11840",
+     "name": "Comedy",
+     "url_name": "Comedy"
+    },
+    {
+     "category_id": "11846",
+     "name": "Straight",
+     "url_name": "Straight"
+    },
+    {
+     "category_id": "0",
+     "name": "Wicked Originals",
+     "url_name": "Wicked-Originals"
+    }
+   ],
+   "master_categories": [
+    "4k"
+   ],
+   "award_winning": [],
+   "male": 1,
+   "female": 1,
+   "shemale": 0,
+   "pictures_qualifier": [
+    "nsfw"
+   ],
+   "pictures": {
+    "nsfw": {
+     "top": {
+      "1920x1080": "/162397/162397_04/previews/2/371/top_1_1920x1080/162397_04_01.jpg"
+     }
+    },
+    "1920x1080": "/162397/162397_04/previews/2/371/top_1_1920x1080/162397_04_01.jpg",
+    "resized": "/162397/162397_04/previews/2/371/top_1_resized/162397_04_01.jpg"
+   },
+   "download_file_sizes": {
+    "240p": 128507469,
+    "480p": 197323025,
+    "540p": 283083016,
+    "720p": 344594794,
+    "1080p": 701747336,
+    "4k": 4272910050
+   },
+   "download_sizes": [
+    "240p",
+    "480p",
+    "540p",
+    "720p",
+    "1080p",
+    "4k"
+   ],
+   "content_tags": [
+    "straight"
+   ],
+   "lesbian": 0,
+   "bisex": 0,
+   "trans": 0,
+   "hasSubtitle": 0,
+   "hasPpu": 0,
+   "channels": [
+    {
+     "id": "sethgamble",
+     "name": "Seth Gamble ",
+     "type": "director"
+    },
+    {
+     "id": "features",
+     "name": "Wicked Features",
+     "type": "genres"
+    }
+   ],
+   "mainChannel": {
+    "id": "sethgamble",
+    "name": "Seth Gamble ",
+    "type": "director"
+   },
+   "plays_365days": 417,
+   "plays_30days": 362,
+   "plays_7days": 51,
+   "plays_24hours": 6,
+   "engagement_score": 5.5909,
+   "rating_rank": null,
+   "ratings_up": 19,
+   "ratings_down": 1,
+   "views": 877,
+   "single_site_views": 877,
+   "objectID": "288612-371-371"
+  }
+ ],
+ "nbHits": 6209
+}
