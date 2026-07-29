@@ -1,12 +1,15 @@
 package stashbox
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"os"
+	"path/filepath"
 	"testing"
 	"time"
 
@@ -345,5 +348,78 @@ func TestListScenesNoConfig(t *testing.T) {
 	_, err := s.ListScenes(context.Background(), "https://stashdb.org/studios/abc", scraper.ListOpts{})
 	if err == nil {
 		t.Fatal("expected error for unconfigured host")
+	}
+}
+
+// --- golden fixture ----------------------------------------------------------
+//
+// The other tests build gqlScene values in Go, so encode and decode share the
+// struct tag and a renamed tag round-trips unnoticed. This one decodes a
+// queryScenes response captured verbatim from stashdb.org and runs it through
+// toScene, so a tag break fails here.
+//
+// The fixture carries no credential — the API key travels in the ApiKey request
+// header, never in the response — and that is asserted below rather than assumed.
+//
+// Notable shapes: almost every scalar is a *pointer* (nullable in the schema), so
+// a wrong tag yields a silent nil rather than a type error; performers are nested
+// two deep (`performers[].performer.name`) with a separate `as` alias that is null
+// here; and `release_date` is a date string while `duration` is an int.
+func TestGoldenQueryScenes(t *testing.T) {
+	body, err := os.ReadFile(filepath.Join("testdata", "query_scenes.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if bytes.Contains(bytes.ToLower(body), []byte("apikey")) {
+		t.Fatal("fixture appears to contain a credential — it must not be committed")
+	}
+
+	var resp gqlResponse
+	if err := json.Unmarshal(body, &resp); err != nil {
+		t.Fatalf("decoding captured payload: %v", err)
+	}
+	if len(resp.Errors) != 0 {
+		t.Fatalf("captured payload carries GraphQL errors: %+v", resp.Errors)
+	}
+	if resp.Data.QueryScenes.Count == 0 {
+		t.Error("count is 0 (data.queryScenes.count) — pagination depends on it")
+	}
+	if len(resp.Data.QueryScenes.Scenes) != 2 {
+		t.Fatalf("decoded %d scenes, want 2", len(resp.Data.QueryScenes.Scenes))
+	}
+
+	inst := instance{baseURL: "https://stashdb.org", siteID: "stashdb"}
+	sc := toScene("https://stashdb.org/studios/x", inst, resp.Data.QueryScenes.Scenes[0])
+
+	if sc.ID != "019f7e7a-f725-7628-8930-8dc79cd82b1d" {
+		t.Errorf("ID = %q (scenes[].id)", sc.ID)
+	}
+	if sc.Title != "START-608" {
+		t.Errorf("Title = %q (scenes[].title, a *string)", sc.Title)
+	}
+	if sc.Date.Format("2006-01-02") != "2026-08-06" {
+		t.Errorf("Date = %v (scenes[].release_date), want 2026-08-06", sc.Date)
+	}
+	if sc.Duration != 8916 {
+		t.Errorf("Duration = %d (scenes[].duration), want 8916", sc.Duration)
+	}
+	if sc.Director != "Chinpo Dazai" {
+		t.Errorf("Director = %q (scenes[].director)", sc.Director)
+	}
+	if sc.Studio != "SOD Create" {
+		t.Errorf("Studio = %q (scenes[].studio.name)", sc.Studio)
+	}
+	if sc.Description == "" {
+		t.Error("Description is empty (scenes[].details)")
+	}
+	// performers[].performer.name — nested two deep.
+	if len(sc.Performers) != 1 || sc.Performers[0] != "Rei Kamiki" {
+		t.Errorf("Performers = %v (scenes[].performers[].performer.name)", sc.Performers)
+	}
+	if len(sc.Tags) == 0 {
+		t.Error("Tags is empty (scenes[].tags[].name)")
+	}
+	if sc.Thumbnail == "" {
+		t.Error("Thumbnail is empty (scenes[].images[].url)")
 	}
 }
