@@ -72,11 +72,8 @@ func TestFetchSitemap(t *testing.T) {
 	defer ts.Close()
 	base = ts.URL
 
-	old := sitemapURL
-	sitemapURL = ts.URL + "/sitemap.xml"
-	defer func() { sitemapURL = old }()
-
 	s := New()
+	s.base = ts.URL
 	items, err := s.fetchSitemap(context.Background())
 	if err != nil {
 		t.Fatalf("fetchSitemap error: %v", err)
@@ -102,6 +99,7 @@ func TestFetchScene(t *testing.T) {
 	defer ts.Close()
 
 	s := New()
+	s.base = ts.URL
 	now := time.Date(2026, 6, 25, 0, 0, 0, 0, time.UTC)
 	it := sitemapItem{id: "101", url: ts.URL + "/update/101/", lastmod: time.Date(2023, 5, 16, 0, 0, 0, 0, time.UTC)}
 	scene, err := s.fetchScene(context.Background(), "https://dreamtranny.com", it, now)
@@ -144,6 +142,7 @@ func TestFetchSceneDateFallback(t *testing.T) {
 	defer ts.Close()
 
 	s := New()
+	s.base = ts.URL
 	lm := time.Date(2022, 3, 4, 0, 0, 0, 0, time.UTC)
 	it := sitemapItem{id: "9", url: ts.URL + "/update/9/", lastmod: lm}
 	scene, err := s.fetchScene(context.Background(), "https://dreamtranny.com", it, time.Now())
@@ -170,11 +169,8 @@ func TestListScenes(t *testing.T) {
 	defer ts.Close()
 	base = ts.URL
 
-	old := sitemapURL
-	sitemapURL = ts.URL + "/sitemap.xml"
-	defer func() { sitemapURL = old }()
-
 	s := New()
+	s.base = ts.URL
 	ch, err := s.ListScenes(context.Background(), ts.URL, scraper.ListOpts{})
 	if err != nil {
 		t.Fatalf("ListScenes error: %v", err)

@@ -94,6 +94,7 @@ func TestFetchScene(t *testing.T) {
 	defer ts.Close()
 
 	s := New()
+	s.base = ts.URL
 	now := time.Date(2026, 6, 25, 0, 0, 0, 0, time.UTC)
 	scene, err := s.fetchScene(context.Background(), "https://www.mistresst.net", ts.URL+"/content/humiliating-cuckold", now)
 	if err != nil {
@@ -145,11 +146,8 @@ func TestListScenes(t *testing.T) {
 	defer ts.Close()
 	base = ts.URL
 
-	old := sitemapURL
-	sitemapURL = ts.URL + "/sitemap.xml"
-	defer func() { sitemapURL = old }()
-
 	s := New()
+	s.base = ts.URL
 	ch, err := s.ListScenes(context.Background(), ts.URL, scraper.ListOpts{})
 	if err != nil {
 		t.Fatalf("ListScenes error: %v", err)

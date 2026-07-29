@@ -27,16 +27,19 @@ const (
 	detailWorkers = 6
 )
 
-// sitemapURL is a var (not const) so tests can point it at a local httptest server.
-var sitemapURL = siteBase + "/sitemap.xml"
-
 type Scraper struct {
 	client *http.Client
+	// base is the site root. A field rather than a mutable package var so tests
+	// can redirect fetches without swapping global state — the old
+	// `sitemapURL` var had to be saved and restored by every test.
+	base string
 }
 
 func New() *Scraper {
-	return &Scraper{client: httpx.NewClient(30 * time.Second)}
+	return &Scraper{client: httpx.NewClient(30 * time.Second), base: siteBase}
 }
+
+func (s *Scraper) sitemapURL() string { return s.base + "/sitemap.xml" }
 
 var _ scraper.StudioScraper = (*Scraper)(nil)
 
@@ -161,7 +164,7 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 }
 
 func (s *Scraper) fetchSitemap(ctx context.Context) ([]sitemapItem, error) {
-	body, err := s.get(ctx, sitemapURL)
+	body, err := s.get(ctx, s.sitemapURL())
 	if err != nil {
 		return nil, err
 	}
