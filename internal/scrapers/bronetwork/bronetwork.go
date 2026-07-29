@@ -10,6 +10,13 @@ import (
 	"github.com/Wasylq/FSS/scraper"
 )
 
+// Ordering is load-bearing. masqulin and menofmontreal live at
+// thebronetwork.com/categories/<slug>_{N}_d.html, so the network's own
+// catch-all regex also matches their URLs. scraper.ForURL returns the *first*
+// registered match and Go's RE2 has no negative lookahead, so the sub-studios
+// must be registered before the catch-all — otherwise pasting a masqulin
+// listing URL silently scrapes the whole network under that URL's key.
+// TestSubStudioURLsRouteToTheirOwnScraper pins this.
 var sites = []bronetworkutil.SiteConfig{
 	{
 		ID:       "menatplay",
@@ -28,20 +35,12 @@ var sites = []bronetworkutil.SiteConfig{
 		MatchRe:  regexp.MustCompile(`^https?://(?:www\.)?amateurgaypov\.com`),
 	},
 	{
-		ID:       "thebronetwork",
-		Studio:   "The Bro Network",
-		SiteBase: "https://thebronetwork.com",
-		Slug:     "videos",
-		Patterns: []string{"thebronetwork.com", "thebronetwork.com/categories/videos_{N}_d.html"},
-		MatchRe:  regexp.MustCompile(`^https?://(?:www\.)?thebronetwork\.com`),
-	},
-	{
 		ID:       "masqulin",
 		Studio:   "MASQULIN",
 		SiteBase: "https://thebronetwork.com",
 		Slug:     "masqulin",
 		Patterns: []string{"masqulin.com", "thebronetwork.com/categories/masqulin_{N}_d.html"},
-		MatchRe:  regexp.MustCompile(`^https?://(?:www\.)?masqulin\.com`),
+		MatchRe:  regexp.MustCompile(`^https?://(?:www\.)?(?:masqulin\.com|thebronetwork\.com/categories/masqulin)`),
 	},
 	{
 		ID:       "menofmontreal",
@@ -49,7 +48,15 @@ var sites = []bronetworkutil.SiteConfig{
 		SiteBase: "https://thebronetwork.com",
 		Slug:     "men-of-montreal",
 		Patterns: []string{"menofmontreal.com", "thebronetwork.com/categories/men-of-montreal_{N}_d.html"},
-		MatchRe:  regexp.MustCompile(`^https?://(?:www\.)?menofmontreal\.com`),
+		MatchRe:  regexp.MustCompile(`^https?://(?:www\.)?(?:menofmontreal\.com|thebronetwork\.com/categories/men-of-montreal)`),
+	},
+	{
+		ID:       "thebronetwork",
+		Studio:   "The Bro Network",
+		SiteBase: "https://thebronetwork.com",
+		Slug:     "videos",
+		Patterns: []string{"thebronetwork.com", "thebronetwork.com/categories/videos_{N}_d.html"},
+		MatchRe:  regexp.MustCompile(`^https?://(?:www\.)?thebronetwork\.com`),
 	},
 }
 
