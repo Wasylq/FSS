@@ -6,7 +6,10 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"os"
+	"path/filepath"
 	"regexp"
+	"strings"
 	"testing"
 	"time"
 
@@ -261,5 +264,80 @@ func TestModelPage(t *testing.T) {
 	}
 	if got[0].Performers[0] != "Jane Doe" {
 		t.Errorf("scenes[0].Performers[0] = %q, want %q", got[0].Performers[0], "Jane Doe")
+	}
+}
+
+// --- golden fixture ----------------------------------------------------------
+//
+// The other tests build sceneJSON values in Go, so encode and decode share the
+// struct tag and a renamed tag round-trips unnoticed. This one decodes a
+// _next/data page captured verbatim from wankitnow.com and runs a row through
+// toScene.
+//
+// Notable shapes: the payload is buried two levels deep under
+// `pageProps.contents`, `publish_date` uses the unusual "2026/07/26 00:00:00"
+// layout rather than RFC3339, and `models` (plain strings) sits beside
+// `models_slugs` (objects) — an easy pair to conflate.
+func TestGoldenNextData(t *testing.T) {
+	body, err := os.ReadFile(filepath.Join("testdata", "videos.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	var resp nextDataResponse
+	if err := json.Unmarshal(body, &resp); err != nil {
+		t.Fatalf("decoding captured payload: %v", err)
+	}
+	c := resp.PageProps.Contents
+	if c.Total == 0 || c.TotalPages == 0 {
+		t.Errorf("total/total_pages = %d/%d — pagination depends on both", c.Total, c.TotalPages)
+	}
+	if len(c.Data) != 2 {
+		t.Fatalf("decoded %d scenes, want 2 (pageProps.contents.data)", len(c.Data))
+	}
+
+	j := c.Data[0]
+	if j.ID != 31729 {
+		t.Errorf("ID = %d (id), want 31729", j.ID)
+	}
+	if j.Slug != "cuck-tales-2" {
+		t.Errorf("Slug = %q (slug) — the scene URL is built from it", j.Slug)
+	}
+	if j.SecondsDuration != 810 {
+		t.Errorf("SecondsDuration = %d (seconds_duration), want 810", j.SecondsDuration)
+	}
+	if j.PublishDate != "2026/07/26 00:00:00" {
+		t.Errorf("PublishDate = %q (publish_date)", j.PublishDate)
+	}
+	if len(j.Models) == 0 {
+		t.Error("Models is empty (models, plain strings)")
+	}
+	if len(j.ModelsSlugs) == 0 || j.ModelsSlugs[0].Slug == "" {
+		t.Errorf("ModelsSlugs = %+v (models_slugs, objects)", j.ModelsSlugs)
+	}
+	if j.Rating == 0 {
+		t.Error("Rating is 0 (rating)")
+	}
+
+	now := time.Date(2026, 7, 26, 0, 0, 0, 0, time.UTC)
+	sc := toScene(j, "wankitnow", "https://www.wankitnow.com", "Wank It Now", now)
+
+	if sc.Title != "CUCK TALES" {
+		t.Errorf("scene Title = %q", sc.Title)
+	}
+	if sc.Duration != 810 {
+		t.Errorf("scene Duration = %d, want 810", sc.Duration)
+	}
+	// The "2026/07/26 00:00:00" layout must actually parse.
+	if sc.Date.Format("2006-01-02") != "2026-07-26" {
+		t.Errorf("scene Date = %v, want 2026-07-26 (publish_date layout)", sc.Date)
+	}
+	if !strings.Contains(sc.URL, "cuck-tales-2") {
+		t.Errorf("scene URL = %q", sc.URL)
+	}
+	if sc.Thumbnail == "" {
+		t.Error("scene Thumbnail is empty (thumb)")
+	}
+	if len(sc.Performers) == 0 {
+		t.Error("scene Performers is empty (models)")
 	}
 }
