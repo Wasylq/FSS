@@ -5,7 +5,10 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"os"
+	"path/filepath"
 	"regexp"
+	"strings"
 	"testing"
 	"time"
 
@@ -261,4 +264,64 @@ func TestListScenesTagFilter(t *testing.T) {
 
 func fixedTime() time.Time {
 	return time.Date(2026, 4, 26, 12, 0, 0, 0, time.UTC)
+}
+
+// --- golden fixture ----------------------------------------------------------
+//
+// The other tests build wpPost values in Go, so encode and decode share the
+// struct tag and a renamed tag round-trips unnoticed. This one decodes a
+// wp-json response captured verbatim from a live video-elements site and runs a
+// post through postToScene.
+//
+// The WordPress shape is the interesting part: `title` and `content` are not
+// strings but `{"rendered": …}` wrappers, `tags` is a list of numeric IDs that
+// must be resolved separately, and the date field is `date_gmt` rather than
+// `date` — three easy things to model wrong.
+func TestGoldenPosts(t *testing.T) {
+	body, err := os.ReadFile(filepath.Join("testdata", "posts.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	var posts []wpPost
+	if err := json.Unmarshal(body, &posts); err != nil {
+		t.Fatalf("decoding captured payload: %v", err)
+	}
+	if len(posts) != 2 {
+		t.Fatalf("decoded %d posts, want 2", len(posts))
+	}
+
+	p := posts[0]
+	if p.ID != 2150 {
+		t.Errorf("ID = %d (id), want 2150", p.ID)
+	}
+	if p.DateGMT != "2026-07-24T00:00:00" {
+		t.Errorf("DateGMT = %q (date_gmt, not date)", p.DateGMT)
+	}
+	if p.Link == "" {
+		t.Error("Link is empty (link)")
+	}
+	// title/content are {"rendered": …} wrappers, not plain strings.
+	if p.Title.Rendered != "The Undress Rehearsal" {
+		t.Errorf("Title.Rendered = %q (title.rendered)", p.Title.Rendered)
+	}
+	if p.Content.Rendered == "" {
+		t.Error("Content.Rendered is empty (content.rendered)")
+	}
+
+	s := New(SiteConfig{ID: "brattyfamily", SiteBase: "https://brattyfamily.com", Studio: "Bratty Family"})
+	now := time.Date(2026, 7, 26, 0, 0, 0, 0, time.UTC)
+	sc := s.postToScene("https://brattyfamily.com", p, map[int]string{}, now)
+
+	if sc.ID != "2150" {
+		t.Errorf("scene ID = %q", sc.ID)
+	}
+	if sc.Title != "The Undress Rehearsal" {
+		t.Errorf("scene Title = %q", sc.Title)
+	}
+	if sc.Date.Format("2006-01-02") != "2026-07-24" {
+		t.Errorf("scene Date = %v, want 2026-07-24 (date_gmt)", sc.Date)
+	}
+	if !strings.Contains(sc.URL, "the-undress-rehearsal") {
+		t.Errorf("scene URL = %q (link)", sc.URL)
+	}
 }
