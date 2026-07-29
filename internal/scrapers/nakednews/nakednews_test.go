@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 	"time"
@@ -463,5 +465,64 @@ func TestListScenesDedup(t *testing.T) {
 	}
 	if count != 2 {
 		t.Errorf("got %d scenes, want 2 (deduped)", count)
+	}
+}
+
+// --- golden fixture ----------------------------------------------------------
+//
+// The other tests build listItem values in Go, so encode and decode share the
+// struct tag and a renamed tag round-trips unnoticed. This one decodes a program
+// listing captured verbatim from nakednews.com and runs an item through toScene.
+//
+// Notable shapes: `date` is a **millisecond** epoch (not seconds, and not a
+// string), and the ID is `programSegmentId` while a separate `programId` sits
+// beside it — picking the wrong one still decodes and looks plausible.
+func TestGoldenProgram(t *testing.T) {
+	body, err := os.ReadFile(filepath.Join("testdata", "program.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	var resp listResponse
+	if err := json.Unmarshal(body, &resp); err != nil {
+		t.Fatalf("decoding captured payload: %v", err)
+	}
+	if resp.Count == 0 {
+		t.Error("Count is 0 (count) — pagination depends on it")
+	}
+	if len(resp.Segments) == 0 {
+		t.Fatal("no segments decoded (segments)")
+	}
+
+	it := resp.Segments[0]
+	if it.ProgramSegmentID != 71765 {
+		t.Errorf("ProgramSegmentID = %d (programSegmentId, not programId), want 71765", it.ProgramSegmentID)
+	}
+	if it.Title == "" {
+		t.Error("Title is empty (title)")
+	}
+	if it.Slug == "" {
+		t.Error("Slug is empty (slug) — the scene URL is built from it")
+	}
+	if it.Image == "" {
+		t.Error("Image is empty (image)")
+	}
+	if it.Date == 0 {
+		t.Fatal("Date is 0 (date, a millisecond epoch)")
+	}
+
+	sc := toScene("https://www.nakednews.com/archives", it, nil)
+	if sc.ID != "71765" {
+		t.Errorf("scene ID = %q", sc.ID)
+	}
+	if sc.Title != "Krysta In News off the Top" {
+		t.Errorf("scene Title = %q", sc.Title)
+	}
+	// date is milliseconds; treating it as seconds lands in 1970, so assert the
+	// year rather than merely non-zero.
+	if sc.Date.Year() != 2026 {
+		t.Errorf("scene Date = %v, want 2026 — `date` is a millisecond epoch", sc.Date)
+	}
+	if sc.Thumbnail == "" {
+		t.Error("scene Thumbnail is empty (image)")
 	}
 }
