@@ -6,10 +6,14 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"os"
+	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 
 	"github.com/Wasylq/FSS/internal/scrapers/testutil"
+	"github.com/Wasylq/FSS/models"
 	"github.com/Wasylq/FSS/parseutil"
 	"github.com/Wasylq/FSS/scraper"
 )
@@ -304,4 +308,72 @@ func TestListScenesKnownIDs(t *testing.T) {
 
 func fixedTime() time.Time {
 	return time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC)
+}
+
+// --- golden fixture ----------------------------------------------------------
+//
+// The other tests build apiClip values in Go, so encode and decode share the
+// struct tag and a renamed tag round-trips unnoticed. This one serves a page
+// captured verbatim from fancentro.com. Each assertion names the field it pins.
+//
+// Notable shapes: `publishedAt` is a **unix timestamp**, not a date string;
+// `duration` is "14:03" rather than seconds; and price/model/thumbnails are
+// nested pointers that are easy to leave nil without noticing.
+func TestGoldenContent(t *testing.T) {
+	body, err := os.ReadFile(filepath.Join("testdata", "content.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		if r.URL.Query().Get("page") != "1" {
+			_, _ = w.Write([]byte(`{"data":[],"success":true,"last_page":1,"current_page":2}`))
+			return
+		}
+		_, _ = w.Write(body)
+	}))
+	defer ts.Close()
+
+	s := &Scraper{client: ts.Client(), base: ts.URL}
+	ch, err := s.ListScenes(context.Background(), ts.URL+"/cherie-deville", scraper.ListOpts{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	scenes := testutil.CollectScenes(t, ch)
+	if len(scenes) != 2 {
+		t.Fatalf("got %d scenes from the captured page, want 2", len(scenes))
+	}
+
+	var sc *models.Scene
+	for i := range scenes {
+		if scenes[i].ID == "2456181" {
+			sc = &scenes[i]
+		}
+	}
+	if sc == nil {
+		t.Fatalf("scene 2456181 missing (data[].id); got %v", scenes)
+	}
+	if sc.Title != "Suck & Fuck Out The Devil" {
+		t.Errorf("Title = %q (data[].title)", sc.Title)
+	}
+	// duration is "14:03".
+	if sc.Duration != 14*60+3 {
+		t.Errorf("Duration = %d (data[].duration \"14:03\"), want %d", sc.Duration, 14*60+3)
+	}
+	// publishedAt is a unix timestamp (1719356896).
+	if sc.Date.IsZero() {
+		t.Error("Date is zero (data[].publishedAt, a unix timestamp)")
+	}
+	if sc.Date.Year() != 2024 {
+		t.Errorf("Date = %v (data[].publishedAt), want 2024 — a mis-scaled timestamp is the usual bug", sc.Date)
+	}
+	if !strings.Contains(sc.URL, "suck-fuck-out-the-devil") {
+		t.Errorf("URL = %q (data[].link)", sc.URL)
+	}
+	if sc.Thumbnail == "" {
+		t.Error("Thumbnail is empty (data[].thumbnails.thumbnail.src)")
+	}
+	if len(sc.Performers) == 0 {
+		t.Error("Performers is empty (data[].model.stageName)")
+	}
 }
