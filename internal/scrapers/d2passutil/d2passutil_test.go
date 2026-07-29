@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"os"
+	"path/filepath"
 	"slices"
 	"strings"
 	"testing"
@@ -397,5 +399,84 @@ func TestMovieURL(t *testing.T) {
 	s := New(testConfig())
 	if got, want := s.MovieURL("072126_001"), "https://www.1pondo.tv/movies/072126_001/"; got != want {
 		t.Errorf("MovieURL = %q, want %q", got, want)
+	}
+}
+
+// --- golden fixture ----------------------------------------------------------
+//
+// The other tests build Movie values in Go, so encode and decode share the struct
+// tag and a renamed tag round-trips unnoticed. This one decodes a listing captured
+// verbatim from 1pondo.tv and runs a row through ToScene.
+//
+// Notable shapes: the JSON keys are **PascalCase** (`MovieID`, `ActressesJa`), which
+// is unusual enough that a lowercase guess would be silently wrong; credits and tags
+// arrive as parallel Ja/En arrays that the scraper prefers between; and `Series` is a
+// *string that is null on most rows.
+func TestGoldenListNewest(t *testing.T) {
+	body, err := os.ReadFile(filepath.Join("testdata", "list_newest.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	var page ListPage
+	if err := json.Unmarshal(body, &page); err != nil {
+		t.Fatalf("decoding captured payload: %v", err)
+	}
+	if page.TotalRows == 0 {
+		t.Error("TotalRows is 0 (TotalRows) — pagination depends on it")
+	}
+	if page.SplitSize == 0 {
+		t.Error("SplitSize is 0 (SplitSize)")
+	}
+	if len(page.Rows) != 2 {
+		t.Fatalf("decoded %d rows, want 2", len(page.Rows))
+	}
+
+	m := page.Rows[0]
+	if m.MovieID != "072526_001" {
+		t.Errorf("MovieID = %q (MovieID)", m.MovieID)
+	}
+	if m.Title == "" {
+		t.Error("Title is empty (Title)")
+	}
+	if m.Release != "2026-07-25" {
+		t.Errorf("Release = %q (Release)", m.Release)
+	}
+	if m.Duration != 3686 {
+		t.Errorf("Duration = %d (Duration), want 3686", m.Duration)
+	}
+	if len(m.ActressesJa) == 0 {
+		t.Error("ActressesJa is empty (ActressesJa)")
+	}
+	if len(m.UCNAME) == 0 {
+		t.Error("UCNAME is empty (UCNAME) — the tag list")
+	}
+	if m.ThumbUltra == "" && m.ThumbHigh == "" && m.MovieThumb == "" {
+		t.Error("no thumbnail decoded (ThumbUltra/ThumbHigh/MovieThumb)")
+	}
+
+	s := New(testConfig())
+	now := time.Date(2026, 7, 26, 0, 0, 0, 0, time.UTC)
+	sc := s.ToScene("https://www.1pondo.tv/", m, now)
+
+	if sc.ID != "072526_001" {
+		t.Errorf("scene ID = %q", sc.ID)
+	}
+	if sc.Title == "" {
+		t.Error("scene Title is empty")
+	}
+	if sc.Date.Format("2006-01-02") != "2026-07-25" {
+		t.Errorf("scene Date = %v, want 2026-07-25", sc.Date)
+	}
+	if sc.Duration != 3686 {
+		t.Errorf("scene Duration = %d, want 3686", sc.Duration)
+	}
+	if len(sc.Performers) == 0 {
+		t.Error("scene Performers is empty")
+	}
+	if len(sc.Tags) == 0 {
+		t.Error("scene Tags is empty")
+	}
+	if sc.Thumbnail == "" {
+		t.Error("scene Thumbnail is empty")
 	}
 }
