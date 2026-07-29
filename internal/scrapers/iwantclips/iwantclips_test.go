@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 	"time"
@@ -315,5 +317,73 @@ func TestFetchAPIKey(t *testing.T) {
 	}
 	if tsBase != "http://typesense.example.com" {
 		t.Errorf("tsBase = %q, want %q", tsBase, "http://typesense.example.com")
+	}
+}
+
+// --- golden fixture ----------------------------------------------------------
+//
+// The other tests build iwcDoc values in Go, so encode and decode share the
+// struct tag and a renamed tag round-trips unnoticed. This one decodes a
+// Typesense search response captured verbatim from the live index and runs a
+// document through toScene. (No credential is involved: the search key is
+// scraped from the store page's own source, as fetchAPIKey does at runtime.)
+//
+// Notable shapes: documents are wrapped one level deep under `hits[].document`,
+// `publish_time` is a **unix epoch** integer, `content_id` is a string while
+// `price` is a float, and `video_length` is a duration string alongside them.
+func TestGoldenTypesenseSearch(t *testing.T) {
+	body, err := os.ReadFile(filepath.Join("testdata", "typesense_search.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	var resp tsResponse
+	if err := json.Unmarshal(body, &resp); err != nil {
+		t.Fatalf("decoding captured payload: %v", err)
+	}
+	if resp.Found == 0 {
+		t.Error("Found is 0 (found) — pagination depends on it")
+	}
+	if len(resp.Hits) != 2 {
+		t.Fatalf("decoded %d hits, want 2 (hits[].document)", len(resp.Hits))
+	}
+
+	doc := resp.Hits[0].Document
+	if doc.ContentID != "6467412" {
+		t.Errorf("ContentID = %q (content_id, a string), want 6467412", doc.ContentID)
+	}
+	if doc.Title != "Seduced By Your Best Friends Stepmom" {
+		t.Errorf("Title = %q (title)", doc.Title)
+	}
+	if doc.PublishTime == 0 {
+		t.Fatal("PublishTime is 0 (publish_time, a unix epoch)")
+	}
+	if doc.Price != 14.99 {
+		t.Errorf("Price = %v (price, a float), want 14.99", doc.Price)
+	}
+	if doc.ModelUsername == "" {
+		t.Error("ModelUsername is empty (model_username)")
+	}
+	if len(doc.Keywords) == 0 {
+		t.Error("Keywords is empty (keywords)")
+	}
+
+	now := time.Date(2026, 7, 26, 0, 0, 0, 0, time.UTC)
+	sc := toScene("https://iwantclips.com/store/327/Diane-Andrews", doc, now)
+
+	if sc.ID != "6467412" {
+		t.Errorf("scene ID = %q", sc.ID)
+	}
+	if sc.Title == "" {
+		t.Error("scene Title is empty")
+	}
+	// publish_time is seconds; treating it as ms would land far in the future.
+	if sc.Date.Year() != 2026 {
+		t.Errorf("scene Date = %v, want 2026 (publish_time is a second-epoch)", sc.Date)
+	}
+	if len(sc.PriceHistory) != 1 || sc.PriceHistory[0].Regular != 14.99 {
+		t.Errorf("PriceHistory = %+v, want one snapshot at 14.99", sc.PriceHistory)
+	}
+	if len(sc.Tags) == 0 {
+		t.Error("scene Tags is empty (keywords/categories)")
 	}
 }
