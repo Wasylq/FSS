@@ -6,6 +6,8 @@ import (
 	"net/http"
 	"net/http/cookiejar"
 	"net/http/httptest"
+	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/Wasylq/FSS/scraper"
@@ -453,5 +455,60 @@ func TestSessionBootstrap(t *testing.T) {
 	}
 	if !sessionHit {
 		t.Error("session bootstrap request was never made")
+	}
+}
+
+// --- golden fixture ----------------------------------------------------------
+//
+// The other tests build contentItem values in Go, so encode and decode share the
+// struct tag and a renamed tag round-trips unnoticed. This one decodes a studio
+// listing captured verbatim from pornbox.com and runs an item through toScene.
+//
+// Notable shapes: the ID is `content_id` (there is a separate `id` alongside it,
+// so a wrong pick still decodes and looks fine), `runtime` is "00:28:51" rather
+// than seconds, and price is a float under `content_price_usd`.
+func TestGoldenStudioContents(t *testing.T) {
+	body, err := os.ReadFile(filepath.Join("testdata", "studio_contents.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	var resp listingResp
+	if err := json.Unmarshal(body, &resp); err != nil {
+		t.Fatalf("decoding captured payload: %v", err)
+	}
+	if resp.TotalCount == 0 || resp.TotalPages == 0 {
+		t.Errorf("totalCount/totalPages = %d/%d — pagination depends on them", resp.TotalCount, resp.TotalPages)
+	}
+	if len(resp.Contents) != 2 {
+		t.Fatalf("decoded %d contents, want 2", len(resp.Contents))
+	}
+
+	it := resp.Contents[0]
+	if it.ID != 217308 {
+		t.Errorf("ID = %d (content_id, not the sibling id), want 217308", it.ID)
+	}
+	if it.PublishDate == "" {
+		t.Error("PublishDate is empty (publish_date)")
+	}
+	if it.Runtime != "00:28:51" {
+		t.Errorf("Runtime = %q (runtime)", it.Runtime)
+	}
+	if it.PriceUSD == 0 {
+		t.Error("PriceUSD is 0 (content_price_usd)")
+	}
+
+	sc := toScene(it, "https://pornbox.com/application/studio/123", "Test Studio")
+	if sc.ID != "217308" {
+		t.Errorf("scene ID = %q", sc.ID)
+	}
+	// runtime "00:28:51" must parse to seconds.
+	if sc.Duration != 28*60+51 {
+		t.Errorf("scene Duration = %d, want %d (runtime %q)", sc.Duration, 28*60+51, it.Runtime)
+	}
+	if sc.Date.IsZero() {
+		t.Error("scene Date is zero (publish_date)")
+	}
+	if len(sc.PriceHistory) == 0 {
+		t.Error("scene PriceHistory is empty (content_price_usd)")
 	}
 }
