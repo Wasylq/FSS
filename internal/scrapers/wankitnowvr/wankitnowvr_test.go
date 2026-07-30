@@ -83,7 +83,7 @@ func TestListScenesModel(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	s := &Scraper{client: ts.Client()}
+	s := &Scraper{client: ts.Client(), base: ts.URL}
 	modelURL := ts.URL + "/models/tamsin+riley/147"
 	ch, err := s.ListScenes(context.Background(), modelURL, scraper.ListOpts{})
 	if err != nil {

@@ -20,10 +20,13 @@ const siteBase = "https://wankitnowvr.com"
 
 type Scraper struct {
 	client *http.Client
+	// base is the site root, a field so offline tests can redirect the listing
+	// fetch rather than reaching the live site.
+	base string
 }
 
 func New() *Scraper {
-	return &Scraper{client: httpx.NewClient(30 * time.Second)}
+	return &Scraper{client: httpx.NewClient(30 * time.Second), base: siteBase}
 }
 
 var _ scraper.StudioScraper = (*Scraper)(nil)
@@ -121,7 +124,7 @@ func (s *Scraper) scrapeListing(ctx context.Context, studioURL string, opts scra
 }
 
 func (s *Scraper) fetchPage(ctx context.Context, page int) ([]byte, error) {
-	return s.fetchURL(ctx, fmt.Sprintf("%s/videos?page=%d", siteBase, page))
+	return s.fetchURL(ctx, fmt.Sprintf("%s/videos?page=%d", s.base, page))
 }
 
 func (s *Scraper) fetchURL(ctx context.Context, u string) ([]byte, error) {

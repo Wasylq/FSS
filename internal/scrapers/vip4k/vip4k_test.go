@@ -270,7 +270,7 @@ func TestFullScrape(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	s := &Scraper{client: ts.Client()}
+	s := &Scraper{client: ts.Client(), base: ts.URL}
 	out := make(chan scraper.SceneResult)
 	go func() {
 		defer close(out)
@@ -321,7 +321,7 @@ func TestEarlyStop(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	s := &Scraper{client: ts.Client()}
+	s := &Scraper{client: ts.Client(), base: ts.URL}
 	out := make(chan scraper.SceneResult)
 	go func() {
 		defer close(out)
@@ -385,7 +385,7 @@ func TestPagination(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	s := &Scraper{client: ts.Client()}
+	s := &Scraper{client: ts.Client(), base: ts.URL}
 	out := make(chan scraper.SceneResult)
 	go func() {
 		defer close(out)

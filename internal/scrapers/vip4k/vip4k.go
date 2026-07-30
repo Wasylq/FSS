@@ -23,11 +23,15 @@ func init() { scraper.Register(New()) }
 
 type Scraper struct {
 	client *http.Client
+	// base is the site root. runWithBase already threads a base through, so this
+	// only has to make the entry point overridable for offline tests.
+	base string
 }
 
 func New() *Scraper {
 	return &Scraper{
 		client: httpx.NewClient(30 * time.Second),
+		base:   siteBase,
 	}
 }
 
@@ -200,7 +204,7 @@ func channelToSiteID(channel string) string {
 
 func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOpts, out chan<- scraper.SceneResult) {
 	defer close(out)
-	s.runWithBase(ctx, siteBase, studioURL, opts, out)
+	s.runWithBase(ctx, s.base, studioURL, opts, out)
 }
 
 func (s *Scraper) runWithBase(ctx context.Context, base, studioURL string, opts scraper.ListOpts, out chan<- scraper.SceneResult) {
