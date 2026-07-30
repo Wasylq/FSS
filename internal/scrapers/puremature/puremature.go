@@ -22,11 +22,16 @@ const (
 
 type Scraper struct {
 	client *http.Client
+	// base is the site root used for the *API fetches*, a field so offline tests
+	// can redirect them. The scene-URL builder keeps the siteBase const — that is
+	// a public address, not something a test should rewrite.
+	base string
 }
 
 func New() *Scraper {
 	return &Scraper{
 		client: httpx.NewClient(30 * time.Second),
+		base:   siteBase,
 	}
 }
 
@@ -65,9 +70,9 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 
 	var baseURL string
 	if m := modelRe.FindStringSubmatch(studioURL); m != nil {
-		baseURL = fmt.Sprintf("%s/api/actors/%s/releases", siteBase, m[1])
+		baseURL = fmt.Sprintf("%s/api/actors/%s/releases", s.base, m[1])
 	} else {
-		baseURL = siteBase + "/api/releases?sort=latest"
+		baseURL = s.base + "/api/releases?sort=latest"
 	}
 
 	s.runWithBase(ctx, baseURL, studioURL, opts, out)

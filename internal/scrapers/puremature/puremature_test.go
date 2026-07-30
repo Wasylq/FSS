@@ -172,7 +172,7 @@ func TestPaginatedScrape(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	s := &Scraper{client: ts.Client()}
+	s := &Scraper{client: ts.Client(), base: ts.URL}
 	out := make(chan scraper.SceneResult)
 	go func() {
 		defer close(out)
@@ -202,7 +202,7 @@ func TestKnownIDsStopsEarly(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	s := &Scraper{client: ts.Client()}
+	s := &Scraper{client: ts.Client(), base: ts.URL}
 	out := make(chan scraper.SceneResult)
 	opts := scraper.ListOpts{KnownIDs: map[string]bool{"101": true}}
 	go func() {
