@@ -72,13 +72,17 @@ var (
 )
 
 type Scraper struct {
+	// base is the site root used for request headers and fetches, a field so
+	// offline tests can redirect them. The scene-URL builder keeps the siteBase
+	// const — that is a public address, not something a test should rewrite.
+	base   string
 	Client *http.Client
 }
 
 var _ scraper.StudioScraper = (*Scraper)(nil)
 
 func New() *Scraper {
-	return &Scraper{Client: httpx.NewClient(30 * time.Second)}
+	return &Scraper{Client: httpx.NewClient(30 * time.Second), base: siteBase}
 }
 
 func init() { scraper.Register(New()) }
@@ -305,8 +309,8 @@ func (s *Scraper) getJSON(ctx context.Context, rawURL string, v any) error {
 			"User-Agent": httpx.UserAgentFirefox,
 			"Accept":     "application/json",
 			"x-ident":    ident,
-			"Origin":     siteBase,
-			"Referer":    siteBase + "/",
+			"Origin":     s.base,
+			"Referer":    s.base + "/",
 		},
 	})
 	if err != nil {

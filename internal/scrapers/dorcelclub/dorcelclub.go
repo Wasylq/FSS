@@ -27,13 +27,18 @@ var matchRe = regexp.MustCompile(`^https?://(?:www\.)?dorcelclub\.com(?:/|$)`)
 
 type Scraper struct {
 	client *http.Client
+	// base is the site root used for *fetches* (session bootstrap and the AJAX
+	// listing), a field so offline tests can redirect them. parseSceneCards
+	// keeps the siteBase const: it builds Scene.URL, a public address that must
+	// not become a 127.0.0.1 URL just because a test fetched it from there.
+	base string
 }
 
 func New() *Scraper {
 	jar, _ := cookiejar.New(nil)
 	c := httpx.NewClient(30 * time.Second)
 	c.Jar = jar
-	return &Scraper{client: c}
+	return &Scraper{client: c, base: siteBase}
 }
 
 var _ scraper.StudioScraper = (*Scraper)(nil)
@@ -117,7 +122,7 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 
 func (s *Scraper) initSession(ctx context.Context) error {
 	resp, err := httpx.Do(ctx, s.client, httpx.Request{
-		URL:     siteBase + "/en/",
+		URL:     s.base + "/en/",
 		Headers: httpx.BrowserHeaders(httpx.UserAgentFirefox),
 	})
 	if err != nil {
@@ -208,7 +213,7 @@ func (s *Scraper) paginateAJAX(ctx context.Context, basePath, sorting string, op
 		}
 		scraper.Debugf(1, "dorcelclub: fetching page %d", page)
 
-		ajaxURL := fmt.Sprintf("%s%s?lang=en&sorting=%s&page=%d", siteBase, basePath, sorting, page)
+		ajaxURL := fmt.Sprintf("%s%s?lang=en&sorting=%s&page=%d", s.base, basePath, sorting, page)
 		body, err := s.fetchAJAX(ctx, ajaxURL)
 		if err != nil {
 			select {

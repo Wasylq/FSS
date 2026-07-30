@@ -394,7 +394,7 @@ func TestRunPornstar(t *testing.T) {
 		tsURL:     ts.URL,
 		targetURL: siteBase,
 	}
-	s := &Scraper{client: c}
+	s := &Scraper{client: c, base: ts.URL}
 
 	studioURL := ts.URL + "/en/pornstar/performer-a"
 	ch, err := s.ListScenes(context.Background(), studioURL, scraper.ListOpts{Workers: 2, Delay: 0})
@@ -507,7 +507,7 @@ func TestRunPornstarKnownIDs(t *testing.T) {
 		tsURL:     ts.URL,
 		targetURL: siteBase,
 	}
-	s := &Scraper{client: c}
+	s := &Scraper{client: c, base: ts.URL}
 
 	studioURL := ts.URL + "/en/pornstar/alice"
 	ch, err := s.ListScenes(context.Background(), studioURL, scraper.ListOpts{
