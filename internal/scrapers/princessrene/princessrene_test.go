@@ -1,8 +1,16 @@
 package princessrene
 
 import (
+	"context"
+	"fmt"
+	"net/http"
+	"net/http/httptest"
+	"strings"
 	"testing"
 	"time"
+
+	"github.com/Wasylq/FSS/internal/scrapers/testutil"
+	"github.com/Wasylq/FSS/scraper"
 )
 
 // listingFixture mirrors the real /videos/ card markup: real scene links plus
@@ -106,5 +114,65 @@ func TestMatchesURL(t *testing.T) {
 		if got := s.MatchesURL(u); got != want {
 			t.Errorf("MatchesURL(%q) = %v, want %v", u, got, want)
 		}
+	}
+}
+
+// --- end to end ---------------------------------------------------------------
+//
+// The tests above call the parsers directly, which left ListScenes, run,
+// fetchPage and the paginated walk at 0% and the package at 37.0%. The base is
+// now a field, so the listing -> detail walk runs offline.
+func TestListScenesEndToEnd(t *testing.T) {
+	var listingHits, detailHits int
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch {
+		case r.URL.Path == "/videos/" || strings.HasPrefix(r.URL.Path, "/videos/page/"):
+			listingHits++
+			// Only the first listing has cards; the next page is empty so the walk ends.
+			if strings.Contains(r.URL.Path, "/page/2") {
+				_, _ = fmt.Fprint(w, `<div class="empty"></div>`)
+				return
+			}
+			_, _ = fmt.Fprint(w, listingFixture)
+		case strings.HasPrefix(r.URL.Path, "/videos/"):
+			detailHits++
+			// Give each slug its own og:url and title, so two scenes cannot share
+			// them — the shared-fixture trap.
+			slug := strings.Trim(strings.TrimPrefix(r.URL.Path, "/videos/"), "/")
+			_, _ = fmt.Fprint(w, strings.ReplaceAll(detailFixture, "beg-to-see-my-tits", slug))
+		default:
+			http.NotFound(w, r)
+		}
+	}))
+	defer ts.Close()
+
+	s := New()
+	s.client = ts.Client()
+	s.base = ts.URL
+
+	ch, err := s.ListScenes(context.Background(), ts.URL+"/videos/", scraper.ListOpts{Workers: 2})
+	if err != nil {
+		t.Fatal(err)
+	}
+	scenes := testutil.CollectScenes(t, ch)
+	if len(scenes) != 2 {
+		t.Fatalf("got %d scenes, want 2", len(scenes))
+	}
+	if listingHits == 0 || detailHits != 2 {
+		t.Errorf("listing/detail fetches = %d/%d, want listing>0 and detail=2", listingHits, detailHits)
+	}
+
+	seenURL := map[string]bool{}
+	for _, sc := range scenes {
+		if sc.Title == "" {
+			t.Errorf("scene %q has empty Title", sc.ID)
+		}
+		if sc.Date.IsZero() {
+			t.Errorf("scene %q has zero Date — the JSON-LD datePublished was not parsed", sc.ID)
+		}
+		if seenURL[sc.URL] {
+			t.Errorf("scene %q repeats URL %q", sc.ID, sc.URL)
+		}
+		seenURL[sc.URL] = true
 	}
 }

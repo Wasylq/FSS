@@ -1,6 +1,16 @@
 package pissplay
 
-import "testing"
+import (
+	"context"
+	"fmt"
+	"net/http"
+	"net/http/httptest"
+	"strings"
+	"testing"
+
+	"github.com/Wasylq/FSS/internal/scrapers/testutil"
+	"github.com/Wasylq/FSS/scraper"
+)
 
 const sitemapFixture = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
@@ -94,5 +104,66 @@ func TestMatchesURL(t *testing.T) {
 		if got := s.MatchesURL(u); got != want {
 			t.Errorf("MatchesURL(%q) = %v, want %v", u, got, want)
 		}
+	}
+}
+
+// --- end to end ---------------------------------------------------------------
+//
+// The tests above call the parsers directly, which left ListScenes, run,
+// fetchPage and the sitemap walk at 0% and the package at 30.9%. The base is now
+// a field, so the whole sitemap -> detail walk runs offline.
+func TestListScenesEndToEnd(t *testing.T) {
+	var detailHits int
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch {
+		case r.URL.Path == "/sitemap.xml":
+			// Served verbatim: sitemapLocRe only matches <loc> entries on the real
+			// pissplay.com host, and it yields *slugs* only. Detail URLs are then
+			// built from s.base, so they still land on this server. Rewriting the
+			// host here would make the regex match nothing.
+			_, _ = fmt.Fprint(w, sitemapFixture)
+		case strings.HasPrefix(r.URL.Path, "/videos/"):
+			detailHits++
+			// Substitute the requested slug so each scene gets its own og:url and
+			// title. Serving the fixture verbatim would give every scene the same
+			// URL — the shared-fixture trap that hid duplicate data elsewhere.
+			slug := strings.TrimPrefix(r.URL.Path, "/videos/")
+			_, _ = fmt.Fprint(w, strings.ReplaceAll(detailFixture, "non-stop-piss-drinking", slug))
+		default:
+			http.NotFound(w, r)
+		}
+	}))
+	defer ts.Close()
+
+	s := New()
+	s.client = ts.Client()
+	s.base = ts.URL
+
+	ch, err := s.ListScenes(context.Background(), ts.URL, scraper.ListOpts{Workers: 2})
+	if err != nil {
+		t.Fatal(err)
+	}
+	scenes := testutil.CollectScenes(t, ch)
+	// The sitemap lists three /videos/ entries, one of them a duplicate.
+	if len(scenes) != 2 {
+		t.Fatalf("got %d scenes, want 2 (duplicate <loc> deduped)", len(scenes))
+	}
+	if detailHits != 2 {
+		t.Errorf("detail fetches = %d, want 2", detailHits)
+	}
+	// Scene.URL comes from the detail page's og:url, so it is fixture data and
+	// legitimately names the live host — it is not the URL that was fetched.
+	seenURL := map[string]bool{}
+	for _, sc := range scenes {
+		if sc.Title == "" {
+			t.Errorf("scene %q has empty Title", sc.ID)
+		}
+		if sc.Date.IsZero() {
+			t.Errorf("scene %q has zero Date", sc.ID)
+		}
+		if seenURL[sc.URL] {
+			t.Errorf("scene %q repeats URL %q — each detail page must yield its own", sc.ID, sc.URL)
+		}
+		seenURL[sc.URL] = true
 	}
 }

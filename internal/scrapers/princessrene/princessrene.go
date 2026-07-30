@@ -33,10 +33,13 @@ var matchRe = regexp.MustCompile(`^https?://(?:www\.)?worshiprene\.com(?:/|$)`)
 
 type Scraper struct {
 	client *http.Client
+	// base is the site root used for *fetches*, a field so offline tests can
+	// drive the whole walk instead of only the parsers.
+	base string
 }
 
 func New() *Scraper {
-	return &Scraper{client: httpx.NewClient(30 * time.Second)}
+	return &Scraper{client: httpx.NewClient(30 * time.Second), base: siteBase}
 }
 
 var _ scraper.StudioScraper = (*Scraper)(nil)
@@ -65,9 +68,9 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 	defer close(out)
 
 	scraper.Paginate(ctx, opts, siteID, out, func(ctx context.Context, page int) (scraper.PageResult, error) {
-		pageURL := fmt.Sprintf("%s/videos/page/%d/", siteBase, page)
+		pageURL := fmt.Sprintf("%s/videos/page/%d/", s.base, page)
 		if page == 1 {
-			pageURL = siteBase + "/videos/"
+			pageURL = s.base + "/videos/"
 		}
 		body, err := s.fetchPage(ctx, pageURL)
 		if err != nil {
@@ -167,7 +170,7 @@ func parseDetail(body []byte) detailData {
 }
 
 func (s *Scraper) fetchDetail(ctx context.Context, slug, studioURL string) (models.Scene, error) {
-	url := fmt.Sprintf("%s/videos/%s/", siteBase, slug)
+	url := fmt.Sprintf("%s/videos/%s/", s.base, slug)
 	scraper.Debugf(1, "princessrene: fetching detail %s", slug)
 	body, err := s.fetchPage(ctx, url)
 	if err != nil {

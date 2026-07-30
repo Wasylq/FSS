@@ -25,17 +25,19 @@ const (
 	siteID     = "pissplay"
 	studioName = "Piss Play"
 	siteBase   = "https://pissplay.com"
-	sitemapURL = "https://pissplay.com/sitemap.xml"
 )
 
 var matchRe = regexp.MustCompile(`^https?://(?:www\.)?pissplay\.com(?:/|$)`)
 
 type Scraper struct {
 	client *http.Client
+	// base is the site root used for *fetches*, a field so offline tests can
+	// drive the whole walk instead of only the parsers.
+	base string
 }
 
 func New() *Scraper {
-	return &Scraper{client: httpx.NewClient(30 * time.Second)}
+	return &Scraper{client: httpx.NewClient(30 * time.Second), base: siteBase}
 }
 
 var _ scraper.StudioScraper = (*Scraper)(nil)
@@ -59,11 +61,13 @@ func (s *Scraper) ListScenes(ctx context.Context, studioURL string, opts scraper
 	return out, nil
 }
 
+func (s *Scraper) sitemapURL() string { return s.base + "/sitemap.xml" }
+
 func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOpts, out chan<- scraper.SceneResult) {
 	defer close(out)
 
-	scraper.Debugf(1, "pissplay: fetching sitemap %s", sitemapURL)
-	body, err := s.fetchPage(ctx, sitemapURL)
+	scraper.Debugf(1, "pissplay: fetching sitemap %s", s.sitemapURL())
+	body, err := s.fetchPage(ctx, s.sitemapURL())
 	if err != nil {
 		select {
 		case out <- scraper.Error(fmt.Errorf("sitemap: %w", err)):
@@ -200,7 +204,7 @@ func (s *Scraper) fetchDetail(ctx context.Context, slug, studioURL string, delay
 		}
 	}
 
-	url := siteBase + "/videos/" + slug
+	url := s.base + "/videos/" + slug
 	scene := models.Scene{
 		ID:        slug,
 		SiteID:    siteID,
