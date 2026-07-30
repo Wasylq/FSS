@@ -134,7 +134,7 @@ func TestRun(t *testing.T) {
 	ts := newTestServer([][]string{{"100", "200"}}, detailPage)
 	defer ts.Close()
 
-	s := &Scraper{client: ts.Client()}
+	s := &Scraper{client: ts.Client(), base: ts.URL}
 	ch, err := s.ListScenes(context.Background(), ts.URL, scraper.ListOpts{
 		Workers: 1,
 		Delay:   time.Millisecond,
@@ -156,7 +156,7 @@ func TestKnownIDs(t *testing.T) {
 	ts := newTestServer([][]string{{"1", "2", "3"}}, detailPage)
 	defer ts.Close()
 
-	s := &Scraper{client: ts.Client()}
+	s := &Scraper{client: ts.Client(), base: ts.URL}
 	ch, err := s.ListScenes(context.Background(), ts.URL, scraper.ListOpts{
 		Workers:  1,
 		KnownIDs: map[string]bool{"2": true},
@@ -201,7 +201,7 @@ func TestModelPage(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	s := &Scraper{client: ts.Client()}
+	s := &Scraper{client: ts.Client(), base: ts.URL}
 	modelURL := ts.URL + "/models/SomeModel.html"
 	ch, err := s.ListScenes(context.Background(), modelURL, scraper.ListOpts{
 		Workers: 1,
@@ -226,7 +226,7 @@ func TestPagination(t *testing.T) {
 	ts := newTestServer([][]string{{"10", "20"}, {"30"}}, detailPage)
 	defer ts.Close()
 
-	s := &Scraper{client: ts.Client()}
+	s := &Scraper{client: ts.Client(), base: ts.URL}
 	ch, err := s.ListScenes(context.Background(), ts.URL, scraper.ListOpts{
 		Workers: 1,
 		Delay:   time.Millisecond,

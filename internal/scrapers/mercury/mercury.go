@@ -23,12 +23,17 @@ const siteBase = "https://mercury.diary.to"
 
 type Scraper struct {
 	client *http.Client
+	// base is the site root used for *fetches*, a field so offline tests can
+	// redirect them. Output fields (Scene.URL, Thumbnail) keep the const: a
+	// scene's public address must not become a 127.0.0.1 URL because a test
+	// happened to fetch it from there.
+	base string
 }
 
 var _ scraper.StudioScraper = (*Scraper)(nil)
 
 func New() *Scraper {
-	return &Scraper{client: httpx.NewClient(30 * time.Second)}
+	return &Scraper{client: httpx.NewClient(30 * time.Second), base: siteBase}
 }
 
 func init() { scraper.Register(New()) }
@@ -272,7 +277,7 @@ var (
 func (s *Scraper) fetchDetail(ctx context.Context, item listItem, studioURL string) (models.Scene, bool, error) {
 	u := item.permalink
 	if u == "" {
-		u = fmt.Sprintf("%s/archives/%d.html", siteBase, item.articleID)
+		u = fmt.Sprintf("%s/archives/%d.html", s.base, item.articleID)
 	}
 
 	body, err := s.fetchHTML(ctx, u)

@@ -90,7 +90,7 @@ func TestFetchDetail(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	s := &Scraper{client: ts.Client()}
+	s := &Scraper{client: ts.Client(), base: ts.URL}
 	item := listItem{
 		articleID: 31328743,
 		permalink: ts.URL + "/archives/31328743.html",
@@ -148,7 +148,7 @@ func TestFetchDetailSkipsNonProduct(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	s := &Scraper{client: ts.Client()}
+	s := &Scraper{client: ts.Client(), base: ts.URL}
 	item := listItem{
 		articleID: 31419219,
 		permalink: ts.URL + "/archives/31419219.html",
@@ -312,7 +312,7 @@ ld_blog_vars.articles.push({
 	defer ts.Close()
 	tsURL = ts.URL
 
-	s := &Scraper{client: ts.Client()}
+	s := &Scraper{client: ts.Client(), base: ts.URL}
 	out := make(chan scraper.SceneResult)
 	go s.run(context.Background(), ts.URL, scraper.ListOpts{Workers: 1}, out)
 
@@ -367,7 +367,7 @@ ld_blog_vars.articles.push({
 
 func runMercury(t *testing.T, ts *httptest.Server, opts scraper.ListOpts) (scenes, stopped int) {
 	t.Helper()
-	s := &Scraper{client: ts.Client()}
+	s := &Scraper{client: ts.Client(), base: ts.URL}
 	out := make(chan scraper.SceneResult)
 	go s.run(context.Background(), ts.URL, opts, out)
 	for r := range out {
@@ -389,7 +389,7 @@ func TestRunKnownIDsUsesSceneID(t *testing.T) {
 	ts := newKnownIDsServer(t)
 
 	// First pass: discover what the scraper actually emits.
-	s := &Scraper{client: ts.Client()}
+	s := &Scraper{client: ts.Client(), base: ts.URL}
 	out := make(chan scraper.SceneResult)
 	go s.run(context.Background(), ts.URL, scraper.ListOpts{Workers: 1}, out)
 	known := map[string]bool{}

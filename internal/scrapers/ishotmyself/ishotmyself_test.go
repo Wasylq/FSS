@@ -108,7 +108,7 @@ func TestEndToEnd(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	s := &Scraper{client: ts.Client()}
+	s := &Scraper{client: ts.Client(), base: ts.URL}
 
 	origBase := siteBase
 	siteBaseOverride := ts.URL

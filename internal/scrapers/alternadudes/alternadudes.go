@@ -19,10 +19,15 @@ import (
 
 type Scraper struct {
 	client *http.Client
+	// base is the site root used for *fetches*, a field so offline tests can
+	// redirect them. Output fields (Scene.URL, Thumbnail) keep the const: a
+	// scene's public address must not become a 127.0.0.1 URL because a test
+	// happened to fetch it from there.
+	base string
 }
 
 func New() *Scraper {
-	return &Scraper{client: httpx.NewClient(30 * time.Second)}
+	return &Scraper{client: httpx.NewClient(30 * time.Second), base: siteBase}
 }
 
 var _ scraper.StudioScraper = (*Scraper)(nil)
@@ -129,7 +134,7 @@ func pageURL(base string, page int) string {
 func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOpts, out chan<- scraper.SceneResult) {
 	defer close(out)
 
-	base := siteBase
+	base := s.base
 	if strings.HasPrefix(studioURL, "http") {
 		if m := baseURLRe.FindString(studioURL); m != "" {
 			base = m

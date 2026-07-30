@@ -60,12 +60,18 @@ type SiteConfig struct {
 type Scraper struct {
 	cfg    SiteConfig
 	client *http.Client
+	// base is the site root used for *fetches*, a field so offline tests can
+	// redirect them. Output fields (Scene.URL, Thumbnail) keep the const: a
+	// scene's public address must not become a 127.0.0.1 URL because a test
+	// happened to fetch it from there.
+	base string
 }
 
 func New(cfg SiteConfig) *Scraper {
 	return &Scraper{
 		cfg:    cfg,
 		client: httpx.NewClient(30 * time.Second),
+		base:   baseURL,
 	}
 }
 
@@ -120,7 +126,7 @@ func (s *Scraper) listingURL(start int) string {
 	q.Set("count", strconv.Itoa(perPage))
 	q.Set("format", "json")
 	q.Set("resource", "video")
-	return baseURL + "/index.php?" + q.Encode()
+	return s.base + "/index.php?" + q.Encode()
 }
 
 func (s *Scraper) fetchPage(ctx context.Context, start int) (*apiResponse, error) {
@@ -130,7 +136,7 @@ func (s *Scraper) fetchPage(ctx context.Context, start int) (*apiResponse, error
 		Headers: map[string]string{
 			"User-Agent": httpx.UserAgentFirefox,
 			"Accept":     "application/json, text/javascript, */*; q=0.01",
-			"Referer":    baseURL + "/index.php?section=" + strconv.Itoa(section),
+			"Referer":    s.base + "/index.php?section=" + strconv.Itoa(section),
 		},
 	})
 	if err != nil {
