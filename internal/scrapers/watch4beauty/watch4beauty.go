@@ -29,10 +29,14 @@ var (
 
 type Scraper struct {
 	Client *http.Client
+	// apiBase is the API root used for *fetches*, a field so offline tests can
+	// redirect them. The scene-URL and cover-URL builders keep the siteBase
+	// const — those are public addresses, not things a test should rewrite.
+	apiBase string
 }
 
 func New() *Scraper {
-	return &Scraper{Client: httpx.NewClient(30 * time.Second)}
+	return &Scraper{Client: httpx.NewClient(30 * time.Second), apiBase: apiBase}
 }
 
 var _ scraper.StudioScraper = (*Scraper)(nil)
@@ -70,7 +74,7 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 }
 
 func (s *Scraper) runListing(ctx context.Context, studioURL string, opts scraper.ListOpts, out chan<- scraper.SceneResult) {
-	s.runListingFrom(ctx, studioURL, opts, out, apiBase)
+	s.runListingFrom(ctx, studioURL, opts, out, s.apiBase)
 }
 
 func (s *Scraper) runListingFrom(ctx context.Context, studioURL string, opts scraper.ListOpts, out chan<- scraper.SceneResult, base string) {
@@ -173,7 +177,7 @@ func (s *Scraper) runListingFrom(ctx context.Context, studioURL string, opts scr
 }
 
 func (s *Scraper) runModel(ctx context.Context, modelSlug, studioURL string, opts scraper.ListOpts, out chan<- scraper.SceneResult) {
-	s.runModelFrom(ctx, modelSlug, studioURL, opts, out, apiBase)
+	s.runModelFrom(ctx, modelSlug, studioURL, opts, out, s.apiBase)
 }
 
 func (s *Scraper) runModelFrom(ctx context.Context, modelSlug, studioURL string, opts scraper.ListOpts, out chan<- scraper.SceneResult, base string) {

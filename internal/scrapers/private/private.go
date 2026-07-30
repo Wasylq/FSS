@@ -89,10 +89,14 @@ const (
 
 type Scraper struct {
 	client *http.Client
+	// base is the site root. resolveInput already threads a base through the
+	// `resolved` struct into every fetch, so this only has to make the default
+	// overridable for offline tests.
+	base string
 }
 
 func New() *Scraper {
-	return &Scraper{client: httpx.NewClient(30 * time.Second)}
+	return &Scraper{client: httpx.NewClient(30 * time.Second), base: canonicalBase}
 }
 
 var _ scraper.StudioScraper = (*Scraper)(nil)
@@ -187,7 +191,7 @@ type resolved struct {
 //
 // Sister-domain hosts in `hostRewrite` redirect to the corresponding
 // /site/{slug}/ path on private.com.
-func resolveInput(rawURL string) (resolved, error) {
+func resolveInput(rawURL, canonicalBase string) (resolved, error) {
 	parsed, err := url.Parse(rawURL)
 	if err != nil || parsed.Host == "" {
 		return resolved{}, fmt.Errorf("private: invalid URL %q", rawURL)
@@ -360,7 +364,7 @@ func listingURL(r resolved, page int) string {
 }
 
 func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOpts, out chan<- scraper.SceneResult) {
-	target, err := resolveInput(studioURL)
+	target, err := resolveInput(studioURL, s.base)
 	if err != nil {
 		defer close(out)
 		select {

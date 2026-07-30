@@ -184,7 +184,7 @@ func TestFetchIssues(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	s := &Scraper{Client: ts.Client()}
+	s := &Scraper{Client: ts.Client(), apiBase: ts.URL}
 	got, err := s.fetchIssuesFrom(context.Background(), ts.URL+"/api/issues")
 	if err != nil {
 		t.Fatalf("fetchIssuesFrom error: %v", err)
@@ -216,7 +216,7 @@ func TestFetchIssueModels(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	s := &Scraper{Client: ts.Client()}
+	s := &Scraper{Client: ts.Client(), apiBase: ts.URL}
 	got, err := s.fetchIssueModelsFrom(context.Background(), ts.URL+"/api/issues/sweet-street-sin/models")
 	if err != nil {
 		t.Fatalf("error: %v", err)
@@ -249,7 +249,7 @@ func TestFetchModelUpdates(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	s := &Scraper{Client: ts.Client()}
+	s := &Scraper{Client: ts.Client(), apiBase: ts.URL}
 	got, err := s.fetchModelUpdatesFrom(context.Background(), ts.URL+"/api/models/erika-heiss/updates")
 	if err != nil {
 		t.Fatalf("error: %v", err)
@@ -286,7 +286,7 @@ func TestRunModel(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	s := &Scraper{Client: ts.Client()}
+	s := &Scraper{Client: ts.Client(), apiBase: ts.URL}
 	ctx := context.Background()
 	out := make(chan scraper.SceneResult, 10)
 
@@ -334,7 +334,7 @@ func TestRunListing(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	s := &Scraper{Client: ts.Client()}
+	s := &Scraper{Client: ts.Client(), apiBase: ts.URL}
 	ctx := context.Background()
 	out := make(chan scraper.SceneResult, 10)
 

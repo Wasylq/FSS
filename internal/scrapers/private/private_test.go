@@ -182,7 +182,7 @@ func TestResolveInput(t *testing.T) {
 		{"https://example.com/scenes", resolved{}, true},
 	}
 	for _, c := range cases {
-		got, err := resolveInput(c.in)
+		got, err := resolveInput(c.in, canonicalBase)
 		if c.wantErr {
 			if err == nil {
 				t.Errorf("resolveInput(%q) → no error, want one", c.in)
@@ -278,7 +278,7 @@ func TestListScenes_endToEnd(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	s := &Scraper{client: ts.Client()}
+	s := &Scraper{client: ts.Client(), base: ts.URL}
 	// We have to inject the httptest URL into resolveInput's expected base
 	// somehow. Easiest: subclass-style — drop in a tiny override by
 	// constructing the listingURL helper manually for this test.
@@ -322,7 +322,7 @@ func TestListScenes_knownIDsStopsEarly(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	s := &Scraper{client: ts.Client()}
+	s := &Scraper{client: ts.Client(), base: ts.URL}
 	target := resolved{base: ts.URL, basePath: "/scenes"}
 	out := make(chan scraper.SceneResult)
 	go s.runFromResolved(context.Background(), target, "test", scraper.ListOpts{
