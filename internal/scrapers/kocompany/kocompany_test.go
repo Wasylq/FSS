@@ -208,7 +208,7 @@ func TestListScenes_endToEnd(t *testing.T) {
 		ID: "kobeast", SiteName: "KO BEAST", LabelID: 3,
 		MatchRe: regexp.MustCompile(`.*`),
 	}
-	s := &Scraper{cfg: cfg, client: ts.Client()}
+	s := &Scraper{cfg: cfg, client: ts.Client(), base: ts.URL}
 	// Replicate the run loop pointed at ts.URL by overriding listingURL
 	// through a tiny inline shim that drops the fixed baseURL.
 	out := make(chan scraper.SceneResult)

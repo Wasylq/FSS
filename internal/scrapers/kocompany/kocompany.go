@@ -72,12 +72,18 @@ type SiteConfig struct {
 type Scraper struct {
 	cfg    SiteConfig
 	client *http.Client
+	// base is the site root used for *fetches*, a field so offline tests can
+	// redirect the listing walk. Output fields (Scene.URL, Thumbnail) keep the
+	// baseURL const deliberately — a scene's public address must not become a
+	// 127.0.0.1 URL just because a test fetched it from there.
+	base string
 }
 
 func New(cfg SiteConfig) *Scraper {
 	return &Scraper{
 		cfg:    cfg,
 		client: httpx.NewClient(30 * time.Second),
+		base:   baseURL,
 	}
 }
 
@@ -195,7 +201,7 @@ func (s *Scraper) listingURL(page int) string {
 	if page > 1 {
 		q += fmt.Sprintf("&pageno=%d", page)
 	}
-	return baseURL + "/products/list.php?" + q
+	return s.base + "/products/list.php?" + q
 }
 
 func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOpts, out chan<- scraper.SceneResult) {
