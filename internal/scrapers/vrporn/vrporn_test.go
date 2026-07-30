@@ -5,11 +5,11 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 	"time"
 
 	"github.com/Wasylq/FSS/internal/scrapers/testutil"
-	"github.com/Wasylq/FSS/models"
 	"github.com/Wasylq/FSS/scraper"
 )
 
@@ -87,42 +87,34 @@ const fixtureAPI = `{
   }
 }`
 
+// TestRun drives ListScenes end to end.
+//
+// This previously reimplemented the scraper's own Paginate callback inside the
+// test — its comment explained that apiBase was a const it could not redirect —
+// which left ListScenes and run at 0% and would have passed even if run were
+// broken. apiBase is now a field, so the real code path is exercised.
 func TestRun(t *testing.T) {
+	var paths []string
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		paths = append(paths, r.URL.Path)
 		_, _ = fmt.Fprint(w, fixtureAPI)
 	}))
 	defer ts.Close()
 
 	s := &Scraper{client: ts.Client(), apiBase: ts.URL}
-	// Override apiBase by using the test server URL directly in studioURL
-	// The scraper extracts the slug and builds the API URL from apiBase constant,
-	// so we need to make the test server respond to any request.
-	out := make(chan scraper.SceneResult)
-	go func() {
-		defer close(out)
-		scraper.Paginate(context.Background(), scraper.ListOpts{}, "vrporn", out, func(ctx context.Context, page int) (scraper.PageResult, error) {
-			u := ts.URL + "/proxy/api/content/v1/videos/studio/test?page=1&limit=100&sort=new"
-			var resp apiResponse
-			if err := s.fetchJSON(ctx, u, &resp); err != nil {
-				return scraper.PageResult{}, err
-			}
-			scenes := make([]models.Scene, 0, len(resp.Data.Items))
-			now := time.Now().UTC()
-			for _, item := range resp.Data.Items {
-				scenes = append(scenes, toScene(item, ts.URL+"/studio/test/", now))
-			}
-			return scraper.PageResult{
-				Scenes: scenes,
-				Total:  resp.Data.Total,
-				Done:   true,
-			}, nil
-		})
-	}()
 
-	scenes := testutil.CollectScenes(t, out)
+	ch, err := s.ListScenes(context.Background(), "https://vrporn.com/studio/test/", scraper.ListOpts{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	scenes := testutil.CollectScenes(t, ch)
 
 	if len(scenes) != 2 {
 		t.Fatalf("got %d scenes, want 2", len(scenes))
+	}
+	// The studio mode must hit the studio endpoint, not the model one.
+	if len(paths) == 0 || !strings.Contains(strings.Join(paths, " "), "/videos/studio/test") {
+		t.Errorf("requested paths = %v, want the studio endpoint", paths)
 	}
 
 	sc := scenes[0]
@@ -152,6 +144,38 @@ func TestRun(t *testing.T) {
 	}
 	if sc.Thumbnail != "https://cdn.vrporn.com/img1.jpg" {
 		t.Errorf("Thumbnail = %q", sc.Thumbnail)
+	}
+}
+
+// The model URL mode must route to the model endpoint.
+func TestRunModelMode(t *testing.T) {
+	var paths []string
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		paths = append(paths, r.URL.Path)
+		_, _ = fmt.Fprint(w, fixtureAPI)
+	}))
+	defer ts.Close()
+
+	s := &Scraper{client: ts.Client(), apiBase: ts.URL}
+	ch, err := s.ListScenes(context.Background(), "https://vrporn.com/pornstars/somebody/", scraper.ListOpts{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if scenes := testutil.CollectScenes(t, ch); len(scenes) != 2 {
+		t.Fatalf("got %d scenes, want 2", len(scenes))
+	}
+	if !strings.Contains(strings.Join(paths, " "), "/videos/model/somebody") {
+		t.Errorf("requested paths = %v, want the model endpoint", paths)
+	}
+}
+
+func TestIDAndPatterns(t *testing.T) {
+	s := New()
+	if s.ID() != "vrporn" {
+		t.Errorf("ID = %q", s.ID())
+	}
+	if len(s.Patterns()) == 0 {
+		t.Error("Patterns is empty")
 	}
 }
 
