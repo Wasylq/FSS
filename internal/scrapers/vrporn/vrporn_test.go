@@ -93,7 +93,7 @@ func TestRun(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	s := &Scraper{client: ts.Client()}
+	s := &Scraper{client: ts.Client(), apiBase: ts.URL}
 	// Override apiBase by using the test server URL directly in studioURL
 	// The scraper extracts the slug and builds the API URL from apiBase constant,
 	// so we need to make the test server respond to any request.

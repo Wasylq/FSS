@@ -20,12 +20,15 @@ const (
 
 type Scraper struct {
 	client *http.Client
+	// apiBase is a field rather than only a const so offline tests can point
+	// the API calls at an httptest server.
+	apiBase string
 }
 
 var _ scraper.StudioScraper = (*Scraper)(nil)
 
 func New() *Scraper {
-	return &Scraper{client: httpx.NewClient(30 * time.Second)}
+	return &Scraper{client: httpx.NewClient(30 * time.Second), apiBase: apiBase}
 }
 
 func init() { scraper.Register(New()) }
@@ -84,10 +87,10 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 	var endpoint string
 	switch mode {
 	case modeStudio:
-		endpoint = fmt.Sprintf("%s/videos/studio/%s", apiBase, slug)
+		endpoint = fmt.Sprintf("%s/videos/studio/%s", s.apiBase, slug)
 		scraper.Debugf(1, "vrporn: scraping studio %s", slug)
 	case modeModel:
-		endpoint = fmt.Sprintf("%s/videos/model/%s", apiBase, slug)
+		endpoint = fmt.Sprintf("%s/videos/model/%s", s.apiBase, slug)
 		scraper.Debugf(1, "vrporn: scraping model %s", slug)
 	}
 
