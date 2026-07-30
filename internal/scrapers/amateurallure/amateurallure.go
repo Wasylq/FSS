@@ -29,19 +29,21 @@ const (
 	detailWorkers = 4
 )
 
-// siteBase / listingURL are vars (not consts) so tests can point them at an
-// httptest server.
-var (
-	siteBase   = "https://www.amateurallure.com"
-	listingURL = siteBase + "/tour/updates/page_%d.html"
+const (
+	siteBase       = "https://www.amateurallure.com"
+	listingPathFmt = "/tour/updates/page_%d.html"
 )
 
 type Scraper struct {
 	Client *http.Client
+	// base is the site root. A field rather than a mutable package var so tests
+	// redirect fetches without swapping global state, which every test
+	// previously had to save and restore.
+	base string
 }
 
 func New() *Scraper {
-	return &Scraper{Client: httpx.NewClient(30 * time.Second)}
+	return &Scraper{Client: httpx.NewClient(30 * time.Second), base: siteBase}
 }
 
 var _ scraper.StudioScraper = (*Scraper)(nil)
@@ -83,7 +85,7 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 
 	now := time.Now().UTC()
 	scraper.Paginate(ctx, opts, siteID, out, func(ctx context.Context, page int) (scraper.PageResult, error) {
-		items, err := s.fetchListing(ctx, fmt.Sprintf(listingURL, page))
+		items, err := s.fetchListing(ctx, fmt.Sprintf(s.base+listingPathFmt, page))
 		if err != nil {
 			return scraper.PageResult{}, err
 		}
@@ -132,7 +134,7 @@ func (s *Scraper) fetchListing(ctx context.Context, pageURL string) ([]listItem,
 			it.title = html.UnescapeString(strings.TrimSpace(t[1]))
 		}
 		if th := thumbRe.FindStringSubmatch(card); th != nil {
-			it.thumb = absURL(th[1])
+			it.thumb = absURL(s.base, th[1])
 		}
 		items = append(items, it)
 	}
@@ -198,7 +200,7 @@ func (s *Scraper) toScene(ctx context.Context, studioURL string, it listItem, no
 			scene.Description = d
 		}
 		if img := strings.TrimSpace(og["og:image"]); img != "" {
-			scene.Thumbnail = absURL(img)
+			scene.Thumbnail = absURL(s.base, img)
 		}
 		scene.Performers = parsePerformers(body)
 	}
@@ -228,11 +230,11 @@ func parsePerformers(body []byte) []string {
 	return performers
 }
 
-func absURL(u string) string {
+func absURL(base, u string) string {
 	if u == "" || strings.HasPrefix(u, "http") {
 		return u
 	}
-	return siteBase + "/" + strings.TrimPrefix(u, "/")
+	return base + "/" + strings.TrimPrefix(u, "/")
 }
 
 func (s *Scraper) get(ctx context.Context, u string) ([]byte, error) {

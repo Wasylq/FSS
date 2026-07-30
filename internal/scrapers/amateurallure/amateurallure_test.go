@@ -120,9 +120,6 @@ func TestID(t *testing.T) {
 }
 
 func TestListScenesEndToEnd(t *testing.T) {
-	origBase, origListing := siteBase, listingURL
-	defer func() { siteBase, listingURL = origBase, origListing }()
-
 	var ts *httptest.Server
 	ts = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
@@ -138,11 +135,10 @@ func TestListScenesEndToEnd(t *testing.T) {
 		}
 	}))
 	defer ts.Close()
-	siteBase = ts.URL
-	listingURL = siteBase + "/tour/updates/page_%d.html"
 
 	s := New()
 	s.Client = ts.Client()
+	s.base = ts.URL
 	ch, err := s.ListScenes(context.Background(), ts.URL, scraper.ListOpts{})
 	if err != nil {
 		t.Fatal(err)
