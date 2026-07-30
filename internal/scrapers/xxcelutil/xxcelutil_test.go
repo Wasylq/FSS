@@ -1,6 +1,16 @@
 package xxcelutil
 
-import "testing"
+import (
+	"context"
+	"fmt"
+	"net/http"
+	"net/http/httptest"
+	"strings"
+	"testing"
+
+	"github.com/Wasylq/FSS/internal/scrapers/testutil"
+	"github.com/Wasylq/FSS/scraper"
+)
 
 func newXXCel() *Scraper {
 	return New(SiteConfig{SiteID: "xxcel", Domain: "xx-cel.com", Host: "https://xx-cel.com", StudioName: "XX-Cel"})
@@ -112,5 +122,102 @@ func TestMatchesURL(t *testing.T) {
 	}
 	if !hh.MatchesURL("https://www.heavyonhotties.com/movies/i-love-redheads") {
 		t.Error("hh should match www.heavyonhotties.com")
+	}
+}
+
+// --- end to end ---------------------------------------------------------------
+//
+// The tests above exercise the parsers directly, which left the whole fetch path
+// — ListScenes, run, enqueueListing, fetchPage, fetchDetail — at 0% and the
+// package at 37.4%. That mattered more here than for a single site: xxcelutil is
+// shared infrastructure, and its host package `xxcel` is a config-only wrapper
+// with no unit tests of its own, so this was the total coverage of the whole
+// network.
+//
+// SiteConfig.Host is injectable, so the whole walk runs against httptest.
+func TestListScenesEndToEnd(t *testing.T) {
+	var listingHits, detailHits int
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch {
+		case strings.HasPrefix(r.URL.Path, "/movies/page-"):
+			listingHits++
+			// Page 2 onwards is empty so the walk terminates.
+			if !strings.HasPrefix(r.URL.Path, "/movies/page-1/") {
+				_, _ = fmt.Fprint(w, `<div class="grid"></div>`)
+				return
+			}
+			_, _ = fmt.Fprint(w, listingFixture)
+		case strings.HasPrefix(r.URL.Path, "/movies/"):
+			detailHits++
+			_, _ = fmt.Fprint(w, detailFixtureXC)
+		default:
+			http.NotFound(w, r)
+		}
+	}))
+	defer ts.Close()
+
+	s := New(SiteConfig{SiteID: "xxcel", Domain: "xx-cel.com", Host: ts.URL, StudioName: "XX-Cel"})
+	s.Client = ts.Client()
+
+	ch, err := s.ListScenes(context.Background(), ts.URL+"/movies/", scraper.ListOpts{Workers: 2})
+	if err != nil {
+		t.Fatal(err)
+	}
+	scenes := testutil.CollectScenes(t, ch)
+	if len(scenes) != 2 {
+		t.Fatalf("got %d scenes, want 2", len(scenes))
+	}
+	if listingHits == 0 || detailHits == 0 {
+		t.Errorf("listing/detail fetches = %d/%d, want both non-zero", listingHits, detailHits)
+	}
+
+	// Offline means offline: a scene URL off the test server means the scrape
+	// escaped to the live site.
+	for _, sc := range scenes {
+		if !strings.HasPrefix(sc.URL, ts.URL) {
+			t.Errorf("scene %q URL %q is not on the test server", sc.ID, sc.URL)
+		}
+		if sc.SiteID != "xxcel" {
+			t.Errorf("scene %q SiteID = %q", sc.ID, sc.SiteID)
+		}
+		if sc.Studio != "XX-Cel" {
+			t.Errorf("scene %q Studio = %q", sc.ID, sc.Studio)
+		}
+	}
+
+	// Detail-page fields must actually be merged in, not just fetched. Note the
+	// title comes from the slug via slugToTitle ("Megara Steele Video 8"), not
+	// from the detail page's <h1> — the detail fetch supplies date, duration and
+	// performers only.
+	var found bool
+	for _, sc := range scenes {
+		if sc.ID == "video-megara-steele-video-8" {
+			found = true
+			if sc.Title != "Megara Steele Video 8" {
+				t.Errorf("Title = %q, want the slug-derived title", sc.Title)
+			}
+			if sc.Duration != 10*60+21 {
+				t.Errorf("Duration = %d, want %d", sc.Duration, 10*60+21)
+			}
+			if sc.Date.Format("2006-01-02") != "2024-02-26" {
+				t.Errorf("Date = %v, want 2024-02-26", sc.Date)
+			}
+			if len(sc.Performers) == 0 {
+				t.Error("Performers is empty — the detail page was not merged")
+			}
+		}
+	}
+	if !found {
+		t.Errorf("expected scene not found; got %+v", scenes)
+	}
+}
+
+func TestIDAndPatterns(t *testing.T) {
+	s := newXXCel()
+	if s.ID() != "xxcel" {
+		t.Errorf("ID = %q", s.ID())
+	}
+	if len(s.Patterns()) == 0 {
+		t.Error("Patterns is empty — the scraper would be invisible in `fss list-scrapers`")
 	}
 }
