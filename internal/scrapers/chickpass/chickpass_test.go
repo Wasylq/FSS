@@ -1,7 +1,16 @@
 package chickpass
 
 import (
+	"context"
+	"fmt"
+	"net/http"
+	"net/http/httptest"
+	"strings"
 	"testing"
+
+	"github.com/Wasylq/FSS/internal/scrapers/testutil"
+	"github.com/Wasylq/FSS/models"
+	"github.com/Wasylq/FSS/scraper"
 )
 
 func TestFindSetListBlockID(t *testing.T) {
@@ -137,5 +146,93 @@ func TestMatchesURL(t *testing.T) {
 		if got := s.MatchesURL(c.url); got != c.want {
 			t.Errorf("MatchesURL[%s](%q) = %v, want %v", c.id, c.url, got, c.want)
 		}
+	}
+}
+
+// --- end to end ---------------------------------------------------------------
+//
+// The tests above exercise the helpers directly, which left the whole NATS walk
+// — ListScenes, run, fetchPageConfig, fetchSets, fetchServers, fetchAPI — at 0%.
+// The tour_api endpoint is now a field, so the three-step discovery
+// (page config -> set list -> servers) runs offline.
+func TestListScenesEndToEnd(t *testing.T) {
+	var seen []string
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		seen = append(seen, r.URL.Path+"?"+r.URL.RawQuery)
+		w.Header().Set("Content-Type", "application/json")
+		switch {
+		case strings.Contains(r.URL.RawQuery, "slug=/"):
+			_, _ = fmt.Fprint(w, `{"success":true,"slug":"/","name":"Home","blocks":[`+
+				`{"cms_block_id":"99","settings":{"type":"other"}},`+
+				`{"cms_block_id":"42","settings":{"type":"set_list"}}]}`)
+		case strings.Contains(r.URL.Path, "/content/sets"):
+			// total_count and member_views arrive as *strings* (hence stringOrInt), and
+			// thumb keys are W-H ratios (hyphen, not "x") that parseRatio ranks by area.
+			_, _ = fmt.Fprint(w, `{"success":true,"total_count":"2","sets":[`+
+				`{"cms_set_id":"1001","name":"First Scene","description":"<p>Desc &amp; more</p>",`+
+				`"slug":"first-scene","added_nice":"2026-01-05","member_views":"1234",`+
+				`"preview_formatted":{"thumb":{"320-180":[{"cms_content_server_id":"7","fileuri":"/t/1s.jpg","signature":"sig"}],"1280-720":[{"cms_content_server_id":"7","fileuri":"/t/1.jpg","signature":"sig"}]}}},`+
+				`{"cms_set_id":"1002","name":"Second Scene","description":"","slug":"second-scene",`+
+				`"added_nice":"2026-01-06","member_views":"5",`+
+				`"preview_formatted":{"thumb":{"1280-720":[{"cms_content_server_id":"7","fileuri":"/t/2.jpg","signature":"sig"}]}}}]}`)
+		case strings.Contains(r.URL.Path, "/content/servers"):
+			_, _ = fmt.Fprint(w, `{"success":true,"servers":[{"cms_content_server_id":"7","settings":{"url":"https://cdn.example/"}}]}`)
+		default:
+			http.NotFound(w, r)
+		}
+	}))
+	defer ts.Close()
+
+	cfg := SiteConfig{ID: "chickpass", SiteBase: "https://www.chickpass.com", SiteName: "ChickPass", CMSAreaID: "1"}
+	s := New(cfg)
+	s.client = ts.Client()
+	s.apiBase = ts.URL
+
+	ch, err := s.ListScenes(context.Background(), cfg.SiteBase, scraper.ListOpts{Workers: 2})
+	if err != nil {
+		t.Fatal(err)
+	}
+	scenes := testutil.CollectScenes(t, ch)
+	if len(scenes) != 2 {
+		t.Fatalf("got %d scenes, want 2 (requests: %v)", len(scenes), seen)
+	}
+
+	// All three discovery steps must have run.
+	joined := strings.Join(seen, " ")
+	for _, want := range []string{"slug=/", "/content/sets", "/content/servers"} {
+		if !strings.Contains(joined, want) {
+			t.Errorf("never requested %q; requests were %v", want, seen)
+		}
+	}
+
+	var first *models.Scene
+	for i := range scenes {
+		if scenes[i].Title == "First Scene" {
+			first = &scenes[i]
+		}
+	}
+	if first == nil {
+		t.Fatalf("scene \"First Scene\" missing; got %+v", scenes)
+	}
+	if first.ID != "1001" {
+		t.Errorf("ID = %q, want 1001", first.ID)
+	}
+	if first.Date.Format("2006-01-02") != "2026-01-05" {
+		t.Errorf("Date = %v, want 2026-01-05 (added_nice)", first.Date)
+	}
+	// member_views is a JSON string; stringOrInt must decode it.
+	if first.Views != 1234 {
+		t.Errorf("Views = %d, want 1234 (member_views as a string)", first.Views)
+	}
+	// Description arrives as HTML and is cleaned.
+	if strings.Contains(first.Description, "<p>") {
+		t.Errorf("Description still contains HTML: %q", first.Description)
+	}
+	// The thumbnail is assembled from the servers response.
+	if first.Thumbnail == "" {
+		t.Error("Thumbnail is empty — the servers lookup did not feed through")
+	}
+	if !strings.HasPrefix(first.URL, cfg.SiteBase) {
+		t.Errorf("URL = %q, want it under SiteBase", first.URL)
 	}
 }

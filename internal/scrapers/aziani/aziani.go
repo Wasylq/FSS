@@ -41,12 +41,16 @@ type SiteConfig struct {
 type Scraper struct {
 	cfg    SiteConfig
 	client *http.Client
+	// apiBase is the NATS tour_api endpoint used for *fetches*, a field so
+	// offline tests can drive the whole walk. Output fields keep cfg.SiteBase.
+	apiBase string
 }
 
 func New(cfg SiteConfig) *Scraper {
 	return &Scraper{
-		cfg:    cfg,
-		client: httpx.NewClient(30 * time.Second),
+		cfg:     cfg,
+		client:  httpx.NewClient(30 * time.Second),
+		apiBase: natsAPIBase,
 	}
 }
 
@@ -152,7 +156,7 @@ type previewItem struct {
 // ---- Discovery + fetch ----
 
 func (s *Scraper) fetchPageConfig(ctx context.Context) (*pageResponse, error) {
-	u := natsAPIBase + "/content/page?slug=/"
+	u := s.apiBase + "/content/page?slug=/"
 	body, err := s.fetchAPI(ctx, u)
 	if err != nil {
 		return nil, err
@@ -177,7 +181,7 @@ func findSetListBlockID(page *pageResponse) string {
 }
 
 func (s *Scraper) fetchSets(ctx context.Context, blockID string) (*setsResponse, error) {
-	u := natsAPIBase + "/content/sets?cms_block_id=" + blockID
+	u := s.apiBase + "/content/sets?cms_block_id=" + blockID
 	body, err := s.fetchAPI(ctx, u)
 	if err != nil {
 		return nil, err
@@ -193,7 +197,7 @@ func (s *Scraper) fetchSets(ctx context.Context, blockID string) (*setsResponse,
 }
 
 func (s *Scraper) fetchServers(ctx context.Context) (map[string]string, error) {
-	body, err := s.fetchAPI(ctx, natsAPIBase+"/content/servers")
+	body, err := s.fetchAPI(ctx, s.apiBase+"/content/servers")
 	if err != nil {
 		return nil, err
 	}
