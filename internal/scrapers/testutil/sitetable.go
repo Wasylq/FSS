@@ -97,6 +97,15 @@ func checkComplete(t *testing.T, rows []SiteRow) {
 		if len(r.Patterns) == 0 {
 			t.Errorf("%s: no Patterns — it would be invisible in `fss list-scrapers`", r.label())
 		}
+		// A blank entry is not the same as no entries: where Patterns() derives
+		// each string from another column, a broken derivation yields
+		// []string{""} — length 1, so the check above passes while
+		// `fss list-scrapers` prints an empty line.
+		for i, p := range r.Patterns {
+			if strings.TrimSpace(p) == "" {
+				t.Errorf("%s: Patterns[%d] is blank", r.label(), i)
+			}
+		}
 		if r.MatchRe == nil {
 			t.Errorf("%s: nil MatchRe", r.label())
 		}
