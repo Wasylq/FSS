@@ -873,3 +873,134 @@ func TestApplyScene_stashboxTagOnlyForScenesWithStashIDs(t *testing.T) {
 		t.Error("stashbox tag was resolved for a scene with no StashIDs")
 	}
 }
+
+// --- entityLookup -------------------------------------------------------------
+//
+// entityLookup decides what `stash import` reports as "would create on apply" —
+// i.e. what the operator is told will be added to their library. It was at 0%.
+//
+// Its error path is a deliberate choice worth pinning: a failed lookup records
+// the name as *existing*, so a transient Stash error cannot produce a misleading
+// "would create" entry. A future refactor that flipped that to `false` would
+// silently start promising to create things that are already there.
+
+// lookupServer answers the tag/performer/studio queries entityLookup makes.
+// name/alias sets decide what "exists"; failOn makes a query error.
+func lookupServer(t *testing.T, exists map[string]bool, aliases map[string]bool, failOn string) *stash.Client {
+	t.Helper()
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		var req struct {
+			Query     string         `json:"query"`
+			Variables map[string]any `json:"variables"`
+		}
+		_ = json.NewDecoder(r.Body).Decode(&req)
+		name, _ := req.Variables["name"].(string)
+		alias, _ := req.Variables["alias"].(string)
+		key := name
+		if key == "" {
+			key = alias
+		}
+		if failOn != "" && key == failOn {
+			http.Error(w, "boom", http.StatusInternalServerError)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		hit := (name != "" && exists[name]) || (alias != "" && aliases[alias])
+		body := `{"tags":[]}`
+		switch {
+		case strings.Contains(req.Query, "findTags"):
+			if hit {
+				body = `{"findTags":{"tags":[{"id":"1","name":"x"}]}}`
+			} else {
+				body = `{"findTags":{"tags":[]}}`
+			}
+		case strings.Contains(req.Query, "findPerformers"):
+			if hit {
+				body = `{"findPerformers":{"performers":[{"id":"1","name":"x"}]}}`
+			} else {
+				body = `{"findPerformers":{"performers":[]}}`
+			}
+		case strings.Contains(req.Query, "findStudios"):
+			if hit {
+				body = `{"findStudios":{"studios":[{"id":"1","name":"x"}]}}`
+			} else {
+				body = `{"findStudios":{"studios":[]}}`
+			}
+		}
+		_, _ = fmt.Fprintf(w, `{"data":%s}`, body)
+	}))
+	t.Cleanup(ts.Close)
+	return stash.NewClient(ts.URL, "")
+}
+
+func TestEntityLookupTagByNameAndAlias(t *testing.T) {
+	c := lookupServer(t, map[string]bool{"HasName": true}, map[string]bool{"OnlyAlias": true}, "")
+	l := newEntityLookup(context.Background(), c)
+
+	l.checkTag("HasName")
+	l.checkTag("OnlyAlias") // absent by name, present by alias
+	l.checkTag("Missing")
+
+	if !l.tags["HasName"] {
+		t.Error("tag found by name recorded as missing")
+	}
+	if !l.tags["OnlyAlias"] {
+		t.Error("tag found by *alias* recorded as missing — the alias fallback did not run")
+	}
+	if l.tags["Missing"] {
+		t.Error("absent tag recorded as existing")
+	}
+}
+
+// A lookup error must record the name as existing, so it stays out of the
+// would-create list rather than promising a creation that may be wrong.
+func TestEntityLookupTreatsErrorsAsExisting(t *testing.T) {
+	c := lookupServer(t, nil, nil, "Explodes")
+	l := newEntityLookup(context.Background(), c)
+
+	stderr := captureStderr(t, func() { l.checkTag("Explodes") })
+
+	if !l.tags["Explodes"] {
+		t.Error("a failed lookup was recorded as missing; it must be treated as existing")
+	}
+	if !strings.Contains(stderr, "Explodes") {
+		t.Errorf("no warning naming the failed lookup; stderr = %q", stderr)
+	}
+}
+
+// Each name is queried once — the map doubles as a cache, and re-querying would
+// multiply requests against the operator's Stash on a large import.
+func TestEntityLookupCachesByName(t *testing.T) {
+	var queries int
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		queries++
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = fmt.Fprint(w, `{"data":{"findTags":{"tags":[{"id":"1","name":"x"}]}}}`)
+	}))
+	defer ts.Close()
+
+	l := newEntityLookup(context.Background(), stash.NewClient(ts.URL, ""))
+	l.checkTag("Same")
+	l.checkTag("Same")
+	l.checkTag("Same")
+	if queries != 1 {
+		t.Errorf("made %d queries for one name, want 1 (the map is the cache)", queries)
+	}
+}
+
+func TestEntityLookupPerformerAndStudio(t *testing.T) {
+	c := lookupServer(t, map[string]bool{"Known": true}, nil, "")
+	l := newEntityLookup(context.Background(), c)
+
+	l.checkPerformer("Known")
+	l.checkPerformer("Unknown")
+	l.checkStudio("Known")
+	l.checkStudio("Unknown")
+
+	if !l.performers["Known"] || l.performers["Unknown"] {
+		t.Errorf("performers = %v", l.performers)
+	}
+	if !l.studios["Known"] || l.studios["Unknown"] {
+		t.Errorf("studios = %v", l.studios)
+	}
+}
