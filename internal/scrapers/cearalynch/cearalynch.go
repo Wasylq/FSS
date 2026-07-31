@@ -26,17 +26,19 @@ const (
 	studioName = "Ceara Lynch"
 	performer  = "Ceara Lynch"
 	siteBase   = "https://www.cearalynch.com"
-	sitemapURL = siteBase + "/sitemap.xml"
 )
 
 var matchRe = regexp.MustCompile(`^https?://(?:www\.)?cearalynch\.com(?:/|$)`)
 
 type Scraper struct {
 	client *http.Client
+	// base is the site root used for *fetches*, a field so offline tests can
+	// drive the sitemap -> detail walk.
+	base string
 }
 
 func New() *Scraper {
-	return &Scraper{client: httpx.NewClient(30 * time.Second)}
+	return &Scraper{client: httpx.NewClient(30 * time.Second), base: siteBase}
 }
 
 var _ scraper.StudioScraper = (*Scraper)(nil)
@@ -67,11 +69,13 @@ type sitemapEntry struct {
 	lastmod time.Time
 }
 
+func (s *Scraper) sitemapURL() string { return s.base + "/sitemap.xml" }
+
 func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOpts, out chan<- scraper.SceneResult) {
 	defer close(out)
 
-	scraper.Debugf(1, "cearalynch: fetching sitemap %s", sitemapURL)
-	body, err := s.fetchPage(ctx, sitemapURL)
+	scraper.Debugf(1, "cearalynch: fetching sitemap %s", s.sitemapURL())
+	body, err := s.fetchPage(ctx, s.sitemapURL())
 	if err != nil {
 		select {
 		case out <- scraper.Error(fmt.Errorf("sitemap: %w", err)):
@@ -79,7 +83,7 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 		}
 		return
 	}
-	entries := parseSitemap(body)
+	entries := parseSitemap(s.base, body)
 	scraper.Debugf(1, "cearalynch: sitemap listed %d video entries", len(entries))
 
 	select {
@@ -150,7 +154,7 @@ var (
 // parseSitemap returns one entry per /video/{slug} <url> block in the sitemap,
 // capturing the slug and <lastmod>. Non-video paths (/content, /gallery,
 // /links, the home page) are skipped.
-func parseSitemap(body []byte) []sitemapEntry {
+func parseSitemap(base string, body []byte) []sitemapEntry {
 	page := string(body)
 	var entries []sitemapEntry
 	seen := map[string]bool{}
@@ -170,7 +174,7 @@ func parseSitemap(body []byte) []sitemapEntry {
 		}
 		seen[slug] = true
 
-		e := sitemapEntry{slug: slug, url: siteBase + "/video/" + slug}
+		e := sitemapEntry{slug: slug, url: base + "/video/" + slug}
 		if mm := lastmodRe.FindStringSubmatch(block[1]); mm != nil {
 			if t, err := parseutil.TryParseDate(strings.TrimSpace(mm[1]),
 				"2006-01-02T15:04Z", "2006-01-02T15:04:05Z07:00", time.RFC3339, "2006-01-02"); err == nil {

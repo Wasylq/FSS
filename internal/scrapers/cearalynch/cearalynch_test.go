@@ -1,6 +1,17 @@
 package cearalynch
 
-import "testing"
+import (
+	"context"
+	"fmt"
+	"net/http"
+	"net/http/httptest"
+	"strings"
+	"sync/atomic"
+	"testing"
+
+	"github.com/Wasylq/FSS/internal/scrapers/testutil"
+	"github.com/Wasylq/FSS/scraper"
+)
 
 const sitemapFixture = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
@@ -23,7 +34,7 @@ const detailFixture = `<!DOCTYPE html>
 </body></html>`
 
 func TestParseSitemap(t *testing.T) {
-	entries := parseSitemap([]byte(sitemapFixture))
+	entries := parseSitemap(siteBase, []byte(sitemapFixture))
 	// Only the two distinct /video/ entries should survive (dedup drops the
 	// repeated booty-basement; home/content/gallery/links are filtered out).
 	if len(entries) != 2 {
@@ -81,6 +92,56 @@ func TestMatchesURL(t *testing.T) {
 	for u, want := range cases {
 		if got := s.MatchesURL(u); got != want {
 			t.Errorf("MatchesURL(%q) = %v, want %v", u, got, want)
+		}
+	}
+}
+
+// --- end to end ---------------------------------------------------------------
+//
+// The tests above call the parsers directly, which left ListScenes, run,
+// fetchPage and the sitemap walk at 0% and the package at 35.6%. The base is now
+// a field and parseSitemap takes it, so the sitemap -> detail walk runs offline.
+func TestListScenesEndToEnd(t *testing.T) {
+	// Handlers run on separate goroutines (Workers > 1), so this must be atomic.
+	var detailHits atomic.Int32
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch {
+		case r.URL.Path == "/sitemap.xml":
+			// Served verbatim: parseSitemap only takes the *slug* from each <loc>
+			// and rebuilds the URL from the base, so detail fetches still land here.
+			_, _ = fmt.Fprint(w, sitemapFixture)
+		case strings.HasPrefix(r.URL.Path, "/video/"):
+			detailHits.Add(1)
+			_, _ = fmt.Fprint(w, detailFixture)
+		default:
+			http.NotFound(w, r)
+		}
+	}))
+	defer ts.Close()
+
+	s := New()
+	s.client = ts.Client()
+	s.base = ts.URL
+
+	ch, err := s.ListScenes(context.Background(), ts.URL, scraper.ListOpts{Workers: 2})
+	if err != nil {
+		t.Fatal(err)
+	}
+	scenes := testutil.CollectScenes(t, ch)
+	// The sitemap holds two distinct /video/ slugs plus a duplicate, and several
+	// non-video paths (/content/, /gallery/, /links/) that must be ignored.
+	if len(scenes) != 2 {
+		t.Fatalf("got %d scenes, want 2 (non-video paths skipped, duplicate deduped)", len(scenes))
+	}
+	if got := detailHits.Load(); got != 2 {
+		t.Errorf("detail fetches = %d, want 2", got)
+	}
+	for _, sc := range scenes {
+		if !strings.HasPrefix(sc.URL, ts.URL) {
+			t.Errorf("scene %q URL %q escaped the test server", sc.ID, sc.URL)
+		}
+		if sc.Title == "" {
+			t.Errorf("scene %q has empty Title", sc.ID)
 		}
 	}
 }
