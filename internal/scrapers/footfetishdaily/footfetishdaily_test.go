@@ -1,7 +1,15 @@
 package footfetishdaily
 
 import (
+	"context"
+	"fmt"
+	"net/http"
+	"net/http/httptest"
+	"strings"
 	"testing"
+
+	"github.com/Wasylq/FSS/internal/scrapers/testutil"
+	"github.com/Wasylq/FSS/scraper"
 )
 
 const listingFixture = `
@@ -28,7 +36,7 @@ const listingFixture = `
 `
 
 func TestParseListing(t *testing.T) {
-	scenes := parseListing([]byte(listingFixture))
+	scenes := parseListing(siteBase, []byte(listingFixture))
 	if len(scenes) != 2 {
 		t.Fatalf("got %d scenes, want 2", len(scenes))
 	}
@@ -50,7 +58,7 @@ func TestParseListing(t *testing.T) {
 }
 
 func TestParseListing_empty(t *testing.T) {
-	if got := parseListing([]byte(`<div class="row"></div>`)); len(got) != 0 {
+	if got := parseListing(siteBase, []byte(`<div class="row"></div>`)); len(got) != 0 {
 		t.Fatalf("got %d scenes, want 0", len(got))
 	}
 }
@@ -137,5 +145,59 @@ func TestMatchesURL(t *testing.T) {
 func TestSlugToTitle(t *testing.T) {
 	if got := slugToTitle("Anetta_Moor_Lollipop_Toes"); got != "Anetta Moor Lollipop Toes" {
 		t.Errorf("got %q", got)
+	}
+}
+
+// --- end to end ---------------------------------------------------------------
+//
+// The tests above call the parsers directly, which left ListScenes, run,
+// enqueueListing, fetchPage and fetchDetail at 0% and the package at 29.1%. The
+// base is now a field and parseListing takes it, so the listing -> detail walk
+// runs entirely against httptest.
+func TestListScenesEndToEnd(t *testing.T) {
+	var listingHits, detailHits int
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch {
+		case strings.HasPrefix(r.URL.Path, "/videos/"):
+			listingHits++
+			// Page 2 onwards is empty so the walk terminates.
+			if !strings.HasSuffix(r.URL.Path, "/1") {
+				_, _ = fmt.Fprint(w, `<div class="container"></div>`)
+				return
+			}
+			_, _ = fmt.Fprint(w, listingFixture)
+		case strings.HasPrefix(r.URL.Path, "/update/"):
+			detailHits++
+			_, _ = fmt.Fprint(w, detailFixture)
+		default:
+			http.NotFound(w, r)
+		}
+	}))
+	defer ts.Close()
+
+	s := New()
+	s.client = ts.Client()
+	s.base = ts.URL
+
+	ch, err := s.ListScenes(context.Background(), ts.URL+"/videos/1", scraper.ListOpts{Workers: 2})
+	if err != nil {
+		t.Fatal(err)
+	}
+	scenes := testutil.CollectScenes(t, ch)
+	if len(scenes) == 0 {
+		t.Fatal("no scenes returned")
+	}
+	if listingHits == 0 || detailHits == 0 {
+		t.Errorf("listing/detail fetches = %d/%d, want both non-zero", listingHits, detailHits)
+	}
+	// Offline means offline: the detail URL is the one actually fetched, so it
+	// must be on the test server.
+	for _, sc := range scenes {
+		if !strings.HasPrefix(sc.URL, ts.URL) {
+			t.Errorf("scene %q URL %q escaped the test server", sc.ID, sc.URL)
+		}
+		if sc.Title == "" {
+			t.Errorf("scene %q has empty Title", sc.ID)
+		}
 	}
 }

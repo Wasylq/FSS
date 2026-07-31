@@ -1,6 +1,16 @@
 package meanawolf
 
-import "testing"
+import (
+	"context"
+	"fmt"
+	"net/http"
+	"net/http/httptest"
+	"strings"
+	"testing"
+
+	"github.com/Wasylq/FSS/internal/scrapers/testutil"
+	"github.com/Wasylq/FSS/scraper"
+)
 
 const listingFixture = `
 <div class="item" data-setid="357" data-videoposter="https://cdn.example/06/53/653-2x.jpg?token=abc">
@@ -23,7 +33,7 @@ const detailFixture = `
 `
 
 func TestParseListing(t *testing.T) {
-	scenes := parseListing([]byte(listingFixture))
+	scenes := parseListing(siteBase, []byte(listingFixture))
 	if len(scenes) != 2 {
 		t.Fatalf("expected 2 scenes, got %d", len(scenes))
 	}
@@ -79,5 +89,62 @@ func TestMatchesURL(t *testing.T) {
 func TestSlugToTitle(t *testing.T) {
 	if got := slugToTitle("No-Nut-Challenge"); got != "No Nut Challenge" {
 		t.Errorf("slugToTitle = %q", got)
+	}
+}
+
+// --- end to end ---------------------------------------------------------------
+//
+// The tests above call the parsers directly, which left ListScenes, run,
+// enqueueListing, fetchPage and fetchDetail at 0% and the package at 33.8%. The
+// base is now a field and parseListing/absURL take it, so the listing -> detail
+// walk runs entirely against httptest.
+func TestListScenesEndToEnd(t *testing.T) {
+	var listingHits, detailHits int
+	var ts *httptest.Server
+	ts = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch {
+		case strings.HasPrefix(r.URL.Path, "/updates/page_"):
+			listingHits++
+			if !strings.Contains(r.URL.Path, "page_1.html") {
+				_, _ = fmt.Fprint(w, `<div class="none"></div>`)
+				return
+			}
+			// The fixture mixes an absolute live href with a relative one; rewrite
+			// the absolute one so both detail fetches stay on this server.
+			_, _ = fmt.Fprint(w, strings.ReplaceAll(listingFixture, "https://meanawolf.com", ts.URL))
+		case strings.HasPrefix(r.URL.Path, "/scenes/"):
+			detailHits++
+			_, _ = fmt.Fprint(w, detailFixture)
+		default:
+			http.NotFound(w, r)
+		}
+	}))
+	defer ts.Close()
+
+	s := New()
+	s.client = ts.Client()
+	s.base = ts.URL
+
+	ch, err := s.ListScenes(context.Background(), ts.URL+"/updates/page_1.html", scraper.ListOpts{Workers: 2})
+	if err != nil {
+		t.Fatal(err)
+	}
+	scenes := testutil.CollectScenes(t, ch)
+	if len(scenes) != 2 {
+		t.Fatalf("got %d scenes, want 2", len(scenes))
+	}
+	if listingHits == 0 || detailHits != 2 {
+		t.Errorf("listing/detail fetches = %d/%d, want listing>0 and detail=2", listingHits, detailHits)
+	}
+	for _, sc := range scenes {
+		if !strings.HasPrefix(sc.URL, ts.URL) {
+			t.Errorf("scene %q URL %q escaped the test server", sc.ID, sc.URL)
+		}
+		if sc.Title == "" {
+			t.Errorf("scene %q has empty Title", sc.ID)
+		}
+		if sc.Duration == 0 {
+			t.Errorf("scene %q has zero Duration — the detail RUNTIME was not parsed", sc.ID)
+		}
 	}
 }

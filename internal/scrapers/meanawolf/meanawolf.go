@@ -30,10 +30,13 @@ var matchRe = regexp.MustCompile(`^https?://(?:www\.)?meanawolf\.com(?:/|$)`)
 
 type Scraper struct {
 	client *http.Client
+	// base is the site root used for *fetches*, a field so offline tests can
+	// drive the whole walk instead of only the parsers.
+	base string
 }
 
 func New() *Scraper {
-	return &Scraper{client: httpx.NewClient(30 * time.Second)}
+	return &Scraper{client: httpx.NewClient(30 * time.Second), base: siteBase}
 }
 
 var _ scraper.StudioScraper = (*Scraper)(nil)
@@ -127,7 +130,7 @@ func (s *Scraper) enqueueListing(ctx context.Context, opts scraper.ListOpts, out
 			}
 		}
 		scraper.Debugf(1, "meanawolf: fetching page %d", page)
-		pageURL := fmt.Sprintf("%s/updates/page_%d.html", siteBase, page)
+		pageURL := fmt.Sprintf("%s/updates/page_%d.html", s.base, page)
 		body, err := s.fetchPage(ctx, pageURL)
 		if err != nil {
 			select {
@@ -136,7 +139,7 @@ func (s *Scraper) enqueueListing(ctx context.Context, opts scraper.ListOpts, out
 			}
 			return
 		}
-		scenes := parseListing(body)
+		scenes := parseListing(s.base, body)
 		if len(scenes) == 0 {
 			return
 		}
@@ -156,7 +159,7 @@ func (s *Scraper) enqueueModelPage(ctx context.Context, modelURL string, opts sc
 		}
 		return
 	}
-	scenes := parseListing(body)
+	scenes := parseListing(s.base, body)
 	if len(scenes) == 0 {
 		return
 	}
@@ -204,7 +207,7 @@ var (
 )
 
 // parseListing extracts the scene URL + poster thumbnail from each card.
-func parseListing(body []byte) []listingScene {
+func parseListing(base string, body []byte) []listingScene {
 	page := string(body)
 	locs := cardRe.FindAllStringIndex(page, -1)
 	scenes := make([]listingScene, 0, len(locs))
@@ -228,7 +231,7 @@ func parseListing(body []byte) []listingScene {
 		}
 		seen[slug] = true
 
-		ls := listingScene{slug: slug, url: absURL(m[1])}
+		ls := listingScene{slug: slug, url: absURL(base, m[1])}
 		if pm := posterRe.FindStringSubmatch(block); pm != nil {
 			ls.thumb = pm[1]
 		}
@@ -318,14 +321,14 @@ func slugToTitle(slug string) string {
 	return strings.ReplaceAll(slug, "-", " ")
 }
 
-func absURL(u string) string {
+func absURL(base, u string) string {
 	if strings.HasPrefix(u, "http") {
 		return u
 	}
 	if strings.HasPrefix(u, "/") {
-		return siteBase + u
+		return base + u
 	}
-	return siteBase + "/" + u
+	return base + "/" + u
 }
 
 func (s *Scraper) fetchPage(ctx context.Context, url string) ([]byte, error) {

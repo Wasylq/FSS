@@ -32,10 +32,13 @@ var matchRe = regexp.MustCompile(`^https?://(?:www\.)?footfetishdaily\.com(?:/|$
 
 type Scraper struct {
 	client *http.Client
+	// base is the site root used for *fetches*, a field so offline tests can
+	// drive the whole walk instead of only the parsers.
+	base string
 }
 
 func New() *Scraper {
-	return &Scraper{client: httpx.NewClient(30 * time.Second)}
+	return &Scraper{client: httpx.NewClient(30 * time.Second), base: siteBase}
 }
 
 var _ scraper.StudioScraper = (*Scraper)(nil)
@@ -123,7 +126,7 @@ func (s *Scraper) enqueueListing(ctx context.Context, opts scraper.ListOpts, out
 			}
 		}
 		scraper.Debugf(1, "footfetishdaily: fetching page %d", page)
-		pageURL := fmt.Sprintf("%s/videos/%d", siteBase, page)
+		pageURL := fmt.Sprintf("%s/videos/%d", s.base, page)
 		body, err := s.fetchPage(ctx, pageURL)
 		if err != nil {
 			select {
@@ -132,7 +135,7 @@ func (s *Scraper) enqueueListing(ctx context.Context, opts scraper.ListOpts, out
 			}
 			return
 		}
-		scenes := parseListing(body)
+		scenes := parseListing(s.base, body)
 		if len(scenes) == 0 {
 			scraper.Debugf(1, "footfetishdaily: page %d empty, stopping", page)
 			return
@@ -171,7 +174,7 @@ var (
 
 // parseListing extracts the /update/{id}/{slug} link from each card, deduped
 // by numeric id (the link appears on both the thumbnail and the title).
-func parseListing(body []byte) []listingScene {
+func parseListing(base string, body []byte) []listingScene {
 	page := string(body)
 	matches := updateLinkRe.FindAllStringSubmatch(page, -1)
 	scenes := make([]listingScene, 0, len(matches))
@@ -186,7 +189,7 @@ func parseListing(body []byte) []listingScene {
 		scenes = append(scenes, listingScene{
 			id:   id,
 			slug: m[3],
-			url:  siteBase + m[1],
+			url:  base + m[1],
 		})
 	}
 	return scenes
