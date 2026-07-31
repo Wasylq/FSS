@@ -9,6 +9,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/Wasylq/FSS/internal/scrapers/testutil"
 	"github.com/Wasylq/FSS/scraper"
 )
 
@@ -295,3 +296,19 @@ func TestListScenes_knownIDsStopsEarly(t *testing.T) {
 }
 
 func testNow() time.Time { return time.Date(2026, 5, 29, 0, 0, 0, 0, time.UTC) }
+
+// Config table integrity — see testutil.CheckSiteTable for what this catches and
+// why a config-only table needs it even when the *util carries the parsing tests.
+func TestSiteTableIntegrity(t *testing.T) {
+	// Studio is deliberately left out of this check: the parent row sets
+	// SiteName="" so the per-card label wins downstream (see SiteConfig), which a
+	// consistency check would read as drift.
+	rows := make([]testutil.SiteRow, 0, len(sites))
+	for _, c := range sites {
+		rows = append(rows, testutil.SiteRow{
+			ID: c.ID, Base: c.SiteBase,
+			Patterns: c.Patterns, MatchRe: c.MatchRe,
+		})
+	}
+	testutil.CheckSiteTable(t, rows)
+}

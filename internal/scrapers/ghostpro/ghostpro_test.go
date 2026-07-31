@@ -10,6 +10,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/Wasylq/FSS/internal/scrapers/testutil"
 	"github.com/Wasylq/FSS/scraper"
 )
 
@@ -393,3 +394,16 @@ func TestSitesTable_uniqueIDsAndDomainIsolation(t *testing.T) {
 }
 
 func testNow() time.Time { return time.Date(2026, 5, 28, 0, 0, 0, 0, time.UTC) }
+
+// Config table integrity — see testutil.CheckSiteTable for what this catches and
+// why a config-only table needs it even when the *util carries the parsing tests.
+func TestSiteTableIntegrity(t *testing.T) {
+	rows := make([]testutil.SiteRow, 0, len(sites))
+	for _, c := range sites {
+		rows = append(rows, testutil.SiteRow{
+			ID: c.ID, Base: c.SiteBase, Studio: c.SiteName,
+			Patterns: c.Patterns, MatchRe: c.MatchRe,
+		})
+	}
+	testutil.CheckSiteTable(t, rows)
+}

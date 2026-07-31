@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/Wasylq/FSS/internal/scrapers/natscmsutil"
+	"github.com/Wasylq/FSS/internal/scrapers/testutil"
 )
 
 func TestSitesTable(t *testing.T) {
@@ -67,4 +68,17 @@ func TestMatchesURL(t *testing.T) {
 			t.Errorf("MatchesURL[%s](%q) = %v, want %v", c.id, c.url, got, c.want)
 		}
 	}
+}
+
+// Config table integrity — see testutil.CheckSiteTable for what this catches and
+// why a config-only table needs it even when the *util carries the parsing tests.
+func TestSiteTableIntegrity(t *testing.T) {
+	rows := make([]testutil.SiteRow, 0, len(sites))
+	for _, c := range sites {
+		rows = append(rows, testutil.SiteRow{
+			ID: c.ID, Base: c.SiteBase, Studio: c.SiteName,
+			Patterns: c.Patterns, MatchRe: c.MatchRe,
+		})
+	}
+	testutil.CheckSiteTable(t, rows)
 }

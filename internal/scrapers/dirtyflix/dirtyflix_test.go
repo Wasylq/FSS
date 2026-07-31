@@ -9,6 +9,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/Wasylq/FSS/internal/scrapers/testutil"
 	"github.com/Wasylq/FSS/scraper"
 )
 
@@ -336,4 +337,17 @@ func TestListScenes_paginatedStopsOnEmpty(t *testing.T) {
 	if scenes != 2 {
 		t.Errorf("got %d scenes, want 2", scenes)
 	}
+}
+
+// Config table integrity — see testutil.CheckSiteTable for what this catches and
+// why a config-only table needs it even when the *util carries the parsing tests.
+func TestSiteTableIntegrity(t *testing.T) {
+	rows := make([]testutil.SiteRow, 0, len(sites))
+	for _, c := range sites {
+		rows = append(rows, testutil.SiteRow{
+			ID: c.ID, Base: c.SiteBase, Studio: c.SiteName,
+			Patterns: c.Patterns, MatchRe: c.MatchRe,
+		})
+	}
+	testutil.CheckSiteTable(t, rows)
 }

@@ -11,6 +11,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/Wasylq/FSS/internal/scrapers/testutil"
 	"github.com/Wasylq/FSS/scraper"
 )
 
@@ -208,4 +209,20 @@ func TestListScenesEndToEnd(t *testing.T) {
 	if got["abc123"] != "Exam Room One" || got["def456"] != "Exam Room Two & Three" {
 		t.Errorf("unexpected scenes: %v", got)
 	}
+}
+
+// Config table integrity — see testutil.CheckSiteTable for what this catches and
+// why a config-only table needs it even when the *util carries the parsing tests.
+func TestSiteTableIntegrity(t *testing.T) {
+	// Patterns are derived from SiteBase by Patterns() rather than stored as a
+	// column, so take them from the constructed scraper — that also pins the
+	// derivation itself.
+	rows := make([]testutil.SiteRow, 0, len(sites))
+	for _, c := range sites {
+		rows = append(rows, testutil.SiteRow{
+			ID: c.ID, Base: c.SiteBase, Studio: c.Studio,
+			Patterns: New(c).Patterns(), MatchRe: c.MatchRe,
+		})
+	}
+	testutil.CheckSiteTable(t, rows)
 }

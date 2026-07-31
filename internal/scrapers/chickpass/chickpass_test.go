@@ -250,3 +250,16 @@ func TestListScenesEndToEnd(t *testing.T) {
 		t.Errorf("URL = %q, want it under SiteBase", first.URL)
 	}
 }
+
+// Config table integrity — see testutil.CheckSiteTable for what this catches and
+// why a config-only table needs it even when the *util carries the parsing tests.
+func TestSiteTableIntegrity(t *testing.T) {
+	rows := make([]testutil.SiteRow, 0, len(sites))
+	for _, c := range sites {
+		rows = append(rows, testutil.SiteRow{
+			ID: c.ID, Base: c.SiteBase, Studio: c.SiteName,
+			Patterns: c.Patterns, MatchRe: c.MatchRe,
+		})
+	}
+	testutil.CheckSiteTable(t, rows)
+}
