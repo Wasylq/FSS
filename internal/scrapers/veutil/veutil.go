@@ -48,8 +48,19 @@ func New(cfg SiteConfig) *Scraper {
 var _ scraper.StudioScraper = (*Scraper)(nil)
 
 func (s *Scraper) ID() string { return s.cfg.ID }
+
+// Patterns appends the tag-page pattern to the configured ones.
+//
+// SiteBase carries no trailing slash, so the path needs its own leading one —
+// without it every site in the table advertised "example.comtag/{slug}" in
+// `fss list-scrapers`. Built into a fresh slice rather than appended to
+// cfg.Patterns, which would write into the shared config's backing array.
 func (s *Scraper) Patterns() []string {
-	return append(s.cfg.Patterns, strings.TrimPrefix(s.cfg.SiteBase, "https://")+"tag/{slug}")
+	host := strings.TrimSuffix(
+		strings.TrimPrefix(strings.TrimPrefix(s.cfg.SiteBase, "https://"), "http://"), "/")
+	out := make([]string, 0, len(s.cfg.Patterns)+1)
+	out = append(out, s.cfg.Patterns...)
+	return append(out, host+"/tag/{slug}")
 }
 func (s *Scraper) MatchesURL(u string) bool { return s.cfg.MatchRe.MatchString(u) }
 
