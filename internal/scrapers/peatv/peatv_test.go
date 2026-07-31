@@ -1,8 +1,17 @@
 package peatv
 
 import (
+	"context"
+	"fmt"
+	"net/http"
+	"net/http/httptest"
+	"strings"
+	"sync/atomic"
 	"testing"
 	"time"
+
+	"github.com/Wasylq/FSS/internal/scrapers/testutil"
+	"github.com/Wasylq/FSS/scraper"
 )
 
 const fixtureListing = `
@@ -138,7 +147,7 @@ func TestBuildListingURL(t *testing.T) {
 		{"https://pea-tv.jp/search.php", "https://pea-tv.jp/search.php"},
 	}
 	for _, c := range cases {
-		got := buildListingURL(c.studioURL)
+		got := buildListingURL(siteBase, c.studioURL)
 		if got != c.want {
 			t.Errorf("buildListingURL(%q) = %q, want %q", c.studioURL, got, c.want)
 		}
@@ -179,6 +188,60 @@ func TestMatchesURL(t *testing.T) {
 	for _, c := range cases {
 		if got := s.MatchesURL(c.url); got != c.want {
 			t.Errorf("MatchesURL(%q) = %v, want %v", c.url, got, c.want)
+		}
+	}
+}
+
+// --- end to end ---------------------------------------------------------------
+//
+// The tests above call the parsers directly, which left ListScenes, run,
+// fetchDetail and fetchHTML at 0% and the package at 39.3%. The base is now a
+// field, so the search-listing -> detail walk runs offline.
+func TestListScenesEndToEnd(t *testing.T) {
+	// Handlers run on separate goroutines (Workers > 1), so this must be atomic.
+	var detailHits atomic.Int32
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch {
+		case strings.HasPrefix(r.URL.Path, "/search.php"):
+			if r.URL.Query().Get("p") != "" && r.URL.Query().Get("p") != "1" {
+				_, _ = fmt.Fprint(w, `<html><body>0 件中</body></html>`)
+				return
+			}
+			// The listing's detail hrefs are absolute live URLs, but the scraper
+			// only takes the ?code= from them and rebuilds the URL from the base,
+			// so serving the fixture verbatim keeps the fetches on this server.
+			_, _ = fmt.Fprint(w, fixtureListing)
+		case strings.HasPrefix(r.URL.Path, "/monthly_detail.php"):
+			detailHits.Add(1)
+			_, _ = fmt.Fprint(w, fixtureDetail)
+		default:
+			http.NotFound(w, r)
+		}
+	}))
+	defer ts.Close()
+
+	s := New()
+	s.client = ts.Client()
+	s.base = ts.URL
+
+	ch, err := s.ListScenes(context.Background(), ts.URL+"/search.php?b=1", scraper.ListOpts{Workers: 2})
+	if err != nil {
+		t.Fatal(err)
+	}
+	scenes := testutil.CollectScenes(t, ch)
+	if len(scenes) == 0 {
+		t.Fatal("no scenes returned")
+	}
+	if detailHits.Load() == 0 {
+		t.Error("no detail pages were fetched")
+	}
+	for _, sc := range scenes {
+		// fetchDetail fetches scene.URL, so it must stay on the test server.
+		if !strings.HasPrefix(sc.URL, ts.URL) {
+			t.Errorf("scene %q URL %q escaped the test server", sc.ID, sc.URL)
+		}
+		if sc.ID == "" || sc.Title == "" {
+			t.Errorf("scene has empty ID/Title: %+v", sc)
 		}
 	}
 }

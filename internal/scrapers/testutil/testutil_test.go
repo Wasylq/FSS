@@ -5,6 +5,7 @@ import (
 	"errors"
 	"io"
 	"net/http"
+	"regexp"
 	"strconv"
 	"strings"
 	"testing"
@@ -312,5 +313,124 @@ func TestAssertCancellableCatchesALeak(t *testing.T) {
 	}
 	if !fake.Failed() {
 		t.Error("AssertCancellable passed a scraper that ignores context cancellation")
+	}
+}
+
+// --- site table helpers -------------------------------------------------------
+//
+// CheckSiteTable and CheckSiteDomainTable guard 24 config tables, but they are
+// only ever *called* from those packages — per-package coverage therefore showed
+// them as untested here. These exercise them directly, and more importantly pin
+// that each rule fires, since a table check that cannot fail is worse than none.
+
+// tableProblems runs a checker against rows and reports the messages it emitted,
+// using a throwaway *testing.T so a deliberate failure does not fail this test.
+func tableProblems(t *testing.T, check func(*testing.T, []SiteRow), rows []SiteRow) bool {
+	t.Helper()
+	fake := &testing.T{}
+	done := make(chan struct{})
+	go func() {
+		defer close(done)
+		check(fake, rows)
+	}()
+	<-done
+	return fake.Failed()
+}
+
+func goodRows() []SiteRow {
+	return []SiteRow{
+		{ID: "a", Base: "https://a.example", Studio: "A", Patterns: []string{"a.example"},
+			MatchRe: regexp.MustCompile(`^https?://(?:www\.)?a\.example`)},
+		{ID: "b", Base: "https://b.example", Studio: "B", Patterns: []string{"b.example"},
+			MatchRe: regexp.MustCompile(`^https?://(?:www\.)?b\.example`)},
+	}
+}
+
+func TestCheckSiteTableAcceptsAGoodTable(t *testing.T) {
+	CheckSiteTable(t, goodRows())
+	CheckSiteTableDomains(t, goodRows())
+}
+
+func TestCheckSiteTableRejectsEachFault(t *testing.T) {
+	cases := []struct {
+		name string
+		mut  func([]SiteRow) []SiteRow
+	}{
+		{"empty ID", func(r []SiteRow) []SiteRow { r[0].ID = ""; return r }},
+		{"empty Base", func(r []SiteRow) []SiteRow { r[0].Base = ""; return r }},
+		{"duplicate ID", func(r []SiteRow) []SiteRow { r[1].ID = r[0].ID; return r }},
+		{"no Patterns", func(r []SiteRow) []SiteRow { r[0].Patterns = nil; return r }},
+		{"nil MatchRe", func(r []SiteRow) []SiteRow { r[0].MatchRe = nil; return r }},
+		{"relative Base", func(r []SiteRow) []SiteRow { r[0].Base = "a.example"; return r }},
+		{"trailing slash", func(r []SiteRow) []SiteRow { r[0].Base = "https://a.example/"; return r }},
+		// Studio is only required when other rows set one.
+		{"one row missing Studio", func(r []SiteRow) []SiteRow { r[0].Studio = ""; return r }},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			if !tableProblems(t, CheckSiteTable, c.mut(goodRows())) {
+				t.Errorf("CheckSiteTable accepted a table with %s", c.name)
+			}
+		})
+	}
+}
+
+// A table where *no* row carries a Studio is a design choice (paysite), not a
+// fault — only a partly filled column is.
+func TestCheckSiteTableAllowsAnEntirelyAbsentStudio(t *testing.T) {
+	rows := goodRows()
+	rows[0].Studio, rows[1].Studio = "", ""
+	if tableProblems(t, CheckSiteTable, rows) {
+		t.Error("CheckSiteTable rejected a table with no Studio column at all")
+	}
+}
+
+func TestCheckSiteTableDomainsRejectsACopyPastedRegex(t *testing.T) {
+	rows := goodRows()
+	// The classic slip: row a's regex left naming row b's domain.
+	rows[0].MatchRe = rows[1].MatchRe
+	if !tableProblems(t, CheckSiteTableDomains, rows) {
+		t.Error("CheckSiteTableDomains accepted a regex matching another row's base")
+	}
+}
+
+func TestCheckSiteTableDomainsRejectsAnUnclaimedPattern(t *testing.T) {
+	rows := goodRows()
+	rows[0].Patterns = []string{"somewhere-else.example"}
+	if !tableProblems(t, CheckSiteTableDomains, rows) {
+		t.Error("CheckSiteTableDomains accepted a pattern its own MatchRe rejects")
+	}
+}
+
+func TestCheckSiteDomainTable(t *testing.T) {
+	good := []DomainRow{
+		{ID: "a", Domain: "a.example", Studio: "A"},
+		{ID: "b", Domain: "b.example", Studio: "B"},
+	}
+	run := func(rows []DomainRow) bool {
+		fake := &testing.T{}
+		done := make(chan struct{})
+		go func() { defer close(done); CheckSiteDomainTable(fake, rows) }()
+		<-done
+		return fake.Failed()
+	}
+	if run(good) {
+		t.Error("CheckSiteDomainTable rejected a good table")
+	}
+	for _, c := range []struct {
+		name string
+		rows []DomainRow
+	}{
+		{"duplicate domain", []DomainRow{{ID: "a", Domain: "x.example", Studio: "A"}, {ID: "b", Domain: "x.example", Studio: "B"}}},
+		{"scheme in domain", []DomainRow{{ID: "a", Domain: "https://a.example", Studio: "A"}}},
+		{"path in domain", []DomainRow{{ID: "a", Domain: "a.example/x", Studio: "A"}}},
+		{"no dot", []DomainRow{{ID: "a", Domain: "localhost", Studio: "A"}}},
+		{"uppercase", []DomainRow{{ID: "a", Domain: "A.example", Studio: "A"}}},
+		{"empty studio", []DomainRow{{ID: "a", Domain: "a.example"}}},
+		{"empty id", []DomainRow{{Domain: "a.example", Studio: "A"}}},
+	} {
+		if !run(c.rows) {
+			t.Errorf("CheckSiteDomainTable accepted %s", c.name)
+		}
 	}
 }

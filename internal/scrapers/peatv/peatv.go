@@ -22,12 +22,15 @@ const siteBase = "https://pea-tv.jp"
 
 type Scraper struct {
 	client *http.Client
+	// base is the site root used for *fetches*, a field so offline tests can
+	// drive the whole walk. Output fields (thumbnail, Scene.URL) keep the const.
+	base string
 }
 
 var _ scraper.StudioScraper = (*Scraper)(nil)
 
 func New() *Scraper {
-	return &Scraper{client: httpx.NewClient(30 * time.Second)}
+	return &Scraper{client: httpx.NewClient(30 * time.Second), base: siteBase}
 }
 
 func init() { scraper.Register(New()) }
@@ -64,7 +67,7 @@ type listItem struct {
 func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOpts, out chan<- scraper.SceneResult) {
 	defer close(out)
 
-	baseURL := buildListingURL(studioURL)
+	baseURL := buildListingURL(s.base, studioURL)
 	scraper.Debugf(1, "peatv: listing base %s", baseURL)
 
 	work := make(chan listItem, opts.Workers)
@@ -174,21 +177,21 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 	wg.Wait()
 }
 
-func buildListingURL(studioURL string) string {
+func buildListingURL(base, studioURL string) string {
 	u, err := url.Parse(studioURL)
 	if err != nil {
-		return siteBase + "/search.php"
+		return base + "/search.php"
 	}
 	if strings.Contains(u.Path, "search.php") {
 		q := u.Query()
 		q.Del("p")
-		base := siteBase + "/search.php"
+		listing := base + "/search.php"
 		if encoded := q.Encode(); encoded != "" {
-			base += "?" + encoded
+			listing += "?" + encoded
 		}
-		return base
+		return listing
 	}
-	return siteBase + "/search.php"
+	return base + "/search.php"
 }
 
 func pageURL(base string, page int) string {
@@ -276,7 +279,7 @@ func (s *Scraper) fetchDetail(ctx context.Context, item listItem, studioURL stri
 		SiteID:    "peatv",
 		StudioURL: studioURL,
 		Title:     item.title,
-		URL:       siteBase + "/monthly_detail.php?code=" + item.code,
+		URL:       s.base + "/monthly_detail.php?code=" + item.code,
 		Thumbnail: item.thumbnail,
 		Duration:  item.duration,
 		Studio:    "PEA-TV",
