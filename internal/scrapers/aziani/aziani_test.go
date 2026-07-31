@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"strings"
+	"sync"
 	"testing"
 
 	"github.com/Wasylq/FSS/internal/scrapers/testutil"
@@ -181,9 +182,22 @@ func TestMatchesURL(t *testing.T) {
 // The tour_api endpoint is now a field, so the three-step discovery
 // (page config -> set list -> servers) runs offline.
 func TestListScenesEndToEnd(t *testing.T) {
+	// Handlers run on separate goroutines (Workers > 1), so the request log needs
+	// a mutex — a bare append here is a real data race.
+	var mu sync.Mutex
 	var seen []string
+	record := func(p string) {
+		mu.Lock()
+		defer mu.Unlock()
+		seen = append(seen, p)
+	}
+	snapshot := func() []string {
+		mu.Lock()
+		defer mu.Unlock()
+		return append([]string(nil), seen...)
+	}
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		seen = append(seen, r.URL.Path+"?"+r.URL.RawQuery)
+		record(r.URL.Path + "?" + r.URL.RawQuery)
 		w.Header().Set("Content-Type", "application/json")
 		switch {
 		case strings.Contains(r.URL.RawQuery, "slug=/"):
@@ -219,14 +233,14 @@ func TestListScenesEndToEnd(t *testing.T) {
 	}
 	scenes := testutil.CollectScenes(t, ch)
 	if len(scenes) != 2 {
-		t.Fatalf("got %d scenes, want 2 (requests: %v)", len(scenes), seen)
+		t.Fatalf("got %d scenes, want 2 (requests: %v)", len(scenes), snapshot())
 	}
 
 	// All three discovery steps must have run.
-	joined := strings.Join(seen, " ")
+	joined := strings.Join(snapshot(), " ")
 	for _, want := range []string{"slug=/", "/content/sets", "/content/servers"} {
 		if !strings.Contains(joined, want) {
-			t.Errorf("never requested %q; requests were %v", want, seen)
+			t.Errorf("never requested %q; requests were %v", want, snapshot())
 		}
 	}
 

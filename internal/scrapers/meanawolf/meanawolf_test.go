@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"strings"
+	"sync/atomic"
 	"testing"
 
 	"github.com/Wasylq/FSS/internal/scrapers/testutil"
@@ -99,12 +100,15 @@ func TestSlugToTitle(t *testing.T) {
 // base is now a field and parseListing/absURL take it, so the listing -> detail
 // walk runs entirely against httptest.
 func TestListScenesEndToEnd(t *testing.T) {
-	var listingHits, detailHits int
+	// Handlers run on separate goroutines (Workers > 1), so these counters
+	// must be atomic — a plain int++ here is a real data race.
+	var listingHits atomic.Int32
+	var detailHits atomic.Int32
 	var ts *httptest.Server
 	ts = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch {
 		case strings.HasPrefix(r.URL.Path, "/updates/page_"):
-			listingHits++
+			listingHits.Add(1)
 			if !strings.Contains(r.URL.Path, "page_1.html") {
 				_, _ = fmt.Fprint(w, `<div class="none"></div>`)
 				return
@@ -113,7 +117,7 @@ func TestListScenesEndToEnd(t *testing.T) {
 			// the absolute one so both detail fetches stay on this server.
 			_, _ = fmt.Fprint(w, strings.ReplaceAll(listingFixture, "https://meanawolf.com", ts.URL))
 		case strings.HasPrefix(r.URL.Path, "/scenes/"):
-			detailHits++
+			detailHits.Add(1)
 			_, _ = fmt.Fprint(w, detailFixture)
 		default:
 			http.NotFound(w, r)
@@ -133,8 +137,8 @@ func TestListScenesEndToEnd(t *testing.T) {
 	if len(scenes) != 2 {
 		t.Fatalf("got %d scenes, want 2", len(scenes))
 	}
-	if listingHits == 0 || detailHits != 2 {
-		t.Errorf("listing/detail fetches = %d/%d, want listing>0 and detail=2", listingHits, detailHits)
+	if listingHits.Load() == 0 || detailHits.Load() != 2 {
+		t.Errorf("listing/detail fetches = %d/%d, want listing>0 and detail=2", listingHits.Load(), detailHits.Load())
 	}
 	for _, sc := range scenes {
 		if !strings.HasPrefix(sc.URL, ts.URL) {

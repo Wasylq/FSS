@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"strings"
+	"sync/atomic"
 	"testing"
 
 	"github.com/Wasylq/FSS/internal/scrapers/testutil"
@@ -113,7 +114,9 @@ func TestMatchesURL(t *testing.T) {
 // fetchPage and the sitemap walk at 0% and the package at 30.9%. The base is now
 // a field, so the whole sitemap -> detail walk runs offline.
 func TestListScenesEndToEnd(t *testing.T) {
-	var detailHits int
+	// Handlers run on separate goroutines (Workers > 1), so these counters
+	// must be atomic — a plain int++ here is a real data race.
+	var detailHits atomic.Int32
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch {
 		case r.URL.Path == "/sitemap.xml":
@@ -123,7 +126,7 @@ func TestListScenesEndToEnd(t *testing.T) {
 			// host here would make the regex match nothing.
 			_, _ = fmt.Fprint(w, sitemapFixture)
 		case strings.HasPrefix(r.URL.Path, "/videos/"):
-			detailHits++
+			detailHits.Add(1)
 			// Substitute the requested slug so each scene gets its own og:url and
 			// title. Serving the fixture verbatim would give every scene the same
 			// URL — the shared-fixture trap that hid duplicate data elsewhere.
@@ -148,8 +151,8 @@ func TestListScenesEndToEnd(t *testing.T) {
 	if len(scenes) != 2 {
 		t.Fatalf("got %d scenes, want 2 (duplicate <loc> deduped)", len(scenes))
 	}
-	if detailHits != 2 {
-		t.Errorf("detail fetches = %d, want 2", detailHits)
+	if detailHits.Load() != 2 {
+		t.Errorf("detail fetches = %d, want 2", detailHits.Load())
 	}
 	// Scene.URL comes from the detail page's og:url, so it is fixture data and
 	// legitimately names the live host — it is not the URL that was fetched.

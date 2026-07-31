@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"strings"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -123,11 +124,14 @@ func TestMatchesURL(t *testing.T) {
 // fetchPage and the paginated walk at 0% and the package at 37.0%. The base is
 // now a field, so the listing -> detail walk runs offline.
 func TestListScenesEndToEnd(t *testing.T) {
-	var listingHits, detailHits int
+	// Handlers run on separate goroutines (Workers > 1), so these counters
+	// must be atomic — a plain int++ here is a real data race.
+	var listingHits atomic.Int32
+	var detailHits atomic.Int32
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch {
 		case r.URL.Path == "/videos/" || strings.HasPrefix(r.URL.Path, "/videos/page/"):
-			listingHits++
+			listingHits.Add(1)
 			// Only the first listing has cards; the next page is empty so the walk ends.
 			if strings.Contains(r.URL.Path, "/page/2") {
 				_, _ = fmt.Fprint(w, `<div class="empty"></div>`)
@@ -135,7 +139,7 @@ func TestListScenesEndToEnd(t *testing.T) {
 			}
 			_, _ = fmt.Fprint(w, listingFixture)
 		case strings.HasPrefix(r.URL.Path, "/videos/"):
-			detailHits++
+			detailHits.Add(1)
 			// Give each slug its own og:url and title, so two scenes cannot share
 			// them — the shared-fixture trap.
 			slug := strings.Trim(strings.TrimPrefix(r.URL.Path, "/videos/"), "/")
@@ -158,8 +162,8 @@ func TestListScenesEndToEnd(t *testing.T) {
 	if len(scenes) != 2 {
 		t.Fatalf("got %d scenes, want 2", len(scenes))
 	}
-	if listingHits == 0 || detailHits != 2 {
-		t.Errorf("listing/detail fetches = %d/%d, want listing>0 and detail=2", listingHits, detailHits)
+	if listingHits.Load() == 0 || detailHits.Load() != 2 {
+		t.Errorf("listing/detail fetches = %d/%d, want listing>0 and detail=2", listingHits.Load(), detailHits.Load())
 	}
 
 	seenURL := map[string]bool{}

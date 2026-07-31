@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"strings"
+	"sync/atomic"
 	"testing"
 
 	"github.com/Wasylq/FSS/internal/scrapers/testutil"
@@ -136,11 +137,14 @@ func TestMatchesURL(t *testing.T) {
 //
 // SiteConfig.Host is injectable, so the whole walk runs against httptest.
 func TestListScenesEndToEnd(t *testing.T) {
-	var listingHits, detailHits int
+	// Handlers run on separate goroutines (Workers > 1), so these counters
+	// must be atomic — a plain int++ here is a real data race.
+	var listingHits atomic.Int32
+	var detailHits atomic.Int32
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch {
 		case strings.HasPrefix(r.URL.Path, "/movies/page-"):
-			listingHits++
+			listingHits.Add(1)
 			// Page 2 onwards is empty so the walk terminates.
 			if !strings.HasPrefix(r.URL.Path, "/movies/page-1/") {
 				_, _ = fmt.Fprint(w, `<div class="grid"></div>`)
@@ -148,7 +152,7 @@ func TestListScenesEndToEnd(t *testing.T) {
 			}
 			_, _ = fmt.Fprint(w, listingFixture)
 		case strings.HasPrefix(r.URL.Path, "/movies/"):
-			detailHits++
+			detailHits.Add(1)
 			_, _ = fmt.Fprint(w, detailFixtureXC)
 		default:
 			http.NotFound(w, r)
@@ -167,8 +171,8 @@ func TestListScenesEndToEnd(t *testing.T) {
 	if len(scenes) != 2 {
 		t.Fatalf("got %d scenes, want 2", len(scenes))
 	}
-	if listingHits == 0 || detailHits == 0 {
-		t.Errorf("listing/detail fetches = %d/%d, want both non-zero", listingHits, detailHits)
+	if listingHits.Load() == 0 || detailHits.Load() == 0 {
+		t.Errorf("listing/detail fetches = %d/%d, want both non-zero", listingHits.Load(), detailHits.Load())
 	}
 
 	// Offline means offline: a scene URL off the test server means the scrape

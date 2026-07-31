@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"strings"
+	"sync/atomic"
 	"testing"
 
 	"github.com/Wasylq/FSS/internal/scrapers/testutil"
@@ -107,21 +108,26 @@ func TestMatchesURL(t *testing.T) {
 // 23.3% — the lowest in the repo. The base is now a field, so the full sequence
 // runs offline: age-gate handshake, then the listing walk, then detail fetches.
 func TestListScenesEndToEnd(t *testing.T) {
-	var gotToken, gotConfirm, listingHits, detailHits int
+	// Handlers run on separate goroutines (Workers > 1), so these counters
+	// must be atomic — a plain int++ here is a real data race.
+	var gotToken atomic.Int32
+	var gotConfirm atomic.Int32
+	var listingHits atomic.Int32
+	var detailHits atomic.Int32
 	var ts *httptest.Server
 	ts = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case "/age-confirmation":
-			gotToken++
+			gotToken.Add(1)
 			_, _ = fmt.Fprint(w, `<form><input name="_token" value="tok123" /></form>`)
 		case "/age-confirm":
-			gotConfirm++
+			gotConfirm.Add(1)
 			if err := r.ParseForm(); err == nil && r.PostFormValue("_token") != "tok123" {
 				t.Errorf("age-confirm posted _token = %q, want tok123", r.PostFormValue("_token"))
 			}
 			w.WriteHeader(http.StatusOK)
 		case "/virtualreality/list":
-			listingHits++
+			listingHits.Add(1)
 			if r.URL.Query().Get("page") != "1" {
 				_, _ = fmt.Fprint(w, `<div class="empty"></div>`)
 				return
@@ -131,7 +137,7 @@ func TestListScenesEndToEnd(t *testing.T) {
 			// straight out of this test and onto stasyqvr.com.
 			_, _ = fmt.Fprint(w, strings.ReplaceAll(listingFixture, "https://stasyqvr.com", ts.URL))
 		default:
-			detailHits++
+			detailHits.Add(1)
 			_, _ = fmt.Fprint(w, detailFixture)
 		}
 	}))
@@ -149,11 +155,11 @@ func TestListScenesEndToEnd(t *testing.T) {
 		t.Fatal("no scenes returned")
 	}
 	// The age gate must be negotiated before any listing request.
-	if gotToken == 0 || gotConfirm == 0 {
-		t.Errorf("age handshake: token=%d confirm=%d, want both non-zero", gotToken, gotConfirm)
+	if gotToken.Load() == 0 || gotConfirm.Load() == 0 {
+		t.Errorf("age handshake: token=%d confirm=%d, want both non-zero", gotToken.Load(), gotConfirm.Load())
 	}
-	if listingHits == 0 || detailHits == 0 {
-		t.Errorf("listing/detail fetches = %d/%d, want both non-zero", listingHits, detailHits)
+	if listingHits.Load() == 0 || detailHits.Load() == 0 {
+		t.Errorf("listing/detail fetches = %d/%d, want both non-zero", listingHits.Load(), detailHits.Load())
 	}
 	for _, sc := range scenes {
 		if sc.Title == "" {
