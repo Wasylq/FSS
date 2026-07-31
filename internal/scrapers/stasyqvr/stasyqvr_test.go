@@ -1,6 +1,16 @@
 package stasyqvr
 
-import "testing"
+import (
+	"context"
+	"fmt"
+	"net/http"
+	"net/http/httptest"
+	"strings"
+	"testing"
+
+	"github.com/Wasylq/FSS/internal/scrapers/testutil"
+	"github.com/Wasylq/FSS/scraper"
+)
 
 const listingFixture = `
 <div class="main-part__item">
@@ -33,7 +43,7 @@ const detailFixture = `
 `
 
 func TestParseListing(t *testing.T) {
-	scenes := parseListing([]byte(listingFixture))
+	scenes := parseListing(siteBase, []byte(listingFixture))
 	if len(scenes) != 2 {
 		t.Fatalf("expected 2 scenes (deduped), got %d", len(scenes))
 	}
@@ -87,5 +97,86 @@ func TestMatchesURL(t *testing.T) {
 		if got := s.MatchesURL(u); got != want {
 			t.Errorf("MatchesURL(%q) = %v, want %v", u, got, want)
 		}
+	}
+}
+
+// --- end to end ---------------------------------------------------------------
+//
+// The tests above call the parsers directly, which left ListScenes, run,
+// confirmAge, enqueueListing, fetchDetail and fetch at 0% and the package at
+// 23.3% — the lowest in the repo. The base is now a field, so the full sequence
+// runs offline: age-gate handshake, then the listing walk, then detail fetches.
+func TestListScenesEndToEnd(t *testing.T) {
+	var gotToken, gotConfirm, listingHits, detailHits int
+	var ts *httptest.Server
+	ts = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case "/age-confirmation":
+			gotToken++
+			_, _ = fmt.Fprint(w, `<form><input name="_token" value="tok123" /></form>`)
+		case "/age-confirm":
+			gotConfirm++
+			if err := r.ParseForm(); err == nil && r.PostFormValue("_token") != "tok123" {
+				t.Errorf("age-confirm posted _token = %q, want tok123", r.PostFormValue("_token"))
+			}
+			w.WriteHeader(http.StatusOK)
+		case "/virtualreality/list":
+			listingHits++
+			if r.URL.Query().Get("page") != "1" {
+				_, _ = fmt.Fprint(w, `<div class="empty"></div>`)
+				return
+			}
+			// The fixture holds absolute live hrefs and the scraper fetches them
+			// verbatim, so the host must be rewritten or the detail fetches walk
+			// straight out of this test and onto stasyqvr.com.
+			_, _ = fmt.Fprint(w, strings.ReplaceAll(listingFixture, "https://stasyqvr.com", ts.URL))
+		default:
+			detailHits++
+			_, _ = fmt.Fprint(w, detailFixture)
+		}
+	}))
+	defer ts.Close()
+
+	s := New()
+	s.base = ts.URL
+
+	ch, err := s.ListScenes(context.Background(), ts.URL, scraper.ListOpts{Workers: 2})
+	if err != nil {
+		t.Fatal(err)
+	}
+	scenes := testutil.CollectScenes(t, ch)
+	if len(scenes) == 0 {
+		t.Fatal("no scenes returned")
+	}
+	// The age gate must be negotiated before any listing request.
+	if gotToken == 0 || gotConfirm == 0 {
+		t.Errorf("age handshake: token=%d confirm=%d, want both non-zero", gotToken, gotConfirm)
+	}
+	if listingHits == 0 || detailHits == 0 {
+		t.Errorf("listing/detail fetches = %d/%d, want both non-zero", listingHits, detailHits)
+	}
+	for _, sc := range scenes {
+		if sc.Title == "" {
+			t.Errorf("scene %q has empty Title", sc.ID)
+		}
+	}
+}
+
+// A missing _token must fail loudly rather than silently scraping an age-gated
+// site and returning nothing.
+func TestConfirmAgeMissingToken(t *testing.T) {
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		_, _ = fmt.Fprint(w, `<form>no token here</form>`)
+	}))
+	defer ts.Close()
+
+	s := New()
+	s.base = ts.URL
+	err := s.confirmAge(context.Background(), ts.Client())
+	if err == nil {
+		t.Fatal("confirmAge succeeded with no _token on the page")
+	}
+	if !strings.Contains(err.Error(), "_token") {
+		t.Errorf("error = %v, want it to name the missing _token", err)
 	}
 }

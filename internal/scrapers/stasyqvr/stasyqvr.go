@@ -33,9 +33,13 @@ const (
 
 var matchRe = regexp.MustCompile(`^https?://(?:www\.)?stasyqvr\.com(?:/|$)`)
 
-type Scraper struct{}
+type Scraper struct {
+	// base is the site root used for *fetches*, a field so offline tests can
+	// drive the age-confirmation handshake and the listing walk.
+	base string
+}
 
-func New() *Scraper { return &Scraper{} }
+func New() *Scraper { return &Scraper{base: siteBase} }
 
 var _ scraper.StudioScraper = (*Scraper)(nil)
 
@@ -129,7 +133,7 @@ var tokenRe = regexp.MustCompile(`name="_token"\s+value="([^"]+)"`)
 // Laravel session cookie so listing pages stop redirecting to /age-confirmation.
 func (s *Scraper) confirmAge(ctx context.Context, client *http.Client) error {
 	scraper.Debugf(1, "stasyqvr: confirming age gate")
-	body, err := fetch(ctx, client, http.MethodGet, siteBase+"/age-confirmation", nil)
+	body, err := fetch(ctx, client, http.MethodGet, s.base+"/age-confirmation", nil)
 	if err != nil {
 		return err
 	}
@@ -138,7 +142,7 @@ func (s *Scraper) confirmAge(ctx context.Context, client *http.Client) error {
 		return fmt.Errorf("could not find _token on age-confirmation page")
 	}
 	form := url.Values{"_token": {string(m[1])}, "confirm": {"1"}}
-	_, err = fetch(ctx, client, http.MethodPost, siteBase+"/age-confirm", []byte(form.Encode()))
+	_, err = fetch(ctx, client, http.MethodPost, s.base+"/age-confirm", []byte(form.Encode()))
 	return err
 }
 
@@ -155,7 +159,7 @@ func (s *Scraper) enqueueListing(ctx context.Context, client *http.Client, opts 
 			}
 		}
 		scraper.Debugf(1, "stasyqvr: fetching page %d", page)
-		pageURL := fmt.Sprintf("%s/virtualreality/list?page=%d", siteBase, page)
+		pageURL := fmt.Sprintf("%s/virtualreality/list?page=%d", s.base, page)
 		body, err := fetch(ctx, client, http.MethodGet, pageURL, nil)
 		if err != nil {
 			select {
@@ -164,7 +168,7 @@ func (s *Scraper) enqueueListing(ctx context.Context, client *http.Client, opts 
 			}
 			return
 		}
-		scenes := parseListing(body)
+		scenes := parseListing(s.base, body)
 		if len(scenes) == 0 {
 			return
 		}
@@ -187,7 +191,7 @@ func (s *Scraper) enqueueListing(ctx context.Context, client *http.Client, opts 
 }
 
 var (
-	cardLinkRe = regexp.MustCompile(`href="(https://stasyqvr\.com/virtualreality/scene/id/(\d+))"`)
+	cardLinkRe = regexp.MustCompile(`href="[^"]*?/virtualreality/scene/id/(\d+)"`)
 	cardImgRe  = regexp.MustCompile(`<img src="([^"]+)"[^>]*alt="([^"]*)"`)
 
 	detailH1Re   = regexp.MustCompile(`<h1[^>]*>\s*([^<]+?)\s*</h1>`)
@@ -198,7 +202,7 @@ var (
 
 // parseListing extracts the scene id, URL, title and cover from each card.
 // Cards repeat the scene link, so the first occurrence per id wins.
-func parseListing(body []byte) []listingScene {
+func parseListing(base string, body []byte) []listingScene {
 	page := string(body)
 
 	// Split into per-card blocks on the cover image, then read the scene link
@@ -215,14 +219,14 @@ func parseListing(body []byte) []listingScene {
 		if lm == nil {
 			continue
 		}
-		id := lm[2]
+		id := lm[1]
 		if seen[id] {
 			continue
 		}
 		seen[id] = true
 		scenes = append(scenes, listingScene{
 			id:    id,
-			url:   lm[1],
+			url:   base + "/virtualreality/scene/id/" + id,
 			title: strings.TrimSpace(html.UnescapeString(alt)),
 			thumb: imgSrc,
 		})
