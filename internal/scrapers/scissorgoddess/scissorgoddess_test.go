@@ -276,3 +276,32 @@ func TestFirstPageErrorIsReported(t *testing.T) {
 		t.Error("a page-1 failure produced no error result")
 	}
 }
+
+// This pins the **wire format**, not the scraper's use of it. Changing toScene's
+// layout is already caught by TestToScene via Date.IsZero(); what nothing covered
+// is the *site* changing format, and the two failures look identical from
+// TestToScene alone.
+//
+// WordPress's date_gmt carries no timezone suffix ("2025-03-02T23:03:28"), so it
+// deliberately does not parse as RFC3339 and toScene uses an explicit
+// "2006-01-02T15:04:05" layout. If WP starts emitting an offset, this test says so
+// directly instead of leaving a zero Date to be diagnosed as a code bug — and a
+// zero Date is only an advisory note at validation time, so a whole catalogue can
+// scrape dateless with the smoke run still passing.
+func TestDateGMTLayout(t *testing.T) {
+	ps := fixtureProducts(t)
+	if len(ps) == 0 {
+		t.Fatal("fixture is empty")
+	}
+	raw := ps[0].DateGMT
+	if raw == "" {
+		t.Fatal("DateGMT is empty (date_gmt)")
+	}
+	if _, err := time.Parse(time.RFC3339, raw); err == nil {
+		t.Errorf("date_gmt %q parsed as RFC3339 — the field gained a timezone suffix, so the "+
+			"explicit layout in toScene is now the wrong one", raw)
+	}
+	if _, err := time.Parse("2006-01-02T15:04:05", raw); err != nil {
+		t.Errorf("date_gmt %q does not parse with the layout toScene uses: %v", raw, err)
+	}
+}
