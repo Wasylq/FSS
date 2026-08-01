@@ -91,8 +91,17 @@ func (s *Scraper) runSinglePage(ctx context.Context, modelURL string, opts scrap
 		return
 	}
 
-	entries := parseListingEntries(body)
+	entries := parseModelEntries(body)
 	if len(entries) == 0 {
+		// Surfaced rather than returning silently. A silent zero here is what
+		// hid this mode being broken: the page fetched fine, no cards parsed,
+		// and the scrape reported success with nothing in it. A model with
+		// genuinely no videos also lands here, which is still worth telling the
+		// operator about.
+		select {
+		case out <- scraper.Error(fmt.Errorf("no update cards parsed from model page %s", modelURL)):
+		case <-ctx.Done():
+		}
 		return
 	}
 
@@ -279,14 +288,38 @@ var (
 	thumbRe     = regexp.MustCompile(`class="stdimage[^"]*"\s+src="([^"]+)"`)
 	priceRe     = regexp.MustCompile(`Buy\s+\$([0-9.]+)`)
 	maxPageRe   = regexp.MustCompile(`movies_(\d+)_d\.html`)
+
+	// Model-page variants of the two patterns the templates do not share.
+	modelTitleRe = regexp.MustCompile(`(?s)<span class="update_title">\s*(.*?)\s*</span>`)
+	modelDateRe  = regexp.MustCompile(`<span class="availdate">\s*(\d{2}/\d{2}/\d{4})`)
 )
 
+// parseListingEntries parses the paginated main listing, whose cards are
+// `<div class="updateItem">`.
 func parseListingEntries(body []byte) []listEntry {
-	page := string(body)
+	return parseEntries(string(body), `<div class="updateItem">`, titleRe, dateRe)
+}
+
+// parseModelEntries parses a /tour/models/{slug}.html page.
+//
+// Model pages run a different template from the main listing: cards are
+// `update_block` rather than `updateItem`, the title is a
+// `<span class="update_title">` rather than an `<h4><a>`, and the date sits in
+// `<span class="availdate">` rather than a bare `<span>`. Only the link,
+// performer, thumbnail and price patterns are shared.
+//
+// Splitting a model page on the listing's delimiter yields zero cards, so
+// runSinglePage returned without emitting anything: the /models/ mode was
+// advertised in Patterns() but had never produced a scene.
+func parseModelEntries(body []byte) []listEntry {
+	return parseEntries(string(body), `<div class="update_block">`, modelTitleRe, modelDateRe)
+}
+
+func parseEntries(page, delim string, titleRe, dateRe *regexp.Regexp) []listEntry {
 	var entries []listEntry
 	seen := make(map[string]bool)
 
-	parts := strings.Split(page, `<div class="updateItem">`)
+	parts := strings.Split(page, delim)
 	for _, part := range parts[1:] {
 		m := linkRe.FindStringSubmatch(part)
 		if m == nil {

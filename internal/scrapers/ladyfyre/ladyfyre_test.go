@@ -263,3 +263,179 @@ func TestKnownIDsStopsEarly(t *testing.T) {
 		t.Error("expected StoppedEarly signal")
 	}
 }
+
+// Markup copied from a live /tour/models/{slug}.html page (trimmed). The card
+// container, title span and date span all differ from the main listing — that
+// mismatch is why the /models/ mode silently returned nothing, so the fixture
+// keeps those three shapes verbatim rather than being hand-simplified.
+const modelPageHTML = `<html><body>
+<div class="modelUpdates">
+<div class="update_block">
+<div class="update_table_left">
+	<div class="update_block_info">
+		<span class="update_title">Annoyed, Hot Teacher Milks You</span>
+		<br />
+	<span class="tour_update_models">
+			<a href="https://www.ladyfyre.com/tour/models/LadyOliviaFyre.html">Lady Fyre</a>
+	</span>
+		<br />
+		<span class="availdate">07/25/2026									<br />Available to Members Now</span>
+		<hr class="update_hr" />
+		<span class="latest_update_description">You&rsquo;ve not been paying attention to the lessons.</span>
+		<span class="update_tags">
+	  <a href="https://www.ladyfyre.com/tour/categories/big-tits.html">Big Tits</a>
+		</span>
+	</div>
+	</div>
+	<div class="update_table_right">
+		<div class="update_image">
+			<a  href="https://www.ladyfyre.com/tour/updates/Annoyed-Hot-Teacher-Milks-You.html">
+			<img alt="LadyFyreAnnoyed" class="stdimage large_update_thumb left thumbs" src="https://cdn.example.com/tour/content/LadyFyreAnnoyed/0.jpg" />
+			</a>
+			<div class="buy_button">Buy $12.99</div>
+		</div>
+	</div>
+</div>
+<div class="update_block">
+<div class="update_table_left">
+	<div class="update_block_info">
+		<span class="update_title">Stepmom&#039;s Sloppy Seconds</span>
+		<br />
+	<span class="tour_update_models">
+			<a href="https://www.ladyfyre.com/tour/models/LadyOliviaFyre.html">Lady Fyre</a>
+			<a href="https://www.ladyfyre.com/tour/models/LazFyre.html">Laz Fyre</a>
+	</span>
+		<br />
+		<span class="availdate">06/13/2026									<br />Available to Members Now</span>
+	</div>
+	</div>
+	<div class="update_table_right">
+		<div class="update_image">
+			<a  href="https://www.ladyfyre.com/tour/updates/Stepmoms-Sloppy-Seconds.html">
+			<img alt="LadyFyreStepmoms" class="stdimage large_update_thumb left thumbs" src="https://cdn.example.com/tour/content/LadyFyreStepmoms/0.jpg" />
+			</a>
+			<div class="buy_button">Buy $8.99</div>
+		</div>
+	</div>
+</div>
+</div>
+</body></html>`
+
+func TestParseModelEntries(t *testing.T) {
+	entries := parseModelEntries([]byte(modelPageHTML))
+	if len(entries) != 2 {
+		t.Fatalf("expected 2 entries, got %d", len(entries))
+	}
+
+	e := entries[0]
+	if e.slug != "Annoyed-Hot-Teacher-Milks-You" {
+		t.Errorf("slug = %q", e.slug)
+	}
+	if e.title != "Annoyed, Hot Teacher Milks You" {
+		t.Errorf("title = %q", e.title)
+	}
+	if e.date != "07/25/2026" {
+		t.Errorf("date = %q — the model page uses <span class=\"availdate\">, not a bare <span>", e.date)
+	}
+	if len(e.performers) != 1 || e.performers[0] != "Lady Fyre" {
+		t.Errorf("performers = %v", e.performers)
+	}
+	if e.thumbnail != "https://cdn.example.com/tour/content/LadyFyreAnnoyed/0.jpg" {
+		t.Errorf("thumbnail = %q", e.thumbnail)
+	}
+	if e.price != 12.99 {
+		t.Errorf("price = %v", e.price)
+	}
+
+	e2 := entries[1]
+	if e2.title != "Stepmom's Sloppy Seconds" {
+		t.Errorf("entry 2 title = %q (HTML entities should be unescaped)", e2.title)
+	}
+	if len(e2.performers) != 2 {
+		t.Errorf("entry 2 performers = %v, want both models", e2.performers)
+	}
+}
+
+// The two templates must not be interchangeable: parsing a model page with the
+// listing parser is what produced zero scenes, so this pins that they really do
+// need separate delimiters rather than one lenient pattern.
+func TestListingParserDoesNotParseModelPage(t *testing.T) {
+	if got := parseListingEntries([]byte(modelPageHTML)); len(got) != 0 {
+		t.Fatalf("the listing parser found %d entries on a model page; if the "+
+			"templates converged, collapse the two parsers instead of keeping both", len(got))
+	}
+	if got := parseModelEntries([]byte(listingHTML)); len(got) != 0 {
+		t.Fatalf("the model parser found %d entries on a listing page", len(got))
+	}
+}
+
+// Drives the /models/ URL end to end, so the dispatch in run() and the parser
+// runSinglePage picks are both pinned. Asserting the parsers in isolation is not
+// enough: pointing runSinglePage back at the listing parser is exactly the bug
+// that shipped, and it leaves parseModelEntries passing its own unit test.
+func TestListScenesModelPage(t *testing.T) {
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/html")
+		switch {
+		case strings.Contains(r.URL.Path, "/models/"):
+			_, _ = fmt.Fprint(w, strings.ReplaceAll(modelPageHTML, "https://www.ladyfyre.com", ""))
+		case strings.Contains(r.URL.Path, "/updates/"):
+			_, _ = fmt.Fprint(w, detailHTML)
+		default:
+			_, _ = fmt.Fprint(w, "<html></html>")
+		}
+	}))
+	defer ts.Close()
+
+	s := &Scraper{client: ts.Client(), baseOverride: ts.URL}
+
+	ch, err := s.ListScenes(context.Background(), ts.URL+"/tour/models/LadyOliviaFyre.html", scraper.ListOpts{Workers: 1})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	var scenes int
+	var titles []string
+	for r := range ch {
+		switch r.Kind {
+		case scraper.KindScene:
+			scenes++
+			titles = append(titles, r.Scene.Title)
+		case scraper.KindError:
+			t.Errorf("unexpected error: %v", r.Err)
+		}
+	}
+	if scenes != 2 {
+		t.Fatalf("got %d scenes from a model page, want 2", scenes)
+	}
+	if titles[0] == "" {
+		t.Error("model-page scene has an empty Title")
+	}
+}
+
+// The silent-zero path is what hid this mode being broken, so the error is
+// asserted rather than assumed.
+func TestListScenesModelPageReportsUnparseablePage(t *testing.T) {
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.Header().Set("Content-Type", "text/html")
+		_, _ = fmt.Fprint(w, "<html><body>no cards here</body></html>")
+	}))
+	defer ts.Close()
+
+	s := &Scraper{client: ts.Client(), baseOverride: ts.URL}
+	ch, err := s.ListScenes(context.Background(), ts.URL+"/tour/models/Nobody.html", scraper.ListOpts{Workers: 1})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	var errs int
+	for r := range ch {
+		if r.Kind == scraper.KindError {
+			errs++
+		}
+	}
+	if errs == 0 {
+		t.Error("a model page with no parseable cards reported success with zero scenes; " +
+			"that silence is what let this mode ship broken")
+	}
+}
