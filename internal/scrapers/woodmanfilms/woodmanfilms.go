@@ -1,3 +1,13 @@
+// Package woodmanfilms scrapes Woodman Films (woodmanfilms.com), covering the
+// main /movie listing and the /pornstar/{slug}_{id} mode.
+//
+// Scene.Date is deliberately left zero: the site publishes no release date
+// anywhere. Scene pages, movie pages and listing cards were all checked — the
+// only four-digit years in the markup are image dimensions and the footer
+// copyright. Its sibling wunf (same CMS family, same CDN) does carry
+// "Publish Date : 7 August 2010" on scene pages, which makes the absence here
+// look like a parser gap; it is not. ValidateScene logs the zero date as an
+// advisory note, so live tests report it on every scene and pass.
 package woodmanfilms
 
 import (
