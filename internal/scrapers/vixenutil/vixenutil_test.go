@@ -1,11 +1,14 @@
 package vixenutil
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 	"time"
@@ -301,4 +304,91 @@ func TestScraperInterface(t *testing.T) {
 
 func fixedTime() time.Time {
 	return time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC)
+}
+
+// --- golden fixture ----------------------------------------------------------
+//
+// TestExtractNextData and TestNodeToScene build node values in Go, so encode and
+// decode share the struct tag and a renamed one round-trips unnoticed. This
+// fixture wraps a byte-verbatim slice of the `edges` array from a live
+// https://www.vixen.com/videos?page=1 __NEXT_DATA__ payload (first 2 of 24 edges;
+// totalCount and pageNum copied from the same response) so the wire names are
+// pinned independently of the structs.
+//
+// Shapes a hand-written fixture would have got wrong:
+//   - `videoId` is a **quoted string** ("107143") even though it looks numeric.
+//     node.VideoID is a string for that reason; writing it as a JSON number would
+//     make the fixture pass while a real scrape failed to decode.
+//   - `releaseDate` is RFC3339 with milliseconds and a Z offset
+//     ("2026-07-26T17:30:00.000Z"), which is what time.RFC3339 is parsed against.
+//   - `modelsSlugged` lists every performer including the male performer, so a
+//     scene's Performers is not just the headline model.
+//   - each `images.listing` entry carries nested `webp` / `highdpi` objects and a
+//     `__typename` the scraper ignores — kept in, so unknown-field tolerance stays
+//     covered.
+func TestGoldenNextDataListing(t *testing.T) {
+	body, err := os.ReadFile(filepath.Join("testdata", "next_data_listing.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	var nd nextData
+	if err := json.Unmarshal(body, &nd); err != nil {
+		t.Fatalf("decoding captured payload: %v", err)
+	}
+	pp := nd.Props.PageProps
+	if len(pp.Edges) != 2 {
+		t.Fatalf("decoded %d edges, want 2", len(pp.Edges))
+	}
+	if pp.TotalCount != 630 {
+		t.Errorf("TotalCount = %d (totalCount), want 630 — pagination depends on it", pp.TotalCount)
+	}
+
+	n := pp.Edges[0].Node
+	if n.VideoID != "107143" {
+		t.Errorf("VideoID = %q (videoId), want the string \"107143\"", n.VideoID)
+	}
+	if n.Slug != "elegant-beauty-needs-passionate-sex" {
+		t.Errorf("Slug = %q (slug)", n.Slug)
+	}
+	if n.Title != "Elegant Beauty Needs Passionate Sex" {
+		t.Errorf("Title = %q (title)", n.Title)
+	}
+	if n.Site != "vixen" {
+		t.Errorf("Site = %q (site)", n.Site)
+	}
+	if len(n.ModelsSlugged) != 2 {
+		t.Errorf("ModelsSlugged has %d entries (modelsSlugged), want 2", len(n.ModelsSlugged))
+	}
+	if len(n.Images.Listing) == 0 {
+		t.Fatal("Images.Listing is empty (images.listing) — every scene loses its thumbnail")
+	}
+	if n.Images.Listing[0].Src == "" || n.Images.Listing[0].Width == 0 {
+		t.Errorf("listing image = %+v (src/width)", n.Images.Listing[0])
+	}
+
+	// The exact wire format of releaseDate, not merely that it is non-empty:
+	// Scene.Date is parsed with time.RFC3339 and a zero date is only an advisory
+	// warning at validation time, so a format change degrades quietly.
+	if n.ReleaseDate != "2026-07-26T17:30:00.000Z" {
+		t.Errorf("ReleaseDate = %q (releaseDate), want RFC3339 with ms and Z", n.ReleaseDate)
+	}
+	if _, err := time.Parse(time.RFC3339, n.ReleaseDate); err != nil {
+		t.Errorf("releaseDate %q does not parse as RFC3339: %v", n.ReleaseDate, err)
+	}
+}
+
+// The captured body must stay a capture; re-encoding it normalises exactly the
+// details the fixture exists to pin.
+func TestGoldenNextDataIsRawCapture(t *testing.T) {
+	body, err := os.ReadFile(filepath.Join("testdata", "next_data_listing.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !bytes.Contains(body, []byte(`"videoId":"107143"`)) {
+		t.Error(`fixture lost the quoted "videoId":"107143" form — it looks re-encoded`)
+	}
+	if !bytes.Contains(body, []byte(`"__typename"`)) {
+		t.Error("fixture lost __typename; unknown-field tolerance is no longer covered")
+	}
 }
