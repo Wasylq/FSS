@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
@@ -137,6 +138,8 @@ func writeChangelog(t *testing.T, path string, entries []changelogEntry) {
 	}
 }
 
+// captureStderr mirrors captureStdout; see there for why the pipe is drained
+// concurrently rather than read after the writer is closed.
 func captureStderr(t *testing.T, fn func()) string {
 	t.Helper()
 	orig := os.Stderr
@@ -145,18 +148,23 @@ func captureStderr(t *testing.T, fn func()) string {
 		t.Fatal(err)
 	}
 	os.Stderr = w
-	defer func() { os.Stderr = orig }()
+
+	done := make(chan string, 1)
+	go func() {
+		var buf bytes.Buffer
+		_, _ = io.Copy(&buf, r)
+		done <- buf.String()
+	}()
 
 	fn()
 
+	os.Stderr = orig
 	if err := w.Close(); err != nil {
 		t.Fatal(err)
 	}
-	data, err := io.ReadAll(r)
-	if err != nil {
-		t.Fatal(err)
-	}
-	return string(data)
+	out := <-done
+	_ = r.Close()
+	return out
 }
 
 func TestPrintFailureSummary_emptyIsNoOp(t *testing.T) {
@@ -206,6 +214,12 @@ func TestPrintFailureSummary_groupsByScene(t *testing.T) {
 	}
 }
 
+// captureStdout runs fn with os.Stdout redirected and returns what it wrote.
+//
+// The pipe is drained in a goroutine rather than read after w.Close(): a pipe
+// holds ~64KB, so reading only after fn returns deadlocks as soon as fn writes
+// more than that. Small callers never noticed, but `list-scrapers` prints
+// hundreds of KB for 1634 scrapers and hangs outright.
 func captureStdout(t *testing.T, fn func()) string {
 	t.Helper()
 	orig := os.Stdout
@@ -214,18 +228,23 @@ func captureStdout(t *testing.T, fn func()) string {
 		t.Fatal(err)
 	}
 	os.Stdout = w
-	defer func() { os.Stdout = orig }()
+
+	done := make(chan string, 1)
+	go func() {
+		var buf bytes.Buffer
+		_, _ = io.Copy(&buf, r)
+		done <- buf.String()
+	}()
 
 	fn()
 
+	os.Stdout = orig
 	if err := w.Close(); err != nil {
 		t.Fatal(err)
 	}
-	data, err := io.ReadAll(r)
-	if err != nil {
-		t.Fatal(err)
-	}
-	return string(data)
+	out := <-done
+	_ = r.Close()
+	return out
 }
 
 func TestPrintWouldCreateSummary_emptyIsNoOp(t *testing.T) {
