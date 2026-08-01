@@ -66,11 +66,30 @@ func WriteCSV(scenes []models.Scene, path string) error {
 	})
 }
 
+// maxSlugLen bounds the slug so the files the Flat store derives from it stay
+// within the 255-byte filename limit every mainstream filesystem enforces
+// (ext4, APFS, NTFS). The longest suffix added to a slug is 5 bytes — `.json`
+// for the store file and `.lock` for the flock sidecar — so 250 leaves both
+// exactly at the limit. `.fss-tmp-*` temp files use a fixed prefix and do not
+// embed the slug, so they are unaffected.
+//
+// Without this cap a studio URL long enough to sanitize past ~250 characters
+// produced a slug that could not be written at all: the scrape ran to
+// completion and then failed with ENAMETOOLONG on Save, losing the whole run.
+//
+// 250 is chosen so that no slug which already works is renamed. A slug of 250
+// characters plus `.json` is 255 bytes and writes fine today, so capping any
+// lower would rename working store files and silently orphan them — the hazard
+// called out in this function's doc comment. Only slugs that were already
+// unwritable change.
+const maxSlugLen = 250
+
 // Slugify converts a studio URL to a safe filename stem. It appends a short
 // hash of the raw URL so that distinct URLs never collide on the same slug —
 // e.g. "anna_b" and "anna-b" both sanitize to "anna-b" but get different
 // hashes — and so that URLs whose host+path sanitize to the empty string
-// (e.g. purely non-ASCII paths) still produce a unique, non-empty stem.
+// (e.g. purely non-ASCII paths) still produce a unique, non-empty stem. The
+// stem is capped at maxSlugLen bytes.
 //
 // Changing this output renames Flat-store files; the Flat store migrates the
 // legacy (un-hashed) filename on read — see LegacySlugify.
@@ -80,6 +99,14 @@ func Slugify(rawURL string) string {
 	hash := hex.EncodeToString(sum[:])[:8]
 	if base == "" {
 		return hash
+	}
+	// Truncating the human-readable prefix cannot introduce a collision: the
+	// hash is taken over the full rawURL, not the truncated base.
+	if maxBase := maxSlugLen - len(hash) - 1; len(base) > maxBase {
+		base = strings.TrimRight(base[:maxBase], "-")
+		if base == "" {
+			return hash
+		}
 	}
 	return base + "-" + hash
 }
