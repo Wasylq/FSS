@@ -1,11 +1,14 @@
 package povrutil
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"os"
+	"path/filepath"
 	"regexp"
 	"testing"
 	"time"
@@ -298,5 +301,82 @@ func TestListScenesKnownIDs(t *testing.T) {
 	}
 	if len(titles) != 1 || titles[0] != "New Scene" {
 		t.Errorf("titles = %v, want [New Scene]", titles)
+	}
+}
+
+// --- golden fixture ----------------------------------------------------------
+//
+// Every other test in this file builds exportVideo values in Go, so encode and
+// decode share the struct tag: renaming `json:"thumb"` on both sides round-trips
+// unnoticed while the live scrape silently loses thumbnails. This fixture is a
+// byte-verbatim slice of a live https://www.milfvr.com/export/videos.json body
+// (the first two of 467 entries, array brackets re-added), so the wire field
+// names are pinned independently of the struct.
+//
+// Shapes worth knowing, none of which a hand-written fixture would have produced:
+//   - the scene ID exists only as a trailing `-6373639` on `url`; there is no id
+//     field, so sceneIDRe is the only way to key a scene.
+//   - `length` is numeric seconds here, not the "MM:SS" string several sibling
+//     platforms use.
+//   - the payload carries `embed_html`, which exportVideo does not decode. Its
+//     presence is deliberate: it proves the decode tolerates unknown fields, so
+//     the site adding one cannot break a scrape.
+func TestGoldenVideosExport(t *testing.T) {
+	body, err := os.ReadFile(filepath.Join("testdata", "videos_export.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	var videos []exportVideo
+	if err := json.Unmarshal(body, &videos); err != nil {
+		t.Fatalf("decoding captured payload: %v", err)
+	}
+	if len(videos) != 2 {
+		t.Fatalf("decoded %d entries, want 2", len(videos))
+	}
+
+	v := videos[0]
+	if v.URL != "https://www.milfvr.com/cum-on-and-take-a-free-ryder-6373639" {
+		t.Errorf("URL = %q (url)", v.URL)
+	}
+	if v.Title != "Cum On And Take A Free Ryder" {
+		t.Errorf("Title = %q (title)", v.Title)
+	}
+	if v.Length != 2709 {
+		t.Errorf("Length = %d (length), want 2709 seconds", v.Length)
+	}
+	if v.Thumb == "" {
+		t.Error("Thumb is empty (thumb) — every scene would lose its thumbnail")
+	}
+	if len(v.Tags) != 13 {
+		t.Errorf("Tags has %d entries (tags), want 13", len(v.Tags))
+	}
+	if len(v.Actors) != 1 || v.Actors[0] != "Linzee Ryder" {
+		t.Errorf("Actors = %v (actors)", v.Actors)
+	}
+
+	// The ID is derivable only from the URL; if this breaks, every scene is
+	// re-keyed and an incremental scrape re-adds the whole catalogue.
+	if got := extractID(v.URL); got != "6373639" {
+		t.Errorf("extractID(%q) = %q, want 6373639", v.URL, got)
+	}
+	if got := extractID(videos[1].URL); got != "6368145" {
+		t.Errorf("extractID(%q) = %q, want 6368145", videos[1].URL, got)
+	}
+}
+
+// The captured body must stay a capture. Re-serialising it through a Go or Python
+// encoder normalises key order and escaping, which is what the fixture exists to
+// detect, so this pins the raw wire form rather than trusting the file's history.
+func TestGoldenVideosExportIsRawCapture(t *testing.T) {
+	body, err := os.ReadFile(filepath.Join("testdata", "videos_export.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !bytes.Contains(body, []byte(`"url":"https://www.milfvr.com/`)) {
+		t.Error(`fixture no longer contains the compact "url":"..." form — it looks re-encoded`)
+	}
+	if !bytes.Contains(body, []byte(`"embed_html"`)) {
+		t.Error("fixture lost embed_html; the unknown-field tolerance is no longer covered")
 	}
 }
