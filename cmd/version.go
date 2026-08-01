@@ -30,20 +30,41 @@ func runVersion(_ *cobra.Command, _ []string) error {
 		return nil
 	}
 
-	current := strings.TrimPrefix(buildVersion, "v")
-	remote := strings.TrimPrefix(latest, "v")
+	for _, line := range updateLines(buildVersion, latest) {
+		fmt.Println(line)
+	}
+	return nil
+}
 
-	switch current {
-	case "dev":
-		fmt.Printf("Latest release: %s (running dev build)\n", latest)
-	case remote:
-		fmt.Println("You are running the latest version.")
-	default:
-		fmt.Printf("Update available: %s → %s\n", buildVersion, latest)
-		fmt.Println("https://github.com/Wasylq/FSS/releases/latest")
+// updateLines renders the update notice comparing the built-in version against
+// the latest release tag.
+//
+// Split out from runVersion so the comparison is testable without reaching
+// GitHub — the network call is best-effort and its own concern.
+//
+// An empty tag is treated as "could not determine": GitHub returning a body
+// without tag_name (or any 200 that is not the expected shape) otherwise fell
+// into the default branch and printed "Update available: v1.2.3 → " with nothing
+// after the arrow, pointing the user at a release that was never identified.
+func updateLines(current, latest string) []string {
+	if strings.TrimSpace(latest) == "" {
+		return []string{"Could not determine the latest release."}
 	}
 
-	return nil
+	cur := strings.TrimPrefix(current, "v")
+	remote := strings.TrimPrefix(latest, "v")
+
+	switch cur {
+	case "dev":
+		return []string{fmt.Sprintf("Latest release: %s (running dev build)", latest)}
+	case remote:
+		return []string{"You are running the latest version."}
+	default:
+		return []string{
+			fmt.Sprintf("Update available: %s → %s", current, latest),
+			"https://github.com/Wasylq/FSS/releases/latest",
+		}
+	}
 }
 
 func fetchLatestRelease() (string, error) {
