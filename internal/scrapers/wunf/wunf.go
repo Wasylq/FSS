@@ -299,11 +299,17 @@ type listingScene struct {
 
 var (
 	sceneEntryRe = regexp.MustCompile(`(?s)<a href="(/scene/[^"]+)" class="scene item[^"]*"[^>]*>(.*?)</a>`)
-	titleH3Re    = regexp.MustCompile(`(?s)<h3>([^<]+)</h3>`)
-	subRe        = regexp.MustCompile(`<p class="sub">([^<]+)</p>`)
-	timerRe      = regexp.MustCompile(`<p class="timer">([^<]+)</p>`)
-	imgRe        = regexp.MustCompile(`<img[^>]+src="([^"]+)"`)
-	sceneIDRe    = regexp.MustCompile(`_(\d+)$`)
+	// The closing tag is deliberately not required. Scene cards on the main
+	// listing close their <h3>; cards on an actor page do not — they run
+	// straight into the next <p> ("<h3>Dido Angel - WUNF 3    <p>0/5</p>").
+	// Demanding </h3> matched nothing there, so every scene scraped from an
+	// actor page came back with an empty Title. `[^<]+` stops at the next tag
+	// either way, so this parses both templates identically.
+	titleH3Re = regexp.MustCompile(`(?s)<h3>([^<]+)`)
+	subRe     = regexp.MustCompile(`<p class="sub">([^<]+)</p>`)
+	timerRe   = regexp.MustCompile(`<p class="timer">([^<]+)</p>`)
+	imgRe     = regexp.MustCompile(`<img[^>]+src="([^"]+)"`)
+	sceneIDRe = regexp.MustCompile(`_(\d+)$`)
 )
 
 func parseListingPage(body []byte, base string) []listingScene {

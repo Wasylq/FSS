@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 	"time"
 
@@ -162,6 +163,11 @@ func TestParseDetailPage(t *testing.T) {
 	}
 }
 
+// Actor-page markup, reproduced as the site actually emits it. The `<h3>` in the
+// first card is deliberately left **unclosed**, running straight into the next
+// `<p>` — that is what the live page does, and the earlier hand-tidied fixture
+// (which closed the tag) is why this parser passed offline while every scene
+// scraped from a real actor page came back with an empty Title.
 const testActorHTML = `<html><body>
 <h1>KENZA DEL CAIRO</h1>
 <p class="sub actor_infos"><strong>Nationnality : French</strong></p>
@@ -172,8 +178,7 @@ const testActorHTML = `<html><body>
             <img src="https://cdn.example.com/41390_thumb.jpg" alt="player"/>
         </div>
         <div class="informations">
-            <h3>Kenza Del Cairo - Wunf 441</h3>
-            <p>0/5</p>
+            <h3>Kenza Del Cairo - Wunf 441                            <p>0/5</p>
             <p>2026-05-17 22:09:00&nbsp;</p>
         </div>
     </a>
@@ -297,5 +302,30 @@ func TestRunActor(t *testing.T) {
 
 	if len(scenes) != 1 {
 		t.Fatalf("got %d scenes, want 1: %v", len(scenes), scenes)
+	}
+}
+
+// Both templates must parse: the main listing closes its <h3>, actor pages do
+// not. One lenient pattern covers both, and this pins that rather than leaving
+// it to whichever fixture happens to exist.
+func TestTitleH3ParsesClosedAndUnclosedTags(t *testing.T) {
+	cases := []struct {
+		name  string
+		block string
+		want  string
+	}{
+		{"closed, as the main listing emits it", `<div><h3>WUNF 444</h3><p class="sub">x</p></div>`, "WUNF 444"},
+		{"unclosed, as actor pages emit it", `<div><h3>Dido Angel - WUNF 3      <p>0/5</p></div>`, "Dido Angel - WUNF 3"},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			m := titleH3Re.FindStringSubmatch(c.block)
+			if m == nil {
+				t.Fatal("no match — a scene parsed from this template gets an empty Title")
+			}
+			if got := strings.TrimSpace(m[1]); got != c.want {
+				t.Errorf("title = %q, want %q", got, c.want)
+			}
+		})
 	}
 }
