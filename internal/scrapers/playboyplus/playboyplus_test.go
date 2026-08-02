@@ -1,11 +1,16 @@
 package playboyplus
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"os"
+	"path/filepath"
+	"strconv"
 	"testing"
+	"time"
 
 	"github.com/Wasylq/FSS/internal/scrapers/testutil"
 	"github.com/Wasylq/FSS/scraper"
@@ -318,5 +323,104 @@ func TestRunPagination(t *testing.T) {
 	}
 	if scenes[0].ID != "1" || scenes[1].ID != "2" {
 		t.Errorf("scene IDs = %q, %q", scenes[0].ID, scenes[1].ID)
+	}
+}
+
+// --- golden fixture ----------------------------------------------------------
+//
+// The other tests build photosetHit values in Go, so encode and decode share the
+// struct tag and a renamed one round-trips unnoticed. This is a byte-verbatim
+// slice of a live Algolia response (the first two of 15606 hits; the paging
+// counters copied from the same body).
+//
+// No credential is embedded: the Algolia search key is public and scraped from
+// the site's own page source at runtime, exactly as fetchAPIKey does — the same
+// arrangement as gammautil. TestGoldenAlgoliaCarriesNoKey asserts the fixture
+// does not contain it.
+//
+// Shapes a hand-written fixture would have got wrong:
+//   - **`set_id` (int 151603) and `set_path` (string "190476") are different
+//     numbers.** Scene.ID and the scene URL are built from set_id; set_path is a
+//     media path that also appears inside objectID. Picking the wrong one still
+//     produces a plausible-looking URL that 404s.
+//   - `num_of_pictures` is a **string** ("30"), not a number.
+//   - `actors[].actor_id` is a **string** ("121963") in an otherwise numeric
+//     record — the same mixed-typing gammautil's index shows.
+//   - `multicontent_data` is keyed by `sfw`/`nsfw` rather than by size.
+//   - Algolia's generated `_highlightResult` is retained here rather than dropped:
+//     at 737 bytes it is not the bloat it was in gammautil, and keeping it covers
+//     unknown-field tolerance.
+func TestGoldenAlgoliaQuery(t *testing.T) {
+	body, err := os.ReadFile(filepath.Join("testdata", "algolia_query.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	var resp algoliaResponse
+	if err := json.Unmarshal(body, &resp); err != nil {
+		t.Fatalf("decoding captured payload: %v", err)
+	}
+	if len(resp.Hits) != 2 {
+		t.Fatalf("decoded %d hits, want 2", len(resp.Hits))
+	}
+	if resp.NbHits != 15606 {
+		t.Errorf("NbHits = %d (nbHits), want 15606 — paging depends on it", resp.NbHits)
+	}
+
+	h := resp.Hits[0]
+	if h.SetID != 151603 {
+		t.Errorf("SetID = %d (set_id), want 151603", h.SetID)
+	}
+	if h.Title != "Floral Garden" {
+		t.Errorf("Title = %q (title)", h.Title)
+	}
+	if h.URLTitle != "Floral-Garden" {
+		t.Errorf("URLTitle = %q (url_title) — the scene URL is built from it", h.URLTitle)
+	}
+	if h.DateOnline != "2026-07-25" {
+		t.Errorf("DateOnline = %q (date_online), want a bare Y-m-d", h.DateOnline)
+	}
+	if _, err := time.Parse("2006-01-02", h.DateOnline); err != nil {
+		t.Errorf("date_online %q does not parse as Y-m-d: %v", h.DateOnline, err)
+	}
+	if h.NumOfPictures != "30" {
+		t.Errorf("NumOfPictures = %q (num_of_pictures), want the string \"30\"", h.NumOfPictures)
+	}
+	if h.SiteName != "playboyplus" {
+		t.Errorf("SiteName = %q (sitename)", h.SiteName)
+	}
+	if h.ObjectID == "" {
+		t.Error("ObjectID is empty (objectID)")
+	}
+	if len(h.Actors) == 0 || h.Actors[0].Name == "" {
+		t.Fatalf("actors = %+v (actors[].name)", h.Actors)
+	}
+	// actor_id is a string even though it looks numeric.
+	if h.Actors[0].ActorID != "121963" {
+		t.Errorf("actor ActorID = %q (actors[].actor_id), want the string \"121963\"", h.Actors[0].ActorID)
+	}
+	if bestThumbnail(h.MulticontentData) == "" {
+		t.Error("bestThumbnail found nothing in multicontent_data — every scene loses its thumbnail")
+	}
+
+	// The set_id / set_path distinction, stated as the invariant it is.
+	if got := strconv.Itoa(h.SetID); got == "190476" {
+		t.Error("SetID now equals set_path; the two were different values when captured, " +
+			"and the scene URL depends on set_id")
+	}
+}
+
+func TestGoldenAlgoliaCarriesNoKey(t *testing.T) {
+	body, err := os.ReadFile(filepath.Join("testdata", "algolia_query.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, marker := range []string{"x-algolia-api-key", "apiKey", "algolia\":{"} {
+		if bytes.Contains(body, []byte(marker)) {
+			t.Errorf("fixture contains %q — the search key belongs in the request, not the body", marker)
+		}
+	}
+	if !bytes.Contains(body, []byte(`"num_of_pictures":"30"`)) {
+		t.Error(`fixture lost the quoted "num_of_pictures":"30" — a re-encode may have made it numeric`)
 	}
 }
