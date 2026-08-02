@@ -1,6 +1,7 @@
 package match
 
 import (
+	"strings"
 	"testing"
 	"time"
 
@@ -281,5 +282,70 @@ func TestMergeStrings_doesNotMutateInputs(t *testing.T) {
 	}
 	if len(update) != 1 || update[0] != "c" {
 		t.Errorf("update slice was mutated: %v", update)
+	}
+}
+
+// Aylo's API serves performer names with stray whitespace ("Nikki Nuttz "), and
+// every consumer of these strings compares them exactly. The cross-site case is
+// the one that matters most: dedup is by exact string, so without trimming the
+// same performer arrives twice from two sites and `fss stash import` then creates
+// a duplicate performer in Stash rather than matching the existing one.
+func TestMergeScenesTrimsNamesAndDedupesAcrossSites(t *testing.T) {
+	scenes := []models.Scene{
+		{
+			ID: "1", SiteID: "babes", Title: "T", URL: "https://babes.com/1",
+			Performers: []string{"Nikki Nuttz ", "Zazie Skymm"},
+			Tags:       []string{" Blowjob", "Big Tits "},
+			Categories: []string{" Couples "},
+			Studio:     " Babes ",
+		},
+		{
+			ID: "1", SiteID: "other", Title: "T", URL: "https://other.com/1",
+			Performers: []string{"Nikki Nuttz", "  "},
+			Tags:       []string{"Blowjob", ""},
+			Categories: []string{"Couples"},
+		},
+	}
+
+	m := MergeScenes(scenes, time.Time{})
+
+	if len(m.Performers) != 2 {
+		t.Errorf("Performers = %q, want 2 — the untrimmed and trimmed forms of the "+
+			"same name must collapse, and a whitespace-only entry must be dropped", m.Performers)
+	}
+	for _, p := range m.Performers {
+		if p != strings.TrimSpace(p) {
+			t.Errorf("performer %q still carries surrounding whitespace", p)
+		}
+		if p == "" {
+			t.Error("empty performer name retained")
+		}
+	}
+	if len(m.Tags) != 2 {
+		t.Errorf("Tags = %q, want 2 (Blowjob, Big Tits)", m.Tags)
+	}
+	for _, tag := range m.Tags {
+		if tag != strings.TrimSpace(tag) || tag == "" {
+			t.Errorf("tag %q is empty or untrimmed", tag)
+		}
+	}
+	if len(m.Categories) != 1 || m.Categories[0] != "Couples" {
+		t.Errorf("Categories = %q, want [Couples]", m.Categories)
+	}
+	if m.Studio != "Babes" {
+		t.Errorf("Studio = %q, want %q", m.Studio, "Babes")
+	}
+}
+
+// Case is deliberately preserved: sites differ on capitalisation and folding it
+// would change which name is written to Stash. This pins that decision so it is
+// not "fixed" into case-insensitive dedup by accident.
+func TestMergeScenesKeepsDistinctCasing(t *testing.T) {
+	scenes := []models.Scene{
+		{ID: "1", SiteID: "a", URL: "https://a/1", Performers: []string{"Nikki Nuttz"}},
+		{ID: "1", SiteID: "b", URL: "https://b/1", Performers: []string{"nikki nuttz"}},
+	}
+	if m := MergeScenes(scenes, time.Time{}); len(m.Performers) != 2 {
+		t.Errorf("Performers = %q, want both casings retained", m.Performers)
 	}
 }

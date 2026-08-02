@@ -41,6 +41,28 @@ type MergedScene struct {
 // MergeScenes combines metadata from multiple FSS scenes (potentially from
 // different sites) into a single MergedScene. Optionally incorporates the
 // existing Stash scene date for earliest-date logic.
+//
+// Performer, tag, category and studio names are trimmed before deduplication,
+// and entries that trim to nothing are dropped.
+//
+// This is not cosmetic tidying. Several site APIs return names with stray
+// whitespace — Aylo serves "Nikki Nuttz " with a trailing space — and every
+// downstream consumer compares these strings exactly:
+//
+//   - deduplication here is by exact string, so "Nikki Nuttz " from one site and
+//     "Nikki Nuttz" from another survived as two separate performers, which
+//     defeats the point of merging across sites;
+//   - `fss stash import` looks performers, tags and studios up in Stash **by
+//     name**, so the untrimmed variant never matches the existing entity and
+//     `--apply` creates a duplicate with a trailing space.
+//
+// Trimming here rather than only in the scrapers also repairs catalogues that
+// were already written to disk with the stray whitespace, which no scraper-side
+// fix can do without a full re-scrape. Scrapers should still avoid emitting it.
+//
+// Only surrounding whitespace is removed. Case is deliberately left alone: sites
+// legitimately differ on capitalisation and folding it would change which name
+// gets written to Stash.
 func MergeScenes(scenes []models.Scene, existingDate time.Time) MergedScene {
 	m := MergedScene{}
 
@@ -68,28 +90,30 @@ func MergeScenes(scenes []models.Scene, existingDate time.Time) MergedScene {
 		}
 
 		for _, t := range s.Tags {
-			if !tagSet[t] {
+			if t = strings.TrimSpace(t); t != "" && !tagSet[t] {
 				tagSet[t] = true
 				m.Tags = append(m.Tags, t)
 			}
 		}
 
 		for _, c := range s.Categories {
-			if !catSet[c] {
+			if c = strings.TrimSpace(c); c != "" && !catSet[c] {
 				catSet[c] = true
 				m.Categories = append(m.Categories, c)
 			}
 		}
 
 		for _, p := range s.Performers {
-			if !perfSet[p] {
+			if p = strings.TrimSpace(p); p != "" && !perfSet[p] {
 				perfSet[p] = true
 				m.Performers = append(m.Performers, p)
 			}
 		}
 
-		if m.Studio == "" && s.Studio != "" {
-			m.Studio = s.Studio
+		// Studio is looked up in Stash by name too (checkStudio), so it gets the
+		// same treatment.
+		if studio := strings.TrimSpace(s.Studio); m.Studio == "" && studio != "" {
+			m.Studio = studio
 		}
 
 		if m.Thumbnail == "" && s.Thumbnail != "" {
