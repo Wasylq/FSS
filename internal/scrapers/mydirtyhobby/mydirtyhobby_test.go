@@ -1,10 +1,14 @@
 package mydirtyhobby
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"os"
+	"path/filepath"
+	"strconv"
 	"testing"
 
 	"github.com/Wasylq/FSS/parseutil"
@@ -252,5 +256,120 @@ func TestListScenesKnownIDs(t *testing.T) {
 	}
 	if len(scenesOnly) > 0 && scenesOnly[0].Scene.ID != "201" {
 		t.Errorf("scene ID = %q, want %q", scenesOnly[0].Scene.ID, "201")
+	}
+}
+
+// --- golden fixture ----------------------------------------------------------
+//
+// The other tests build mdhItem values in Go, so encode and decode share the
+// struct tag and a renamed one round-trips unnoticed. This is a byte-verbatim
+// slice of a live POST to https://www.mydirtyhobby.com/content/api/v2/videos
+// (first two of 1092 items for the Dirty-Tina profile; the three pagination keys
+// copied from the same body).
+//
+// The endpoint needs a JSON POST body plus a `Cookie: AGEGATEPASSED=1` header —
+// the age gate, not a credential, so nothing secret is embedded. The response's
+// `filters` blob (~8KB of country and category lists) is dropped: listResponse
+// decodes only items/total/page/totalPages, the same precedent as gammautil
+// dropping `_highlightResult`. Every retained object is unedited.
+//
+// Shapes a hand-written fixture would have got wrong:
+//   - **`price` is a string of cents** ("542", i.e. €5.42). toScene runs it
+//     through ParseFloat and divides by 100; writing it as a JSON number or as
+//     "5.42" would both pass a hand-built fixture and misprice every scene by
+//     100x.
+//   - `reducedPercent` is **null** when there is no discount, which is why it is
+//     a *int rather than an int.
+//   - `duration` is a "M:SS" string, not seconds.
+//   - the release date comes from **`latestPictureChange`**, and it carries a
+//     **+01:00 offset** rather than a Z — parseDate accepts both, and this pins
+//     that the offset form is the one actually served.
+//   - `u_id` and `uv_id` sit side by side in snake_case; uv_id is the scene, u_id
+//     the profile. Picking the wrong one re-keys every scene to the same value.
+func TestGoldenVideos(t *testing.T) {
+	body, err := os.ReadFile(filepath.Join("testdata", "videos.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	var resp listResponse
+	if err := json.Unmarshal(body, &resp); err != nil {
+		t.Fatalf("decoding captured payload: %v", err)
+	}
+	if len(resp.Items) != 2 {
+		t.Fatalf("decoded %d items, want 2", len(resp.Items))
+	}
+	if resp.Total != 1092 || resp.TotalPages != 546 {
+		t.Errorf("Total/TotalPages = %d/%d (total/totalPages), want 1092/546 — the walk needs both",
+			resp.Total, resp.TotalPages)
+	}
+
+	it := resp.Items[0]
+	if it.UVID != 12797791 {
+		t.Errorf("UVID = %d (uv_id), want 12797791 — note u_id (%d) is the profile, not the scene",
+			it.UVID, it.UID)
+	}
+	if it.UID != 2517040 {
+		t.Errorf("UID = %d (u_id), want 2517040", it.UID)
+	}
+	if it.Nick != "Dirty-Tina" {
+		t.Errorf("Nick = %q (nick)", it.Nick)
+	}
+	if it.Title == "" {
+		t.Error("Title is empty (title)")
+	}
+	if it.Thumbnail == "" {
+		t.Error("Thumbnail is empty (thumbnail)")
+	}
+
+	// price as a string of cents.
+	if it.Price != "542" {
+		t.Errorf("Price = %q (price), want the string \"542\" — cents, as a string", it.Price)
+	}
+	cents, err := strconv.ParseFloat(it.Price, 64)
+	if err != nil {
+		t.Fatalf("price %q no longer parses as a number: %v", it.Price, err)
+	}
+	if got := cents / 100; got != 5.42 {
+		t.Errorf("price %q / 100 = %v, want 5.42", it.Price, got)
+	}
+
+	// nullable discount.
+	if it.ReducedPercent != nil {
+		t.Errorf("ReducedPercent = %v (reducedPercent), want nil on an undiscounted item", *it.ReducedPercent)
+	}
+	if it.HasDiscount {
+		t.Error("HasDiscount is true (hasDiscount) on an item with a null reducedPercent")
+	}
+
+	if it.Duration != "6:01" {
+		t.Errorf("Duration = %q (duration), want a M:SS string rather than seconds", it.Duration)
+	}
+
+	// the date source and its offset form.
+	if it.LatestPictureChange != "2026-02-17T00:03:06+01:00" {
+		t.Errorf("LatestPictureChange = %q (latestPictureChange), want an explicit +01:00 offset",
+			it.LatestPictureChange)
+	}
+	if d := parseDate(it.LatestPictureChange); d.IsZero() {
+		t.Errorf("parseDate(%q) returned zero — Scene.Date comes from this field",
+			it.LatestPictureChange)
+	}
+}
+
+// The captured body must stay a capture.
+func TestGoldenVideosIsRawCapture(t *testing.T) {
+	body, err := os.ReadFile(filepath.Join("testdata", "videos.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !bytes.Contains(body, []byte(`"price":"542"`)) {
+		t.Error(`fixture lost the quoted "price":"542" form — a re-encode may have made it numeric`)
+	}
+	if !bytes.Contains(body, []byte(`"reducedPercent":null`)) {
+		t.Error("fixture lost the explicit null reducedPercent")
+	}
+	if bytes.Contains(body, []byte("AGEGATEPASSED")) {
+		t.Error("fixture contains the age-gate cookie; it belongs in the request, not the body")
 	}
 }
