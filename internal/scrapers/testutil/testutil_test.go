@@ -434,3 +434,30 @@ func TestCheckSiteDomainTable(t *testing.T) {
 		}
 	}
 }
+
+// Surrounding whitespace on a performer or tag name is a site artefact that
+// matters because these strings are compared exactly: `fss stash import` looks
+// entities up in Stash by name, so an untrimmed one creates a duplicate.
+//
+// Advisory rather than a failure — see sceneNotes for why — so this pins both
+// halves: the note is emitted, and sceneProblems stays quiet.
+func TestSceneNotesFlagsUntrimmedNames(t *testing.T) {
+	s := goodScene()
+	s.Thumbnail = "https://example.com/t.jpg"
+	s.Performers = []string{"Nikki Nuttz ", "Clean Name"}
+	s.Tags = []string{" Blowjob", "Clean Tag"}
+
+	notes := strings.Join(sceneNotes(s), "; ")
+	if !strings.Contains(notes, `performer "Nikki Nuttz "`) {
+		t.Errorf("sceneNotes = %q, want a note naming the untrimmed performer", notes)
+	}
+	if !strings.Contains(notes, `tag " Blowjob"`) {
+		t.Errorf("sceneNotes = %q, want a note naming the untrimmed tag", notes)
+	}
+	if strings.Contains(notes, "Clean Name") || strings.Contains(notes, "Clean Tag") {
+		t.Errorf("sceneNotes = %q, must not flag already-trimmed entries", notes)
+	}
+	if got := sceneProblems(s); len(got) != 0 {
+		t.Errorf("sceneProblems = %v, want none — untrimmed names must not fail a scraper", got)
+	}
+}

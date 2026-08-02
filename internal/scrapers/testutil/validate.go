@@ -81,6 +81,27 @@ func sceneNotes(s models.Scene) []string {
 	if s.Thumbnail == "" {
 		out = append(out, fmt.Sprintf("scene %q has empty Thumbnail", s.ID))
 	}
+	// Surrounding whitespace on a name is always a site artefact, never meaning.
+	// Aylo serves "Nikki Nuttz " with a trailing space, and 20 other packages
+	// append these strings without trimming — but whether their APIs actually
+	// carry whitespace is unmeasured, and probing 21 live APIs to find out is a
+	// worse use of a smoke run than simply reporting it when it appears.
+	//
+	// Advisory, not a failure, for two reasons: the user-visible harm is already
+	// fixed downstream (match.MergeScenes trims before anything is written to
+	// Stash or an NFO, and both write paths go through it), and a hard failure
+	// here would break scrapers over a cosmetic detail in stored JSON. Promote it
+	// once a full `make smoke` shows the real list.
+	for _, p := range s.Performers {
+		if p != strings.TrimSpace(p) {
+			out = append(out, fmt.Sprintf("scene %q has performer %q with surrounding whitespace", s.ID, p))
+		}
+	}
+	for _, t := range s.Tags {
+		if t != strings.TrimSpace(t) {
+			out = append(out, fmt.Sprintf("scene %q has tag %q with surrounding whitespace", s.ID, t))
+		}
+	}
 	return out
 }
 
