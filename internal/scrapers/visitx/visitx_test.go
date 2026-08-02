@@ -1,11 +1,14 @@
 package visitx
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"os"
+	"path/filepath"
 	"strconv"
 	"testing"
 	"time"
@@ -338,4 +341,120 @@ func TestListScenesKnownIDs(t *testing.T) {
 
 func fixedTime() time.Time {
 	return time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC)
+}
+
+// --- golden fixture ----------------------------------------------------------
+//
+// The other tests build gqlVideo values in Go, so encode and decode share the
+// struct tag and a renamed one round-trips unnoticed. This is a live
+// POST https://www.visit-x.net/vxql response, kept whole and unedited (3KB).
+//
+// Two steps are needed to reach it: GET the model page and scrape the
+// `vxqlAccessToken` out of its HTML, then send it as a Bearer token. That token
+// is a JWT and travels in a *request* header, so it never appears in the
+// response — TestGoldenVideosCarriesNoToken asserts that rather than trusting it.
+// No account or credential is involved.
+//
+// Shapes a hand-written fixture would have got wrong:
+//   - **`duration` is a string ("148") even though the query asks for
+//     `duration(format:sec)`.** gqlVideo.Duration is a string for that reason;
+//     writing it as a JSON number passes a hand-built fixture and fails live.
+//   - **`price.currency` is "VXC"**, VisitX's own token currency — not EUR or
+//     USD. Scene prices from this site are therefore not comparable with other
+//     sites' prices, and the value is small (13) because of it.
+//   - `tagList` is an array of `{"label": …}` objects, not strings.
+//   - `price` / `basePrice` / `preview` / `rating` / `model` are all **pointers**;
+//     GraphQL returns null for absent ones and toScene nil-checks each.
+//   - `released` is RFC3339 with an explicit +00:00 offset.
+func TestGoldenVideosGQL(t *testing.T) {
+	body, err := os.ReadFile(filepath.Join("testdata", "videos_gql.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	var resp gqlResponse
+	if err := json.Unmarshal(body, &resp); err != nil {
+		t.Fatalf("decoding captured payload: %v", err)
+	}
+	if len(resp.Errors) != 0 {
+		t.Fatalf("captured payload carries GraphQL errors: %+v", resp.Errors)
+	}
+	if resp.Data.Model == nil {
+		t.Fatal("data.model is nil — the whole walk hangs off it")
+	}
+	m := resp.Data.Model
+	if m.Name != "DirtyTina" {
+		t.Errorf("model Name = %q (data.model.name)", m.Name)
+	}
+	if m.VideosV2.Total != 1294 {
+		t.Errorf("Total = %d (videos_v2.total), want 1294 — pagination depends on it", m.VideosV2.Total)
+	}
+	if len(m.VideosV2.Items) != 2 {
+		t.Fatalf("decoded %d items, want 2", len(m.VideosV2.Items))
+	}
+
+	v := m.VideosV2.Items[0]
+	if v.ID != 28044121 {
+		t.Errorf("ID = %d (id)", v.ID)
+	}
+	if v.Title == "" || v.Description == "" {
+		t.Errorf("title/description empty: %q / %q", v.Title, v.Description)
+	}
+	if v.Slug == "" || v.LinkVX == "" {
+		t.Errorf("slug/linkVX empty: %q / %q", v.Slug, v.LinkVX)
+	}
+
+	// duration as a numeric-looking *string*.
+	if v.Duration != "148" {
+		t.Errorf("Duration = %q (duration), want the string \"148\" — it is a string despite format:sec", v.Duration)
+	}
+	if _, err := strconv.Atoi(v.Duration); err != nil {
+		t.Errorf("duration %q is no longer an integer string: %v", v.Duration, err)
+	}
+
+	if v.Released != "2026-07-15T07:00:00+00:00" {
+		t.Errorf("Released = %q (released), want RFC3339 with an explicit offset", v.Released)
+	}
+	if _, err := time.Parse(time.RFC3339, v.Released); err != nil {
+		t.Errorf("released %q does not parse as RFC3339: %v", v.Released, err)
+	}
+
+	// The nullable blocks, and the site's own currency.
+	if v.Price == nil || v.BasePrice == nil {
+		t.Fatalf("price/basePrice nil: %+v / %+v — both are pointers and toScene nil-checks them",
+			v.Price, v.BasePrice)
+	}
+	if v.Price.Currency != "VXC" {
+		t.Errorf("price.currency = %q, want VXC — VisitX prices are in its own token "+
+			"currency, so they are not comparable with other sites'", v.Price.Currency)
+	}
+	if v.Price.Value == 0 {
+		t.Error("price.value is 0")
+	}
+	if v.Preview == nil || len(v.Preview.Images) == 0 {
+		t.Error("preview.images is empty — every scene loses its thumbnail")
+	}
+	if v.Rating == nil {
+		t.Error("rating is nil")
+	}
+	if len(v.TagList) == 0 || v.TagList[0].Label == "" {
+		t.Errorf("tagList = %+v — it is an array of {label} objects, not strings", v.TagList)
+	}
+}
+
+func TestGoldenVideosCarriesNoToken(t *testing.T) {
+	body, err := os.ReadFile(filepath.Join("testdata", "videos_gql.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	// The Bearer token is a JWT ("eyJ…") sent as a request header; it must never
+	// land in a committed fixture.
+	for _, marker := range []string{"eyJ0eXAiOi", "vxqlAccessToken", "Authorization", "Bearer "} {
+		if bytes.Contains(body, []byte(marker)) {
+			t.Errorf("fixture contains %q — re-capture without the credential", marker)
+		}
+	}
+	if !bytes.Contains(body, []byte(`"duration":"148"`)) {
+		t.Error(`fixture lost the quoted "duration":"148" — a re-encode may have made it numeric`)
+	}
 }
