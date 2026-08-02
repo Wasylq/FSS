@@ -1,11 +1,14 @@
 package teencoreclub
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"os"
+	"path/filepath"
 	"testing"
 	"time"
 
@@ -405,5 +408,113 @@ func TestLangString(t *testing.T) {
 		if got != tt.want {
 			t.Errorf("langString(%v).String() = %q, want %q", tt.input, got, tt.want)
 		}
+	}
+}
+
+// --- golden fixtures ---------------------------------------------------------
+//
+// The other tests build videoItem/siteConfig values in Go, so encode and decode
+// share the struct tag and a renamed one round-trips unnoticed. These are
+// byte-verbatim slices of live api.fundorado.com responses.
+//
+// Reaching the API needs `Referer`/`Origin` headers for teencoreclub.com; it was
+// previously recorded as returning "its SPA shell without real studio/site IDs",
+// but /api/sitecfg?h=teencoreclub.com answers with the real config. No credential
+// is involved.
+//
+// Both bodies are trimmed to the fields the structs decode plus a few array
+// entries — sitecfg alone is 104KB, of which the scraper reads only `id` and
+// `studios` — following the same precedent as gammautil dropping
+// `_highlightResult`. Each retained object is unedited.
+//
+// Shapes a hand-written fixture would have got wrong:
+//   - **`title` is a language object, `{"en": "…"}`, not a string.** langString
+//     exists for this, and guessing a plain string loses every title.
+//   - `artwork` is an object of four named sizes, not a URL.
+//   - `publication_date` carries **six-digit microseconds** and a Z
+//     ("2020-06-24T22:00:00.000000Z"), which is why toScene tries a bare
+//     "2006-01-02" first and then an explicit microsecond layout.
+//   - `videos.total` and `videos.last_page` are nested under `videos`, not at the
+//     top level, and the walk terminates on them.
+func TestGoldenSiteConfig(t *testing.T) {
+	body, err := os.ReadFile(filepath.Join("testdata", "sitecfg.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	var cfg siteConfig
+	if err := json.Unmarshal(body, &cfg); err != nil {
+		t.Fatalf("decoding captured payload: %v", err)
+	}
+	if cfg.ID != 10 {
+		t.Errorf("ID = %d (id), want 10 — it becomes site_id on every browse call", cfg.ID)
+	}
+	if len(cfg.Studios) != 3 {
+		t.Fatalf("decoded %d studios, want 3", len(cfg.Studios))
+	}
+	if cfg.Studios[0].ID == 0 || cfg.Studios[0].Name == "" {
+		t.Errorf("studio[0] = %+v (studios[].id/name)", cfg.Studios[0])
+	}
+}
+
+func TestGoldenBrowse(t *testing.T) {
+	body, err := os.ReadFile(filepath.Join("testdata", "browse.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	var resp browseResponse
+	if err := json.Unmarshal(body, &resp); err != nil {
+		t.Fatalf("decoding captured payload: %v", err)
+	}
+	if len(resp.Videos.Data) != 2 {
+		t.Fatalf("decoded %d videos, want 2", len(resp.Videos.Data))
+	}
+	if resp.Videos.Total != 1768 {
+		t.Errorf("Total = %d (videos.total), want 1768", resp.Videos.Total)
+	}
+	if resp.Videos.LastPage != 36 {
+		t.Errorf("LastPage = %d (videos.last_page), want 36 — the walk stops on it", resp.Videos.LastPage)
+	}
+	if resp.Videos.CurrentPage != 1 {
+		t.Errorf("CurrentPage = %d (videos.current_page)", resp.Videos.CurrentPage)
+	}
+
+	it := resp.Videos.Data[0]
+	if it.ID == 0 {
+		t.Error("ID = 0 (id)")
+	}
+	if it.Slug == "" {
+		t.Error("Slug is empty (slug)")
+	}
+	// The language-object title.
+	if got := it.Title.String(); got != "BIC_1360692388" {
+		t.Errorf("Title.String() = %q, want the en value — title is a {\"en\": …} object, not a string", got)
+	}
+	if _, ok := it.Title["en"]; !ok {
+		t.Errorf("title has no \"en\" key: %v", it.Title)
+	}
+	if it.Artwork.Original == "" || it.Artwork.Large == "" {
+		t.Errorf("artwork = %+v (artwork.original/large) — it is an object of sizes, not a URL", it.Artwork)
+	}
+
+	// The microsecond timestamp, and that the layouts toScene uses still match it.
+	if it.PublicationDate != "2020-06-24T22:00:00.000000Z" {
+		t.Errorf("PublicationDate = %q (publication_date), want six-digit microseconds", it.PublicationDate)
+	}
+	if _, err := time.Parse("2006-01-02T15:04:05.000000Z", it.PublicationDate); err != nil {
+		t.Errorf("publication_date %q does not parse with the layout toScene uses: %v", it.PublicationDate, err)
+	}
+}
+
+// The captured bodies must stay captures.
+func TestGoldenFixturesAreRawCaptures(t *testing.T) {
+	browse, err := os.ReadFile(filepath.Join("testdata", "browse.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !bytes.Contains(browse, []byte(`"title":{"en":`)) {
+		t.Error(`browse fixture lost the compact "title":{"en": form — it looks re-encoded`)
+	}
+	if !bytes.Contains(browse, []byte(`"publication_date":"2020-06-24T22:00:00.000000Z"`)) {
+		t.Error("browse fixture lost the microsecond timestamp verbatim")
 	}
 }
