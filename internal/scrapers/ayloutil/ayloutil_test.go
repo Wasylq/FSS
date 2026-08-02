@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"sync"
@@ -986,5 +987,125 @@ func TestToSceneCustomScenePath(t *testing.T) {
 	sc := ToScene(cfg, "https://www.spicevids.com", rel, time.Now())
 	if !strings.Contains(sc.URL, "/scene/42/") {
 		t.Errorf("URL = %q, want /scene/42/ path", sc.URL)
+	}
+}
+
+// --- golden fixture ----------------------------------------------------------
+//
+// The other tests build Release values in Go, so encode and decode share the
+// struct tag and a renamed one round-trips unnoticed. This is a byte-verbatim
+// slice of a live https://site-api.project1service.com/v2/releases response
+// (the first two of 1314 for babes.com; meta.count/total copied from the same
+// body), so the wire names are pinned independently of the structs.
+//
+// No credential is embedded. The API needs an `Instance` token, but that token is
+// obtained by a plain GET of the site base and reading the instance_token cookie
+// — FetchToken does exactly that — and it travels in a *request* header, so it
+// never appears in the response. TestGoldenReleasesCarriesNoToken asserts that
+// rather than trusting it.
+//
+// Shapes a hand-written fixture would not have produced:
+//   - `id` (4474211) sits beside a different `spartanId` (4712782). Picking the
+//     wrong one still decodes and looks plausible, but re-keys every scene.
+//   - `dateReleased` is RFC3339 **with** an explicit +00:00 offset, unlike the
+//     bare timestamps some other platforms return.
+//   - **`actors[1].name` is "Nikki Nuttz " with a trailing space.** This is real
+//     API data, and it is why ToScene and match.MergeScenes both trim: the name
+//     is looked up in Stash by exact string, so untrimmed it creates a duplicate
+//     performer.
+//   - `children` is populated, so Release is recursive.
+//   - apostrophes arrive as ' escapes, which a re-encode would rewrite.
+func TestGoldenReleases(t *testing.T) {
+	body, err := os.ReadFile(filepath.Join("testdata", "releases.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	var resp ReleasesResponse
+	if err := json.Unmarshal(body, &resp); err != nil {
+		t.Fatalf("decoding captured payload: %v", err)
+	}
+	if len(resp.Result) != 2 {
+		t.Fatalf("decoded %d releases, want 2", len(resp.Result))
+	}
+	if resp.Meta.Total != 1314 {
+		t.Errorf("Meta.Total = %d (meta.total), want 1314 — pagination depends on it", resp.Meta.Total)
+	}
+
+	r := resp.Result[0]
+	if r.ID != 4474211 {
+		t.Errorf("ID = %d (id), want 4474211 — note the sibling spartanId is 4712782", r.ID)
+	}
+	if r.Type != "scene" {
+		t.Errorf("Type = %q (type)", r.Type)
+	}
+	if r.Title != "Forbidden Fruit" {
+		t.Errorf("Title = %q (title)", r.Title)
+	}
+	if r.DateReleased != "2021-09-14T12:00:00+00:00" {
+		t.Errorf("DateReleased = %q (dateReleased), want RFC3339 with an explicit offset", r.DateReleased)
+	}
+	if len(r.Actors) != 2 {
+		t.Fatalf("Actors has %d entries (actors), want 2", len(r.Actors))
+	}
+	if len(r.Collections) == 0 || r.Collections[0].Name == "" {
+		t.Error("no collections (collections) — Series comes from here")
+	}
+	if len(r.Tags) == 0 {
+		t.Error("no tags (tags)")
+	}
+	if len(r.Children) == 0 {
+		t.Error("children is empty; Release is recursive and the nesting is part of the contract")
+	}
+	if len(r.RawImages) == 0 {
+		t.Error("images (RawImages) is empty — thumbnails are decoded from it lazily")
+	}
+
+	// The raw payload really does carry the untrimmed name, so the trim in
+	// ToScene is guarding against live data rather than a hypothetical.
+	var untrimmed bool
+	for _, a := range r.Actors {
+		if a.Name != strings.TrimSpace(a.Name) {
+			untrimmed = true
+		}
+	}
+	if !untrimmed {
+		t.Error("no untrimmed actor name in the fixture — if the API stopped doing this, " +
+			"say so here rather than dropping the trim; other Aylo sites still do it")
+	}
+
+	// ToScene must not pass it through.
+	sc := ToScene(SiteConfig{SiteID: "babes", SiteBase: "https://www.babes.com", StudioName: "Babes"},
+		"https://www.babes.com", r, time.Now().UTC())
+	for _, p := range sc.Performers {
+		if p != strings.TrimSpace(p) {
+			t.Errorf("ToScene emitted performer %q with surrounding whitespace; "+
+				"stash import looks performers up by exact name and would create a duplicate", p)
+		}
+	}
+}
+
+func TestGoldenReleasesCarriesNoToken(t *testing.T) {
+	body, err := os.ReadFile(filepath.Join("testdata", "releases.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	// The Instance token is a JWT (277 chars, "eyJ..." prefix) sent as a request
+	// header, so it should never appear in a response body. Asserted rather than
+	// assumed so a future re-capture cannot quietly commit one — the same guard
+	// the stashbox fixture carries.
+	//
+	// The markers are specific on purpose: an earlier version of this test looked
+	// for the bare word "Instance" and tripped on the legitimate group name
+	// "Babes_Twistys_Master_Instance" in the payload.
+	for _, marker := range []string{"instance_token", "instanceToken", "eyJ0eXAiOiJK"} {
+		if bytes.Contains(body, []byte(marker)) {
+			t.Errorf("fixture contains %q — re-capture without the credential", marker)
+		}
+	}
+	// Re-encoding through any JSON encoder would rewrite \u0027 to a literal apostrophe,
+	// so its presence is evidence the file is still a capture.
+	if !bytes.Contains(body, []byte(`\u0027`)) {
+		t.Error(`fixture lost the \u0027 escapes — it looks re-encoded rather than captured`)
 	}
 }

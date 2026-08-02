@@ -429,19 +429,29 @@ func (s *Scraper) runSeries(ctx context.Context, studioURL string, opts scraper.
 }
 
 func ToScene(cfg SiteConfig, studioURL string, rel Release, now time.Time) models.Scene {
+	// Names are trimmed and blanks dropped: the API returns some with stray
+	// whitespace ("Nikki Nuttz " on babes.com), and `fss stash import` looks
+	// performers, tags and studios up in Stash by exact name — so an untrimmed
+	// name creates a duplicate performer instead of matching the existing one.
+	// match.MergeScenes trims as well, which covers catalogues already on disk;
+	// this keeps newly written JSON clean at the source.
 	performers := make([]string, 0, len(rel.Actors))
 	for _, a := range rel.Actors {
-		performers = append(performers, a.Name)
+		if name := strings.TrimSpace(a.Name); name != "" {
+			performers = append(performers, name)
+		}
 	}
 
 	tags := make([]string, 0, len(rel.Tags))
 	for _, t := range rel.Tags {
-		tags = append(tags, t.Name)
+		if name := strings.TrimSpace(t.Name); name != "" {
+			tags = append(tags, name)
+		}
 	}
 
 	var series string
 	if len(rel.Collections) > 0 {
-		series = rel.Collections[0].Name
+		series = strings.TrimSpace(rel.Collections[0].Name)
 	}
 
 	scenePath := cfg.ScenePath
