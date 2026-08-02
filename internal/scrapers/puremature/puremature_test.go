@@ -1,11 +1,14 @@
 package puremature
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"os"
+	"path/filepath"
 	"testing"
 	"time"
 
@@ -234,4 +237,109 @@ func TestTagCleaning(t *testing.T) {
 
 func TestScraperInterface(t *testing.T) {
 	var _ scraper.StudioScraper = (*Scraper)(nil)
+}
+
+// --- golden fixture ----------------------------------------------------------
+//
+// The other tests build apiScene values in Go, so encode and decode share the
+// struct tag and a renamed one round-trips unnoticed. This is a byte-verbatim
+// slice of a live https://puremature.com/api/releases?sort=latest response
+// (first two items; pagination copied from the same body).
+//
+// Reaching this endpoint needs an `x-site: puremature.com` request header — without
+// it the API answers 404, which is why this was previously recorded as
+// "404s on its documented path". The path was right; the header was missing.
+//
+// One field is redacted: `sponsor.imagesSourceUrl`. On puremature it is an AWS
+// presigned URL carrying `AWSAccessKeyId=AKIA…` and a `Signature` — the site
+// leaks its own credential through a public API, and committing the capture
+// verbatim would republish it. apiSponsor decodes only `name` and `cachedSlug`,
+// so no covered field is lost, and TestGoldenReleasesCarriesNoCredential keeps it
+// out of any future re-capture.
+//
+// Shapes a hand-written fixture would have got wrong:
+//   - the payload **mixes casing conventions**: the scene slug is `cachedSlug`
+//     (camelCase) while the actor slug in the same response is `cached_slug`
+//     (snake_case). Guessing one convention for both silently loses a field.
+//   - `releasedAt` is RFC3339 with a bare `Z`, not an offset.
+//   - `tags` is a flat string array, unlike the object arrays most sibling
+//     platforms use.
+//   - `pagination.nextPage` is a *pointer* to a path string, null on the last
+//     page — that nil is how the walk terminates.
+func TestGoldenReleases(t *testing.T) {
+	body, err := os.ReadFile(filepath.Join("testdata", "releases.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	var resp apiResponse
+	if err := json.Unmarshal(body, &resp); err != nil {
+		t.Fatalf("decoding captured payload: %v", err)
+	}
+	if len(resp.Items) != 2 {
+		t.Fatalf("decoded %d items, want 2", len(resp.Items))
+	}
+	if resp.Pagination.TotalItems != 473 {
+		t.Errorf("TotalItems = %d (pagination.totalItems), want 473", resp.Pagination.TotalItems)
+	}
+	if resp.Pagination.TotalPages == 0 {
+		t.Error("TotalPages is 0 (pagination.totalPages) — the walk needs it")
+	}
+	if resp.Pagination.NextPage == nil {
+		t.Error("NextPage is nil on page 1 (pagination.nextPage); a nil here ends the walk early")
+	}
+
+	it := resp.Items[0]
+	if it.ID == 0 {
+		t.Error("ID = 0 (id)")
+	}
+	if it.CachedSlug != "she-surprised-me-after-tennis" {
+		t.Errorf("CachedSlug = %q (cachedSlug, camelCase)", it.CachedSlug)
+	}
+	if it.Title == "" {
+		t.Error("Title is empty (title)")
+	}
+	if it.ReleasedAt != "2026-07-22T15:00:00Z" {
+		t.Errorf("ReleasedAt = %q (releasedAt), want RFC3339 with a bare Z", it.ReleasedAt)
+	}
+	if _, err := time.Parse(time.RFC3339, it.ReleasedAt); err != nil {
+		t.Errorf("releasedAt %q does not parse as RFC3339: %v", it.ReleasedAt, err)
+	}
+	if it.ThumbURL == "" || it.PosterURL == "" {
+		t.Errorf("thumbUrl/posterUrl empty: %q / %q", it.ThumbURL, it.PosterURL)
+	}
+	if len(it.Tags) == 0 {
+		t.Error("Tags is empty (tags) — a flat string array here, not objects")
+	}
+	if it.Sponsor.Name == "" {
+		t.Error("Sponsor.Name is empty (sponsor.name)")
+	}
+
+	// The snake_case actor slug beside the camelCase scene slug.
+	if len(it.Actors) == 0 {
+		t.Fatal("Actors is empty (actors)")
+	}
+	if it.Actors[0].Name == "" {
+		t.Error("actor Name is empty (actors[].name)")
+	}
+	if it.Actors[0].CachedSlug == "" {
+		t.Error("actor CachedSlug is empty — the tag is `cached_slug` (snake_case), " +
+			"unlike the scene's `cachedSlug`")
+	}
+}
+
+// The fixture must stay a capture, minus the one redacted credential field.
+func TestGoldenReleasesCarriesNoCredential(t *testing.T) {
+	body, err := os.ReadFile(filepath.Join("testdata", "releases.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, marker := range []string{"AKIA", "AWSAccessKeyId", "Signature=", "imagesSourceUrl"} {
+		if bytes.Contains(body, []byte(marker)) {
+			t.Errorf("fixture contains %q — re-capture with sponsor.imagesSourceUrl removed", marker)
+		}
+	}
+	if !bytes.Contains(body, []byte(`"cached_slug"`)) {
+		t.Error(`fixture lost the snake_case "cached_slug" key — it looks re-encoded`)
+	}
 }
