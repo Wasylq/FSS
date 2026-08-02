@@ -336,10 +336,34 @@ func fetchPage(ctx context.Context, sess *session, u string) ([]byte, error) {
 
 type ajaxResponse struct {
 	HTMLMod []struct {
+		// El names the DOM selector the block replaces. The response carries
+		// more than one block — ".products-block" and ".pagination" — so the
+		// right one is selected by name rather than by position.
+		El    string `json:"el"`
 		Value string `json:"value"`
 	} `json:"htmlMod"`
 	IsLast   bool `json:"isLast"`
 	NextPage int  `json:"nextPage"`
+}
+
+// productsHTML returns the block holding the product cards.
+//
+// Selecting by `el` rather than taking HTMLMod[0]: the server currently sends
+// ".products-block" first and ".pagination" second, but nothing in the protocol
+// promises that order. Reading index 0 after a reorder would parse the pagination
+// markup for cards, find none, and break the paging loop — a silent empty scrape
+// rather than an error. Falls back to the first block if no name matches, so an
+// unexpected selector still scrapes rather than returning nothing.
+func (a ajaxResponse) productsHTML() string {
+	for _, m := range a.HTMLMod {
+		if m.El == ".products-block" {
+			return m.Value
+		}
+	}
+	if len(a.HTMLMod) > 0 {
+		return a.HTMLMod[0].Value
+	}
+	return ""
 }
 
 // fetchAjaxPage POSTs one paginated AJAX request and decodes the response.
@@ -393,7 +417,7 @@ func paginateLeaf(ctx context.Context, sess *session, slug, tab string, opts scr
 			break
 		}
 
-		html := ar.HTMLMod[0].Value
+		html := ar.productsHTML()
 		entries := parseProductCards(html, sess.base)
 		scraper.Debugf(1, "paginate: page %d → %d cards, isLast=%v, nextPage=%d", page, len(entries), ar.IsLast, ar.NextPage)
 		if len(entries) == 0 {

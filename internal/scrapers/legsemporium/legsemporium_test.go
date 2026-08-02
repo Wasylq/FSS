@@ -1,11 +1,14 @@
 package legsemporium
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 
@@ -306,9 +309,10 @@ func TestListScenes(t *testing.T) {
 
 	ajaxPage1 := ajaxResponse{
 		HTMLMod: []struct {
+			El    string `json:"el"`
 			Value string `json:"value"`
 		}{
-			{Value: `
+			{El: ".products-block", Value: `
 <div data-id="1" data-title="Video One" data-price="5.00">
   <a href="DETAIL_URL/product/video-one">
     <img class="a-img" src="/thumb1.jpg">
@@ -347,6 +351,7 @@ func TestListScenes(t *testing.T) {
 			html := strings.ReplaceAll(ajaxPage1.HTMLMod[0].Value, "DETAIL_URL", ts.URL)
 			resp := ajaxResponse{
 				HTMLMod: []struct {
+					El    string `json:"el"`
 					Value string `json:"value"`
 				}{{Value: html}},
 				IsLast: true,
@@ -395,9 +400,10 @@ func TestListScenesKnownIDs(t *testing.T) {
 
 	ajaxResp := ajaxResponse{
 		HTMLMod: []struct {
+			El    string `json:"el"`
 			Value string `json:"value"`
 		}{
-			{Value: `
+			{El: ".products-block", Value: `
 <div data-id="1" data-title="New" data-price="5.00">
   <a href="DETAIL_URL/product/new">
     <img class="a-img" src="/t1.jpg">
@@ -425,6 +431,7 @@ func TestListScenesKnownIDs(t *testing.T) {
 			html := strings.ReplaceAll(ajaxResp.HTMLMod[0].Value, "DETAIL_URL", ts.URL)
 			resp := ajaxResponse{
 				HTMLMod: []struct {
+					El    string `json:"el"`
 					Value string `json:"value"`
 				}{{Value: html}},
 				IsLast: true,
@@ -457,5 +464,109 @@ func TestListScenesKnownIDs(t *testing.T) {
 	}
 	if count != 1 {
 		t.Errorf("got %d scenes, want 1 (early stop at known ID)", count)
+	}
+}
+
+// --- golden fixture ----------------------------------------------------------
+//
+// TestListScenes builds ajaxResponse values in Go, so encode and decode share the
+// struct tag and a renamed one round-trips unnoticed. This is a byte-verbatim
+// capture of a live POST to https://legsemporium.com/product-category, kept whole
+// and unedited.
+//
+// Reaching it takes two steps and no credential: GET a page and scrape
+// `this.csrf = "…"` out of its HTML, then POST a form-encoded body with an
+// `X-CSRF-TOKEN` header. The token travels in a request header, so it is absent
+// from the response — TestGoldenAjaxPageCarriesNoToken asserts that.
+//
+// Shapes a hand-written fixture would have got wrong:
+//   - **`htmlMod` carries more than one block.** The response holds
+//     `.products-block` *and* `.pagination`, and the struct literal in
+//     TestListScenes only ever had one entry — which is why reading
+//     `HTMLMod[0]` looked safe. See productsHTML for why it no longer is.
+//   - each block has an `el` selector and a `type`, neither of which the struct
+//     originally decoded.
+//   - the payload uses WordPress-style escaped forward slashes (`\/`).
+//   - `per_page` in the request body is **ignored** by the server: asking for 2
+//     still returns 24 cards, so the fixture is 47KB rather than something
+//     smaller. It is kept whole rather than truncated, since editing the HTML
+//     inside `value` would stop it being a capture.
+func TestGoldenAjaxPage(t *testing.T) {
+	body, err := os.ReadFile(filepath.Join("testdata", "ajax_page.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	var ar ajaxResponse
+	if err := json.Unmarshal(body, &ar); err != nil {
+		t.Fatalf("decoding captured payload: %v", err)
+	}
+	if len(ar.HTMLMod) != 2 {
+		t.Fatalf("decoded %d htmlMod blocks, want 2 (.products-block and .pagination)", len(ar.HTMLMod))
+	}
+	if ar.IsLast {
+		t.Error("IsLast is true (isLast) on page 1 of a multi-page category")
+	}
+	if ar.NextPage != 2 {
+		t.Errorf("NextPage = %d (nextPage), want 2", ar.NextPage)
+	}
+
+	// The block names, and that products are not simply first by luck.
+	var names []string
+	for _, m := range ar.HTMLMod {
+		names = append(names, m.El)
+	}
+	if names[0] != ".products-block" || names[1] != ".pagination" {
+		t.Errorf("htmlMod block order = %v; productsHTML selects by name so this is not fatal, "+
+			"but the comment describing the order is now stale", names)
+	}
+
+	// productsHTML must pick the cards regardless of order.
+	html := ar.productsHTML()
+	if html == "" {
+		t.Fatal("productsHTML returned nothing")
+	}
+	entries := parseProductCards(html, "https://legsemporium.com")
+	if len(entries) == 0 {
+		t.Fatal("no product cards parsed from the real .products-block markup")
+	}
+	if entries[0].url == "" || entries[0].title == "" {
+		t.Errorf("first card = %+v, want a url and title", entries[0])
+	}
+}
+
+// The ordering guard: reverse the blocks and productsHTML must still find the
+// cards. This is the failure the index-0 read would have caused — a silent empty
+// scrape rather than an error.
+func TestProductsHTMLSelectsByNameNotPosition(t *testing.T) {
+	body, err := os.ReadFile(filepath.Join("testdata", "ajax_page.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	var ar ajaxResponse
+	if err := json.Unmarshal(body, &ar); err != nil {
+		t.Fatal(err)
+	}
+	ar.HTMLMod[0], ar.HTMLMod[1] = ar.HTMLMod[1], ar.HTMLMod[0]
+
+	entries := parseProductCards(ar.productsHTML(), "https://legsemporium.com")
+	if len(entries) == 0 {
+		t.Error("no cards found after the server reordered its htmlMod blocks; " +
+			"reading HTMLMod[0] would silently end the paging loop here")
+	}
+}
+
+func TestGoldenAjaxPageCarriesNoToken(t *testing.T) {
+	body, err := os.ReadFile(filepath.Join("testdata", "ajax_page.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, marker := range []string{"X-CSRF-TOKEN", "this.csrf", "laravel_session", "XSRF-TOKEN"} {
+		if bytes.Contains(body, []byte(marker)) {
+			t.Errorf("fixture contains %q — re-capture without the session material", marker)
+		}
+	}
+	if !bytes.Contains(body, []byte(`\/`)) {
+		t.Error(`fixture lost the escaped forward slashes (\/) — it looks re-encoded`)
 	}
 }
