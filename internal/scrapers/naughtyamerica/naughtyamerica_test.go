@@ -339,3 +339,61 @@ func TestGoldenScenesPage(t *testing.T) {
 		t.Error("Description is empty (data[].synopsis)")
 	}
 }
+
+// The live API serves padded tag values — a full smoke run over the registry
+// found `"Cheating "` here, the only occurrence outside Aylo across ~1600
+// scrapers. These strings are looked up in Stash by exact name, so an untrimmed
+// one creates a duplicate tag instead of matching the existing one.
+func TestToSceneTrimsTagAndPerformerNames(t *testing.T) {
+	s := scene{
+		ID:            1,
+		Title:         "T",
+		SceneURL:      "https://www.naughtyamerica.com/scene/x-1",
+		Tags:          []string{"Cheating ", " MILF", "Clean", "   ", ""},
+		Performers:    map[string][]string{"female": {" Alice ", "Bob"}},
+		PublishedDate: "2026-01-02 03:04:05",
+	}
+
+	sc := toScene("https://www.naughtyamerica.com", s, time.Now().UTC())
+
+	if len(sc.Tags) != 3 {
+		t.Errorf("Tags = %q, want 3 — padded entries trimmed, blank ones dropped", sc.Tags)
+	}
+	for _, tag := range sc.Tags {
+		if tag != strings.TrimSpace(tag) || tag == "" {
+			t.Errorf("tag %q is blank or still padded", tag)
+		}
+	}
+	if len(sc.Performers) != 2 {
+		t.Errorf("Performers = %q, want 2", sc.Performers)
+	}
+	for _, p := range sc.Performers {
+		if p != strings.TrimSpace(p) || p == "" {
+			t.Errorf("performer %q is blank or still padded", p)
+		}
+	}
+}
+
+// Trimming must not disturb the VR tag, which is appended after the trim.
+func TestVRTagStillAppendedAfterTrim(t *testing.T) {
+	s := scene{
+		ID: 2, Title: "T", SceneURL: "https://www.naughtyamerica.com/scene/y-2",
+		Tags: []string{"Cheating "}, Degrees: 180,
+	}
+	sc := toScene("https://www.naughtyamerica.com", s, time.Now().UTC())
+	var hasVR, hasClean bool
+	for _, tag := range sc.Tags {
+		if tag == "VR" {
+			hasVR = true
+		}
+		if tag == "Cheating" {
+			hasClean = true
+		}
+	}
+	if !hasVR {
+		t.Errorf("Tags = %q, want the VR tag retained", sc.Tags)
+	}
+	if !hasClean {
+		t.Errorf("Tags = %q, want the trimmed Cheating tag", sc.Tags)
+	}
+}

@@ -163,7 +163,7 @@ func toScene(studioURL string, s scene, now time.Time) models.Scene {
 		Preview:     previewURL(s.Trailers),
 		Duration:    s.Length,
 		Performers:  performers,
-		Tags:        s.Tags,
+		Tags:        trimNames(s.Tags),
 		Studio:      s.SiteName,
 		ScrapedAt:   now,
 	}
@@ -180,6 +180,27 @@ func allPerformers(m map[string][]string) []string {
 	var out []string
 	for _, names := range m {
 		out = append(out, names...)
+	}
+	return trimNames(out)
+}
+
+// trimNames strips surrounding whitespace and drops entries that trim to
+// nothing. The API really does serve padded values — a full smoke run over the
+// registry found `"Cheating "` among this site's tags — and `fss stash import`
+// looks tags and performers up in Stash by exact name, so an untrimmed one
+// creates a duplicate rather than matching the existing entity.
+//
+// match.MergeScenes trims as well, which covers catalogues already on disk; this
+// keeps newly written JSON clean at the source.
+func trimNames(in []string) []string {
+	if in == nil {
+		return nil
+	}
+	out := make([]string, 0, len(in))
+	for _, v := range in {
+		if v = strings.TrimSpace(v); v != "" {
+			out = append(out, v)
+		}
 	}
 	return out
 }
