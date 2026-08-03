@@ -1,11 +1,15 @@
 package mymemberutil
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"os"
+	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/Wasylq/FSS/internal/scrapers/testutil"
@@ -404,5 +408,108 @@ func TestMultiPage(t *testing.T) {
 	scenes := testutil.CollectScenes(t, out)
 	if len(scenes) != 2 {
 		t.Fatalf("got %d scenes, want 2", len(scenes))
+	}
+}
+
+// --- golden fixture ----------------------------------------------------------
+//
+// This one covers four packages. `rubberpassion`, `rachelsteele` and
+// `kingnoirexxx` each stand up a test server that marshals a
+// **mymemberutil.VideosPage** built in Go — so all three share this package's
+// struct tags on both sides of the round trip, and a renamed tag would go
+// unnoticed in every one of them. Pinning the wire format here covers the util
+// and its three wrappers at once.
+//
+// Byte-verbatim slice of a live
+// https://rubber-passion.com/api/cancellable-request?functionName=fetchVideosApi
+// response (first two of 526 videos; the page counters copied from the same
+// body). No credential: the endpoint is open, and the `args` parameter is just a
+// JSON-encoded `[["page=1"]]`.
+//
+// Shapes a hand-written fixture would have got wrong:
+//   - the payload is **double-wrapped**: `{"ok":…,"data":{…VideosPage…}}`, and the
+//     inner page has its own `data` array. fetchVideosPage unmarshals twice for
+//     this reason, and the outer `ok` is checked before the inner decode.
+//   - **`poster` is a bare filename while `poster_src` is the full CDN URL.**
+//     BuildScene uses poster_src; taking `poster` yields a thumbnail that is not
+//     a URL at all, and nothing downstream would reject it.
+//   - **`publish_date` and `original_publish_date` are different dates**
+//     (2026-07-25 vs 2024-03-11 for a re-published video). Scene.Date comes from
+//     publish_date.
+//   - both carry **six-digit microseconds** and a Z, which is why ParseDate falls
+//     back to an explicit "2006-01-02T15:04:05.000000Z" layout after RFC3339Nano.
+func TestGoldenVideosPage(t *testing.T) {
+	body, err := os.ReadFile(filepath.Join("testdata", "videos_page.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Decode exactly as fetchVideosPage does: envelope first, then the page.
+	var outer apiResponse
+	if err := json.Unmarshal(body, &outer); err != nil {
+		t.Fatalf("decoding envelope: %v", err)
+	}
+	if !outer.OK {
+		t.Fatal("envelope ok is false — fetchVideosPage would treat this as an error")
+	}
+	var page VideosPage
+	if err := json.Unmarshal(outer.Data, &page); err != nil {
+		t.Fatalf("decoding VideosPage from data: %v", err)
+	}
+
+	if len(page.Data) != 2 {
+		t.Fatalf("decoded %d videos, want 2", len(page.Data))
+	}
+	if page.CurrentPage != 1 || page.LastPage != 18 || page.PerPage != 30 || page.Total != 526 {
+		t.Errorf("paging = current %d, last %d, per_page %d, total %d; want 1/18/30/526",
+			page.CurrentPage, page.LastPage, page.PerPage, page.Total)
+	}
+
+	v := page.Data[0]
+	if v.ID != 15 {
+		t.Errorf("ID = %d (id), want 15", v.ID)
+	}
+	if v.Title == "" {
+		t.Error("Title is empty (title)")
+	}
+	if !v.IsPublished {
+		t.Error("IsPublished is false (is_published) on a published video")
+	}
+	if v.Duration != 338 {
+		t.Errorf("Duration = %d (duration), want 338 seconds", v.Duration)
+	}
+	if v.ContentMappingID != 20 {
+		t.Errorf("ContentMappingID = %d (content_mapping_id), want 20 — the detail URL uses it", v.ContentMappingID)
+	}
+
+	// poster_src, not poster.
+	if !strings.HasPrefix(v.PosterSrc, "https://") {
+		t.Errorf("PosterSrc = %q (poster_src) — BuildScene uses this as Thumbnail and it must "+
+			"be a URL; the sibling `poster` field is a bare filename", v.PosterSrc)
+	}
+
+	// the date field and its microsecond layout.
+	if v.PublishDate != "2026-07-25T20:10:25.000000Z" {
+		t.Errorf("PublishDate = %q (publish_date), want six-digit microseconds", v.PublishDate)
+	}
+	if d := ParseDate(v.PublishDate); d.IsZero() {
+		t.Errorf("ParseDate(%q) returned zero — Scene.Date comes from it", v.PublishDate)
+	}
+}
+
+// The two poster fields and the two date fields, asserted against the raw bytes
+// so the distinction survives even if the struct stops decoding one of them.
+func TestGoldenVideosPageHasBothPosterAndDateVariants(t *testing.T) {
+	body, err := os.ReadFile(filepath.Join("testdata", "videos_page.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, k := range []string{`"poster":`, `"poster_src":`, `"publish_date":`, `"original_publish_date":`} {
+		if !bytes.Contains(body, []byte(k)) {
+			t.Errorf("fixture no longer carries %s — the wrong-pick trap it documents is gone", k)
+		}
+	}
+	if !bytes.Contains(body, []byte(`"ok":true`)) {
+		t.Error(`fixture lost the outer {"ok":true,…} envelope`)
 	}
 }
