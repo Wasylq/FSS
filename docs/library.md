@@ -264,6 +264,13 @@ fmt.Println(merged.Title, merged.URLs, merged.Performers)
 
 **Key types:** `SceneIndex`, `MatchResult`, `MatchConfidence`, `MergedScene`.
 
+`MergeScenes` trims surrounding whitespace from performer, tag, category and studio
+names and drops entries that trim to nothing. This is not cosmetic: dedup across sites
+is by exact string, and `fss stash import` looks entities up in Stash **by name**, so an
+untrimmed `"Nikki Nuttz "` would both survive as a second performer and create a
+duplicate in Stash. Case is deliberately preserved — sites differ on capitalisation and
+folding it would change which name is written.
+
 ## NFO Generation (`nfo`)
 
 The `nfo` package generates Kodi-style `.nfo` XML files from merged scene metadata.
@@ -356,6 +363,16 @@ slug := output.Slugify("https://www.manyvids.com/Profile/590705/bettie-bondage/S
 ```
 
 **Key functions:** `WriteJSON`, `WriteCSV`, `Slugify`. **Key var:** `CSVHeaders` (column order).
+
+`Slugify` appends a short hash of the full URL, so two URLs that sanitize to the same
+stem never collide, and the result is **capped at 250 bytes** — `<slug>.json` must fit
+the 255-byte filename limit. Only the human-readable prefix is truncated; the hash is
+taken over the whole URL, so uniqueness is unaffected.
+
+`WriteCSV` prefixes `'` to any cell beginning `=`, `+`, `-`, `@`, tab or CR. Scene titles
+and descriptions are scraped, so they are attacker-controlled, and spreadsheets evaluate
+such cells as formulas on open. The guard lives in `WriteCSV` rather than in the row
+builder so a new column cannot bypass it.
 
 ## Parsing helpers (`parseutil`)
 

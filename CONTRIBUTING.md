@@ -195,6 +195,47 @@ What to test:
 - Pagination (multi-page responses, empty last page)
 - `KnownIDs` early stopping
 
+#### Golden fixtures: pin the wire format, not your own struct
+
+If your scraper decodes JSON, add a **golden fixture** — a response captured from
+the live API and committed under `testdata/`.
+
+The reason is specific. A test that builds a production type in Go and encodes it
+shares the struct tag on both sides of the round trip:
+
+```go
+// Renaming `json:"thumb"` to `json:"thumbnail"` on the struct keeps this GREEN,
+// while every live scrape silently loses its thumbnails.
+body, _ := json.Marshal(apiScene{Thumb: "https://…"})
+```
+
+Only a fixture the API produced can catch that. Rules that have earned their place:
+
+- **Capture verbatim.** Slice raw bytes out of the response; do not re-serialise
+  through an encoder. Re-encoding normalises key order, escaping (`\/`, `\u0027`)
+  and number formatting — exactly what the fixture exists to detect. Add a
+  companion `…IsRawCapture` test asserting a distinctive raw form is still present.
+- **Trim by whole keys, never by editing values.** Dropping an unused blob to keep
+  the file small is fine (`gammautil` drops Algolia's `_highlightResult`); rewriting
+  a retained value is not. Say in the comment what was dropped and why.
+- **Check for credentials before committing.** This has bitten repeatedly, in three
+  different forms: an AWS presigned URL with `AWSAccessKeyId=AKIA…` in a public
+  response (`puremature`), JWTs (`ayloutil`, `visitx`), and CSRF tokens in embedded
+  page state (`faphouse`, `legsemporium`). Add a `…CarriesNoToken` test asserting
+  the markers are absent, so a future re-capture cannot quietly reintroduce one.
+- **Document the shapes the fixture pins.** The value is in what a hand-written
+  fixture would have got wrong: numeric-looking strings (`"542"` cents, `"148"`
+  seconds), objects where a string is expected (`{"en": …}` titles, `created_at`
+  as a struct), two ids side by side (`set_id` vs `set_path`, `_id` vs `id`), and
+  Elasticsearch's `{"value":…,"relation":"gte"}` total.
+- **Mutation-verify it.** Rename a tag in the production struct and confirm the
+  golden test fails while the struct-built tests still pass. If nothing fails, the
+  fixture is decorative.
+
+A `*util` fixture covers every wrapper that builds its types — pinning
+`mymemberutil.VideosPage` covers `rubberpassion`, `rachelsteele` and `kingnoirexxx`
+too, so check for that before adding a redundant one.
+
 #### Offline means offline: sitemap fixtures leak to the live site
 
 Pointing the scraper's base URL at `ts.URL` is **not** enough to make a

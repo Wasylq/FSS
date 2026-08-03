@@ -107,6 +107,11 @@ Prints the config file path for the current platform.
 
 Prints the build version, commit hash, and build date. Checks for newer releases on GitHub.
 
+The update check is best-effort and never fails the command: a network error prints
+`Could not check for updates: …`, and a response that carries no release tag prints
+`Could not determine the latest release.` rather than advertising an update with nothing
+after the arrow.
+
 For `fss identify`, see [identify.md](identify.md).
 For `fss stash` subcommands, see [stash.md](stash.md).
 

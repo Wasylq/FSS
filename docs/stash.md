@@ -156,12 +156,29 @@ When the same scene title appears in multiple FSS JSON files (e.g. scraped from 
 | Title | First non-empty |
 | Description | Longest non-empty; runs of 3+ spaces are converted to newlines |
 | Cover image | First available thumbnail URL; downloaded and pushed as base64 (only when `--cover` is passed) |
-| Performers | Union (deduplicated) |
-| Tags | Union (deduplicated) |
+| Performers | Union (deduplicated, whitespace-trimmed) |
+| Tags | Union (deduplicated, whitespace-trimmed) |
 | Duration | Maximum |
 | Resolution | Highest available |
 
 Format suffix stripping means that Clips4Sale scenes listed as separate formats (e.g. `"Title (FULL HD)"`, `"Title (mp4)"`, `"Title (mov)"`) are merged together, combining tags from all versions.
+
+### Name whitespace
+
+Performer, tag, category and studio names are trimmed before deduplication, and entries
+that trim to nothing are dropped.
+
+Some site APIs return names with stray whitespace — Aylo serves `"Nikki Nuttz "` with a
+trailing space — and every step here compares these strings exactly. Untrimmed, the same
+performer arriving from two sites survives as two entries, and because `import` looks
+performers, tags and studios up in Stash **by name**, `--apply` creates a duplicate
+performer instead of matching the existing one.
+
+Trimming happens during the merge rather than only in the scrapers, so catalogues already
+written to disk are repaired without a re-scrape.
+
+Case is deliberately **not** folded: sites legitimately differ on capitalisation, and
+folding it would change which spelling gets written to Stash.
 
 ## Cover image fetching
 
