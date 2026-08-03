@@ -1,10 +1,13 @@
 package railwayutil
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"os"
+	"path/filepath"
 	"regexp"
 	"testing"
 
@@ -173,5 +176,81 @@ func TestKnownIDs(t *testing.T) {
 	}
 	if scenes[0].ID != "aaa" || scenes[1].ID != "ccc" {
 		t.Errorf("scenes = [%s, %s], want [aaa, ccc]", scenes[0].ID, scenes[1].ID)
+	}
+}
+
+// --- golden fixture ----------------------------------------------------------
+//
+// The other tests build APIVideo values in Go and encode them with
+// json.NewEncoder, so encode and decode share the struct tag and a renamed one
+// round-trips unnoticed. This is a byte-verbatim slice of a live
+// https://sites-api-production.up.railway.app/videos/SE response (first three of
+// the catalogue). No credential.
+//
+// Shapes a hand-written fixture would have got wrong:
+//   - **the id field is `_id`, not `id`** — a MongoDB ObjectId hex string, not a
+//     number. Scene.ID is built from it, so a wrong guess re-keys every scene and
+//     an incremental scrape re-adds the whole catalogue.
+//   - `duration` is a **"HH:MM:SS" string**, not seconds, and it keeps the
+//     leading zero hour ("00:08:41").
+//   - `video4K` is camelCase with a digit in the middle — easy to write as
+//     `video_4k` or `video4k`.
+//   - the response is a **bare top-level array**, with no envelope or count, so
+//     the scraper fetches the whole catalogue in one call.
+//   - each record carries Mongoose's `__v` version key that nothing decodes —
+//     retained, so unknown-field tolerance stays covered.
+func TestGoldenVideos(t *testing.T) {
+	body, err := os.ReadFile(filepath.Join("testdata", "videos.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	var videos []APIVideo
+	if err := json.Unmarshal(body, &videos); err != nil {
+		t.Fatalf("decoding captured payload: %v", err)
+	}
+	if len(videos) != 3 {
+		t.Fatalf("decoded %d videos, want 3", len(videos))
+	}
+
+	v := videos[0]
+	if v.ID != "698cf02ef2ee6afc5e41231f" {
+		t.Errorf("ID = %q (_id), want the ObjectId hex — the field is `_id`, not `id`", v.ID)
+	}
+	if len(v.ID) != 24 {
+		t.Errorf("ID %q is not a 24-char ObjectId; Scene.ID is derived from it", v.ID)
+	}
+	if v.Name != "Abigail 1" {
+		t.Errorf("Name = %q (name)", v.Name)
+	}
+	if v.Site != "SE" {
+		t.Errorf("Site = %q (site) — the per-site code the listing is filtered by", v.Site)
+	}
+	if v.Video4K {
+		t.Error("Video4K is true (video4K) on a non-4K entry")
+	}
+
+	// duration as HH:MM:SS, and that ParseDuration still understands it.
+	if v.Duration != "00:08:41" {
+		t.Errorf("Duration = %q (duration), want a HH:MM:SS string rather than seconds", v.Duration)
+	}
+	if got := ParseDuration(v.Duration); got != 521 {
+		t.Errorf("ParseDuration(%q) = %d, want 521 seconds", v.Duration, got)
+	}
+}
+
+func TestGoldenVideosIsRawCapture(t *testing.T) {
+	body, err := os.ReadFile(filepath.Join("testdata", "videos.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !bytes.HasPrefix(bytes.TrimSpace(body), []byte("[")) {
+		t.Error("fixture is no longer a bare top-level array; the API returns one with no envelope")
+	}
+	if !bytes.Contains(body, []byte(`"_id":`)) {
+		t.Error(`fixture lost the "_id" key`)
+	}
+	if !bytes.Contains(body, []byte(`"__v":`)) {
+		t.Error("fixture lost Mongoose's __v; unknown-field tolerance is no longer covered")
 	}
 }
