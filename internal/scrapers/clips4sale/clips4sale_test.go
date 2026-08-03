@@ -1,11 +1,15 @@
 package clips4sale
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"os"
+	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 
@@ -403,5 +407,96 @@ func TestListScenesEmitsKnownIDs(t *testing.T) {
 	}
 	if len(got) != 3 {
 		t.Errorf("got %d scenes, want 3: %v", len(got), got)
+	}
+}
+
+// --- golden fixture ----------------------------------------------------------
+//
+// The other tests build c4sClip values in Go, so encode and decode share the
+// struct tag and a renamed one round-trips unnoticed. This drives the real
+// entry point — extractClips over page bytes — against **two clip objects sliced
+// byte-for-byte** out of a live https://www.clips4sale.com/studio/21571/tara-tainton
+// response.
+//
+// The surrounding envelope is reconstructed rather than captured: the live
+// `window.__remixContext` is 262KB of Remix route state, of which the scraper
+// reads one route key. The envelope reproduces exactly the nesting extractClips
+// walks (`state.loaderData[routeKey].clips`); every clip object inside it is
+// unedited. That trade is the same one teencoreclub's sitecfg fixture makes.
+//
+// Shapes a hand-written fixture would have got wrong:
+//   - **`clipId` is a string ("34180777") and `id` is the same value as a
+//     number.** c4sClip decodes clipId; writing it as a JSON number makes the
+//     field decode to empty and every scene lose its ID.
+//   - **`date_display` and `dateDisplay` both exist with the same value.** The
+//     struct reads the snake_case one; a camelCase guess happens to work today
+//     and would break silently if the duplicate is ever dropped.
+//   - `date_display` is US-format with a **two-digit year and 12-hour clock**
+//     ("7/19/26 2:10 PM"), parsed with "1/2/06 3:04 PM" — not any ISO layout.
+//   - `discounted_price` and `onSale` are **null** on a non-sale clip, which is
+//     why they are pointers; a zero-valued float would read as "free".
+func TestGoldenStudioPage(t *testing.T) {
+	body, err := os.ReadFile(filepath.Join("testdata", "studio_page.html"))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	clips, total, err := extractClips(body)
+	if err != nil {
+		t.Fatalf("extractClips on a captured page: %v", err)
+	}
+	if len(clips) != 2 {
+		t.Fatalf("extracted %d clips, want 2", len(clips))
+	}
+	if total != 3559 {
+		t.Errorf("clipsCount = %d, want 3559 — paging depends on it", total)
+	}
+
+	c := clips[0]
+	if c.ClipID != "34180777" {
+		t.Errorf("ClipID = %q (clipId), want the string \"34180777\" — the sibling `id` "+
+			"holds the same value as a number", c.ClipID)
+	}
+	if c.Title == "" {
+		t.Error("Title is empty (title)")
+	}
+	if c.Link == "" || !strings.HasPrefix(c.Link, "/studio/") {
+		t.Errorf("Link = %q (link), want a site-relative /studio/… path", c.Link)
+	}
+	if c.Description == "" {
+		t.Error("Description is empty (description)")
+	}
+	if c.CDNPreviewLgLink == "" {
+		t.Error("CDNPreviewLgLink is empty (cdn_previewlg_link) — the thumbnail source")
+	}
+	if c.Price == 0 {
+		t.Error("Price is 0 (price)")
+	}
+	// Nullable sale fields: absent means "not on sale", not "free".
+	if c.DiscountedPrice != nil {
+		t.Errorf("DiscountedPrice = %v (discounted_price), want nil on a non-sale clip", *c.DiscountedPrice)
+	}
+	if c.OnSale != nil {
+		t.Errorf("OnSale = %v (onSale), want nil on a non-sale clip", *c.OnSale)
+	}
+
+	// The date format, and that parseDate still understands it.
+	if c.DateDisplay != "7/19/26 2:10 PM" {
+		t.Errorf("DateDisplay = %q (date_display), want US M/D/YY with a 12-hour clock", c.DateDisplay)
+	}
+	if d := parseDate(c.DateDisplay); d.IsZero() {
+		t.Errorf("parseDate(%q) returned zero — Scene.Date comes from it", c.DateDisplay)
+	}
+}
+
+func TestGoldenStudioPageKeepsBothDateKeys(t *testing.T) {
+	body, err := os.ReadFile(filepath.Join("testdata", "studio_page.html"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, k := range []string{`"clipId":"`, `"date_display":`, `"dateDisplay":`, `"discounted_price":null`} {
+		if !bytes.Contains(body, []byte(k)) {
+			t.Errorf("fixture no longer carries %s — the shape it documents is gone", k)
+		}
 	}
 }
