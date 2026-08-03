@@ -1,11 +1,14 @@
 package faphouse
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 	"time"
@@ -451,4 +454,88 @@ func TestListScenesKnownIDs(t *testing.T) {
 
 func fixedTime() time.Time {
 	return time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC)
+}
+
+// --- golden fixture ----------------------------------------------------------
+//
+// The other tests build viewState/videoMeta values in Go, so encode and decode
+// share the struct tag and a renamed one round-trips unnoticed. This drives the
+// real entry point — parseDetailPage over page bytes — against a **verbatim
+// `video` object** sliced out of a live https://faphouse.com/videos/0E8HtA page.
+//
+// ⚠️ The surrounding blob is *not* captured whole, deliberately. The live
+// `view-state-data` script carries a top-level **`csrfToken`** alongside a large
+// amount of A/B-test and attribution state; committing it would put session
+// material in the repo. viewState decodes only `video`, so the fixture keeps that
+// object byte-for-byte and reconstructs the script wrapper around it.
+// TestGoldenViewStateCarriesNoToken enforces that.
+//
+// This pins the JSON half of parseDetailPage. The HTML-regex half (publishRe,
+// descRe, categoryRe) is covered by the existing detail-page tests above.
+//
+// Shapes a hand-written fixture would have got wrong:
+//   - `publishedAt` is a **bare date** ("2019-05-14"), not a timestamp, and is
+//     parsed with a "2006-01-02" layout. The page separately renders a
+//     DD.MM.YYYY string that publishRe reads as a fallback — two different
+//     formats for the same fact on one page.
+//   - `pornstarNames` is a flat **array of strings**, unlike the object arrays
+//     most sibling platforms use, and it sits beside a `pornstarIds` array that
+//     nothing decodes.
+//   - the `video` object carries ~60 keys of experiment flags; all of them are
+//     retained here, so unknown-field tolerance stays covered.
+func TestGoldenViewState(t *testing.T) {
+	body, err := os.ReadFile(filepath.Join("testdata", "view_state.html"))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	info := parseDetailPage(body)
+
+	want := time.Date(2019, 5, 14, 0, 0, 0, 0, time.UTC)
+	if !info.date.Equal(want) {
+		t.Errorf("date = %v, want %v (from video.publishedAt, a bare Y-m-d)", info.date, want)
+	}
+	if len(info.performers) != 1 || info.performers[0] != "Angel The Dreamgirl" {
+		t.Errorf("performers = %v (video.pornstarNames), want one name", info.performers)
+	}
+}
+
+// Decode the fixture through viewState directly too, so a tag rename is reported
+// against the field rather than only as a missing date.
+func TestGoldenViewStateDecodesVideoMeta(t *testing.T) {
+	body, err := os.ReadFile(filepath.Join("testdata", "view_state.html"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	m := viewStateRe.FindSubmatch(body)
+	if m == nil {
+		t.Fatal("view-state-data script not found in the fixture")
+	}
+	var vs viewState
+	if err := json.Unmarshal(m[1], &vs); err != nil {
+		t.Fatalf("decoding view state: %v", err)
+	}
+	if vs.Video.PublishedAt != "2019-05-14" {
+		t.Errorf("PublishedAt = %q (video.publishedAt)", vs.Video.PublishedAt)
+	}
+	if len(vs.Video.PornstarNames) == 0 {
+		t.Error("PornstarNames is empty (video.pornstarNames) — a flat []string, not objects")
+	}
+}
+
+func TestGoldenViewStateCarriesNoToken(t *testing.T) {
+	body, err := os.ReadFile(filepath.Join("testdata", "view_state.html"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, marker := range []string{"csrfToken", "csrf", "sessionId", "Set-Cookie"} {
+		if bytes.Contains(body, []byte(marker)) {
+			t.Errorf("fixture contains %q — the live view-state blob carries a CSRF token "+
+				"and must not be committed whole; keep only the `video` object", marker)
+		}
+	}
+	if !bytes.Contains(body, []byte(`"pornstarIds"`)) {
+		t.Error("fixture lost pornstarIds; the retained unknown fields are what cover " +
+			"unknown-field tolerance")
+	}
 }
