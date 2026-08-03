@@ -61,6 +61,26 @@ The consumer (`collectScenes()` in `cmd/scrape.go`) switches on `result.Kind` an
 
 **Critical invariant:** the goroutine must `defer close(out)` as its first line, and every send must be wrapped in `select` with `case <-ctx.Done()` to prevent goroutine leaks on cancellation.
 
+That invariant is enforced, not merely stated, by three checks — worth knowing because
+they fail in places you may not expect:
+
+| Check | What it proves | Scope |
+|-------|----------------|-------|
+| `internal/scrapers/all/ctxsend_test.go` | every send of a `SceneResult` sits in a `select` with `ctx.Done()` | all send sites, statically |
+| `internal/scrapers/all/cancel_test.go` | no scraper hangs when handed an already-dead context | every registered scraper |
+| `scraper/paginate_test.go` | `Paginate`'s own sends unblock on cancellation *while a send is blocked* | every scraper built on `Paginate` |
+
+The third matters because most scrapers delegate their whole paging walk to
+`scraper.Paginate`, which owns the sends — so mid-flight cancellation is Paginate's
+responsibility rather than each scraper's, and proving it once covers all of them.
+Scrapers that page themselves (worker pools, cursor walks) own their sends and can
+additionally use `testutil.AssertCancellable` for a runtime check.
+
+A subtlety worth internalising if you write a cancellation test: **a buffered channel
+makes the test vacuous.** Sends into a buffered channel never block, so the `select`
+around them is never exercised, and deleting the `ctx.Done()` case leaves the test green.
+Use an unbuffered channel and stop reading from it.
+
 ## Store Abstraction
 
 **Files:** `internal/store/interface.go`, `internal/store/flat.go`, `internal/store/sqlite.go`

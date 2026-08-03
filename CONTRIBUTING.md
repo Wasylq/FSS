@@ -350,6 +350,37 @@ go test -race -count=1 ./...             # all tests pass
 go build -o fss . && ./fss list-scrapers # new scraper appears
 ```
 
+#### Registry-wide checks your scraper must satisfy
+
+Several tests in `internal/scrapers/all` run against **every** registered scraper, so a
+new one can fail tests in a package you never touched. What they check, and what a
+failure means:
+
+| Test | Requires | Typical fix |
+|------|----------|-------------|
+| `TestRegistryIDsAreWellFormed` | `ID()` is lowercase `[a-z0-9-]+` and unique | the ID becomes a store filename and a config key — no spaces, dots or capitals |
+| `TestRegistryPatternsArePresent` | `Patterns()` non-empty, no blank entries | a blank entry usually means a derivation like `strings.TrimPrefix(base, …)` returned `""` |
+| `TestRegistryPatternsAreNotGlued` | a bare-host pattern is not run into a path | you concatenated a path onto `SiteBase` without a leading `/`, giving `example.comtour/…` |
+| `TestRegistryMatchesURLIsNotOverBroad` | `MatchesURL` rejects `example.com` and friends | anchor the regex (`^https?://…`) and escape dots (`\.`) |
+| `TestScrapersExitOnCancelledContext` | the channel closes on an already-dead context | check `ctx.Err()` before the first fetch |
+| `TestScraperSendsAreGuardedByContext` | every `out <-` send is in a `select` with `ctx.Done()` | see [architecture.md](docs/architecture.md#channel-based-streaming) |
+| `TestSitesMdInSync` | `docs/sites.md` matches the registry | **it rewrites the file and fails once** — just commit the regenerated `docs/sites.md` |
+
+The over-broad check is the one worth understanding rather than just satisfying:
+`scraper.ForURL` returns the **first** registered match, so a loose regex takes over every
+scraper after it in registration order. The scrape then appears to work and quietly
+produces a different studio's catalogue.
+
+`ForURL` does notice the ambiguity — but it reports it via `Debugf(1, …)`, so nothing is
+printed unless the user passes `-d`. If a URL is scraping the wrong site, run
+`fss scrape <url> -d` and look for `registry: … also matched by [...]`.
+
+Go's RE2 has no negative lookahead, so where two scrapers legitimately overlap (a network
+catch-all and its sub-studios), registration **order** is how the overlap is resolved —
+register the specific ones first. `bronetwork` is the worked example: its sub-studios live
+at `thebronetwork.com/categories/<slug>`, and until they were registered ahead of the
+network catch-all, pasting a sub-studio URL scraped the entire network.
+
 ### Reference implementations
 
 | Scraper | Complexity | Good example of |
