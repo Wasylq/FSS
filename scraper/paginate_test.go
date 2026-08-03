@@ -3,6 +3,7 @@ package scraper
 import (
 	"context"
 	"fmt"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -322,5 +323,121 @@ func TestPaginate_progressSentOnce(t *testing.T) {
 	}
 	if totalCount != 1 {
 		t.Errorf("Progress sent %d times, want 1", totalCount)
+	}
+}
+
+// TestPaginate_contextCancelled covers a context that is already dead before the
+// first fetch. This covers the case that actually leaks: cancellation arriving
+// **mid-walk, while a send is blocked on a consumer that has stopped reading**.
+//
+// The distinction matters because the existing test uses a buffered channel, so
+// its sends never block and the `select … case <-ctx.Done()` around each one is
+// never exercised. Delete those selects and that test still passes.
+//
+// This is also the single highest-leverage cancellation test in the suite: 144
+// scrapers delegate their whole paging walk to Paginate, so mid-flight
+// cancellation is Paginate's responsibility rather than each scraper's. Proving
+// it here covers all of them, which is why testutil.AssertCancellable was only
+// ever wired into the handful of scrapers that page themselves.
+func TestPaginate_cancelledMidWalkWithBlockedSend(t *testing.T) {
+	// Unbuffered: every send blocks until a consumer reads, exactly as a real
+	// scrape does when the caller stops consuming.
+	out := make(chan SceneResult)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	var pages atomic.Int32
+	fetchPage := func(_ context.Context, page int) (PageResult, error) {
+		pages.Add(1)
+		// Unique IDs per page so the repeat-page guard never ends the walk —
+		// only the context may.
+		return PageResult{Scenes: []models.Scene{
+			{ID: fmt.Sprintf("p%d-a", page), SiteID: "test"},
+			{ID: fmt.Sprintf("p%d-b", page), SiteID: "test"},
+		}}, nil
+	}
+
+	done := make(chan struct{})
+	go func() {
+		defer close(done)
+		Paginate(ctx, ListOpts{}, "test", out, fetchPage)
+	}()
+
+	// Read one scene so the walk is genuinely under way, then stop reading and
+	// cancel. Paginate is now blocked trying to send the next scene.
+	if _, ok := <-out; !ok {
+		t.Fatal("Paginate closed the channel before producing a scene")
+	}
+	cancel()
+
+	select {
+	case <-done:
+	case <-time.After(5 * time.Second):
+		t.Fatal("Paginate did not return within 5s of cancellation while a send was " +
+			"blocked — the sends are not selecting on ctx.Done(), and every scraper " +
+			"built on Paginate leaks a goroutine per cancelled scrape")
+	}
+	if pages.Load() == 0 {
+		t.Error("fetchPage was never called; the walk never started, so nothing was proven")
+	}
+}
+
+// The same property for the Progress send, which is a separate select and is
+// emitted before any scene.
+func TestPaginate_cancelledWhileProgressSendBlocked(t *testing.T) {
+	out := make(chan SceneResult)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	fetchPage := func(_ context.Context, page int) (PageResult, error) {
+		return PageResult{
+			Total:  1000,
+			Scenes: []models.Scene{{ID: fmt.Sprintf("p%d", page), SiteID: "test"}},
+		}, nil
+	}
+
+	done := make(chan struct{})
+	go func() {
+		defer close(done)
+		Paginate(ctx, ListOpts{}, "test", out, fetchPage)
+	}()
+
+	// Do not read at all: Paginate blocks on the very first send, the Progress
+	// one. Give it a moment to get there, then cancel.
+	time.Sleep(50 * time.Millisecond)
+	cancel()
+
+	select {
+	case <-done:
+	case <-time.After(5 * time.Second):
+		t.Fatal("Paginate did not return within 5s of cancellation while the Progress " +
+			"send was blocked")
+	}
+}
+
+// And for the StoppedEarly send, reached via KnownIDs.
+func TestPaginate_cancelledWhileStoppedEarlySendBlocked(t *testing.T) {
+	out := make(chan SceneResult)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	fetchPage := func(_ context.Context, _ int) (PageResult, error) {
+		return PageResult{Scenes: []models.Scene{{ID: "known", SiteID: "test"}}}, nil
+	}
+
+	done := make(chan struct{})
+	go func() {
+		defer close(done)
+		Paginate(ctx, ListOpts{KnownIDs: map[string]bool{"known": true}}, "test", out, fetchPage)
+	}()
+
+	time.Sleep(50 * time.Millisecond)
+	cancel()
+
+	select {
+	case <-done:
+	case <-time.After(5 * time.Second):
+		t.Fatal("Paginate did not return within 5s of cancellation while the StoppedEarly " +
+			"send was blocked")
 	}
 }
