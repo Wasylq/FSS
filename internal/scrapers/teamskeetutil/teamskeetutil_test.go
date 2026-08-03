@@ -1,11 +1,14 @@
 package teamskeetutil
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"os"
+	"path/filepath"
 	"testing"
 	"time"
 
@@ -375,5 +378,96 @@ func TestSearchParsesResponse(t *testing.T) {
 	}
 	if result.Hits.Hits[0].Source.ItemID != 100 {
 		t.Errorf("first hit itemId = %d, want 100", result.Hits.Hits[0].Source.ItemID)
+	}
+}
+
+// --- golden fixture ----------------------------------------------------------
+//
+// The other tests build esResponse values in Go, so encode and decode share the
+// struct tag and a renamed one round-trips unnoticed. This is a live
+// POST https://tours-store.psmcdn.net/ts_network/_search response, kept whole and
+// unedited. The endpoint is an unauthenticated Elasticsearch tour index — no
+// credential, only a JSON body and an Origin header.
+//
+// Shapes a hand-written fixture would have got wrong:
+//   - **`hits.total` is an object (`{"value":…,"relation":"gte"}`), not a
+//     number.** That is the Elasticsearch 7+ format; a fixture written with a
+//     bare `"total": 10000` decodes to zero against the real struct.
+//   - **`relation` is "gte", so `total.value` is a lower bound, not a count.** ES
+//     caps it at 10000 unless `track_total_hits` is set. This only feeds
+//     scraper.Progress — pagination terminates on an empty `hits` array — so a
+//     large network under-reports its progress total and scrapes fully anyway.
+//     Documented here so the 10000 is not mistaken for a real catalogue size.
+//   - `sort` mixes types (`[1785024000000, "movie_32365"]` — epoch millis and a
+//     doc id), which is why esHit.Sort is []json.RawMessage rather than a
+//     concrete type. It is the search_after cursor.
+//   - the scene payload lives under `_source`, and `id` is a slug string while
+//     `itemId` is numeric — two different identifiers side by side.
+//   - `publishedDate` carries no timezone ("2026-07-26T00:00:00").
+func TestGoldenESSearch(t *testing.T) {
+	body, err := os.ReadFile(filepath.Join("testdata", "es_search.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	var resp esResponse
+	if err := json.Unmarshal(body, &resp); err != nil {
+		t.Fatalf("decoding captured payload: %v", err)
+	}
+	if len(resp.Hits.Hits) != 2 {
+		t.Fatalf("decoded %d hits, want 2", len(resp.Hits.Hits))
+	}
+	if resp.Hits.Total.Value != 10000 {
+		t.Errorf("Total.Value = %d (hits.total.value) — note total is an object, not a number",
+			resp.Hits.Total.Value)
+	}
+
+	h := resp.Hits.Hits[0]
+	if len(h.Sort) != 2 {
+		t.Errorf("Sort has %d elements (sort), want 2 — it is the search_after cursor", len(h.Sort))
+	}
+
+	src := h.Source
+	if src.ID == "" {
+		t.Error("Source.ID is empty (_source.id) — a slug, not the numeric id")
+	}
+	if src.ItemID != 32365 {
+		t.Errorf("ItemID = %d (_source.itemId), want 32365", src.ItemID)
+	}
+	if src.Title == "" || src.Description == "" {
+		t.Errorf("title/description empty: %q / %q", src.Title, src.Description)
+	}
+	if src.Img == "" {
+		t.Error("Img is empty (_source.img) — every scene loses its thumbnail")
+	}
+	if src.PublishedDate != "2026-07-26T00:00:00" {
+		t.Errorf("PublishedDate = %q (_source.publishedDate), want a bare timestamp with no zone",
+			src.PublishedDate)
+	}
+	if len(src.Tags) == 0 {
+		t.Error("Tags is empty (_source.tags)")
+	}
+	if len(src.Models) == 0 || src.Models[0].Name == "" {
+		t.Errorf("models = %+v (_source.models[].name)", src.Models)
+	}
+	if src.Site.NickName == "" || src.Site.Name == "" {
+		t.Errorf("site = %+v (_source.site.name/nickName) — nickName is the series filter key", src.Site)
+	}
+}
+
+// The ES total format, pinned separately because it is the single most likely
+// thing to be written wrong by hand and it fails silently (decodes to zero).
+func TestGoldenESTotalIsAnObject(t *testing.T) {
+	body, err := os.ReadFile(filepath.Join("testdata", "es_search.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !bytes.Contains(body, []byte(`"total":{"value":`)) {
+		t.Error(`fixture no longer has the ES7 object form "total":{"value":…}; ` +
+			`if the cluster downgraded to a bare number, esResponse must change too`)
+	}
+	if !bytes.Contains(body, []byte(`"relation":"gte"`)) {
+		t.Log(`note: total.relation is no longer "gte" — the count may now be exact, ` +
+			`which would make scraper.Progress accurate for large networks`)
 	}
 }
