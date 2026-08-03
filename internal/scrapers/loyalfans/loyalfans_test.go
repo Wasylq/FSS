@@ -1,12 +1,16 @@
 package loyalfans
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"os"
+	"path/filepath"
 	"testing"
+	"time"
 
 	"github.com/Wasylq/FSS/internal/scrapers/testutil"
 	"github.com/Wasylq/FSS/scraper"
@@ -285,5 +289,115 @@ func TestMatchesStoreURL(t *testing.T) {
 		if s.MatchesURL(u) {
 			t.Errorf("MatchesURL(%q) = true, want false", u)
 		}
+	}
+}
+
+// --- golden fixture ----------------------------------------------------------
+//
+// The other tests build video/searchResponse values in Go, so encode and decode
+// share the struct tag and a renamed one round-trips unnoticed. This is a
+// byte-verbatim slice of a live POST to
+// https://www.loyalfans.com/api/v2/advanced-search (first two videos; success,
+// httpCode and page_token copied from the same body).
+//
+// Two steps, no account: POST /api/v2/system-status to pick up the XSRF and AWS
+// load-balancer cookies, then send them with the search. None of those cookies
+// appears in the response — checked, not assumed.
+//
+// **About the retained `page_token`.** It is double-base64 wrapping a Laravel
+// encrypted payload (`{"iv":…,"value":…,"mac":…}`) — ciphertext with a MAC, not a
+// plaintext secret, and inert without the site's APP_KEY. It is kept verbatim
+// because loyalfans is the one cursor-paginated scraper in the suite and the
+// *shape* of this field is the thing worth pinning: a non-null string means "more
+// pages", and the walk ends when it is null. Truncating it would make this file
+// stop being a capture, which is the property every other fixture here relies on.
+//
+// Shapes a hand-written fixture would have got wrong:
+//   - **`created_at` is an object, not a string**: `{"date":"2026-07-14 14:47:40",
+//     "timezone_type":3,"timezone":"UTC"}` — PHP's DateTime serialisation. The
+//     inner date has a **space separator and no zone marker**, so it needs its own
+//     layout rather than RFC3339.
+//   - `video_object` nests `poster` and `duration`; duration is seconds.
+//   - `uid` is an opaque 45-character token and is the scene ID — it is not
+//     numeric and not derived from the slug.
+//   - `short_url` carries escaped forward slashes (`\/`), evidence the body is a
+//     capture rather than a re-encode.
+func TestGoldenAdvancedSearch(t *testing.T) {
+	body, err := os.ReadFile(filepath.Join("testdata", "advanced_search.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	var resp searchResponse
+	if err := json.Unmarshal(body, &resp); err != nil {
+		t.Fatalf("decoding captured payload: %v", err)
+	}
+	if !resp.Success {
+		t.Fatal("success is false (success)")
+	}
+	if len(resp.Data) != 2 {
+		t.Fatalf("decoded %d videos, want 2", len(resp.Data))
+	}
+
+	// The cursor: a non-nil pointer means there is another page.
+	if resp.PageToken == nil {
+		t.Fatal("PageToken is nil (page_token) — the cursor walk would stop after page 1")
+	}
+	if *resp.PageToken == "" {
+		t.Error("PageToken is the empty string; the walk treats non-nil as 'more pages'")
+	}
+
+	v := resp.Data[0]
+	if v.UID == "" {
+		t.Error("UID is empty (uid) — it is the scene ID")
+	}
+	if len(v.UID) < 20 {
+		t.Errorf("UID = %q (uid) is unexpectedly short; it is an opaque token, not a number", v.UID)
+	}
+	if v.Slug != "aftermath-1646650364673" {
+		t.Errorf("Slug = %q (slug)", v.Slug)
+	}
+	if v.Owner.Slug != "bettie_bondage" {
+		t.Errorf("Owner.Slug = %q (owner.slug) — the scene URL is built from it", v.Owner.Slug)
+	}
+	if v.VideoObject.Poster == "" {
+		t.Error("VideoObject.Poster is empty (video_object.poster) — every scene loses its thumbnail")
+	}
+	if v.VideoObject.Duration == 0 {
+		t.Error("VideoObject.Duration is 0 (video_object.duration)")
+	}
+	if v.Reactions.Total == 0 {
+		t.Error("Reactions.Total is 0 (reactions.total)")
+	}
+
+	// created_at as a nested object with a space-separated date.
+	if v.CreatedAt.Date != "2026-07-14 14:47:40" {
+		t.Errorf("CreatedAt.Date = %q (created_at.date), want a space-separated timestamp — "+
+			"created_at is an object, not a string", v.CreatedAt.Date)
+	}
+	if _, err := time.Parse(dateFormat, v.CreatedAt.Date); err != nil {
+		t.Errorf("created_at.date %q does not parse with dateFormat %q: %v",
+			v.CreatedAt.Date, dateFormat, err)
+	}
+}
+
+func TestGoldenAdvancedSearchCarriesNoSessionCookie(t *testing.T) {
+	body, err := os.ReadFile(filepath.Join("testdata", "advanced_search.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	// The XSRF and AWS load-balancer cookies travel in the request; none of them
+	// may appear in a committed body. page_token is deliberately exempt — see the
+	// fixture comment for why it is safe and why it is kept.
+	for _, marker := range []string{"XSRF-TOKEN", "AWSALB", "Set-Cookie", "laravel_session"} {
+		if bytes.Contains(body, []byte(marker)) {
+			t.Errorf("fixture contains %q — re-capture without the session material", marker)
+		}
+	}
+	if !bytes.Contains(body, []byte(`\/`)) {
+		t.Error(`fixture lost the escaped forward slashes (\/) — it looks re-encoded`)
+	}
+	if !bytes.Contains(body, []byte(`"created_at":{"date":`)) {
+		t.Error(`fixture lost the created_at object form; a re-encode may have flattened it`)
 	}
 }
