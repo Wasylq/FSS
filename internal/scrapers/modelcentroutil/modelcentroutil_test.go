@@ -1,11 +1,14 @@
 package modelcentroutil
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"os"
+	"path/filepath"
 	"strconv"
 	"testing"
 	"time"
@@ -380,5 +383,91 @@ func TestListScenesKnownIDs(t *testing.T) {
 	}
 	if results[0].ID != "1" || results[1].ID != "2" {
 		t.Errorf("scenes = %v, %v", results[0].ID, results[1].ID)
+	}
+}
+
+// --- golden fixture ----------------------------------------------------------
+//
+// The other tests build APIScene values in Go, so encode and decode share the
+// struct tag and a renamed one round-trips unnoticed. This is a live
+// /api/content.load response from bigjohnnyxxx.com, kept whole and unedited
+// (980 bytes). No credential — the endpoint is open, though the field list must
+// be requested explicitly via the `fields[N]` query parameters.
+//
+// Shapes a hand-written fixture would have got wrong:
+//   - **`sites.collection` is a map keyed by the scene ID as a *string***
+//     (`{"7720208": {"publishDate": …}}`), not an array. That is why
+//     APIScene.Sites.Collection is a `map[string]APISiteEntry` and why
+//     ParsePublishDate does `strconv.Itoa(sc.ID)` to look itself up. Writing it
+//     as an array — the obvious guess — decodes to an empty map and every scene
+//     gets a zero Date.
+//   - `publishDate` is space-separated with no zone ("2019-12-08 23:00:00").
+//   - the payload is double-wrapped: `{"status":…,"response":{"collection":…}}`,
+//     with the count under `response.meta.totalCount` rather than at the top.
+//   - the response also carries a PHP `class` marker
+//     ("Adultcentro\\Amc\\Object\\Content_Site") that nothing decodes — retained,
+//     so unknown-field tolerance stays covered.
+func TestGoldenContentLoad(t *testing.T) {
+	body, err := os.ReadFile(filepath.Join("testdata", "content_load.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	var resp APIResponse
+	if err := json.Unmarshal(body, &resp); err != nil {
+		t.Fatalf("decoding captured payload: %v", err)
+	}
+	if !resp.Status {
+		t.Fatal("status is false (status)")
+	}
+	if len(resp.Response.Collection) != 2 {
+		t.Fatalf("decoded %d scenes, want 2", len(resp.Response.Collection))
+	}
+	if resp.Response.Meta.TotalCount != 65 {
+		t.Errorf("TotalCount = %d (response.meta.totalCount), want 65 — paging depends on it",
+			resp.Response.Meta.TotalCount)
+	}
+
+	sc := resp.Response.Collection[0]
+	if sc.ID != 7720208 {
+		t.Errorf("ID = %d (id), want 7720208", sc.ID)
+	}
+	if sc.Title == "" {
+		t.Error("Title is empty (title)")
+	}
+	if sc.Len == 0 {
+		t.Error("Len is 0 (length) — note the field is `length`, not `duration`")
+	}
+
+	// The id-keyed map, which is the whole point of this fixture.
+	if len(sc.Sites.Collection) == 0 {
+		t.Fatal("Sites.Collection is empty (sites.collection) — it is a map keyed by the " +
+			"scene ID as a string, not an array; an array guess decodes to nothing")
+	}
+	entry, ok := sc.Sites.Collection[strconv.Itoa(sc.ID)]
+	if !ok {
+		t.Fatalf("sites.collection has no key %q; keys are %v", strconv.Itoa(sc.ID), sc.Sites.Collection)
+	}
+	if entry.PublishDate != "2019-12-08 23:00:00" {
+		t.Errorf("publishDate = %q, want a space-separated timestamp with no zone", entry.PublishDate)
+	}
+
+	// And that ParsePublishDate still resolves it.
+	if d := ParsePublishDate(sc); d.IsZero() {
+		t.Error("ParsePublishDate returned zero on a real payload — Scene.Date comes from it")
+	}
+}
+
+func TestGoldenContentLoadKeepsIDKeyedMap(t *testing.T) {
+	body, err := os.ReadFile(filepath.Join("testdata", "content_load.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !bytes.Contains(body, []byte(`"collection":{"7720208":`)) {
+		t.Error(`fixture lost the id-keyed sites.collection map; if the API switched to an ` +
+			`array, APIScene.Sites.Collection must change type too`)
+	}
+	if !bytes.Contains(body, []byte(`"class":`)) {
+		t.Error("fixture lost the PHP class marker; unknown-field tolerance is no longer covered")
 	}
 }
