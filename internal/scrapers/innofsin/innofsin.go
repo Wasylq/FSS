@@ -2,6 +2,7 @@ package innofsin
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"html"
 	"net/http"
@@ -164,9 +165,16 @@ func (s *siteScraper) fetchAllPosts(ctx context.Context, base string, opts scrap
 			// loop requests one page past the end and WP answers HTTP 400.
 			// Returning that as an error made the caller discard every post
 			// already fetched, leaving the site unscrapeable until its count
-			// drifted off the boundary. Past page 1 this is end-of-list.
-			if page > 1 {
-				scraper.Debugf(1, "%s: API page %d past end (%v), stopping", s.cfg.id, page, err)
+			// drifted off the boundary.
+			//
+			// Only that specific 400 means end-of-list. Treating *any* page>1
+			// failure as the end is what made a 429 or 502 on page 3 return the
+			// first two pages with err == nil — and under `--full` the store
+			// then hard-deletes every scene the run never reached, price history
+			// included, while reporting success. Mirrors fotoroutil.fetchTerms.
+			var se *httpx.StatusError
+			if page > 1 && errors.As(err, &se) && se.StatusCode == http.StatusBadRequest {
+				scraper.Debugf(1, "%s: API page %d past end (400), stopping", s.cfg.id, page)
 				break
 			}
 			return all, fmt.Errorf("API page %d: %w", page, err)

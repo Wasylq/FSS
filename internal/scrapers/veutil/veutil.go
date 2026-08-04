@@ -4,6 +4,7 @@ package veutil
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"html"
 	"net/http"
@@ -170,11 +171,18 @@ func (s *Scraper) fetchAllTags(ctx context.Context) (map[int]string, error) {
 		})
 		if err != nil {
 			// With a tag count that is an exact multiple of the page size, the
-			// loop asks for one page past the end and WP answers HTTP 400.
-			// That is the end of the list, not a failure — the tags gathered
-			// so far are complete. Only a first-page error is fatal.
-			if page > 1 {
-				scraper.Debugf(1, "%s: tags page %d past end (%v), stopping", s.cfg.ID, page, err)
+			// loop asks for one page past the end and WP answers HTTP 400 —
+			// there the tags gathered so far really are complete.
+			//
+			// Any other failure is not the end of the list, and returning a
+			// partial map with a nil error is worse than it sounds: no scene is
+			// dropped, so nothing looks wrong, but every unmapped tag ID
+			// resolves to nothing and `--full`/`--refresh` overwrite complete
+			// stored tag lists with truncated ones across every veutil site.
+			// Mirrors fotoroutil.fetchTerms.
+			var se *httpx.StatusError
+			if page > 1 && errors.As(err, &se) && se.StatusCode == http.StatusBadRequest {
+				scraper.Debugf(1, "%s: tags page %d past end (400), stopping", s.cfg.ID, page)
 				break
 			}
 			return nil, fmt.Errorf("tags page %d: %w", page, err)

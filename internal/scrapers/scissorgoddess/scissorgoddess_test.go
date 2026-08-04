@@ -10,6 +10,7 @@ import (
 	"slices"
 	"strconv"
 	"strings"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -303,5 +304,93 @@ func TestDateGMTLayout(t *testing.T) {
 	}
 	if _, err := time.Parse("2006-01-02T15:04:05", raw); err != nil {
 		t.Errorf("date_gmt %q does not parse with the layout toScene uses: %v", raw, err)
+	}
+}
+
+// N-A / NL1: a page-2+ failure that is *not* WP's past-the-end 400 must surface as an
+// error, not be reported as end-of-listing.
+//
+// The distinction is what makes this severe rather than cosmetic. Under `--full` the
+// store treats the returned scenes as the studio's complete state and hard-deletes
+// everything the run did not reach — price history included. Reporting Done on a 502
+// therefore turns one transient blip into permanent data loss, with a success line
+// printed. Only HTTP 400 past page 1 means the listing ended.
+//
+// Page 1 must return a *full* page (perPage products) or the walk stops there on
+// `len(products) < perPage` and never reaches the failing page — which is exactly what
+// a first draft of this test did, passing the 400 case while proving nothing.
+func TestPageErrorPastFirstPageIsReported(t *testing.T) {
+	cases := []struct {
+		name       string
+		status     int
+		wantErrors bool
+	}{
+		{"400 is WP's past-the-end marker", http.StatusBadRequest, false},
+		{"502 is a real failure", http.StatusBadGateway, true},
+		{"429 is a real failure", http.StatusTooManyRequests, true},
+		{"500 is a real failure", http.StatusInternalServerError, true},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			tmpl := fixtureProducts(t)
+			var page2Hits atomic.Int32
+
+			ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				page, _ := strconv.Atoi(r.URL.Query().Get("page"))
+				if page < 1 {
+					page = 1
+				}
+				if page > 1 {
+					page2Hits.Add(1)
+					w.WriteHeader(c.status)
+					return
+				}
+				// A full page, so the walk continues past it.
+				out := make([]wpProduct, 0, perPage)
+				for i := 0; i < perPage; i++ {
+					p := tmpl[i%len(tmpl)]
+					p.ID = 100000 + i
+					out = append(out, p)
+				}
+				w.Header().Set("Content-Type", "application/json")
+				_ = json.NewEncoder(w).Encode(out)
+			}))
+			defer ts.Close()
+
+			orig := siteBase
+			siteBase = ts.URL
+			t.Cleanup(func() { siteBase = orig })
+
+			s := New()
+			s.Client = ts.Client()
+
+			ch, err := s.ListScenes(context.Background(), ts.URL, scraper.ListOpts{})
+			if err != nil {
+				t.Fatal(err)
+			}
+			var scenes, errs int
+			for r := range ch {
+				switch r.Kind {
+				case scraper.KindScene:
+					scenes++
+				case scraper.KindError:
+					errs++
+				}
+			}
+			if scenes != perPage {
+				t.Fatalf("page 1 produced %d scenes, want %d — the walk must reach page 2", scenes, perPage)
+			}
+			if page2Hits.Load() == 0 {
+				t.Fatal("page 2 was never requested; the error path was not exercised")
+			}
+			if c.wantErrors && errs == 0 {
+				t.Errorf("HTTP %d on page 2 produced no scraper.Error — the run looks complete, "+
+					"and --full would delete every scene past page 1", c.status)
+			}
+			if !c.wantErrors && errs != 0 {
+				t.Errorf("HTTP %d on page 2 produced %d error(s); it is WP's end-of-listing marker",
+					c.status, errs)
+			}
+		})
 	}
 }

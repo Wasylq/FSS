@@ -15,6 +15,7 @@ package scissorgoddess
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"html"
 	"net/http"
@@ -104,10 +105,14 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 	scraper.Paginate(ctx, opts, siteID, out, func(ctx context.Context, page int) (scraper.PageResult, error) {
 		products, total, pages, err := s.fetchPage(ctx, page)
 		if err != nil {
-			// WP answers HTTP 400 for a page past the last one. Past page 1
-			// that is the end of the listing, not a failure.
-			if page > 1 {
-				scraper.Debugf(1, "%s: page %d past end (%v), stopping", siteID, page, err)
+			// WP answers HTTP 400 for a page past the last one, and only that
+			// means end-of-listing. Reporting Done for *any* page>1 failure made
+			// a WAF block or DNS blip on page 4 of 12 indistinguishable from the
+			// end: `--full` then deleted pages 4-12 while printing a success
+			// line. Mirrors fotoroutil.fetchTerms.
+			var se *httpx.StatusError
+			if page > 1 && errors.As(err, &se) && se.StatusCode == http.StatusBadRequest {
+				scraper.Debugf(1, "%s: page %d past end (400), stopping", siteID, page)
 				return scraper.PageResult{Done: true}, nil
 			}
 			return scraper.PageResult{}, err
