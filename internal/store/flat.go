@@ -6,6 +6,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"sync"
 	"time"
 
 	"github.com/Wasylq/FSS/models"
@@ -18,10 +19,37 @@ import (
 type Flat struct {
 	dir     string
 	formats []string
+
+	// held tracks the studio locks this process currently owns, keyed by lock
+	// path, so Lock can be re-entrant. flock(2) is per-open-file-description:
+	// a second Lock on the same path from the same process opens a new fd and
+	// blocks on itself forever. See Lock.
+	mu   sync.Mutex
+	held map[string]*reentrantLock
 }
 
 func NewFlat(dir string, formats []string) *Flat {
-	return &Flat{dir: dir, formats: formats}
+	return &Flat{dir: dir, formats: formats, held: map[string]*reentrantLock{}}
+}
+
+// reentrantLock wraps a held flock with a reference count. Close releases the
+// underlying lock only when the last holder in this process lets go.
+type reentrantLock struct {
+	f     *Flat
+	path  string
+	inner io.Closer
+	refs  int
+}
+
+func (r *reentrantLock) Close() error {
+	r.f.mu.Lock()
+	defer r.f.mu.Unlock()
+	r.refs--
+	if r.refs > 0 {
+		return nil
+	}
+	delete(r.f.held, r.path)
+	return r.inner.Close()
 }
 
 func (f *Flat) jsonPath(studioURL string) string {
@@ -42,11 +70,40 @@ func (f *Flat) csvPath(studioURL string) string {
 	return filepath.Join(f.dir, Slugify(studioURL)+".csv")
 }
 
+// Lock acquires the studio's advisory lock, and is re-entrant within this
+// process: taking it twice returns a second Closer over the same underlying
+// flock, released when both are closed.
+//
+// Re-entrancy is not a convenience. flock(2) is per-open-file-description, so a
+// second Lock on the same path from the same process opens a new fd and blocks
+// against the lock this process already holds — a self-deadlock with no error
+// and no timeout. MarkDeleted locks internally, so any caller that held the lock
+// across a Load→modify→Save cycle (which scrapeOne does) and then called it
+// hung forever. The SQLite store has no such constraint — its MarkDeleted runs
+// in a transaction and is safe under a held lock — so without this the two
+// implementations would not honour the same Store contract.
+//
+// Cross-process locking is unchanged: a different process still blocks, which is
+// the point of the lock.
 func (f *Flat) Lock(studioURL string) (io.Closer, error) {
 	if err := os.MkdirAll(f.dir, 0o755); err != nil {
 		return nil, fmt.Errorf("creating output dir for lock: %w", err)
 	}
-	return lockFile(filepath.Join(f.dir, Slugify(studioURL)+".lock"))
+	path := filepath.Join(f.dir, Slugify(studioURL)+".lock")
+
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	if r, ok := f.held[path]; ok {
+		r.refs++
+		return r, nil
+	}
+	inner, err := lockFile(path)
+	if err != nil {
+		return nil, err
+	}
+	r := &reentrantLock{f: f, path: path, inner: inner, refs: 1}
+	f.held[path] = r
+	return r, nil
 }
 
 func (f *Flat) Load(studioURL string) ([]models.Scene, error) {

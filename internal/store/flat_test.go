@@ -611,3 +611,114 @@ func TestFlatMigratesLegacyFile(t *testing.T) {
 		t.Errorf("hashed file missing after migration: %v", err)
 	}
 }
+
+// D1: MarkDeleted must not self-deadlock when the caller already holds the lock.
+//
+// flock(2) is per-open-file-description, so a second Lock on the same path from the same
+// process opens a new fd and blocks against the lock this process already holds. There is
+// no error and no timeout — the scrape simply stops. scrapeOne holds the studio lock for
+// the whole Load→scrape→Save cycle, so any caller reaching for MarkDeleted inside it hung
+// forever. SQLite's MarkDeleted has no such constraint (it runs in a transaction), so this
+// also keeps the two Store implementations honouring the same contract.
+func TestFlatMarkDeletedUnderHeldLock(t *testing.T) {
+	f := newTestFlat(t)
+	if err := f.Save(flatTestURL, testScenes(time.Now().UTC().Truncate(time.Second))); err != nil {
+		t.Fatal(err)
+	}
+
+	unlock, err := f.Lock(flatTestURL)
+	if err != nil {
+		t.Fatalf("Lock: %v", err)
+	}
+	defer func() { _ = unlock.Close() }()
+
+	done := make(chan error, 1)
+	go func() { done <- f.MarkDeleted(flatTestURL, "example", []string{"1"}) }()
+
+	select {
+	case err := <-done:
+		if err != nil {
+			t.Fatalf("MarkDeleted under a held lock: %v", err)
+		}
+	case <-time.After(10 * time.Second):
+		t.Fatal("MarkDeleted blocked for 10s while the caller held the lock — the studio " +
+			"lock is not re-entrant and the scrape would hang with no error")
+	}
+
+	got, err := f.Load(flatTestURL)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var deleted int
+	for _, s := range got {
+		if s.DeletedAt != nil {
+			deleted++
+		}
+	}
+	if deleted != 1 {
+		t.Errorf("got %d soft-deleted scenes, want 1 — the call returned but did nothing", deleted)
+	}
+}
+
+// Re-entrancy must not weaken the lock: the underlying flock is released only when the
+// last holder closes, or a concurrent process could write while this one still believes
+// it holds the studio.
+func TestFlatLockReleasedOnlyByLastHolder(t *testing.T) {
+	f := newTestFlat(t)
+	if err := f.Save(flatTestURL, testScenes(time.Now().UTC().Truncate(time.Second))); err != nil {
+		t.Fatal(err)
+	}
+
+	outer, err := f.Lock(flatTestURL)
+	if err != nil {
+		t.Fatal(err)
+	}
+	inner, err := f.Lock(flatTestURL)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Closing the inner holder must not free the lock for anyone else.
+	if err := inner.Close(); err != nil {
+		t.Fatalf("inner Close: %v", err)
+	}
+	if n := len(f.held); n != 1 {
+		t.Errorf("after closing the inner holder the lock is tracked %d time(s), want 1", n)
+	}
+
+	if err := outer.Close(); err != nil {
+		t.Fatalf("outer Close: %v", err)
+	}
+	if n := len(f.held); n != 0 {
+		t.Errorf("after the last Close the lock is still tracked %d time(s); it leaked", n)
+	}
+
+	// And it can be taken again cleanly.
+	again, err := f.Lock(flatTestURL)
+	if err != nil {
+		t.Fatalf("re-Lock after full release: %v", err)
+	}
+	if err := again.Close(); err != nil {
+		t.Fatal(err)
+	}
+}
+
+// Distinct studios must not share a lock entry.
+func TestFlatLockIsPerStudio(t *testing.T) {
+	f := newTestFlat(t)
+
+	a, err := f.Lock("https://example.com/studio-a")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() { _ = a.Close() }()
+	b, err := f.Lock("https://example.com/studio-b")
+	if err != nil {
+		t.Fatalf("locking a second studio while the first is held: %v", err)
+	}
+	defer func() { _ = b.Close() }()
+
+	if n := len(f.held); n != 2 {
+		t.Errorf("two studios locked but %d entries tracked", n)
+	}
+}
