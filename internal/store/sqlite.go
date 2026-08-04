@@ -312,7 +312,44 @@ func (s *SQLite) migrate() error {
 			return fmt.Errorf("migration 3: %w", err)
 		}
 	}
+	if version < 4 {
+		if err := s.applyMigration4(); err != nil {
+			return fmt.Errorf("migration 4: %w", err)
+		}
+	}
 	return nil
+}
+
+// migration4 adds first_seen_at, backfilled from scraped_at. That is an upper
+// bound, not the true first sighting — it was never recorded — but it beats
+// stamping existing scenes with the date of some future scrape.
+const migration4 = `
+ALTER TABLE scenes ADD COLUMN first_seen_at TEXT NOT NULL DEFAULT '';
+UPDATE scenes SET first_seen_at = scraped_at WHERE first_seen_at = '';
+`
+
+func (s *SQLite) applyMigration4() error {
+	return s.applyMigration(migration4, 4)
+}
+
+// applyMigration runs a schema-only migration and records its version.
+func (s *SQLite) applyMigration(ddl string, version int) error {
+	tx, err := s.db.Begin()
+	if err != nil {
+		return err
+	}
+	defer func() { _ = tx.Rollback() }()
+
+	if _, err := tx.Exec(ddl); err != nil {
+		return err
+	}
+	if _, err := tx.Exec(`DELETE FROM schema_version`); err != nil {
+		return err
+	}
+	if _, err := tx.Exec(`INSERT INTO schema_version (version) VALUES (?)`, version); err != nil {
+		return err
+	}
+	return tx.Commit()
 }
 
 // migration3 gives the tag and category junction tables the `position` column
@@ -334,22 +371,7 @@ ALTER TABLE scene_categories ADD COLUMN position INTEGER NOT NULL DEFAULT 0;
 `
 
 func (s *SQLite) applyMigration3() error {
-	tx, err := s.db.Begin()
-	if err != nil {
-		return err
-	}
-	defer func() { _ = tx.Rollback() }()
-
-	if _, err := tx.Exec(migration3); err != nil {
-		return err
-	}
-	if _, err := tx.Exec(`DELETE FROM schema_version`); err != nil {
-		return err
-	}
-	if _, err := tx.Exec(`INSERT INTO schema_version (version) VALUES (3)`); err != nil {
-		return err
-	}
-	return tx.Commit()
+	return s.applyMigration(migration3, 3)
 }
 
 // applyMigration2 rebuilds the scene tables with studio_url-qualified keys.
@@ -470,7 +492,8 @@ func (s *SQLite) Load(studioURL string) ([]models.Scene, error) {
 		       COALESCE(duration, 0), COALESCE(resolution, ''),
 		       COALESCE(width, 0), COALESCE(height, 0), COALESCE(format, ''),
 		       COALESCE(views, 0), COALESCE(likes, 0), COALESCE(comments, 0),
-		       COALESCE(lowest_price, 0), lowest_price_date, scraped_at, deleted_at
+		       COALESCE(lowest_price, 0), lowest_price_date,
+		       COALESCE(first_seen_at, ''), scraped_at, deleted_at
 		FROM scenes WHERE studio_url = ?
 		ORDER BY scraped_at DESC, id`, studioURL)
 	if err != nil {
@@ -680,8 +703,8 @@ func upsertScene(tx *sql.Tx, sc models.Scene) error {
 		    tags, categories, series, series_part,
 		    duration, resolution, width, height, format,
 		    views, likes, comments,
-		    lowest_price, lowest_price_date, scraped_at, deleted_at
-		) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+		    lowest_price, lowest_price_date, first_seen_at, scraped_at, deleted_at
+		) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
 		ON CONFLICT(id, site_id, studio_url) DO UPDATE SET
 		    title             = excluded.title,
 		    url               = excluded.url,
@@ -706,6 +729,8 @@ func upsertScene(tx *sql.Tx, sc models.Scene) error {
 		    comments          = excluded.comments,
 		    lowest_price      = excluded.lowest_price,
 		    lowest_price_date = excluded.lowest_price_date,
+		    -- sticky: a first sighting already on record is never overwritten
+		    first_seen_at     = COALESCE(NULLIF(scenes.first_seen_at, ''), excluded.first_seen_at),
 		    scraped_at        = excluded.scraped_at,
 		    deleted_at        = excluded.deleted_at`,
 		sc.ID, sc.SiteID, sc.StudioURL, sc.Title, sc.URL,
@@ -716,7 +741,7 @@ func upsertScene(tx *sql.Tx, sc models.Scene) error {
 		sc.Duration, sc.Resolution, sc.Width, sc.Height, sc.Format,
 		sc.Views, sc.Likes, sc.Comments,
 		sc.LowestPrice, timePtrStr(sc.LowestPriceDate),
-		timeStr(sc.ScrapedAt), timePtrStr(sc.DeletedAt),
+		timeStr(firstSeenFor(sc, nil)), timeStr(sc.ScrapedAt), timePtrStr(sc.DeletedAt),
 	)
 	if err != nil {
 		return fmt.Errorf("upserting scene %s: %w", sc.ID, err)
@@ -1200,6 +1225,7 @@ func scanScene(rows *sql.Rows) (models.Scene, error) {
 	var (
 		dateStr         string
 		lowestPriceDate sql.NullString
+		firstSeenAt     string
 		scrapedAt       string
 		deletedAt       sql.NullString
 	)
@@ -1210,13 +1236,16 @@ func scanScene(rows *sql.Rows) (models.Scene, error) {
 		&sc.Series, &sc.SeriesPart,
 		&sc.Duration, &sc.Resolution, &sc.Width, &sc.Height, &sc.Format,
 		&sc.Views, &sc.Likes, &sc.Comments,
-		&sc.LowestPrice, &lowestPriceDate, &scrapedAt, &deletedAt,
+		&sc.LowestPrice, &lowestPriceDate, &firstSeenAt, &scrapedAt, &deletedAt,
 	)
 	if err != nil {
 		return sc, err
 	}
 	if sc.Date, err = parseStr(dateStr); err != nil {
 		return sc, fmt.Errorf("parsing date for %s: %w", sc.ID, err)
+	}
+	if sc.FirstSeenAt, err = parseStr(firstSeenAt); err != nil {
+		return sc, fmt.Errorf("parsing first_seen_at for %s: %w", sc.ID, err)
 	}
 	if sc.ScrapedAt, err = parseStr(scrapedAt); err != nil {
 		return sc, fmt.Errorf("parsing scraped_at for %s: %w", sc.ID, err)

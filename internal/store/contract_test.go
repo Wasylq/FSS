@@ -351,6 +351,52 @@ func TestContract_SaveOtherStudioUnaffected(t *testing.T) {
 	}
 }
 
+// TestContract_FirstSeenAtIsSticky pins the one field Save does not write
+// verbatim: it is stamped when absent and never moved forward afterwards.
+func TestContract_FirstSeenAtIsSticky(t *testing.T) {
+	for _, sf := range storeFactories(t) {
+		t.Run(sf.name, func(t *testing.T) {
+			s := sf.new(t)
+			first := time.Now().UTC().Truncate(time.Second).Add(-72 * time.Hour)
+
+			if err := s.Save(contractURL, contractScenes(first)); err != nil {
+				t.Fatalf("Save: %v", err)
+			}
+			got, err := s.Load(contractURL)
+			if err != nil {
+				t.Fatalf("Load: %v", err)
+			}
+			for _, sc := range got {
+				if !sc.FirstSeenAt.Equal(first) {
+					t.Fatalf("scene %q: FirstSeenAt = %v, want stamped %v", sc.ID, sc.FirstSeenAt, first)
+				}
+			}
+
+			// Re-scrape later: ScrapedAt moves, FirstSeenAt must not.
+			later := first.Add(48 * time.Hour)
+			fresh := contractScenes(later) // fresh scenes carry no FirstSeenAt
+			if err := s.Save(contractURL, fresh); err != nil {
+				t.Fatalf("re-Save: %v", err)
+			}
+			got, err = s.Load(contractURL)
+			if err != nil {
+				t.Fatalf("Load after re-save: %v", err)
+			}
+			if len(got) != 2 {
+				t.Fatalf("got %d scenes, want 2", len(got))
+			}
+			for _, sc := range got {
+				if !sc.FirstSeenAt.Equal(first) {
+					t.Errorf("scene %q: FirstSeenAt = %v, want preserved %v", sc.ID, sc.FirstSeenAt, first)
+				}
+				if !sc.ScrapedAt.Equal(later) {
+					t.Errorf("scene %q: ScrapedAt = %v, want %v", sc.ID, sc.ScrapedAt, later)
+				}
+			}
+		})
+	}
+}
+
 func TestContract_MarkDeletedNonexistentID(t *testing.T) {
 	for _, sf := range storeFactories(t) {
 		t.Run(sf.name, func(t *testing.T) {

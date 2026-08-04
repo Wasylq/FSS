@@ -3,6 +3,7 @@ package store
 import (
 	"fmt"
 	"io"
+	"time"
 
 	"github.com/Wasylq/FSS/models"
 )
@@ -26,6 +27,32 @@ func validateScenes(scenes []models.Scene) error {
 	return nil
 }
 
+// firstSeenFor returns the FirstSeenAt to persist for a scene, given what the
+// store already holds for the same key (nil when the scene is new).
+//
+// FirstSeenAt is the one field Save does not take verbatim: it records when a
+// scene entered the catalogue, which a later scrape cannot re-derive. An
+// existing non-zero value always wins.
+func firstSeenFor(fresh models.Scene, prev *models.Scene) time.Time {
+	if prev != nil {
+		if !prev.FirstSeenAt.IsZero() {
+			return prev.FirstSeenAt
+		}
+		// Stored before FirstSeenAt existed: its last scrape is the best
+		// available upper bound.
+		if !prev.ScrapedAt.IsZero() {
+			return prev.ScrapedAt
+		}
+	}
+	if !fresh.FirstSeenAt.IsZero() {
+		return fresh.FirstSeenAt
+	}
+	if !fresh.ScrapedAt.IsZero() {
+		return fresh.ScrapedAt
+	}
+	return time.Now().UTC()
+}
+
 // Store is the persistence layer. The default implementation uses flat JSON/CSV files.
 // An optional SQLite-backed implementation is selected with the --db flag.
 type Store interface {
@@ -47,6 +74,10 @@ type Store interface {
 	// disappear. Incremental and `--refresh` modes pass the merged
 	// existing+fresh set so nothing is dropped. Use MarkDeleted for
 	// soft-delete semantics that preserve historical data.
+	//
+	// `FirstSeenAt` is the one exception to verbatim writing: a value
+	// already stored for the same key is preserved, and a scene with no
+	// value gets one stamped from its ScrapedAt. See firstSeenFor.
 	//
 	// Soft-delete state is NOT sticky across Save: each scene's
 	// `DeletedAt` is written verbatim. A re-emitted scene with

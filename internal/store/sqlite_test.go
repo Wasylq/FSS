@@ -1042,6 +1042,9 @@ func TestSQLiteMigration1(t *testing.T) {
 	if err := s.applyMigration3(); err != nil {
 		t.Fatalf("applyMigration3: %v", err)
 	}
+	if err := s.applyMigration4(); err != nil {
+		t.Fatalf("applyMigration4: %v", err)
+	}
 
 	// Verify junction table data via Load.
 	scenes, err := s.Load(testStudioURL)
@@ -1129,6 +1132,9 @@ func TestSQLiteMigration1NullJSON(t *testing.T) {
 	}
 	if err := s.applyMigration3(); err != nil {
 		t.Fatalf("applyMigration3: %v", err)
+	}
+	if err := s.applyMigration4(); err != nil {
+		t.Fatalf("applyMigration4: %v", err)
 	}
 
 	scenes, err := s.Load(testStudioURL)

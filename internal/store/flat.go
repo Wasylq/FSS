@@ -195,9 +195,12 @@ func (f *Flat) Save(studioURL string, scenes []models.Scene) error {
 		return fmt.Errorf("creating output dir: %w", err)
 	}
 	// Refuse to clobber a file that belongs to a different studio URL.
-	if _, err := f.loadStudioFile(studioURL); err != nil {
+	prev, err := f.loadStudioFile(studioURL)
+	if err != nil {
 		return err
 	}
+	scenes = withFirstSeen(scenes, prev)
+
 	sf := models.StudioFile{
 		SchemaVersion: models.StoreSchemaVersion,
 		StudioURL:     studioURL,
@@ -216,6 +219,30 @@ func (f *Flat) Save(studioURL string, scenes []models.Scene) error {
 		}
 	}
 	return nil
+}
+
+// withFirstSeen returns a copy of scenes with FirstSeenAt resolved against what
+// the studio file already held. The copy keeps Save from mutating the caller's
+// slice.
+func withFirstSeen(scenes []models.Scene, prev *models.StudioFile) []models.Scene {
+	var stored map[sceneKey]models.Scene
+	if prev != nil {
+		stored = make(map[sceneKey]models.Scene, len(prev.Scenes))
+		for _, s := range prev.Scenes {
+			stored[sceneKey{id: s.ID, siteID: s.SiteID}] = s
+		}
+	}
+
+	out := make([]models.Scene, len(scenes))
+	copy(out, scenes)
+	for i := range out {
+		var p *models.Scene
+		if s, ok := stored[sceneKey{id: out[i].ID, siteID: out[i].SiteID}]; ok {
+			p = &s
+		}
+		out[i].FirstSeenAt = firstSeenFor(out[i], p)
+	}
+	return out
 }
 
 func (f *Flat) MarkDeleted(studioURL, siteID string, ids []string) error {

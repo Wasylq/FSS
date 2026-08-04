@@ -89,8 +89,9 @@ type Scene struct {
 	LowestPriceDate *time.Time      `json:"lowestPriceDate,omitempty"`
 
 	// Scraper housekeeping
-	ScrapedAt time.Time  `json:"scrapedAt"`
-	DeletedAt *time.Time `json:"deletedAt,omitempty"`
+	FirstSeenAt time.Time  `json:"firstSeenAt,omitzero"`
+	ScrapedAt   time.Time  `json:"scrapedAt"`
+	DeletedAt   *time.Time `json:"deletedAt,omitempty"`
 }
 
 // sameTerms reports whether two snapshots describe identical pricing, ignoring

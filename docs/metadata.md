@@ -37,6 +37,27 @@ newer layout on a guess would silently drop whatever that layout added.
 SQLite has had the equivalent since v0: a `schema_version` table plus numbered
 migrations in `internal/store/sqlite.go`.
 
+## Scene lifetime fields
+
+| Field | Meaning | Written by |
+|---|---|---|
+| `firstSeenAt` | when the scene first entered the store | the store, once |
+| `scrapedAt` | when the scene was last fetched | the scraper, every run |
+| `deletedAt` | soft-delete marker set by `--refresh` | the cmd layer |
+
+`Save` writes every field verbatim **except `firstSeenAt`**, which is sticky: an
+existing value is never overwritten, and a scene arriving without one is stamped
+from its `scrapedAt`. Scrapers do not set it; both stores enforce it, so any
+caller of `Save` gets the same behaviour.
+
+It is not recoverable after the fact, which is why it is stamped at write time
+rather than derived later. Scenes stored before the field existed were
+backfilled from `scraped_at` (SQLite migration 4) or are backfilled on their
+next save (flat store). That is an upper bound on the true first sighting, not
+a measurement.
+
+`firstSeenAt` is also a CSV column, placed before `scrapedAt`.
+
 ## Scraping multiple studios
 
 Studios never overwrite each other:

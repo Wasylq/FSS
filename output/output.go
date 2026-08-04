@@ -39,7 +39,7 @@ var CSVHeaders = []string{
 	"duration", "resolution", "width", "height", "format",
 	"views", "likes", "comments",
 	"lowestPrice", "lowestPriceDate", "priceHistory",
-	"scrapedAt", "deletedAt",
+	"firstSeenAt", "scrapedAt", "deletedAt",
 }
 
 // WriteCSV writes scenes as CSV with a header row, using atomic file replacement.
@@ -278,6 +278,7 @@ func sceneToRow(s models.Scene) ([]string, error) {
 		strconv.FormatFloat(s.LowestPrice, 'f', 2, 64),
 		formatTimePtr(s.LowestPriceDate),
 		string(ph),
+		formatTime(s.FirstSeenAt),
 		s.ScrapedAt.Format(time.RFC3339),
 		formatTimePtr(s.DeletedAt),
 	}, nil
