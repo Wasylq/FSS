@@ -248,6 +248,12 @@ func (s *Scraper) fetchDetails(ctx context.Context, slugs []string, delay time.D
 
 	for i, slug := range slugs {
 		if ctx.Err() != nil {
+			// Breaking here stops launching goroutines, so every remaining slot
+			// would keep its zero value — and the consumer reads `err == nil` as
+			// success and appends an empty scene for each. Mark them instead.
+			for j := i; j < len(slugs); j++ {
+				results[j] = sceneResult{err: ctx.Err()}
+			}
 			break
 		}
 		wg.Add(1)
@@ -259,6 +265,12 @@ func (s *Scraper) fetchDetails(ctx context.Context, slugs []string, delay time.D
 				select {
 				case <-time.After(delay):
 				case <-ctx.Done():
+					// Record the cancellation rather than returning silently.
+					// results is index-addressed, so an unwritten slot stays a
+					// zero value — and the consumer treats `err == nil` as
+					// success, appending an empty models.Scene as if it were a
+					// real scrape result.
+					results[idx] = sceneResult{err: ctx.Err()}
 					return
 				}
 			}

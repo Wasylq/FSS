@@ -307,3 +307,36 @@ func TestMakerMode(t *testing.T) {
 		t.Errorf("got %d scenes, want 1", scenes)
 	}
 }
+
+// H-misc / mousouzoku:251: a cancelled detail fetch must never leave a zero-value
+// result behind.
+//
+// `results` is index-addressed and pre-sized, so a goroutine that returns without
+// writing its slot leaves `sceneResult{}` there. The consumer reads `err == nil` as
+// success and appends the empty models.Scene — a scene with no ID, title or URL enters
+// the store as if it had been scraped. There is no ID guard on that path, which is what
+// separates this package (and rawfuckclub) from the ~19 others with the same goroutine
+// shape but an `item.id == ""` check downstream.
+//
+// Two paths leave a slot unwritten: the delay select's cancel case, and the outer loop
+// breaking before it has launched every goroutine. An already-cancelled context
+// exercises the second deterministically.
+func TestFetchDetailsNeverLeavesZeroValueResults(t *testing.T) {
+	s := New()
+	slugs := []string{"a", "b", "c", "d", "e"}
+
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel() // cancelled before the first launch
+
+	results := s.fetchDetails(ctx, slugs, 0, 2)
+
+	if len(results) != len(slugs) {
+		t.Fatalf("got %d results, want %d", len(results), len(slugs))
+	}
+	for i, r := range results {
+		if r.err == nil && r.scene.ID == "" {
+			t.Errorf("result %d is a zero value: err is nil and Scene.ID is empty, so the "+
+				"consumer would append an empty scene to the store", i)
+		}
+	}
+}
