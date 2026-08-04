@@ -141,6 +141,14 @@ func (f *Flat) loadStudioFile(studioURL string) (*models.StudioFile, error) {
 	if err := json.Unmarshal(data, &sf); err != nil {
 		return nil, fmt.Errorf("parsing store: %w", err)
 	}
+	// Refuse a file from a newer FSS: Save is authoritative, so loading a
+	// partially-understood file would rewrite away whatever the newer layout added.
+	if sf.SchemaVersion > models.StoreSchemaVersion {
+		return nil, fmt.Errorf(
+			"%s was written with store schema v%d but this build understands up to v%d — upgrade fss",
+			path, sf.SchemaVersion, models.StoreSchemaVersion,
+		)
+	}
 	if sf.StudioURL != "" && sf.StudioURL != studioURL {
 		return nil, fmt.Errorf(
 			"slug collision: %s stores data for %q but %q was requested — rename or move one of the studio files",
@@ -191,10 +199,11 @@ func (f *Flat) Save(studioURL string, scenes []models.Scene) error {
 		return err
 	}
 	sf := models.StudioFile{
-		StudioURL:  studioURL,
-		ScrapedAt:  time.Now().UTC(),
-		SceneCount: len(scenes),
-		Scenes:     scenes,
+		SchemaVersion: models.StoreSchemaVersion,
+		StudioURL:     studioURL,
+		ScrapedAt:     time.Now().UTC(),
+		SceneCount:    len(scenes),
+		Scenes:        scenes,
 	}
 	if err := WriteJSON(sf, f.jsonPath(studioURL)); err != nil {
 		return err

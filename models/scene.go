@@ -24,12 +24,20 @@ func (p PriceSnapshot) Effective() float64 {
 	return p.Regular
 }
 
+// StoreSchemaVersion is the layout version stamped into every StudioFile FSS
+// writes, so a reader can refuse a file it does not understand. Bump it only
+// for changes that alter how an existing file must be interpreted, not for
+// additive optional fields. Version 0 means "written before versioning" and
+// loads normally. See docs/metadata.md.
+const StoreSchemaVersion = 1
+
 // StudioFile is the top-level JSON structure for a per-studio file.
 type StudioFile struct {
-	StudioURL  string    `json:"studioUrl"`
-	ScrapedAt  time.Time `json:"scrapedAt"`
-	SceneCount int       `json:"sceneCount"`
-	Scenes     []Scene   `json:"scenes"`
+	SchemaVersion int       `json:"schemaVersion"`
+	StudioURL     string    `json:"studioUrl"`
+	ScrapedAt     time.Time `json:"scrapedAt"`
+	SceneCount    int       `json:"sceneCount"`
+	Scenes        []Scene   `json:"scenes"`
 }
 
 // Scene holds all metadata for a single scraped scene. Fields vary by site —

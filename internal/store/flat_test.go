@@ -2,6 +2,7 @@ package store
 
 import (
 	"encoding/json"
+	"fmt"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -465,6 +466,79 @@ func TestFlatJSONStructure(t *testing.T) {
 	}
 	if sf.ScrapedAt.IsZero() {
 		t.Error("scrapedAt is zero")
+	}
+	if sf.SchemaVersion != models.StoreSchemaVersion {
+		t.Errorf("schemaVersion = %d, want %d", sf.SchemaVersion, models.StoreSchemaVersion)
+	}
+}
+
+// TestFlatLoadUnversionedFile covers files written before schemaVersion existed:
+// they decode as version 0 and must load normally.
+func TestFlatLoadUnversionedFile(t *testing.T) {
+	f := newTestFlat(t)
+	if err := os.MkdirAll(f.dir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	legacy := `{"studioUrl":"` + flatTestURL + `","sceneCount":1,"scenes":[` +
+		`{"id":"1","siteId":"test","title":"Old","url":"u","scrapedAt":"2020-01-01T00:00:00Z"}]}`
+	if err := os.WriteFile(f.jsonPath(flatTestURL), []byte(legacy), 0o600); err != nil {
+		t.Fatal(err)
+	}
+
+	scenes, err := f.Load(flatTestURL)
+	if err != nil {
+		t.Fatalf("unversioned file should load: %v", err)
+	}
+	if len(scenes) != 1 || scenes[0].Title != "Old" {
+		t.Fatalf("got %+v", scenes)
+	}
+
+	// A re-Save stamps the current version.
+	if err := f.Save(flatTestURL, scenes); err != nil {
+		t.Fatal(err)
+	}
+	data, err := os.ReadFile(f.jsonPath(flatTestURL))
+	if err != nil {
+		t.Fatal(err)
+	}
+	var sf models.StudioFile
+	if err := json.Unmarshal(data, &sf); err != nil {
+		t.Fatal(err)
+	}
+	if sf.SchemaVersion != models.StoreSchemaVersion {
+		t.Errorf("schemaVersion after re-save = %d, want %d", sf.SchemaVersion, models.StoreSchemaVersion)
+	}
+}
+
+// TestFlatRejectsNewerSchema pins the point of the version field: Save is
+// authoritative, so a file this build cannot fully parse must not be loaded and
+// rewritten.
+func TestFlatRejectsNewerSchema(t *testing.T) {
+	f := newTestFlat(t)
+	if err := os.MkdirAll(f.dir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	future := fmt.Sprintf(
+		`{"schemaVersion":%d,"studioUrl":%q,"sceneCount":0,"scenes":[]}`,
+		models.StoreSchemaVersion+1, flatTestURL)
+	path := f.jsonPath(flatTestURL)
+	if err := os.WriteFile(path, []byte(future), 0o600); err != nil {
+		t.Fatal(err)
+	}
+
+	if _, err := f.Load(flatTestURL); err == nil {
+		t.Fatal("expected Load to reject a newer schema version")
+	}
+	// Save must refuse too — it loads first for the collision check.
+	if err := f.Save(flatTestURL, testScenes(time.Now().UTC())); err == nil {
+		t.Fatal("expected Save to refuse overwriting a newer-schema file")
+	}
+	data, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if string(data) != future {
+		t.Error("newer-schema file was modified")
 	}
 }
 

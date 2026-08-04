@@ -656,10 +656,11 @@ func (s *SQLite) Export(format, path, studioURL string) error {
 	switch format {
 	case "json":
 		sf := models.StudioFile{
-			StudioURL:  studioURL,
-			ScrapedAt:  time.Now().UTC(),
-			SceneCount: len(scenes),
-			Scenes:     scenes,
+			SchemaVersion: models.StoreSchemaVersion,
+			StudioURL:     studioURL,
+			ScrapedAt:     time.Now().UTC(),
+			SceneCount:    len(scenes),
+			Scenes:        scenes,
 		}
 		return WriteJSON(sf, path)
 	case "csv":
