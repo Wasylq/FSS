@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"os"
 	"path/filepath"
+	"reflect"
 	"strings"
 	"testing"
 	"time"
@@ -1038,6 +1039,9 @@ func TestSQLiteMigration1(t *testing.T) {
 	if err := s.applyMigration2(); err != nil {
 		t.Fatalf("applyMigration2: %v", err)
 	}
+	if err := s.applyMigration3(); err != nil {
+		t.Fatalf("applyMigration3: %v", err)
+	}
 
 	// Verify junction table data via Load.
 	scenes, err := s.Load(testStudioURL)
@@ -1122,6 +1126,9 @@ func TestSQLiteMigration1NullJSON(t *testing.T) {
 	}
 	if err := s.applyMigration2(); err != nil {
 		t.Fatalf("applyMigration2: %v", err)
+	}
+	if err := s.applyMigration3(); err != nil {
+		t.Fatalf("applyMigration3: %v", err)
 	}
 
 	scenes, err := s.Load(testStudioURL)
@@ -1384,4 +1391,155 @@ func TestLoadToleratesNullColumns(t *testing.T) {
 	if sc.Description != "" || sc.Duration != 0 || sc.LowestPrice != 0 {
 		t.Errorf("NULLs should read as zero values, got %+v", sc)
 	}
+}
+
+// D2: tag and category order must survive a Save→Load round-trip.
+//
+// Before migration 3 the junction tables had no position column and loadRelation
+// issued no ORDER BY at all, so the order was whatever the join happened to produce.
+// That is unspecified in SQLite and moves with the query planner — an ANALYZE, a new
+// index, or a library upgrade is enough. Scrapers emit tags in the site's own order and
+// it flows through to Stash and NFO output, so a reshuffle is a silent metadata
+// regression nobody would trace back to a SQLite version bump.
+//
+// The order chosen here is deliberately not alphabetical, so a fallback to name ordering
+// fails this too.
+func TestSQLiteTagAndCategoryOrderPreserved(t *testing.T) {
+	s := newTestDB(t)
+	now := time.Now().UTC().Truncate(time.Second)
+
+	// Scene 1 mints the tag/category rows, so their AUTOINCREMENT ids follow this
+	// order. Scene 2 then uses the same names in a *different* order — that is what
+	// makes the test discriminating: joining on tag_id yields scene 1's order, so a
+	// missing ORDER BY returns the wrong list for scene 2. A single-scene test passes
+	// either way, because the join happens to come back in insertion order.
+	tags := []string{"zebra", "alpha", "Mango", "beta", "9lives"}
+	cats := []string{"Solo", "anal", "BDSM", "amateur"}
+	reTags := []string{"beta", "9lives", "zebra", "Mango", "alpha"}
+	reCats := []string{"amateur", "BDSM", "Solo", "anal"}
+
+	if err := s.Save(testStudioURL, []models.Scene{
+		{
+			ID: "1", SiteID: "manyvids", StudioURL: testStudioURL,
+			Title: "T1", URL: "https://example.com/1", ScrapedAt: now,
+			Tags: tags, Categories: cats,
+		},
+		{
+			ID: "2", SiteID: "manyvids", StudioURL: testStudioURL,
+			Title: "T2", URL: "https://example.com/2", ScrapedAt: now,
+			Tags: reTags, Categories: reCats,
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+
+	got, err := s.Load(testStudioURL)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(got) != 2 {
+		t.Fatalf("got %d scenes, want 2", len(got))
+	}
+	byID := map[string]models.Scene{}
+	for _, sc := range got {
+		byID[sc.ID] = sc
+	}
+	if !reflect.DeepEqual(byID["1"].Tags, tags) {
+		t.Errorf("scene 1 Tags = %v, want %v", byID["1"].Tags, tags)
+	}
+	if !reflect.DeepEqual(byID["1"].Categories, cats) {
+		t.Errorf("scene 1 Categories = %v, want %v", byID["1"].Categories, cats)
+	}
+	if !reflect.DeepEqual(byID["2"].Tags, reTags) {
+		t.Errorf("scene 2 Tags = %v, want %v — this is the order that differs from "+
+			"tag_id order, so a missing ORDER BY shows up here", byID["2"].Tags, reTags)
+	}
+	if !reflect.DeepEqual(byID["2"].Categories, reCats) {
+		t.Errorf("scene 2 Categories = %v, want %v", byID["2"].Categories, reCats)
+	}
+}
+
+// Re-saving with a reordered list must persist the new order, not keep the first one —
+// the position column is rewritten, not just populated on insert.
+func TestSQLiteTagOrderUpdatedOnResave(t *testing.T) {
+	s := newTestDB(t)
+	now := time.Now().UTC().Truncate(time.Second)
+	base := models.Scene{
+		ID: "1", SiteID: "manyvids", StudioURL: testStudioURL,
+		Title: "T", URL: "https://example.com/1", ScrapedAt: now,
+	}
+
+	first := []string{"one", "two", "three"}
+	base.Tags = first
+	if err := s.Save(testStudioURL, []models.Scene{base}); err != nil {
+		t.Fatal(err)
+	}
+
+	reordered := []string{"three", "one", "two"}
+	base.Tags = reordered
+	if err := s.Save(testStudioURL, []models.Scene{base}); err != nil {
+		t.Fatal(err)
+	}
+
+	got, err := s.Load(testStudioURL)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !reflect.DeepEqual(got[0].Tags, reordered) {
+		t.Errorf("Tags = %v, want %v — a re-save must rewrite positions", got[0].Tags, reordered)
+	}
+}
+
+// Every upgrade path must end at a schema Load can read: fresh, v0, and a database
+// already at v2. Migration 3 is an ALTER TABLE, so a path that creates the column twice
+// would fail with "duplicate column name" — which is why migrations 1 and 2 were left in
+// their historical form rather than edited to include it.
+func TestSQLiteMigration3AllUpgradePaths(t *testing.T) {
+	now := time.Now().UTC().Truncate(time.Second)
+	scene := models.Scene{
+		ID: "1", SiteID: "manyvids", StudioURL: testStudioURL,
+		Title: "T", URL: "https://example.com/1", ScrapedAt: now,
+		Tags: []string{"z", "a"}, Categories: []string{"y", "b"},
+	}
+
+	t.Run("fresh database", func(t *testing.T) {
+		s := newTestDB(t)
+		if err := s.Save(testStudioURL, []models.Scene{scene}); err != nil {
+			t.Fatal(err)
+		}
+		got, err := s.Load(testStudioURL)
+		if err != nil {
+			t.Fatalf("Load on a fresh database: %v", err)
+		}
+		if !reflect.DeepEqual(got[0].Tags, scene.Tags) {
+			t.Errorf("Tags = %v, want %v", got[0].Tags, scene.Tags)
+		}
+	})
+
+	t.Run("v0 upgraded through every migration", func(t *testing.T) {
+		s := newV0DB(t)
+		if err := s.migrate(); err != nil {
+			t.Fatalf("full migrate from v0: %v", err)
+		}
+		if err := s.Save(testStudioURL, []models.Scene{scene}); err != nil {
+			t.Fatal(err)
+		}
+		got, err := s.Load(testStudioURL)
+		if err != nil {
+			t.Fatalf("Load after upgrading from v0: %v", err)
+		}
+		if !reflect.DeepEqual(got[0].Tags, scene.Tags) {
+			t.Errorf("Tags = %v, want %v", got[0].Tags, scene.Tags)
+		}
+	})
+
+	t.Run("migrate is idempotent", func(t *testing.T) {
+		s := newTestDB(t)
+		if err := s.migrate(); err != nil {
+			t.Fatalf("second migrate: %v", err)
+		}
+		if err := s.migrate(); err != nil {
+			t.Fatalf("third migrate: %v — ALTER TABLE ran twice", err)
+		}
+	})
 }

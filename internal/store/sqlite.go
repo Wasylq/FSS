@@ -307,7 +307,49 @@ func (s *SQLite) migrate() error {
 			return fmt.Errorf("migration 2: %w", err)
 		}
 	}
+	if version < 3 {
+		if err := s.applyMigration3(); err != nil {
+			return fmt.Errorf("migration 3: %w", err)
+		}
+	}
 	return nil
+}
+
+// migration3 gives the tag and category junction tables the `position` column
+// that scene_performers already had.
+//
+// Without it, Load's tag/category order was whatever order the join happened to
+// return — the query had no ORDER BY at all. That is unspecified in SQLite and
+// can change when the query planner does: an ANALYZE, a new index, or a library
+// upgrade is enough to reorder them. Scrapers emit tags in a meaningful order
+// (the site's own), and it reaches Stash and NFO output, so a silent reshuffle
+// is a metadata regression nobody would connect to a SQLite version bump.
+//
+// Existing rows are backfilled to position 0. Their original order is not
+// recoverable — it was never recorded — so they keep the join order they have
+// now until the next scrape of that studio rewrites them with real positions.
+const migration3 = `
+ALTER TABLE scene_tags ADD COLUMN position INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE scene_categories ADD COLUMN position INTEGER NOT NULL DEFAULT 0;
+`
+
+func (s *SQLite) applyMigration3() error {
+	tx, err := s.db.Begin()
+	if err != nil {
+		return err
+	}
+	defer func() { _ = tx.Rollback() }()
+
+	if _, err := tx.Exec(migration3); err != nil {
+		return err
+	}
+	if _, err := tx.Exec(`DELETE FROM schema_version`); err != nil {
+		return err
+	}
+	if _, err := tx.Exec(`INSERT INTO schema_version (version) VALUES (3)`); err != nil {
+		return err
+	}
+	return tx.Commit()
 }
 
 // applyMigration2 rebuilds the scene tables with studio_url-qualified keys.
@@ -451,10 +493,10 @@ func (s *SQLite) Load(studioURL string) ([]models.Scene, error) {
 	if err := s.loadRelation(studioURL, "scene_performers", "performers", "performer_id", "position", scenes); err != nil {
 		return nil, err
 	}
-	if err := s.loadRelation(studioURL, "scene_tags", "tags", "tag_id", "", scenes); err != nil {
+	if err := s.loadRelation(studioURL, "scene_tags", "tags", "tag_id", "position", scenes); err != nil {
 		return nil, err
 	}
-	if err := s.loadRelation(studioURL, "scene_categories", "categories", "category_id", "", scenes); err != nil {
+	if err := s.loadRelation(studioURL, "scene_categories", "categories", "category_id", "position", scenes); err != nil {
 		return nil, err
 	}
 	if err := s.loadPriceHistory(studioURL, scenes); err != nil {
@@ -682,10 +724,10 @@ func upsertScene(tx *sql.Tx, sc models.Scene) error {
 	if err := syncRelation(tx, "performers", "scene_performers", "performer_id", sc.ID, sc.SiteID, sc.StudioURL, sc.Performers, true); err != nil {
 		return fmt.Errorf("upserting performers for %s: %w", sc.ID, err)
 	}
-	if err := syncRelation(tx, "tags", "scene_tags", "tag_id", sc.ID, sc.SiteID, sc.StudioURL, sc.Tags, false); err != nil {
+	if err := syncRelation(tx, "tags", "scene_tags", "tag_id", sc.ID, sc.SiteID, sc.StudioURL, sc.Tags, true); err != nil {
 		return fmt.Errorf("upserting tags for %s: %w", sc.ID, err)
 	}
-	if err := syncRelation(tx, "categories", "scene_categories", "category_id", sc.ID, sc.SiteID, sc.StudioURL, sc.Categories, false); err != nil {
+	if err := syncRelation(tx, "categories", "scene_categories", "category_id", sc.ID, sc.SiteID, sc.StudioURL, sc.Categories, true); err != nil {
 		return fmt.Errorf("upserting categories for %s: %w", sc.ID, err)
 	}
 
