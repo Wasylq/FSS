@@ -306,3 +306,49 @@ func TestThumbnailFallbacks(t *testing.T) {
 		}
 	}
 }
+
+// N5 / NL5: both the apex and www forms of every configured host must match, and the
+// host must be terminated.
+//
+// The www half is a coverage bug with no error message pointing at it: `fss scrape
+// https://www.blakemason.com` answered "no scraper matches URL", so a site FSS fully
+// supports looked uncovered — and www is the form browsers and StashDB display.
+//
+// The termination half is the more dangerous one. Without a trailing `(?:/|$)` the
+// pattern is a prefix match, so `https://blakemason.com.evil.org/` claims this scraper.
+// scraper.ForURL returns the first match, so a look-alike host silently routes a scrape
+// into the wrong scraper's parser.
+func TestMatchesURLAcceptsWWWAndTerminatesHost(t *testing.T) {
+	for _, cfg := range sites {
+		s := newScraper(cfg)
+		host := strings.TrimPrefix(strings.TrimPrefix(cfg.Base, "https://"), "http://")
+
+		// Brands hosted under {hub}/sites/{slug} are scoped to their path, so the
+		// bare host is deliberately not theirs — skip those here.
+		if strings.HasPrefix(cfg.ListPath, "sites/") {
+			continue
+		}
+
+		for _, u := range []string{
+			"https://" + host,
+			"https://" + host + "/",
+			"https://www." + host + "/",
+			"http://" + host + "/",
+		} {
+			if !s.MatchesURL(u) {
+				t.Errorf("%s: MatchesURL(%q) = false, want true", cfg.SiteID, u)
+			}
+		}
+
+		for _, u := range []string{
+			"https://" + host + ".evil.org/",
+			"https://" + host + "evil.org/",
+			"https://not-" + host + "/",
+		} {
+			if s.MatchesURL(u) {
+				t.Errorf("%s: MatchesURL(%q) = true — the host is not terminated, so a "+
+					"look-alike domain routes into this scraper", cfg.SiteID, u)
+			}
+		}
+	}
+}

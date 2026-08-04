@@ -94,6 +94,41 @@ type sceneItem struct {
 	description string
 }
 
+// cardEnd returns the offset just past the card container opening at `start`, by
+// matching <div>/</div> nesting depth. `limit` is the start of the next card, or the
+// end of the page for the last one.
+//
+// Without this the last card's block ran to len(page), swallowing the footer and
+// sidebar. Any `class="comingsoon"` promo element anywhere outside the grid then made
+// the Coming-Soon check fire on the block remainder and silently drop the last real
+// scene of *every* listing page — a steady 1-in-N loss that `--full` turns into a
+// hard delete.
+//
+// Falls back to `limit` if the markup is unbalanced, which is the previous behaviour:
+// a parse that cannot find the container end should not start dropping cards.
+func cardEnd(page string, start, limit int) int {
+	depth := 0
+	i := start
+	for i < limit {
+		open := strings.Index(page[i:limit], "<div")
+		closeIdx := strings.Index(page[i:limit], "</div>")
+		switch {
+		case closeIdx < 0:
+			return limit
+		case open >= 0 && open < closeIdx:
+			depth++
+			i += open + len("<div")
+		default:
+			depth--
+			i += closeIdx + len("</div>")
+			if depth == 0 {
+				return i
+			}
+		}
+	}
+	return limit
+}
+
 func parseListingPage(body []byte) []sceneItem {
 	page := string(body)
 	starts := cardRe.FindAllStringIndex(page, -1)
@@ -101,11 +136,11 @@ func parseListingPage(body []byte) []sceneItem {
 
 	for i, loc := range starts {
 		start := loc[0]
-		end := len(page)
+		limit := len(page)
 		if i+1 < len(starts) {
-			end = starts[i+1][0]
+			limit = starts[i+1][0]
 		}
-		block := page[start:end]
+		block := page[start:cardEnd(page, start, limit)]
 
 		// Unreleased scenes are rendered as a "Coming Soon!" card with a
 		// countdown and no trailer link, so they have no title and no URL.

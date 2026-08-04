@@ -90,7 +90,11 @@ var _ scraper.StudioScraper = (*Scraper)(nil)
 func newScraper(cfg siteConfig) *Scraper {
 	host := strings.TrimPrefix(cfg.Base, "https://")
 	host = strings.TrimPrefix(host, "http://")
-	pattern := `^https?://` + strings.ReplaceAll(host, ".", `\.`)
+	// `(?:www\.)?` because the apex-domain entries (dirtyauditions, alterotic,
+	// blakemason) are commonly written with www — that is the form browsers and
+	// StashDB show — and without it `fss scrape https://www.blakemason.com`
+	// reports "no scraper matches URL" and the site looks uncovered.
+	pattern := `^https?://(?:www\.)?` + strings.ReplaceAll(host, ".", `\.`)
 
 	// Brands with no domain of their own live at {hub}/sites/{domain}, so
 	// several configs share one Base. Matching on the host alone would make
@@ -99,6 +103,10 @@ func newScraper(cfg siteConfig) *Scraper {
 	// own path instead; the hub root deliberately matches no scraper.
 	if strings.HasPrefix(cfg.ListPath, "sites/") {
 		pattern += `/` + strings.ReplaceAll(cfg.ListPath, ".", `\.`) + `(?:/|$)`
+	} else {
+		// Terminate the host, or the pattern is a prefix match and
+		// `https://blakemason.com.evil.org/…` claims this scraper.
+		pattern += `(?:/|$)`
 	}
 
 	return &Scraper{

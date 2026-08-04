@@ -405,3 +405,79 @@ func TestParseListingSkipsComingSoon(t *testing.T) {
 		t.Errorf("released scene lost its title/url: %+v", items[0])
 	}
 }
+
+// N8 / NL4: a `comingsoon` element in the page footer must not drop the last real card.
+//
+// Card blocks used to run to the end of the page for the final card, so the last
+// block swallowed the footer and sidebar. Any Coming-Soon promo outside the grid then
+// matched, and the last genuine scene of *every* listing page was skipped — a steady
+// 1-in-N loss with no error, which `--full` converts into a hard delete of those scenes
+// and their price history.
+func TestParseListingKeepsLastCardDespiteFooterComingSoon(t *testing.T) {
+	body := []byte(`
+<div class="sexyvideo">
+  <div class="videoblock">
+    <div class="modelname"><a href="/tour/models/A.html"><span class="text-center">Model A</span></a></div>
+    <img id="set-target-11111" class="mainThumb thumbs stdimage" src="/tour/content/a-1x.jpg" />
+    <h4><a href="https://www.groobygirls.com/tour/trailers/First-Scene.html" title="First Scene">x</a></h4>
+  </div>
+</div>
+<div class="sexyvideo">
+  <div class="videoblock">
+    <div class="modelname"><a href="/tour/models/B.html"><span class="text-center">Model B</span></a></div>
+    <img id="set-target-22222" class="mainThumb thumbs stdimage" src="/tour/content/b-1x.jpg" />
+    <h4><a href="https://www.groobygirls.com/tour/trailers/Last-Scene.html" title="Last Scene">x</a></h4>
+  </div>
+</div>
+<footer>
+  <div class="sidebar">
+    <div class="comingsoon" style="text-align: center;">Coming Soon!<br>
+      <div class="countdown" data-end="1784714400"></div>
+    </div>
+  </div>
+</footer>`)
+
+	items := parseListingPage(body)
+	if len(items) != 2 {
+		t.Fatalf("got %d items, want 2 — the footer's comingsoon element must not "+
+			"reach the last card's block", len(items))
+	}
+	if items[1].id != "22222" {
+		t.Errorf("last item id = %q, want 22222", items[1].id)
+	}
+	if items[1].url == "" || items[1].title == "" {
+		t.Errorf("last item is incomplete: %+v", items[1])
+	}
+}
+
+// The genuine case must still be skipped: a Coming-Soon card that is itself the last
+// card on the page.
+func TestParseListingStillSkipsTrailingComingSoonCard(t *testing.T) {
+	body := []byte(`
+<div class="sexyvideo">
+  <div class="videoblock">
+    <div class="modelname"><a href="/tour/models/A.html"><span class="text-center">Model A</span></a></div>
+    <img id="set-target-11111" class="mainThumb thumbs stdimage" src="/tour/content/a-1x.jpg" />
+    <h4><a href="https://www.groobygirls.com/tour/trailers/Real.html" title="Real">x</a></h4>
+  </div>
+</div>
+<div class="sexyvideo">
+  <div class="videoblock">
+    <div class="modelname"><a href="/tour/models/B.html"><span class="text-center">Model B</span></a></div>
+    <div class="epochtime">
+      <img id="set-target-22222" class="mainThumb thumbs stdimage" src="/tour/content/b-1x.jpg" />
+    </div>
+    <div class="comingsoon" style="text-align: center;">Coming Soon!<br>
+      <div class="countdown" data-end="1784714400"></div>
+    </div>
+  </div>
+</div>`)
+
+	items := parseListingPage(body)
+	if len(items) != 1 {
+		t.Fatalf("got %d items, want 1 — a trailing Coming Soon *card* must still be skipped", len(items))
+	}
+	if items[0].id != "11111" {
+		t.Errorf("kept item id = %q, want 11111", items[0].id)
+	}
+}
