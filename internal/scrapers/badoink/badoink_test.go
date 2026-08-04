@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/Wasylq/FSS/scraper"
 )
@@ -247,6 +248,50 @@ func TestAllSitesRegistered(t *testing.T) {
 		}
 		if len(s.Patterns()) == 0 {
 			t.Errorf("%s has no patterns", cfg.SiteID)
+		}
+	}
+}
+
+// The zero-value-slot contract, pinned.
+//
+// fetchDetails writes into a pre-sized []models.Scene indexed by position, and a
+// goroutine cancelled before it finishes deliberately leaves its slot untouched. The
+// zero value has an empty ID, and the consumer skips those — that filter is the *only*
+// thing stopping a cancelled fetch from emitting a scene with no title or URL.
+//
+// This is easy to break in either direction, which is why it is pinned rather than left
+// to a comment:
+//   - remove the `ID == ""` skip and every cancelled fetch emits an empty scene;
+//   - "fix" the cancel path by writing a populated stub and the same thing happens.
+//
+// 20 other packages share this exact shape, so the contract is worth stating once
+// against a representative of it.
+func TestCancelledDetailFetchContributesNoScene(t *testing.T) {
+	release := make(chan struct{})
+	defer close(release)
+
+	s, ts := newTestScraper(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if strings.Contains(r.URL.Path, "vrpornvideo/") {
+			<-release // park every detail fetch
+			return
+		}
+		w.Header().Set("Content-Type", "text/html")
+	}))
+	_ = ts
+
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel() // cancelled before any goroutine runs
+
+	items := []listItem{{id: "a", url: "/vrpornvideo/a"}, {id: "b", url: "/vrpornvideo/b"}}
+	got := s.fetchDetails(ctx, items, scraper.ListOpts{Workers: 2}, time.Now().UTC())
+
+	// fetchDetails filters the zero-value slots itself, so a fully cancelled run
+	// yields nothing at all rather than a set of hollow scenes.
+	if len(got) != 0 {
+		for _, sc := range got {
+			t.Errorf("cancelled fetch produced a scene: id=%q title=%q url=%q — a slot "+
+				"left unwritten by a cancelled goroutine must not become an emittable "+
+				"scene", sc.ID, sc.Title, sc.URL)
 		}
 	}
 }

@@ -264,6 +264,10 @@ func (s *Scraper) fidelityScenes(ctx context.Context, items []fidelityItem, opts
 				select {
 				case <-time.After(opts.Delay):
 				case <-ctx.Done():
+					// Leaving results[idx] unwritten is deliberate: the zero value has an
+					// empty ID and the consumer below skips those, so a cancelled fetch
+					// contributes no scene. Do not "fix" this by writing a stub here —
+					// a populated slot is emitted as a real scene with no title or URL.
 					return
 				}
 			}
@@ -528,6 +532,10 @@ func (s *Scraper) fetchUltraScenes(ctx context.Context, items []ultraItem, opts 
 				select {
 				case <-time.After(opts.Delay):
 				case <-ctx.Done():
+					// Leaving results[idx] unwritten is deliberate: the zero value has an
+					// empty ID and the consumer below skips those, so a cancelled fetch
+					// contributes no scene. Do not "fix" this by writing a stub here —
+					// a populated slot is emitted as a real scene with no title or URL.
 					return
 				}
 			}
