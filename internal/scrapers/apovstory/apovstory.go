@@ -160,7 +160,11 @@ func (s *Scraper) produceListing(ctx context.Context, _ string, opts scraper.Lis
 			select {
 			case <-time.After(opts.Delay):
 			case <-ctx.Done():
-				break
+				// `return`, not `break`: break leaves the select, not the for
+				// loop, so a cancellation during the delay fell through and
+				// fetched the page anyway — producing a spurious
+				// "page N: context canceled" error on every cancelled scrape.
+				return
 			}
 		}
 		scraper.Debugf(1, "apovstory: fetching page %d", page)
@@ -182,7 +186,7 @@ func (s *Scraper) produceListing(ctx context.Context, _ string, opts scraper.Lis
 			select {
 			case out <- scraper.Progress(estimateTotal(len(entries))):
 			case <-ctx.Done():
-				break
+				return
 			}
 		}
 

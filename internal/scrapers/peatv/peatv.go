@@ -135,14 +135,30 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 
 		if page == 1 && total > 0 {
 			scraper.Debugf(1, "peatv: %d total items", total)
+			// A bare `break` here would leave the select, not the for loop, so a
+			// cancellation fell through and kept paging. It cannot `return`
+			// either: close(work) and wg.Wait() follow this loop, and skipping
+			// them blocks the workers forever and then panics them on the
+			// closed out channel. Flag it and break the loop properly.
+			sent := false
 			select {
 			case out <- scraper.Progress(total):
+				sent = true
 			case <-ctx.Done():
+			}
+			if !sent {
 				break
 			}
 		}
 
+		// `cancelled` is tracked separately from `hitKnown`. Folding the two
+		// together made a cancelled scrape emit StoppedEarly, which tells the
+		// consumer the opposite of what happened: StoppedEarly means "an
+		// incremental run reached already-known scenes, so this result is
+		// complete", and the cmd layer treats it as a successful run rather than
+		// an interrupted one.
 		hitKnown := false
+		cancelled := false
 		for _, item := range items {
 			if opts.KnownIDs[item.code] {
 				scraper.Debugf(1, "peatv: hit known ID %s, stopping early", item.code)
@@ -152,11 +168,15 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 			select {
 			case work <- item:
 			case <-ctx.Done():
-				hitKnown = true
+				cancelled = true
 			}
-			if ctx.Err() != nil {
+			if cancelled || ctx.Err() != nil {
+				cancelled = true
 				break
 			}
+		}
+		if cancelled {
+			break
 		}
 		if hitKnown {
 			if opts.KnownIDs != nil {

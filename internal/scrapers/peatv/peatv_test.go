@@ -245,3 +245,85 @@ func TestListScenesEndToEnd(t *testing.T) {
 		}
 	}
 }
+
+// H-misc / peatv:152: a cancelled scrape must not report StoppedEarly.
+//
+// StoppedEarly means something specific — "an incremental run reached scenes it already
+// had, so this result is complete" — and the cmd layer treats it as a successful run.
+// Folding cancellation into the same `hitKnown` flag made an interrupted scrape claim to
+// be a finished one.
+//
+// Forcing the producer to actually block is the whole difficulty. `work` is buffered to
+// Workers, so with a fast detail handler the producer never reaches the `case
+// <-ctx.Done()` branch and the test passes against the bug. Here the single worker is
+// parked inside a detail fetch, the buffer fills, and the producer is provably blocked on
+// `work <- item` at the moment of cancellation.
+//
+// It also guards the correction to a first fix attempt of mine: `close(work)` and
+// `wg.Wait()` follow the paging loop, so bailing out with `return` instead of `break`
+// leaves the workers blocked forever and then panics them on the closed out channel.
+// Draining with a deadline is what catches that.
+func TestCancelledScrapeDoesNotReportStoppedEarly(t *testing.T) {
+	release := make(chan struct{})
+	detailHit := make(chan struct{}, 1)
+
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/html")
+		if strings.HasPrefix(r.URL.Path, "/search.php") {
+			// Never runs out of pages: only the context may end this walk.
+			_, _ = fmt.Fprint(w, fixtureListing)
+			return
+		}
+		select {
+		case detailHit <- struct{}{}:
+		default:
+		}
+		<-release // park the worker so the producer fills the buffer and blocks
+		_, _ = fmt.Fprint(w, fixtureDetail)
+	}))
+	defer ts.Close()
+	defer close(release)
+
+	s := New()
+	s.client = ts.Client()
+	s.base = ts.URL
+
+	ctx, cancel := context.WithCancel(context.Background())
+	ch, err := s.ListScenes(ctx, ts.URL, scraper.ListOpts{KnownIDs: map[string]bool{}, Workers: 1})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	var stoppedEarly atomic.Int32
+	drained := make(chan struct{})
+	go func() {
+		defer close(drained)
+		for r := range ch {
+			if r.Kind == scraper.KindStoppedEarly {
+				stoppedEarly.Add(1)
+			}
+		}
+	}()
+
+	// Wait until a worker is parked in a detail fetch; the producer is then
+	// filling the buffer and will block on the next send.
+	select {
+	case <-detailHit:
+	case <-time.After(10 * time.Second):
+		t.Fatal("no detail fetch within 10s; the walk never reached the worker")
+	}
+	time.Sleep(200 * time.Millisecond) // let the producer reach its blocked send
+	cancel()
+
+	select {
+	case <-drained:
+	case <-time.After(15 * time.Second):
+		t.Fatal("channel still open 15s after cancellation — the producer skipped " +
+			"close(work)/wg.Wait() and the workers are blocked")
+	}
+
+	if n := stoppedEarly.Load(); n > 0 {
+		t.Errorf("cancelled scrape emitted %d StoppedEarly result(s); that tells the "+
+			"caller the run finished normally", n)
+	}
+}
