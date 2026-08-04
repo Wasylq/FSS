@@ -1,6 +1,9 @@
 package parseutil
 
-import "testing"
+import (
+	"strings"
+	"testing"
+)
 
 func FuzzParseDurationColon(f *testing.F) {
 	f.Add("12:34")
@@ -26,11 +29,26 @@ func FuzzParseDurationISO(f *testing.F) {
 	f.Add("null")
 	f.Add("garbage")
 	f.Add("PT999H999M999S")
+	// Regression: lowercase literals lost the whole duration (see
+	// TestParseDurationISOIsCaseInsensitive).
+	f.Add("pt1h2m3s")
+	f.Add("pt45s")
 
 	f.Fuzz(func(t *testing.T, s string) {
 		n := ParseDurationISO(s)
 		if n < 0 {
 			t.Errorf("ParseDurationISO(%q) = %d, must be non-negative", s, n)
+		}
+
+		// Case-insensitivity as a property rather than a handful of seeds.
+		// Non-negativity alone could not catch the bug this guards: lowercase
+		// input returned 0, which is still non-negative, so the target ran
+		// millions of executions over a defect it was structurally unable to
+		// see. Comparing against the uppercased spelling makes every random
+		// input a test of the same invariant.
+		if up := ParseDurationISO(strings.ToUpper(s)); up != n {
+			t.Errorf("ParseDurationISO(%q) = %d but ParseDurationISO(%q) = %d; "+
+				"the ISO literals must be case-insensitive", s, n, strings.ToUpper(s), up)
 		}
 	})
 }

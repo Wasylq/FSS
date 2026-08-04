@@ -30,14 +30,24 @@ func ParseDurationColon(s string) int {
 }
 
 // ParseDurationISO parses ISO 8601 durations like "PT1H2M3S" and returns the
-// total seconds. Returns 0 for empty or unparseable input.
+// total seconds. Input case is ignored. Returns 0 for empty or unparseable input.
+//
+// Only the time components (H/M/S) are understood. A duration carrying a date
+// part ("P1DT2H") is not supported and yields a partial result — no FSS scraper
+// has been seen to emit one, and guessing at day arithmetic would turn a visibly
+// wrong number into a plausibly wrong one.
 func ParseDurationISO(s string) int {
 	s = strings.TrimSpace(s)
 	if s == "" || s == "null" {
 		return 0
 	}
-	s = strings.TrimPrefix(s, "PT")
+	// Uppercase *before* trimming the prefix. The other order silently mangles
+	// any lowercase input: "pt45s" failed the TrimPrefix, became "PT45S", and the
+	// seconds parse then read "PT45" and returned 0 — the whole duration lost,
+	// not merely the hours. Feeds are inconsistent about the case of these
+	// literals, and a zero duration is not validated anywhere downstream.
 	s = strings.ToUpper(s)
+	s = strings.TrimPrefix(s, "PT")
 
 	var total int
 	if i := strings.Index(s, "H"); i >= 0 {
