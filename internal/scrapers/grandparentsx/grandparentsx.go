@@ -166,7 +166,12 @@ func (item sceneItem) toScene(studioURL string) models.Scene {
 	}
 
 	if item.date != "" {
-		if t, err := time.Parse("January 02, 2006", item.date); err == nil {
+		// "2" rather than "02": Go's padded-day verb rejects an unpadded day, and
+		// the site writes "March 9, 2026" for the first nine days of every month.
+		// A third of the catalogue therefore parsed to a zero Date — which nothing
+		// downstream validates, so it stored silently. The unpadded verb accepts
+		// both spellings.
+		if t, err := time.Parse("January 2, 2006", item.date); err == nil {
 			scene.Date = t.UTC()
 		}
 	}

@@ -230,3 +230,39 @@ func TestListScenesKnownIDs(t *testing.T) {
 		t.Errorf("got %d stopped, want 1", stopped)
 	}
 }
+
+// H-dates: the site writes an unpadded day for the 1st-9th of each month
+// ("March 9, 2026"), and Go's "02" verb rejects that — so roughly a third of every
+// month's scenes parsed to a zero Date. Nothing downstream validates Date, so the loss
+// was silent. "2" accepts both spellings.
+func TestToSceneParsesPaddedAndUnpaddedDays(t *testing.T) {
+	cases := []struct {
+		in        string
+		wantYear  int
+		wantMonth time.Month
+		wantDay   int
+	}{
+		{"March 9, 2026", 2026, time.March, 9},
+		{"March 09, 2026", 2026, time.March, 9},
+		{"January 1, 2026", 2026, time.January, 1},
+		{"December 25, 2025", 2025, time.December, 25},
+	}
+	for _, c := range cases {
+		item := sceneItem{
+			id:       "1",
+			title:    "T",
+			sceneURL: "https://grandparentsx.com/scene/1",
+			date:     c.in,
+		}
+		sc := item.toScene("https://grandparentsx.com")
+		if sc.Date.IsZero() {
+			t.Errorf("date %q parsed to zero", c.in)
+			continue
+		}
+		y, m, d := sc.Date.Date()
+		if y != c.wantYear || m != c.wantMonth || d != c.wantDay {
+			t.Errorf("date %q parsed as %d-%02d-%02d, want %d-%02d-%02d",
+				c.in, y, m, d, c.wantYear, c.wantMonth, c.wantDay)
+		}
+	}
+}
