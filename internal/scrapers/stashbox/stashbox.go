@@ -299,6 +299,9 @@ func toScene(studioURL string, inst instance, gs gqlScene) models.Scene {
 		StudioURL: studioURL,
 		URL:       inst.baseURL + "/scenes/" + gs.ID,
 		ScrapedAt: time.Now().UTC(),
+		// The scene ID is this stashbox's UUID, which is what makes it
+		// matchable against scenes scraped from the sites themselves.
+		ExternalIDs: map[string]string{inst.siteID: gs.ID},
 	}
 
 	if gs.Title != nil {

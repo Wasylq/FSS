@@ -58,6 +58,45 @@ a measurement.
 
 `firstSeenAt` is also a CSV column, placed before `scrapedAt`.
 
+## Cross-site identity
+
+`(id, siteId)` is site-local: the same scene scraped from two sites has two
+unrelated keys, so matching them falls back to normalising titles. `externalIds`
+carries the IDs that *are* shared — a map from metadata database to this scene's
+ID in it:
+
+```json
+"externalIds": { "stashdb": "0ec8a4bd-…", "tpdb": "…" }
+```
+
+Well-known keys are `models.ExternalStashDB`, `ExternalTPDB`, `ExternalIAFD`,
+`ExternalIndexxx`. A stashbox instance uses its own site ID, so a second
+configured instance (`pmvstash`) contributes its own key.
+
+The stashbox scraper populates its instance's key from the scene UUID it already
+returns. Other scrapers should set a key only when the site genuinely publishes
+one — a guess is worse than an absent entry.
+
+SQLite stores these in `scene_external_ids`, indexed on `(source, external_id)`
+so "which stored scenes are this StashDB UUID" is answerable across every site
+and studio.
+
+## Compatibility
+
+Changes to the metadata layout are additive. Concretely:
+
+- **Old files, new binary** — a missing `schemaVersion` reads as 0 and loads;
+  `first_seen_at` is backfilled by SQLite migration 4 and on the next save for
+  the flat store.
+- **New files, old binary** — JSON decoding ignores unknown keys, and both the
+  SQLite `SELECT` and `INSERT` name their columns explicitly, so an older build
+  opens a migrated database without error. It will not *populate* the new
+  fields, and because `Save` is authoritative, an old build that rewrites a new
+  studio file drops them. The `schemaVersion` guard prevents this from v2
+  onward; it cannot retroactively teach older builds to refuse.
+- **CSV** — new columns are appended, never inserted, so positional readers keep
+  working. `firstSeenAt` and `externalIds` are the last two columns.
+
 ## Scraping multiple studios
 
 Studios never overwrite each other:

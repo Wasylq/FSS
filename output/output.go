@@ -39,7 +39,10 @@ var CSVHeaders = []string{
 	"duration", "resolution", "width", "height", "format",
 	"views", "likes", "comments",
 	"lowestPrice", "lowestPriceDate", "priceHistory",
-	"firstSeenAt", "scrapedAt", "deletedAt",
+	"scrapedAt", "deletedAt",
+	// New columns are appended, never inserted: readers that index by position
+	// keep working.
+	"firstSeenAt", "externalIds",
 }
 
 // WriteCSV writes scenes as CSV with a header row, using atomic file replacement.
@@ -250,6 +253,14 @@ func sceneToRow(s models.Scene) ([]string, error) {
 	if err != nil {
 		return nil, fmt.Errorf("marshalling price history: %w", err)
 	}
+	extIDs := ""
+	if len(s.ExternalIDs) > 0 {
+		b, err := json.Marshal(s.ExternalIDs)
+		if err != nil {
+			return nil, fmt.Errorf("marshalling external IDs: %w", err)
+		}
+		extIDs = string(b)
+	}
 	return []string{
 		s.ID,
 		s.SiteID,
@@ -278,9 +289,10 @@ func sceneToRow(s models.Scene) ([]string, error) {
 		strconv.FormatFloat(s.LowestPrice, 'f', 2, 64),
 		formatTimePtr(s.LowestPriceDate),
 		string(ph),
-		formatTime(s.FirstSeenAt),
 		s.ScrapedAt.Format(time.RFC3339),
 		formatTimePtr(s.DeletedAt),
+		formatTime(s.FirstSeenAt),
+		extIDs,
 	}, nil
 }
 

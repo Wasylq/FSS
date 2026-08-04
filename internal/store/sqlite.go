@@ -7,6 +7,8 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"sort"
+	"strings"
 	"time"
 
 	"github.com/Wasylq/FSS/models"
@@ -317,7 +319,32 @@ func (s *SQLite) migrate() error {
 			return fmt.Errorf("migration 4: %w", err)
 		}
 	}
+	if version < 5 {
+		if err := s.applyMigration5(); err != nil {
+			return fmt.Errorf("migration 5: %w", err)
+		}
+	}
 	return nil
+}
+
+// migration5 adds cross-site scene identity. The (source, external_id) index is
+// the point: it answers "which stored scenes are this StashDB UUID" across every
+// site and studio.
+const migration5 = `
+CREATE TABLE IF NOT EXISTS scene_external_ids (
+    scene_id    TEXT NOT NULL,
+    site_id     TEXT NOT NULL,
+    studio_url  TEXT NOT NULL,
+    source      TEXT NOT NULL,
+    external_id TEXT NOT NULL,
+    PRIMARY KEY (scene_id, site_id, studio_url, source),
+    FOREIGN KEY (scene_id, site_id, studio_url) REFERENCES scenes(id, site_id, studio_url) ON DELETE CASCADE
+);
+CREATE INDEX IF NOT EXISTS idx_scene_external_ids_lookup ON scene_external_ids(source, external_id);
+`
+
+func (s *SQLite) applyMigration5() error {
+	return s.applyMigration(migration5, 5)
 }
 
 // migration4 adds first_seen_at, backfilled from scraped_at. That is an upper
@@ -523,6 +550,9 @@ func (s *SQLite) Load(studioURL string) ([]models.Scene, error) {
 		return nil, err
 	}
 	if err := s.loadPriceHistory(studioURL, scenes); err != nil {
+		return nil, err
+	}
+	if err := s.loadExternalIDs(studioURL, scenes); err != nil {
 		return nil, err
 	}
 	return scenes, nil
@@ -757,7 +787,49 @@ func upsertScene(tx *sql.Tx, sc models.Scene) error {
 		return fmt.Errorf("upserting categories for %s: %w", sc.ID, err)
 	}
 
+	if err := syncExternalIDs(tx, sc); err != nil {
+		return fmt.Errorf("upserting external IDs for %s: %w", sc.ID, err)
+	}
+
 	return syncPriceHistory(tx, sc)
+}
+
+// syncExternalIDs reconciles a scene's external-ID rows: drop sources no longer
+// claimed, upsert the rest. Blank sources and blank IDs are skipped.
+func syncExternalIDs(tx *sql.Tx, sc models.Scene) error {
+	sources := make([]string, 0, len(sc.ExternalIDs))
+	for source, id := range sc.ExternalIDs {
+		if source == "" || id == "" {
+			continue
+		}
+		sources = append(sources, source)
+	}
+	sort.Strings(sources) // deterministic statement text and insert order
+
+	del := `DELETE FROM scene_external_ids WHERE scene_id = ? AND site_id = ? AND studio_url = ?`
+	args := []any{sc.ID, sc.SiteID, sc.StudioURL}
+	if len(sources) > 0 {
+		del += ` AND source NOT IN (?` + strings.Repeat(",?", len(sources)-1) + `)`
+		for _, source := range sources {
+			args = append(args, source)
+		}
+	}
+	if _, err := tx.Exec(del, args...); err != nil {
+		return err
+	}
+
+	for _, source := range sources {
+		if _, err := tx.Exec(`
+			INSERT INTO scene_external_ids (scene_id, site_id, studio_url, source, external_id)
+			VALUES (?,?,?,?,?)
+			ON CONFLICT(scene_id, site_id, studio_url, source)
+			DO UPDATE SET external_id = excluded.external_id`,
+			sc.ID, sc.SiteID, sc.StudioURL, source, sc.ExternalIDs[source],
+		); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 var allowedRelationIDs = map[string]bool{
@@ -1173,6 +1245,40 @@ func (s *SQLite) loadRelation(studioURL, junctionTable, entityTable, fkCol, orde
 		case "scene_categories":
 			scenes[i].Categories = append(scenes[i].Categories, name)
 		}
+	}
+	return rows.Err()
+}
+
+func (s *SQLite) loadExternalIDs(studioURL string, scenes []models.Scene) error {
+	if len(scenes) == 0 {
+		return nil
+	}
+	idx := make(map[sceneKey]int, len(scenes))
+	for i, sc := range scenes {
+		idx[sceneKey{id: sc.ID, siteID: sc.SiteID}] = i
+	}
+
+	rows, err := s.db.Query(`
+		SELECT scene_id, site_id, source, external_id
+		FROM scene_external_ids WHERE studio_url = ?`, studioURL)
+	if err != nil {
+		return err
+	}
+	defer func() { _ = rows.Close() }()
+
+	for rows.Next() {
+		var sceneID, siteID, source, externalID string
+		if err := rows.Scan(&sceneID, &siteID, &source, &externalID); err != nil {
+			return err
+		}
+		i, ok := idx[sceneKey{id: sceneID, siteID: siteID}]
+		if !ok {
+			continue
+		}
+		if scenes[i].ExternalIDs == nil {
+			scenes[i].ExternalIDs = map[string]string{}
+		}
+		scenes[i].ExternalIDs[source] = externalID
 	}
 	return rows.Err()
 }

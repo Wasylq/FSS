@@ -397,6 +397,56 @@ func TestContract_FirstSeenAtIsSticky(t *testing.T) {
 	}
 }
 
+func TestContract_ExternalIDsRoundTrip(t *testing.T) {
+	for _, sf := range storeFactories(t) {
+		t.Run(sf.name, func(t *testing.T) {
+			s := sf.new(t)
+			now := time.Now().UTC().Truncate(time.Second)
+
+			scenes := contractScenes(now)
+			scenes[0].ExternalIDs = map[string]string{
+				models.ExternalStashDB: "uuid-1",
+				models.ExternalTPDB:    "tpdb-1",
+			}
+			if err := s.Save(contractURL, scenes); err != nil {
+				t.Fatalf("Save: %v", err)
+			}
+
+			got := loadByID(t, s, contractURL)
+			if len(got["s1"].ExternalIDs) != 2 || got["s1"].ExternalIDs[models.ExternalStashDB] != "uuid-1" {
+				t.Errorf("s1 externalIDs = %v", got["s1"].ExternalIDs)
+			}
+			if len(got["s2"].ExternalIDs) != 0 {
+				t.Errorf("s2 should have no externalIDs, got %v", got["s2"].ExternalIDs)
+			}
+
+			// Dropping a source removes its row; changing one updates it.
+			scenes[0].ExternalIDs = map[string]string{models.ExternalStashDB: "uuid-2"}
+			if err := s.Save(contractURL, scenes); err != nil {
+				t.Fatalf("re-Save: %v", err)
+			}
+			got = loadByID(t, s, contractURL)
+			want := map[string]string{models.ExternalStashDB: "uuid-2"}
+			if len(got["s1"].ExternalIDs) != 1 || got["s1"].ExternalIDs[models.ExternalStashDB] != want[models.ExternalStashDB] {
+				t.Errorf("s1 externalIDs = %v, want %v", got["s1"].ExternalIDs, want)
+			}
+		})
+	}
+}
+
+func loadByID(t *testing.T, s Store, studioURL string) map[string]models.Scene {
+	t.Helper()
+	scenes, err := s.Load(studioURL)
+	if err != nil {
+		t.Fatalf("Load: %v", err)
+	}
+	out := make(map[string]models.Scene, len(scenes))
+	for _, sc := range scenes {
+		out[sc.ID] = sc
+	}
+	return out
+}
+
 func TestContract_MarkDeletedNonexistentID(t *testing.T) {
 	for _, sf := range storeFactories(t) {
 		t.Run(sf.name, func(t *testing.T) {

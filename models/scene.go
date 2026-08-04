@@ -31,6 +31,15 @@ func (p PriceSnapshot) Effective() float64 {
 // loads normally. See docs/metadata.md.
 const StoreSchemaVersion = 1
 
+// Well-known Scene.ExternalIDs keys. A stashbox instance uses its own site ID
+// (e.g. "stashdb", "pmvstash"), so those are not enumerated here.
+const (
+	ExternalStashDB = "stashdb"
+	ExternalTPDB    = "tpdb"
+	ExternalIAFD    = "iafd"
+	ExternalIndexxx = "indexxx"
+)
+
 // StudioFile is the top-level JSON structure for a per-studio file.
 type StudioFile struct {
 	SchemaVersion int       `json:"schemaVersion"`
@@ -47,6 +56,11 @@ type Scene struct {
 	ID        string `json:"id"`
 	SiteID    string `json:"siteId"`
 	StudioURL string `json:"studioUrl"`
+
+	// ExternalIDs maps a metadata database to this scene's ID in it, keyed by
+	// the well-known source names below. (ID, SiteID) is site-local, so these
+	// are the only keys that identify the same scene across sites.
+	ExternalIDs map[string]string `json:"externalIds,omitempty"`
 
 	// Core
 	Title       string    `json:"title"`
