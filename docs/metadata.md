@@ -9,20 +9,23 @@ the two stores relate.
 |---|---|---|
 | Layout | one `<slug>.json` per studio | one database, all studios |
 | Read cost | full parse of the whole file | indexed query per studio |
-| Write cost | full rewrite of the whole file | upsert of every scene in the set |
+| Write cost | full rewrite of the whole file | upsert of changed scenes only |
 | Queryable across studios | no | yes |
 
 Both implement `store.Store` and are covered by the same contract tests
 (`internal/store/contract_test.go`), so behaviour is identical apart from cost.
 
-**Neither store is incremental on write.** `Save` is authoritative over the full
-scene set, so the flat store rewrites the whole JSON file and SQLite upserts
-every row — about 296,000 statements to record one new scene in a 59k-scene
-studio. Measured on that catalogue, SQLite is currently **5× slower** than flat
-and uses 2.4× the disk; its only win is roughly half the peak memory.
+**`Save` is authoritative over the full scene set** in both stores, but only
+SQLite is incremental about honouring that: it fingerprints each scene into
+`content_hash` and rewrites only what changed. The flat store re-marshals the
+whole JSON file every time.
 
-Pick a store from the measured trade-offs in [storage.md](storage.md), not from
-the assumption that a database must be faster.
+On a 59k-scene studio that makes SQLite's `Save` ~2.5× faster than flat's and
+its peak memory a third lower, at the cost of 2.4× the disk. See
+[storage.md](storage.md) for the full measurements.
+
+**Invariant:** anything writing scene state outside `upsertScene` must clear
+`content_hash`, or `Save` will skip the row as unchanged. `MarkDeleted` does.
 
 ### Moving between them
 

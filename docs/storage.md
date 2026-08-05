@@ -53,34 +53,40 @@ one incremental round trip (`Load`, add a single new scene, `Save`):
 
 | | Flat | SQLite |
 |---|---|---|
-| Load + Save | **2.0 s** | 9.9 s |
-| Peak RSS | 964 MB | **532 MB** |
+| Load + Save | 2.0 s | **2.5 s** |
+| ↳ of which Save | 1.3 s | **0.5 s** |
+| Peak RSS | 964 MB | **634 MB** |
 | On disk | **104 MB** | 248 MB |
-| Initial ingest | — | 50 s (one-off) |
+| Initial ingest | — | 52 s (one-off) |
 
-Read that table before assuming the database is faster. **It is not, today.**
+The two are now within ~25% on wall clock, and SQLite uses a third less memory.
 
-- **Flat** parses and re-marshals the entire file every save. That is brute
-  force, but `encoding/json` is fast at it. The cost is *memory*: ~964 MB peak
-  for a 104 MB file. On a small VPS that is an OOM waiting to happen.
-- **SQLite** never holds the whole catalogue as JSON, so it peaks at about half
-  the memory. But `Save` is authoritative over the full scene set by contract,
-  so it upserts all 59,254 rows and issues roughly five statements per scene —
-  about **296,000 statements to record one new scene.**
+- **Flat** parses and re-marshals the entire file on every save. `encoding/json`
+  is fast at that, but it costs *memory*: ~964 MB peak for a 104 MB file. On a
+  small VPS that is an OOM waiting to happen, and it grows with the catalogue.
+- **SQLite** writes only what changed. `Save` fingerprints each scene
+  (`content_hash`) and skips any whose stored fingerprint matches, so an
+  incremental scrape touches a handful of rows instead of all 59,254.
 
-Neither store knows which scenes actually changed. That is the real defect, and
-it is why the database currently loses.
+Earlier versions rewrote every row on every save — roughly **296,000 statements
+to record one new scene** — which made the database several times slower than
+brute-force JSON. That is fixed; if you are reading older notes claiming SQLite
+is slower, they predate this.
+
+The remaining one-off cost is the **initial ingest** (~52 s for 59k scenes),
+paid once when you `fss import` an existing catalogue.
 
 ### Which should I use today
 
-- **Under ~10,000 scenes per studio:** flat. Simpler, directly readable, and the
-  performance difference is irrelevant at that size.
-- **Memory-constrained host with a large catalogue:** `--db`. You trade wall
-  clock for roughly half the peak RSS.
-- **You want to query across studios** (all scenes by a performer, price
-  history, per-site counts): `--db`. The flat store cannot answer these at all.
-
-Anything else: stay on flat until the work below lands.
+- **You want to query your data** — scenes by performer across every site, price
+  history over time, per-studio counts: `--db`. The flat store cannot answer any
+  of these, at all.
+- **Large catalogue, or a memory-constrained host:** `--db`. A third less peak
+  RSS, and the gap widens as the catalogue grows.
+- **You want `fss list-studios` or `--name`:** `--db`. `Flat.UpsertStudio` and
+  `Flat.ListStudios` are no-ops — studio tracking only exists in SQLite.
+- **A couple of small studios and you want to read the raw file:** flat is
+  simpler and there is no reason to move.
 
 ---
 
@@ -140,16 +146,33 @@ This is a small fix, not a redesign. `match.BuildIndex` already takes a plain
 instead of from disk. Until it lands, "switch to the database" is not a real
 option — it just adds a step.
 
-### 2. `Save` must become diff-aware
+### 2. ~~`Save` must become diff-aware~~ — done
 
-While `Save` rewrites every scene, the database is strictly worse on time. A
-`Save` that skips rows whose content is unchanged would turn 296,000 statements
-into about three, and the comparison inverts decisively — SQLite becomes both
-faster *and* lighter, and the flat store's whole-file rewrite becomes the
-obvious bottleneck it was always claimed to be.
+`Save` now fingerprints each scene into `content_hash` and skips the expensive
+write path (row upsert plus three relation syncs plus price-history diffing) for
+any scene whose stored fingerprint matches. Measured on the 59k-scene catalogue,
+`Save` went from **6.7 s to 0.5 s**.
 
-This is the highest-value change in the storage layer, and it is worth doing
-**regardless** of which store is the default.
+Two properties make it correct:
+
+- The hash is computed over the **stored** representation, using the same
+  `timeStr` conversions as the writer. Hashing the in-memory values would make a
+  freshly scraped scene (nanosecond timestamps) differ from the same scene
+  loaded back (second precision), and nothing would ever be skipped.
+- `ScrapedAt` and `FirstSeenAt` are excluded. `ScrapedAt` changes on every
+  scrape by definition, so including it would defeat the mechanism; when it is
+  the only difference, `Save` issues one narrow `UPDATE` instead of the full
+  path. `FirstSeenAt` is store-owned and never changes once set.
+
+**Invariant for future work:** anything that writes scene state outside
+`upsertScene` must invalidate `content_hash`. `MarkDeleted` sets it to `''`
+for exactly this reason — without that, re-saving a soft-deleted scene with
+`DeletedAt == nil` would be skipped and the delete would never lift.
+
+`Load` was optimised alongside it (3.2 s → 2.0 s) by dropping two `ORDER BY`
+clauses that made SQLite build temp B-trees over every row and every junction
+row in the studio. The ordering now happens in Go, on slices that are already
+materialised, and is identical.
 
 ---
 

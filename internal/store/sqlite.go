@@ -324,6 +324,11 @@ func (s *SQLite) migrate() error {
 			return fmt.Errorf("migration 5: %w", err)
 		}
 	}
+	if version < 6 {
+		if err := s.applyMigration6(); err != nil {
+			return fmt.Errorf("migration 6: %w", err)
+		}
+	}
 	return nil
 }
 
@@ -345,6 +350,17 @@ CREATE INDEX IF NOT EXISTS idx_scene_external_ids_lookup ON scene_external_ids(s
 
 func (s *SQLite) applyMigration5() error {
 	return s.applyMigration(migration5, 5)
+}
+
+// migration6 adds content_hash, which lets Save skip scenes that would be
+// rewritten identically. Existing rows get ”, which never matches a computed
+// hash, so they are rewritten once and stamped on the next save.
+const migration6 = `
+ALTER TABLE scenes ADD COLUMN content_hash TEXT NOT NULL DEFAULT '';
+`
+
+func (s *SQLite) applyMigration6() error {
+	return s.applyMigration(migration6, 6)
 }
 
 // migration4 adds first_seen_at, backfilled from scraped_at. That is an upper
@@ -521,8 +537,7 @@ func (s *SQLite) Load(studioURL string) ([]models.Scene, error) {
 		       COALESCE(views, 0), COALESCE(likes, 0), COALESCE(comments, 0),
 		       COALESCE(lowest_price, 0), lowest_price_date,
 		       COALESCE(first_seen_at, ''), scraped_at, deleted_at
-		FROM scenes WHERE studio_url = ?
-		ORDER BY scraped_at DESC, id`, studioURL)
+		FROM scenes WHERE studio_url = ?`, studioURL)
 	if err != nil {
 		return nil, err
 	}
@@ -540,13 +555,23 @@ func (s *SQLite) Load(studioURL string) ([]models.Scene, error) {
 		return nil, err
 	}
 
-	if err := s.loadRelation(studioURL, "scene_performers", "performers", "performer_id", "position", scenes); err != nil {
+	// Ordering happens here rather than in SQL. `ORDER BY scraped_at DESC, id`
+	// made SQLite build a temp B-tree over every row in the studio; sorting the
+	// already-materialised slice is far cheaper and gives the identical result.
+	sort.SliceStable(scenes, func(i, j int) bool {
+		if !scenes[i].ScrapedAt.Equal(scenes[j].ScrapedAt) {
+			return scenes[i].ScrapedAt.After(scenes[j].ScrapedAt)
+		}
+		return scenes[i].ID < scenes[j].ID
+	})
+
+	if err := s.loadRelation(studioURL, "scene_performers", "performers", "performer_id", scenes); err != nil {
 		return nil, err
 	}
-	if err := s.loadRelation(studioURL, "scene_tags", "tags", "tag_id", "position", scenes); err != nil {
+	if err := s.loadRelation(studioURL, "scene_tags", "tags", "tag_id", scenes); err != nil {
 		return nil, err
 	}
-	if err := s.loadRelation(studioURL, "scene_categories", "categories", "category_id", "position", scenes); err != nil {
+	if err := s.loadRelation(studioURL, "scene_categories", "categories", "category_id", scenes); err != nil {
 		return nil, err
 	}
 	if err := s.loadPriceHistory(studioURL, scenes); err != nil {
@@ -586,20 +611,29 @@ func (s *SQLite) Save(studioURL string, scenes []models.Scene) error {
 		keep[sceneKey{id: sc.ID, siteID: sc.SiteID}] = struct{}{}
 	}
 
-	rows, err := tx.Query(`SELECT id, site_id FROM scenes WHERE studio_url = ?`, studioURL)
+	// One pass over the studio's rows serves two purposes: finding what to
+	// delete, and capturing each row's content hash so unchanged scenes can be
+	// skipped below. Deliberately no joins — this must stay cheap.
+	rows, err := tx.Query(
+		`SELECT id, site_id, COALESCE(content_hash, ''), scraped_at FROM scenes WHERE studio_url = ?`,
+		studioURL)
 	if err != nil {
 		return fmt.Errorf("selecting existing scene keys: %w", err)
 	}
 	var toDelete []sceneKey
+	stored := make(map[sceneKey]storedScene, len(scenes))
 	for rows.Next() {
 		var k sceneKey
-		if err := rows.Scan(&k.id, &k.siteID); err != nil {
+		var st storedScene
+		if err := rows.Scan(&k.id, &k.siteID, &st.hash, &st.scrapedAt); err != nil {
 			_ = rows.Close()
 			return fmt.Errorf("scanning scene key: %w", err)
 		}
 		if _, kept := keep[k]; !kept {
 			toDelete = append(toDelete, k)
+			continue
 		}
+		stored[k] = st
 	}
 	// A truncated iteration (driver error mid-scan) would yield an incomplete
 	// delete-candidate list; abort rather than commit a partial authoritative
@@ -628,8 +662,30 @@ func (s *SQLite) Save(studioURL string, scenes []models.Scene) error {
 		}
 	}
 
+	// Only scenes whose stored fingerprint differs need the full write path
+	// (row upsert plus three relation syncs plus price history). For the rest,
+	// at most `scraped_at` moved, which is one narrow UPDATE.
+	//
+	// This is what makes an incremental scrape cheap: without it, recording a
+	// single new scene in a 59k-scene studio issued ~296,000 statements.
+	touch, err := tx.Prepare(
+		`UPDATE scenes SET scraped_at = ? WHERE id = ? AND site_id = ? AND studio_url = ?`)
+	if err != nil {
+		return fmt.Errorf("preparing scraped_at update: %w", err)
+	}
+	defer func() { _ = touch.Close() }()
+
 	for _, sc := range scenes {
-		if err := upsertScene(tx, sc); err != nil {
+		hash := sceneContentHash(sc)
+		if prev, ok := stored[sceneKey{id: sc.ID, siteID: sc.SiteID}]; ok && prev.hash == hash {
+			if now := timeStr(sc.ScrapedAt); now != prev.scrapedAt {
+				if _, err := touch.Exec(now, sc.ID, sc.SiteID, sc.StudioURL); err != nil {
+					return fmt.Errorf("updating scraped_at for %s: %w", sc.ID, err)
+				}
+			}
+			continue
+		}
+		if err := upsertScene(tx, sc, hash); err != nil {
 			return err
 		}
 	}
@@ -642,6 +698,13 @@ type sceneKey struct {
 	siteID string
 }
 
+// storedScene is the cheap per-row state Save reads up front to decide whether
+// a scene needs rewriting.
+type storedScene struct {
+	hash      string
+	scrapedAt string
+}
+
 func (s *SQLite) MarkDeleted(studioURL, siteID string, ids []string) error {
 	now := timeStr(time.Now().UTC())
 	tx, err := s.db.Begin()
@@ -649,9 +712,17 @@ func (s *SQLite) MarkDeleted(studioURL, siteID string, ids []string) error {
 		return err
 	}
 	defer func() { _ = tx.Rollback() }()
+	// content_hash is cleared alongside deleted_at. Save skips any scene whose
+	// hash still matches, so a row mutated outside upsertScene must invalidate
+	// its fingerprint — otherwise re-saving the scene with DeletedAt == nil
+	// would be skipped and the soft-delete would never lift.
+	//
+	// Any future writer that touches scene state outside upsertScene owes the
+	// same invalidation.
 	for _, id := range ids {
 		if _, err := tx.Exec(
-			`UPDATE scenes SET deleted_at = ? WHERE id = ? AND site_id = ? AND studio_url = ? AND deleted_at IS NULL`,
+			`UPDATE scenes SET deleted_at = ?, content_hash = ''
+			 WHERE id = ? AND site_id = ? AND studio_url = ? AND deleted_at IS NULL`,
 			now, id, siteID, studioURL,
 		); err != nil {
 			return err
@@ -725,7 +796,7 @@ func (s *SQLite) Export(format, path, studioURL string) error {
 
 // ---- upsert helpers ----
 
-func upsertScene(tx *sql.Tx, sc models.Scene) error {
+func upsertScene(tx *sql.Tx, sc models.Scene, contentHash string) error {
 	_, err := tx.Exec(`
 		INSERT INTO scenes (
 		    id, site_id, studio_url, title, url, date, description,
@@ -733,8 +804,9 @@ func upsertScene(tx *sql.Tx, sc models.Scene) error {
 		    tags, categories, series, series_part,
 		    duration, resolution, width, height, format,
 		    views, likes, comments,
-		    lowest_price, lowest_price_date, first_seen_at, scraped_at, deleted_at
-		) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+		    lowest_price, lowest_price_date, first_seen_at, scraped_at, deleted_at,
+		    content_hash
+		) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
 		ON CONFLICT(id, site_id, studio_url) DO UPDATE SET
 		    title             = excluded.title,
 		    url               = excluded.url,
@@ -762,7 +834,8 @@ func upsertScene(tx *sql.Tx, sc models.Scene) error {
 		    -- sticky: a first sighting already on record is never overwritten
 		    first_seen_at     = COALESCE(NULLIF(scenes.first_seen_at, ''), excluded.first_seen_at),
 		    scraped_at        = excluded.scraped_at,
-		    deleted_at        = excluded.deleted_at`,
+		    deleted_at        = excluded.deleted_at,
+		    content_hash      = excluded.content_hash`,
 		sc.ID, sc.SiteID, sc.StudioURL, sc.Title, sc.URL,
 		timeStr(sc.Date), sc.Description, sc.Thumbnail, sc.Preview,
 		"[]", sc.Director, sc.Studio,
@@ -772,6 +845,7 @@ func upsertScene(tx *sql.Tx, sc models.Scene) error {
 		sc.Views, sc.Likes, sc.Comments,
 		sc.LowestPrice, timePtrStr(sc.LowestPriceDate),
 		timeStr(firstSeenFor(sc, nil)), timeStr(sc.ScrapedAt), timePtrStr(sc.DeletedAt),
+		contentHash,
 	)
 	if err != nil {
 		return fmt.Errorf("upserting scene %s: %w", sc.ID, err)
@@ -1191,13 +1265,14 @@ func syncPriceHistory(tx *sql.Tx, sc models.Scene) error {
 
 // loadRelation batch-loads a string relation (performers, tags, or categories)
 // for all scenes belonging to studioURL and attaches results to the scene slice.
-// orderCol is the column to ORDER BY (empty = no ordering).
-func (s *SQLite) loadRelation(studioURL, junctionTable, entityTable, fkCol, orderCol string, scenes []models.Scene) error {
-	ids := []string{junctionTable, entityTable, fkCol}
-	if orderCol != "" {
-		ids = append(ids, orderCol)
-	}
-	if err := validateRelationIDs(ids...); err != nil {
+//
+// Rows come back unordered and are sorted per scene afterwards. Asking SQLite
+// for `ORDER BY scene_id, site_id, position` built a temp B-tree over every
+// junction row in the studio — hundreds of thousands of them — to order lists
+// that are a handful of entries each. Sorting those small slices in Go is
+// dramatically cheaper and yields the same order.
+func (s *SQLite) loadRelation(studioURL, junctionTable, entityTable, fkCol string, scenes []models.Scene) error {
+	if err := validateRelationIDs(junctionTable, entityTable, fkCol); err != nil {
 		return err
 	}
 	if len(scenes) == 0 {
@@ -1213,40 +1288,56 @@ func (s *SQLite) loadRelation(studioURL, junctionTable, entityTable, fkCol, orde
 		idx[sceneKey{id: sc.ID, siteID: sc.SiteID}] = i
 	}
 
-	q := `SELECT j.scene_id, j.site_id, e.name
-		FROM ` + junctionTable + ` j
-		JOIN ` + entityTable + ` e ON j.` + fkCol + ` = e.id
-		JOIN scenes s ON j.scene_id = s.id AND j.site_id = s.site_id AND j.studio_url = s.studio_url
-		WHERE s.studio_url = ?`
-	if orderCol != "" {
-		q += ` ORDER BY j.scene_id, j.site_id, j.` + orderCol
-	}
-
-	rows, err := s.db.Query(q, studioURL)
+	rows, err := s.db.Query(`SELECT j.scene_id, j.site_id, e.name, j.position
+		FROM `+junctionTable+` j
+		JOIN `+entityTable+` e ON j.`+fkCol+` = e.id
+		WHERE j.studio_url = ?`, studioURL)
 	if err != nil {
 		return err
 	}
 	defer func() { _ = rows.Close() }()
 
+	type positioned struct {
+		name string
+		pos  int
+	}
+	buckets := make([][]positioned, len(scenes))
+
 	for rows.Next() {
 		var sceneID, siteID, name string
-		if err := rows.Scan(&sceneID, &siteID, &name); err != nil {
+		var pos int
+		if err := rows.Scan(&sceneID, &siteID, &name, &pos); err != nil {
 			return err
 		}
 		i, ok := idx[sceneKey{id: sceneID, siteID: siteID}]
 		if !ok {
 			continue
 		}
+		buckets[i] = append(buckets[i], positioned{name: name, pos: pos})
+	}
+	if err := rows.Err(); err != nil {
+		return err
+	}
+
+	for i, bucket := range buckets {
+		if len(bucket) == 0 {
+			continue
+		}
+		sort.SliceStable(bucket, func(a, b int) bool { return bucket[a].pos < bucket[b].pos })
+		names := make([]string, len(bucket))
+		for n, p := range bucket {
+			names[n] = p.name
+		}
 		switch junctionTable {
 		case "scene_performers":
-			scenes[i].Performers = append(scenes[i].Performers, name)
+			scenes[i].Performers = names
 		case "scene_tags":
-			scenes[i].Tags = append(scenes[i].Tags, name)
+			scenes[i].Tags = names
 		case "scene_categories":
-			scenes[i].Categories = append(scenes[i].Categories, name)
+			scenes[i].Categories = names
 		}
 	}
-	return rows.Err()
+	return nil
 }
 
 func (s *SQLite) loadExternalIDs(studioURL string, scenes []models.Scene) error {

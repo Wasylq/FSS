@@ -1,36 +1,28 @@
 # Potential Enhancements
 
-## Diff-aware `Save` — the storage layer's biggest win
+## ~~Diff-aware `Save`~~ — implemented
 
-`Store.Save` is authoritative over the full scene set, so neither implementation
-is incremental on write: the flat store rewrites the whole JSON file, and SQLite
-upserts every scene plus its relations and price history — roughly **five
-statements per scene**.
+`Store.Save` is authoritative over the full scene set, and SQLite used to honour
+that by rewriting every row: roughly five statements per scene, about **296,000
+statements to record one new scene** in a 59k-scene studio. That made the
+database several times slower than brute-force JSON marshalling.
 
-Measured on a 59,254-scene studio (104 MB JSON), one incremental round trip that
-adds a single new scene:
+`Save` now fingerprints each scene into a `content_hash` column (migration 6) and
+skips the row upsert, all three relation syncs, and price-history diffing for any
+scene whose stored fingerprint matches. When only `ScrapedAt` moved, it issues a
+single narrow `UPDATE`. `Load` was optimised alongside it by moving two
+`ORDER BY` clauses out of SQL, where they forced temp B-trees over every row.
 
-| | Flat | SQLite |
-|---|---|---|
-| Load + Save | 2.0 s | 9.9 s |
-| Peak RSS | 964 MB | 532 MB |
-| On disk | 104 MB | 248 MB |
+Measured on a 59,254-scene studio (104 MB JSON):
 
-That is ~296,000 SQL statements to record one scene, which is why the database
-is currently *slower* than brute-force JSON marshalling.
+| | before | after | flat, for reference |
+|---|---|---|---|
+| Save | 6.7 s | **0.5 s** | 1.3 s |
+| Load | 3.2 s | **2.0 s** | 0.7 s |
+| Peak RSS | 532 MB | 634 MB | 964 MB |
 
-**Solution**: have `Save` skip scenes whose stored content is unchanged. The cmd
-layer already loads the existing set to merge against, so the comparison is
-available; a per-scene content hash (or a field-by-field equality check against
-the loaded scene) would do. SQLite's `Save` drops from 59k upserts to ~3, and the
-flat/SQLite comparison inverts decisively.
-
-**Scope**: contained to `internal/store`. The `Store` contract does not change —
-`Save` remains authoritative, it just stops doing redundant writes. Existing
-contract tests already pin the observable behaviour.
-
-**Why it matters**: this is the prerequisite for making SQLite the default. See
-[storage.md](storage.md).
+See [storage.md](storage.md) for the correctness properties and the
+`content_hash` invalidation invariant.
 
 ## Read the store from `stash import` and `identify`
 

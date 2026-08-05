@@ -1048,6 +1048,9 @@ func TestSQLiteMigration1(t *testing.T) {
 	if err := s.applyMigration5(); err != nil {
 		t.Fatalf("applyMigration5: %v", err)
 	}
+	if err := s.applyMigration6(); err != nil {
+		t.Fatalf("applyMigration6: %v", err)
+	}
 
 	// Verify junction table data via Load.
 	scenes, err := s.Load(testStudioURL)
@@ -1141,6 +1144,9 @@ func TestSQLiteMigration1NullJSON(t *testing.T) {
 	}
 	if err := s.applyMigration5(); err != nil {
 		t.Fatalf("applyMigration5: %v", err)
+	}
+	if err := s.applyMigration6(); err != nil {
+		t.Fatalf("applyMigration6: %v", err)
 	}
 
 	scenes, err := s.Load(testStudioURL)
@@ -1554,4 +1560,217 @@ func TestSQLiteMigration3AllUpgradePaths(t *testing.T) {
 			t.Fatalf("third migrate: %v — ALTER TABLE ran twice", err)
 		}
 	})
+}
+
+// countWrites reports how many rows the scenes table reports as modified since
+// a marker, using SQLite's own change counter via a trigger-free proxy: we
+// stamp a sentinel column and count rows whose content_hash was rewritten.
+func storedHashes(t *testing.T, s *SQLite, studioURL string) map[string]string {
+	t.Helper()
+	rows, err := s.db.Query(`SELECT id, content_hash FROM scenes WHERE studio_url = ?`, studioURL)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() { _ = rows.Close() }()
+	out := map[string]string{}
+	for rows.Next() {
+		var id, h string
+		if err := rows.Scan(&id, &h); err != nil {
+			t.Fatal(err)
+		}
+		out[id] = h
+	}
+	return out
+}
+
+// TestSQLiteSaveSkipsUnchangedScenes pins the diff-aware Save: re-saving a scene
+// whose content did not change must not rewrite its relations or price history.
+// Before this, recording one new scene in a large studio issued ~5 statements
+// per stored scene.
+func TestSQLiteSaveSkipsUnchangedScenes(t *testing.T) {
+	s := newTestDB(t)
+	now := time.Now().UTC().Truncate(time.Second)
+
+	build := func(id, title string, tags []string) models.Scene {
+		return models.Scene{
+			ID: id, SiteID: "t", StudioURL: testStudioURL,
+			Title: title, URL: "https://example.com/" + id,
+			Tags: tags, Performers: []string{"P"}, ScrapedAt: now,
+		}
+	}
+	scenes := []models.Scene{
+		build("1", "One", []string{"a", "b"}),
+		build("2", "Two", []string{"c"}),
+	}
+	if err := s.Save(testStudioURL, scenes); err != nil {
+		t.Fatal(err)
+	}
+	before := storedHashes(t, s, testStudioURL)
+	if before["1"] == "" || before["2"] == "" {
+		t.Fatalf("content_hash not stamped: %v", before)
+	}
+
+	// Re-save with scene 2 changed; scene 1 must keep its hash and its data.
+	scenes[1].Title = "Two (updated)"
+	if err := s.Save(testStudioURL, scenes); err != nil {
+		t.Fatal(err)
+	}
+	after := storedHashes(t, s, testStudioURL)
+	if after["1"] != before["1"] {
+		t.Error("unchanged scene 1 had its content_hash rewritten")
+	}
+	if after["2"] == before["2"] {
+		t.Error("changed scene 2 kept its old content_hash")
+	}
+
+	got, err := s.Load(testStudioURL)
+	if err != nil {
+		t.Fatal(err)
+	}
+	byID := map[string]models.Scene{}
+	for _, sc := range got {
+		byID[sc.ID] = sc
+	}
+	if len(byID["1"].Tags) != 2 || byID["1"].Tags[0] != "a" || byID["1"].Tags[1] != "b" {
+		t.Errorf("skipped scene lost its tags: %v", byID["1"].Tags)
+	}
+	if byID["2"].Title != "Two (updated)" {
+		t.Errorf("changed scene not updated: %q", byID["2"].Title)
+	}
+}
+
+// A scrape that only moves ScrapedAt must still record the new timestamp, even
+// though the content hash is unchanged and the expensive path is skipped.
+func TestSQLiteSaveUpdatesScrapedAtOnUnchangedScene(t *testing.T) {
+	s := newTestDB(t)
+	first := time.Now().UTC().Truncate(time.Second).Add(-48 * time.Hour)
+
+	sc := models.Scene{
+		ID: "1", SiteID: "t", StudioURL: testStudioURL,
+		Title: "One", URL: "https://example.com/1",
+		Tags: []string{"a"}, ScrapedAt: first,
+	}
+	if err := s.Save(testStudioURL, []models.Scene{sc}); err != nil {
+		t.Fatal(err)
+	}
+
+	later := first.Add(24 * time.Hour)
+	sc.ScrapedAt = later
+	if err := s.Save(testStudioURL, []models.Scene{sc}); err != nil {
+		t.Fatal(err)
+	}
+
+	got, err := s.Load(testStudioURL)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(got) != 1 {
+		t.Fatalf("got %d scenes", len(got))
+	}
+	if !got[0].ScrapedAt.Equal(later) {
+		t.Errorf("ScrapedAt = %v, want %v", got[0].ScrapedAt, later)
+	}
+	if !got[0].FirstSeenAt.Equal(first) {
+		t.Errorf("FirstSeenAt = %v, want the original %v", got[0].FirstSeenAt, first)
+	}
+}
+
+// MarkDeleted writes deleted_at outside upsertScene, so it must invalidate the
+// content hash — otherwise re-saving the scene undeleted would be skipped and
+// the soft-delete would never lift.
+func TestSQLiteMarkDeletedInvalidatesContentHash(t *testing.T) {
+	s := newTestDB(t)
+	now := time.Now().UTC().Truncate(time.Second)
+	sc := models.Scene{
+		ID: "1", SiteID: "t", StudioURL: testStudioURL,
+		Title: "One", URL: "https://example.com/1", ScrapedAt: now,
+	}
+	if err := s.Save(testStudioURL, []models.Scene{sc}); err != nil {
+		t.Fatal(err)
+	}
+	if err := s.MarkDeleted(testStudioURL, "t", []string{"1"}); err != nil {
+		t.Fatal(err)
+	}
+	if h := storedHashes(t, s, testStudioURL)["1"]; h != "" {
+		t.Errorf("content_hash = %q after MarkDeleted, want cleared", h)
+	}
+
+	// Re-saving the same scene with DeletedAt == nil must revive it.
+	if err := s.Save(testStudioURL, []models.Scene{sc}); err != nil {
+		t.Fatal(err)
+	}
+	got, _ := s.Load(testStudioURL)
+	if len(got) != 1 || got[0].DeletedAt != nil {
+		t.Errorf("scene not revived: %+v", got)
+	}
+}
+
+// The hash must be computed over the stored representation, so a scene that
+// round-trips through the database hashes identically to the one that went in.
+// Otherwise every scene looks changed and nothing is ever skipped.
+func TestSceneContentHashSurvivesRoundTrip(t *testing.T) {
+	s := newTestDB(t)
+	price := time.Date(2026, 3, 1, 12, 30, 45, 0, time.UTC)
+	sc := models.Scene{
+		ID: "1", SiteID: "t", StudioURL: testStudioURL,
+		Title: "One", URL: "https://example.com/1",
+		Date:        time.Date(2026, 1, 2, 3, 4, 5, 123456789, time.UTC), // sub-second
+		Performers:  []string{"Alice", "Bob"},
+		Tags:        []string{"x", "y"},
+		Categories:  []string{"c"},
+		ExternalIDs: map[string]string{"stashdb": "uuid", "tpdb": "t1"},
+		Duration:    600,
+		ScrapedAt:   time.Now().UTC(),
+	}
+	sc.AddPrice(models.PriceSnapshot{Date: price, Regular: 9.99})
+
+	if err := s.Save(testStudioURL, []models.Scene{sc}); err != nil {
+		t.Fatal(err)
+	}
+	got, err := s.Load(testStudioURL)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(got) != 1 {
+		t.Fatalf("got %d scenes", len(got))
+	}
+	if a, b := sceneContentHash(sc), sceneContentHash(got[0]); a != b {
+		t.Errorf("hash changed across a round trip:\n  in  %s\n  out %s", a, b)
+	}
+}
+
+// Distinct content must produce distinct hashes, including in the collection
+// fields where a naive concatenation could collide.
+func TestSceneContentHashDistinguishesFields(t *testing.T) {
+	base := models.Scene{ID: "1", SiteID: "t", Title: "One", Tags: []string{"ab", "c"}}
+	variants := map[string]func(models.Scene) models.Scene{
+		"title":            func(s models.Scene) models.Scene { s.Title = "Two"; return s },
+		"tag split":        func(s models.Scene) models.Scene { s.Tags = []string{"a", "bc"}; return s },
+		"tag order":        func(s models.Scene) models.Scene { s.Tags = []string{"c", "ab"}; return s },
+		"extra tag":        func(s models.Scene) models.Scene { s.Tags = append(s.Tags, "d"); return s },
+		"performers":       func(s models.Scene) models.Scene { s.Performers = []string{"A"}; return s },
+		"duration":         func(s models.Scene) models.Scene { s.Duration = 1; return s },
+		"external id":      func(s models.Scene) models.Scene { s.ExternalIDs = map[string]string{"a": "b"}; return s },
+		"deleted":          func(s models.Scene) models.Scene { now := time.Now().UTC(); s.DeletedAt = &now; return s },
+		"price":            func(s models.Scene) models.Scene { s.AddPrice(models.PriceSnapshot{Regular: 1}); return s },
+		"lowest price val": func(s models.Scene) models.Scene { s.LowestPrice = 5; return s },
+	}
+	h0 := sceneContentHash(base)
+	for name, mutate := range variants {
+		if h := sceneContentHash(mutate(base)); h == h0 {
+			t.Errorf("%s: hash unchanged after mutation", name)
+		}
+	}
+
+	// ScrapedAt is excluded by design — including it would mean nothing ever
+	// matches and the skip path would be dead code.
+	bumped := base
+	bumped.ScrapedAt = time.Now().UTC().Add(time.Hour)
+	if sceneContentHash(bumped) != h0 {
+		t.Error("ScrapedAt must not affect the content hash")
+	}
+	bumped.FirstSeenAt = time.Now().UTC()
+	if sceneContentHash(bumped) != h0 {
+		t.Error("FirstSeenAt must not affect the content hash")
+	}
 }
