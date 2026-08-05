@@ -1,7 +1,10 @@
 package store
 
 import (
+	"os"
+	"path/filepath"
 	"sort"
+	"strings"
 	"testing"
 	"time"
 
@@ -470,4 +473,81 @@ func TestContract_MarkDeletedNonexistentID(t *testing.T) {
 			}
 		})
 	}
+}
+
+// TestStoreInterfaceIsDocumented pins the Store interface listing in
+// docs/architecture.md to the real one. That block was stale for a long time —
+// it omitted Lock entirely and gave MarkDeleted the wrong signature — which is
+// worse than no documentation, since a reader has no reason to doubt it.
+func TestStoreInterfaceIsDocumented(t *testing.T) {
+	src, err := os.ReadFile("interface.go")
+	if err != nil {
+		t.Fatal(err)
+	}
+	docs, err := os.ReadFile(filepath.Join("..", "..", "docs", "architecture.md"))
+	if err != nil {
+		t.Skipf("docs not readable: %v", err)
+	}
+
+	methods := interfaceMethods(t, string(src))
+	if len(methods) == 0 {
+		t.Fatal("found no methods on the Store interface")
+	}
+
+	block := betweenMarkers(string(docs), "type Store interface {", "\n}")
+	if block == "" {
+		t.Fatal("docs/architecture.md has no `type Store interface` block")
+	}
+	documented := map[string]bool{}
+	for _, line := range strings.Split(block, "\n") {
+		if line = strings.TrimSpace(line); line != "" {
+			documented[line] = true
+		}
+	}
+
+	for _, m := range methods {
+		if !documented[m] {
+			t.Errorf("docs/architecture.md does not list %q — update the interface block", m)
+		}
+	}
+	for d := range documented {
+		found := false
+		for _, m := range methods {
+			if m == d {
+				found = true
+				break
+			}
+		}
+		if !found {
+			t.Errorf("docs/architecture.md lists %q, which is not on the Store interface", d)
+		}
+	}
+}
+
+// interfaceMethods extracts the method signatures of `type Store interface`.
+func interfaceMethods(t *testing.T, src string) []string {
+	t.Helper()
+	block := betweenMarkers(src, "type Store interface {", "\n}")
+	var out []string
+	for _, line := range strings.Split(block, "\n") {
+		line = strings.TrimSpace(line)
+		if line == "" || strings.HasPrefix(line, "//") {
+			continue
+		}
+		out = append(out, line)
+	}
+	return out
+}
+
+func betweenMarkers(s, start, end string) string {
+	i := strings.Index(s, start)
+	if i < 0 {
+		return ""
+	}
+	rest := s[i+len(start):]
+	j := strings.Index(rest, end)
+	if j < 0 {
+		return ""
+	}
+	return rest[:j]
 }

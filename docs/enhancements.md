@@ -1,5 +1,10 @@
 # Potential Enhancements
 
+Ideas and known gaps, plus recently-completed items kept for context (struck
+through). Implemented behaviour is documented in the reference docs — see the
+index in the [README](../README.md#documentation).
+
+
 ## ~~Diff-aware `Save`~~ — implemented
 
 `Store.Save` is authoritative over the full scene set, and SQLite used to honour
@@ -24,19 +29,16 @@ Measured on a 59,254-scene studio (104 MB JSON):
 See [storage.md](storage.md) for the correctness properties and the
 `content_hash` invalidation invariant.
 
-## Read the store from `stash import` and `identify`
+## ~~Read the store from `stash import` and `identify`~~ — implemented
 
-Both commands are JSON-only: they call `match.LoadJSONFiles` / `LoadJSONDir` and
-have no `--db` flag. So a `--db` scrape still has to export JSON before anything
-downstream can use it, which makes the database an extra step rather than an
+Both commands were JSON-only, so a `--db` scrape still had to export JSON before
+anything downstream could use it — the database was an extra step rather than an
 alternative.
 
-**Solution**: accept `--db` on both and build the index from `store.Store.Load`
-instead of from disk. `match.BuildIndex` already takes a plain `[]models.Scene`,
-so the loading function is the only thing that changes.
-
-**Scope**: small — a shared "load scenes from JSON *or* store" helper in the cmd
-layer, used by `stash import`, `identify`, and any future consumer.
+They now share one loader (`loadFSSScenes` in `cmd/scenesource.go`) that reads
+JSON files *or* the SQLite store, plus `--from-studio` / `--from-performer` to
+narrow the loaded set. With `db:` in config the database is the default source.
+A test asserts both paths produce the same scene set.
 
 ## uTLS — Browser TLS Fingerprint Impersonation
 

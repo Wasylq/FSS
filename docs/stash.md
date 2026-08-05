@@ -103,7 +103,11 @@ fss stash import --dir ./data --fields tags,urls --apply
 fss stash import --dir ./data --top 50
 ```
 
-**`--dir` vs `--json`:** By default, `--dir` loads every `*.json` file in the directory — all studios get pooled into one index. This is what you want when you've scraped a performer from multiple sites (e.g. ManyVids + Clips4Sale) and want cross-site merging. Use `--json` when you only want to import from specific files, for example a single studio.
+**Choosing a source:** `--dir` loads every `*.json` file in a directory and pools all studios into one index — what you want when you've scraped a performer from multiple sites (e.g. ManyVids + Clips4Sale) and want cross-site merging. `--json` narrows that to specific files. `--db` reads the SQLite store, pooling every tracked studio the same way.
+
+With **nothing specified**, a `db:` entry in your config wins and the database is read; otherwise the configured `out_dir` is scanned. Every run prints the source it resolved to.
+
+To narrow the pool without splitting files, use `--from-studio` / `--from-performer` — these work on any source, including `--dir`.
 
 **`--fields`:** By default, all detected changes are applied. Pass `--fields` with a comma-separated list to restrict which fields are updated. Unselected fields are left untouched in Stash, and changes to unselected fields are hidden from dry-run output. For example, `--fields date,tags,urls` will only update the release date (which already uses earliest-date logic, so it only changes when a earlier date is found), add new tags, and add new URLs — title, details, performers, studio, and cover are left as-is.
 
@@ -271,6 +275,9 @@ When `--include-stashbox` modifies a scene that has StashDB data:
 
 1. The scene is tagged with `fss_stashbox_override` (configurable via `--stashbox-tag`) so you can filter and revert in Stash's UI
 2. A JSON changelog entry is appended to `fss-stashbox-changelog.json` in the `--dir` directory (or `out_dir` from config, default `.`), recording:
+
+   The changelog location is resolved **independently of where scenes came from**, so `--db` does not move it — `fss stash revert` still finds it in the same place.
+
    - Which Stash scene was modified
    - Which FSS scene it was matched to
    - What fields changed and their before/after values

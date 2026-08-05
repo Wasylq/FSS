@@ -89,20 +89,55 @@ The `Store` interface decouples scraping from persistence:
 
 ```go
 type Store interface {
+    Lock(studioURL string) (io.Closer, error)
     Load(studioURL string) ([]models.Scene, error)
     Save(studioURL string, scenes []models.Scene) error
-    MarkDeleted(studioURL string, ids []string) error
+    MarkDeleted(studioURL, siteID string, ids []string) error
     Export(format, path, studioURL string) error
     UpsertStudio(studio models.Studio) error
     ListStudios() ([]models.Studio, error)
 }
 ```
 
-**Flat store** (default): one JSON file per studio on disk. The file _is_ the backing store — `Load()` reads it, `Save()` overwrites it atomically. CSV is an export format written alongside.
+Both implementations are held to one suite, `internal/store/contract_test.go`, so
+behaviour is identical apart from cost. Scrapers never know which store is active.
 
-**SQLite store** (`--db`): auto-migrates schema on open via `schema_version` table. Scenes, price history, and studios live in relational tables. Performers, tags, and categories are normalized into lookup tables with junction tables (`scene_performers`, `scene_tags`, `scene_categories`) — the old JSON columns in `scenes` are kept but ignored on read. `Export()` regenerates JSON/CSV from the database. Uses `SetMaxOpenConns(1)` for serial writes.
+`Save` is **authoritative**: scenes absent from the passed slice are deleted.
+`FirstSeenAt` is the single exception to verbatim writing — the store preserves
+an existing value and stamps an absent one. See [metadata.md](metadata.md).
 
-Scrapers never know which store is active.
+**Flat store** (default): one JSON file per studio. The file _is_ the backing
+store — `Load()` parses it, `Save()` re-marshals and atomically replaces it. Every
+save rewrites the whole file. CSV is written alongside as an export.
+
+**SQLite store** (`--db`): auto-migrates on open via the `schema_version` table
+(currently 7). Scenes, price history, studios and external IDs live in relational
+tables; performers, tags and categories are normalised into global lookup tables
+with junction tables carrying a `position` column. The legacy JSON columns in
+`scenes` are kept but never read or written.
+
+Two things make it more than a swap-in:
+
+- **`Save` is diff-aware.** Each scene is fingerprinted into `content_hash`
+  (everything except `scraped_at`/`first_seen_at`), and a scene whose stored
+  fingerprint matches skips the row upsert, all three relation syncs and the
+  price-history diff. When only `scraped_at` moved it issues one narrow `UPDATE`.
+  Anything writing scene state outside `upsertScene` must clear `content_hash` —
+  `MarkDeleted` does, or a soft-delete would never lift.
+- **`Load` orders in Go, not SQL.** `ORDER BY` clauses made SQLite build temp
+  B-trees over every row and every junction row in the studio. The child tables
+  are indexed by `studio_url` because their primary keys start with `scene_id`,
+  so a studio filter could not use them and every load scanned the whole table.
+
+`Export()` regenerates JSON/CSV from the database; `fss import` goes the other
+way. `SetMaxOpenConns(1)` because SQLite has no concurrent writers.
+
+Measured trade-offs, and which store to use, are in [storage.md](storage.md).
+
+**Process-level locking:** `Lock(studioURL)` takes an exclusive `flock(2)` on a
+`<slug>.lock` sidecar so two concurrent `fss scrape` runs of the same URL cannot
+race on Load+Save. It is re-entrant within a process (`MarkDeleted` locks
+internally and would otherwise self-deadlock) and a no-op on Windows.
 
 ## Shared Scraper Packages
 
@@ -193,8 +228,8 @@ Three-layer design:
 
 1. **Client** (`client.go`): thin GraphQL wrapper over Stash's API. Methods for `FindScenes`, `UpdateScene`, `EnsureTag`, `EnsurePerformer`, `EnsureStudio`. Uses `httpx.Do()` for HTTP.
 
-2. **Matcher** (`match.go`): builds a `SceneIndex` from FSS JSON files, indexed by normalized title. Matches Stash filenames against the index with two passes (primary + sanitized/noise-stripped). Returns confidence levels: Exact, Substring, Ambiguous, None. Duration filtering rejects false positives.
+2. **Matcher** (`match.go`): builds a `SceneIndex` from previously-scraped scenes — loaded from JSON files *or* the SQLite store via the shared `loadFSSScenes` in `cmd/scenesource.go` — indexed by normalized title. Matches Stash filenames against the index with two passes (primary + sanitized/noise-stripped). Returns confidence levels: Exact, Substring, Ambiguous, None. Duration filtering rejects false positives.
 
-3. **Merger** (`merge.go`): when a title appears in multiple FSS JSONs (cross-site), combines metadata: union of URLs/performers/tags, earliest date, longest description, highest resolution.
+3. **Merger** (`merge.go`): when a title appears in more than one source (cross-site), combines metadata: union of URLs/performers/tags, earliest date, longest description, highest resolution. Names are deduplicated by canonical key (`NormalizeName`: case-folded, whitespace-collapsed) while keeping the first contributing site's spelling, and per-field provenance is recorded in `MergedScene.Sources`.
 
 The import command (`cmd/stash_import.go`) orchestrates: load index → query Stash → match → merge → dry-run or apply.

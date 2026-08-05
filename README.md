@@ -251,17 +251,33 @@ CLI flags always override config values. See [docs/usage.md](docs/usage.md#confi
 
 ## Documentation
 
+**New here?** [Quick start](#quick-start) above, then [docs/usage.md](docs/usage.md) for the full CLI.
+
+**Using FSS**
+
 | Document | Contents |
 |----------|----------|
+| [docs/usage.md](docs/usage.md) | CLI reference for every command and flag, config file, output formats, SQLite schema |
 | [docs/scrapers.md](docs/scrapers.md) | Supported sites, URL patterns, shared packages |
 | [docs/sites.md](docs/sites.md) | Searchable A-Z list of every covered domain |
-| [docs/usage.md](docs/usage.md) | CLI reference, data model, output formats, SQLite |
-| [docs/storage.md](docs/storage.md) | Choosing a store, measured JSON vs SQLite trade-offs, inspecting a database, moving between them |
-| [docs/metadata.md](docs/metadata.md) | The scene model: schema versioning, first-seen tracking, external IDs, merge rules |
-| [docs/identify.md](docs/identify.md) | NFO sidecar file generation: matching videos, writing .nfo files |
-| [docs/stash.md](docs/stash.md) | Stash integration: matching, merging, import workflow |
 | [docs/docker.md](docs/docker.md) | Running FSS in Docker — image tags, volumes, compose examples |
-| [docs/library.md](docs/library.md) | Using FSS as a Go library — 9 public packages: scraper registry, models, matching, output, duration parsing, Stash client, NFO, identify |
-| [docs/architecture.md](docs/architecture.md) | System design, plugin registry, streaming model, store abstraction |
+
+**Working with the data you scrape**
+
+| Document | Contents |
+|----------|----------|
+| [docs/storage.md](docs/storage.md) | JSON vs SQLite: measured trade-offs, which to pick, inspecting a database without SQL, moving between the two |
+| [docs/metadata.md](docs/metadata.md) | The scene model: schema versioning, first-seen tracking, external IDs, what a re-scrape can and cannot change |
+| [docs/stash.md](docs/stash.md) | Stash integration: scene sources, matching, cross-site merging, import and revert |
+| [docs/identify.md](docs/identify.md) | NFO sidecar files for Kodi/Jellyfin: matching videos, posters, expiring thumbnails |
+
+**Extending FSS**
+
+| Document | Contents |
+|----------|----------|
 | [CONTRIBUTING.md](CONTRIBUTING.md) | How to add a new scraper, reference implementations |
+| [docs/architecture.md](docs/architecture.md) | System design, plugin registry, streaming model, store abstraction |
+| [docs/library.md](docs/library.md) | Using FSS as a Go library — the nine public packages |
+| [docs/platform-detection.md](docs/platform-detection.md) | Per-platform detection signals and which `*util` package a site belongs to |
+| [docs/enhancements.md](docs/enhancements.md) | Known gaps and ideas not yet built |
 | [SECURITY.md](SECURITY.md) | Credential handling, network policy, vulnerability reporting |

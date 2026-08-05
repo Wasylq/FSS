@@ -38,10 +38,11 @@ fss identify /path/to/videos --json studio.json --apply --no-report
 
 | Flag | Type | Default | Description |
 |------|------|---------|-------------|
-| `--json` | []string | _(none)_ | FSS JSON files to load |
-| `--dir` | string | config `out_dir` | Directory containing FSS JSON files (loads all `*.json`) |
-| `--json` / `--dir` / `--db` | | | Where scenes come from — see [Scene sources](usage.md#scene-sources-fss-stash-import-fss-identify) |
-| `--from-studio` / `--from-performer` | []string | _(none)_ | Narrow which scenes are used for matching — see [Scene sources](usage.md#scene-sources-fss-stash-import-fss-identify) |
+| `--json` | []string | _(none)_ | Specific FSS JSON files to load |
+| `--dir` | string | config `out_dir` | Directory of FSS JSON files (loads all `*.json`) |
+| `--db` | string | _(from config)_ | Load scenes from the SQLite store instead of JSON. Cannot be combined with `--json`/`--dir` |
+| `--from-studio` | []string | _(none)_ | Only match against scenes from these studios — URL, studio name, or sub-brand. Repeatable |
+| `--from-performer` | []string | _(none)_ | Only match against scenes featuring these performers. Repeatable |
 | `--apply` | bool | `false` | Actually write `.nfo` files (default is dry-run) |
 | `--force` | bool | `false` | Overwrite existing `.nfo` files |
 | `--no-report` | bool | `false` | Do not write `fss-report.txt` |
@@ -50,7 +51,15 @@ fss identify /path/to/videos --json studio.json --apply --no-report
 
 The positional argument `<video-dir>` is required — the directory of video files to scan.
 
-`--json` and `--dir` work the same way as in `fss stash import`: `--json` loads specific files, `--dir` loads every `*.json` file in a directory. If neither is specified, the configured `out_dir` is used.
+Scene sources work exactly as in `fss stash import` — same flags, same
+precedence, same filter semantics. See
+[Scene sources](usage.md#scene-sources-fss-stash-import-fss-identify) for the
+full rules.
+
+In short: `--json` loads specific files, `--dir` loads every `*.json` in a
+directory, `--db` reads the SQLite store. With **nothing specified**, a `db:`
+entry in your config wins and the database is read; otherwise the configured
+`out_dir` is scanned for JSON. Every run prints which source it resolved to.
 
 ## Video discovery
 
