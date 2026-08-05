@@ -12,6 +12,7 @@ Full technical reference. Use the section links to jump to what you need.
 
 For Stash integration, see [stash.md](stash.md).
 For NFO sidecar file generation, see [identify.md](identify.md).
+For the metadata model, store contract and JSON ↔ SQLite conversion, see [metadata.md](metadata.md).
 
 ---
 

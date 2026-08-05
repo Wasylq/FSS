@@ -194,7 +194,7 @@ The channel is always closed when the scraper finishes (or is cancelled via cont
 
 | Group | Fields |
 |-------|--------|
-| Identity | `ID`, `SiteID`, `StudioURL` |
+| Identity | `ID`, `SiteID`, `StudioURL`, `ExternalIDs` |
 | Core | `Title`, `URL`, `Date`, `Description` |
 | Media | `Thumbnail`, `Preview` |
 | People | `Performers`, `Director`, `Studio` |
@@ -203,9 +203,19 @@ The channel is always closed when the scraper finishes (or is cancelled via cont
 | Technical | `Duration` (seconds), `Resolution`, `Width`, `Height`, `Format` |
 | Engagement | `Views`, `Likes`, `Comments` |
 | Pricing | `PriceHistory`, `LowestPrice`, `LowestPriceDate` |
-| Housekeeping | `ScrapedAt`, `DeletedAt` |
+| Housekeeping | `FirstSeenAt`, `ScrapedAt`, `DeletedAt` |
 
 Scenes serialize cleanly to JSON (all fields have `json` tags with `omitempty` where appropriate).
+
+`ExternalIDs` maps a metadata database to this scene's ID in it — `(ID, SiteID)` is
+site-local, so these are the only keys that identify the same scene across sites. Use the
+`models.ExternalStashDB` / `ExternalTPDB` / `ExternalIAFD` / `ExternalIndexxx` constants;
+a stashbox instance uses its own site ID as the key.
+
+`FirstSeenAt` is stamped by the store on first write and never moved afterwards, so it
+survives re-scrapes. `models.StoreSchemaVersion` is the layout version written into every
+`models.StudioFile`; a reader should refuse a file whose version exceeds its own. See
+[metadata.md](metadata.md).
 
 ## Cancellation
 
@@ -262,14 +272,28 @@ merged := match.MergeScenes(result.Scenes, time.Time{})
 fmt.Println(merged.Title, merged.URLs, merged.Performers)
 ```
 
-**Key types:** `SceneIndex`, `MatchResult`, `MatchConfidence`, `MergedScene`.
+**Key types:** `SceneIndex`, `MatchResult`, `MatchConfidence`, `MergedScene`, `FieldSource`.
 
-`MergeScenes` trims surrounding whitespace from performer, tag, category and studio
-names and drops entries that trim to nothing. This is not cosmetic: dedup across sites
-is by exact string, and `fss stash import` looks entities up in Stash **by name**, so an
-untrimmed `"Nikki Nuttz "` would both survive as a second performer and create a
-duplicate in Stash. Case is deliberately preserved — sites differ on capitalisation and
-folding it would change which name is written.
+`MergeScenes` normalises performer, tag, category and studio names — surrounding
+whitespace removed, internal runs collapsed — and drops entries that reduce to nothing.
+This is not cosmetic: `fss stash import` looks entities up in Stash **by name**, so an
+untrimmed `"Nikki Nuttz "` both survives as a second performer and creates a duplicate in
+Stash. Deduplication is by a case-folded key, while the stored value keeps the first
+contributing site's spelling.
+
+`MergedScene.Sources` records provenance per scalar field:
+
+```go
+merged := match.MergeScenes(result.Scenes, time.Time{})
+if src := merged.Sources["date"]; src.Conflicted() {
+    fmt.Printf("kept %s's date, dropped %v\n", src.Site, src.Discarded)
+}
+```
+
+Tracked fields are `title`, `description`, `date`, `studio`, `thumbnail`, `duration` and
+`resolution`. `FieldSource.Site` is the site whose value was kept (empty when the value
+came from outside the scene set, e.g. an existing Stash date) and `Discarded` lists the
+competing values as `"siteID: value"`.
 
 ## NFO Generation (`nfo`)
 

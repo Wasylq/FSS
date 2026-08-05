@@ -506,10 +506,10 @@ func printMergeConflicts(merged match.MergedScene) {
 	}
 }
 
-func truncateEach(values []string, max int) []string {
+func truncateEach(values []string, limit int) []string {
 	out := make([]string, len(values))
 	for i, v := range values {
-		out[i] = truncate(v, max)
+		out[i] = truncate(v, limit)
 	}
 	return out
 }
