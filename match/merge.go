@@ -13,6 +13,39 @@ var (
 	mergeBlankLinesRe = regexp.MustCompile(`\n{3,}`)
 )
 
+// cleanName is what gets stored: surrounding whitespace removed and internal
+// runs collapsed to a single space. Case is untouched.
+//
+// Collapsing matters for the same reason trimming does — Stash lookups are by
+// exact name, so "Nikki  Nuttz" never matches the existing performer.
+func cleanName(s string) string {
+	return strings.Join(strings.Fields(s), " ")
+}
+
+// normName is the deduplication key: cleanName, case-folded. Two spellings that
+// differ only in case or spacing are one entry.
+func normName(s string) string {
+	return strings.ToLower(cleanName(s))
+}
+
+// appendNames adds each cleaned name to out unless its canonical key was
+// already seen, recording keys in seen.
+func appendNames(out []string, seen map[string]bool, names []string) []string {
+	for _, n := range names {
+		clean := cleanName(n)
+		if clean == "" {
+			continue
+		}
+		key := normName(clean)
+		if seen[key] {
+			continue
+		}
+		seen[key] = true
+		out = append(out, clean)
+	}
+	return out
+}
+
 func cleanDescription(s string) string {
 	s = mergeMultiSpaceRe.ReplaceAllString(s, "\n")
 	s = mergeBlankLinesRe.ReplaceAllString(s, "\n\n")
@@ -60,9 +93,11 @@ type MergedScene struct {
 // were already written to disk with the stray whitespace, which no scraper-side
 // fix can do without a full re-scrape. Scrapers should still avoid emitting it.
 //
-// Only surrounding whitespace is removed. Case is deliberately left alone: sites
+// Deduplication is by canonical key (see normName): case-folded, with runs of
+// whitespace collapsed. The *stored* value keeps its original case — sites
 // legitimately differ on capitalisation and folding it would change which name
-// gets written to Stash.
+// is written to Stash — but "Big Tits" and "big tits" from two sites are one
+// entry, not two.
 func MergeScenes(scenes []models.Scene, existingDate time.Time) MergedScene {
 	m := MergedScene{}
 
@@ -89,30 +124,13 @@ func MergeScenes(scenes []models.Scene, existingDate time.Time) MergedScene {
 			m.URLs = append(m.URLs, s.URL)
 		}
 
-		for _, t := range s.Tags {
-			if t = strings.TrimSpace(t); t != "" && !tagSet[t] {
-				tagSet[t] = true
-				m.Tags = append(m.Tags, t)
-			}
-		}
-
-		for _, c := range s.Categories {
-			if c = strings.TrimSpace(c); c != "" && !catSet[c] {
-				catSet[c] = true
-				m.Categories = append(m.Categories, c)
-			}
-		}
-
-		for _, p := range s.Performers {
-			if p = strings.TrimSpace(p); p != "" && !perfSet[p] {
-				perfSet[p] = true
-				m.Performers = append(m.Performers, p)
-			}
-		}
+		m.Tags = appendNames(m.Tags, tagSet, s.Tags)
+		m.Categories = appendNames(m.Categories, catSet, s.Categories)
+		m.Performers = appendNames(m.Performers, perfSet, s.Performers)
 
 		// Studio is looked up in Stash by name too (checkStudio), so it gets the
 		// same treatment.
-		if studio := strings.TrimSpace(s.Studio); m.Studio == "" && studio != "" {
+		if studio := cleanName(s.Studio); m.Studio == "" && studio != "" {
 			m.Studio = studio
 		}
 
@@ -168,6 +186,7 @@ func MergeStrings(existing, incoming []string) []string {
 	}
 	for _, s := range incoming {
 		if !seen[s] {
+			seen[s] = true // else a repeat within incoming is appended twice
 			result = append(result, s)
 		}
 	}

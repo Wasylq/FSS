@@ -337,15 +337,42 @@ func TestMergeScenesTrimsNamesAndDedupesAcrossSites(t *testing.T) {
 	}
 }
 
-// Case is deliberately preserved: sites differ on capitalisation and folding it
-// would change which name is written to Stash. This pins that decision so it is
-// not "fixed" into case-insensitive dedup by accident.
-func TestMergeScenesKeepsDistinctCasing(t *testing.T) {
+// Dedup is by canonical key (case-folded, whitespace-collapsed) while the stored
+// value keeps the first site's spelling.
+//
+// This reverses an earlier decision to keep both casings. Keeping both did not
+// help: `fss stash import` looks entities up by exact name, so two spellings
+// create two Stash performers for one person. Emitting one — the first
+// contributing site's — is strictly better, and the value written is still a
+// real site spelling rather than a folded one.
+func TestMergeScenesFoldsCasingButKeepsSpelling(t *testing.T) {
 	scenes := []models.Scene{
-		{ID: "1", SiteID: "a", URL: "https://a/1", Performers: []string{"Nikki Nuttz"}},
-		{ID: "1", SiteID: "b", URL: "https://b/1", Performers: []string{"nikki nuttz"}},
+		{ID: "1", SiteID: "a", URL: "https://a/1",
+			Performers: []string{"Nikki Nuttz"}, Tags: []string{"Big Tits"}},
+		{ID: "1", SiteID: "b", URL: "https://b/1",
+			Performers: []string{"nikki  nuttz"}, Tags: []string{"big tits"}},
 	}
-	if m := MergeScenes(scenes, time.Time{}); len(m.Performers) != 2 {
-		t.Errorf("Performers = %q, want both casings retained", m.Performers)
+	m := MergeScenes(scenes, time.Time{})
+	if len(m.Performers) != 1 || m.Performers[0] != "Nikki Nuttz" {
+		t.Errorf("Performers = %q, want [Nikki Nuttz]", m.Performers)
+	}
+	if len(m.Tags) != 1 || m.Tags[0] != "Big Tits" {
+		t.Errorf("Tags = %q, want [Big Tits]", m.Tags)
+	}
+}
+
+// Internal whitespace runs are collapsed in the stored value, not just used for
+// the dedup key — Stash lookups are by exact name.
+func TestMergeScenesCollapsesInternalWhitespace(t *testing.T) {
+	scenes := []models.Scene{
+		{ID: "1", SiteID: "a", URL: "https://a/1",
+			Performers: []string{"Nikki  Nuttz"}, Studio: "  Babes   Network "},
+	}
+	m := MergeScenes(scenes, time.Time{})
+	if len(m.Performers) != 1 || m.Performers[0] != "Nikki Nuttz" {
+		t.Errorf("Performers = %q, want [Nikki Nuttz]", m.Performers)
+	}
+	if m.Studio != "Babes Network" {
+		t.Errorf("Studio = %q, want %q", m.Studio, "Babes Network")
 	}
 }
