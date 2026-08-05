@@ -6,6 +6,7 @@ import (
 	"encoding/xml"
 	"time"
 
+	"github.com/Wasylq/FSS/internal/mediafetch"
 	"github.com/Wasylq/FSS/match"
 )
 
@@ -47,7 +48,10 @@ func FromMergedScene(m match.MergedScene) Movie {
 		mov.Premiered = m.Date.Format(time.DateOnly)
 	}
 
-	if m.Thumbnail != "" {
+	// A thumbnail whose signed expiry has passed is a dead link: writing it
+	// makes the media manager fetch and fail. Omitting it is strictly better,
+	// and `fss identify --poster` replaces it with a downloaded local file.
+	if m.Thumbnail != "" && !mediafetch.Expired(m.Thumbnail, time.Now()) {
 		mov.Thumbnails = []Thumb{{Aspect: "poster", URL: m.Thumbnail}}
 	}
 

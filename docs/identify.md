@@ -43,6 +43,8 @@ fss identify /path/to/videos --json studio.json --apply --no-report
 | `--apply` | bool | `false` | Actually write `.nfo` files (default is dry-run) |
 | `--force` | bool | `false` | Overwrite existing `.nfo` files |
 | `--no-report` | bool | `false` | Do not write `fss-report.txt` |
+| `--poster` | bool | `false` | Download each matched scene's thumbnail beside the video and reference it from the `.nfo` (see [Posters and expiring thumbnails](#posters-and-expiring-thumbnails)) |
+| `--poster-allow-private` | bool | `false` | Allow poster URLs that resolve to private/loopback IPs, for local media servers; off by default to prevent SSRF |
 
 The positional argument `<video-dir>` is required — the directory of video files to scan.
 
@@ -113,9 +115,33 @@ Each `.nfo` file is written next to the video with the same basename (`scene.mp4
 | `Date` | `<premiered>` | |
 | `Description` | `<plot>` | Empty if the scraper didn't produce one |
 | `Studio` | `<studio>` | |
-| `Thumbnail` | `<thumb aspect="poster">` | URL — may expire, but gives Stash a chance to fetch it |
+| `Thumbnail` | `<thumb aspect="poster">` | Remote URL, or a local filename with `--poster`. Omitted when the URL is known-dead — see below |
 | `Performers` | `<actor><name>` | One `<actor>` block per performer |
 | `Tags` | `<tag>` | One element per tag |
+
+## Posters and expiring thumbnails
+
+Scraped thumbnails are usually hotlinks, and many sites hand out **signed, short-lived CDN URLs**:
+
+```
+https://c758cac692.mjedge.net/…/6932-1x.jpg?expires=1783066465&l=40&token=2036bf…
+```
+
+That `expires` value is the moment of the scrape plus a few hours. Days later the URL returns `410 Gone`, so a `<thumb>` pointing at it is a dead link the media manager fetches and fails on.
+
+**By default** (no network access at all), FSS reads the expiry out of the URL and simply omits `<thumb>` when it has already passed. Recognised forms are `expires` / `exp` / `expiry` / `valid_until` holding a Unix timestamp, and AWS SigV4 presigning (`X-Amz-Date` + `X-Amz-Expires`). The check is deliberately conservative: a URL it cannot decide about is kept.
+
+**With `--poster`**, the image is downloaded to `<basename>-poster.<ext>` next to the video — the local-artwork convention Kodi, Jellyfin and Emby all recognise — and `<thumb>` points at that filename instead of a URL. A local file is present by definition, so the reference cannot rot.
+
+```bash
+fss identify /path/to/videos --json studio.json --apply --poster
+```
+
+It is opt-in because it is one network request per matched scene, against the same hosts a scrape rate-limits.
+
+When `--poster` is set and a download fails, `<thumb>` is omitted rather than falling back to the URL: the failure is proof the URL is dead. The scene is still identified and the `.nfo` still written — a missing poster never fails an identification. Responses that are not images (a login page, say) are refused rather than saved under a `.jpg` name. The run prints `N poster(s) saved, M unavailable`.
+
+Either way the rule is the same: **`<thumb>` is only written when the image is actually there.** If posters come out empty, re-scrape the studio first so the URLs are freshly signed, then run `identify --poster`.
 
 ## Existing `.nfo` files
 

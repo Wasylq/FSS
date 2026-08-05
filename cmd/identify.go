@@ -1,8 +1,12 @@
 package cmd
 
 import (
+	"context"
 	"fmt"
+	"os"
+	"os/signal"
 	"path/filepath"
+	"syscall"
 
 	"github.com/spf13/cobra"
 
@@ -32,6 +36,8 @@ func init() {
 	identifyCmd.Flags().Bool("apply", false, "actually write .nfo files (default is dry-run)")
 	identifyCmd.Flags().Bool("force", false, "overwrite existing .nfo files")
 	identifyCmd.Flags().Bool("no-report", false, "do not write fss-report.txt")
+	identifyCmd.Flags().Bool("poster", false, "download each scene's thumbnail to a -poster file beside the video and reference it from the .nfo (off by default: one network fetch per scene)")
+	identifyCmd.Flags().Bool("poster-allow-private", false, "allow poster URLs that resolve to private/loopback IPs (for local media servers); disabled by default to prevent SSRF")
 }
 
 func runIdentify(cmd *cobra.Command, args []string) error {
@@ -84,10 +90,17 @@ func runIdentify(cmd *cobra.Command, args []string) error {
 	apply, _ := cmd.Flags().GetBool("apply")
 	force, _ := cmd.Flags().GetBool("force")
 	noReport, _ := cmd.Flags().GetBool("no-report")
+	poster, _ := cmd.Flags().GetBool("poster")
+	posterAllowPrivate, _ := cmd.Flags().GetBool("poster-allow-private")
 
-	results := identify.Run(videos, idx, identify.Options{
-		Apply: apply,
-		Force: force,
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
+
+	results := identify.RunContext(ctx, videos, idx, identify.Options{
+		Apply:              apply,
+		Force:              force,
+		Poster:             poster,
+		PosterAllowPrivate: posterAllowPrivate,
 	})
 
 	// --- print results ---
@@ -96,6 +109,7 @@ func runIdentify(cmd *cobra.Command, args []string) error {
 	}
 	fmt.Println()
 
+	var postersSaved, posterFailed int
 	for _, r := range results {
 		rel, _ := filepath.Rel(absDir, r.VideoPath)
 		if rel == "" {
@@ -116,10 +130,23 @@ func runIdentify(cmd *cobra.Command, args []string) error {
 			fmt.Printf(" (%s)", r.Scene.Sites[0])
 		}
 		fmt.Println()
+
+		switch {
+		case r.PosterError != nil:
+			posterFailed++
+			fmt.Printf("             no poster: %v\n", r.PosterError)
+		case r.PosterPath != "":
+			postersSaved++
+		}
 	}
 
 	stats := identify.Summarize(results)
 	fmt.Println()
+	if poster && apply {
+		fmt.Printf("%d poster(s) saved, %d unavailable\n", postersSaved, posterFailed)
+	} else if poster {
+		fmt.Println("(--poster downloads nothing during a dry run)")
+	}
 	if apply {
 		fmt.Printf("%d matched and written, %d unmatched, %d skipped, %d ambiguous\n",
 			stats.Matched, stats.Unmatched, stats.Skipped, stats.Ambiguous)

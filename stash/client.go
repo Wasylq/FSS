@@ -10,18 +10,17 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"net"
 	"net/http"
-	"net/url"
 	"strings"
 	"time"
 
 	"github.com/Wasylq/FSS/internal/httpx"
+	"github.com/Wasylq/FSS/internal/mediafetch"
 )
 
 // MaxCoverImageBytes caps DownloadCoverImage response reads to prevent a
 // malicious or oversized URL from exhausting memory.
-const MaxCoverImageBytes = 10 * 1024 * 1024
+const MaxCoverImageBytes = mediafetch.MaxBytes
 
 // MaxResponseBytes caps GraphQL response reads. Set high enough for paginated
 // FindScenes responses with full metadata, low enough that a runaway server
@@ -589,78 +588,16 @@ func (c *Client) UpdateScene(ctx context.Context, input SceneUpdateInput) error 
 // and the resolved IPs must not be private/loopback/link-local unless
 // allowPrivateNetworks is true (use that to opt into media servers on RFC1918).
 // Response bodies are capped at MaxCoverImageBytes.
+//
+// A URL carrying an already-passed signed expiry is rejected without a request:
+// scraped CDN thumbnails are often dead within hours of the scrape.
 func (c *Client) DownloadCoverImage(ctx context.Context, imageURL string, allowPrivateNetworks bool) (string, error) {
-	if err := validateCoverURL(imageURL, allowPrivateNetworks); err != nil {
-		return "", fmt.Errorf("rejecting cover URL: %w", err)
+	if mediafetch.Expired(imageURL, time.Now()) {
+		return "", fmt.Errorf("cover URL signature expired — re-scrape the studio for a fresh URL")
 	}
-
-	resp, err := httpx.Do(ctx, c.http, httpx.Request{
-		URL:     imageURL,
-		Headers: map[string]string{"User-Agent": httpx.UserAgentFirefox},
-	})
+	asset, err := mediafetch.Fetch(ctx, c.http, imageURL, allowPrivateNetworks)
 	if err != nil {
-		return "", fmt.Errorf("downloading cover image: %w", err)
+		return "", fmt.Errorf("cover image: %w", err)
 	}
-	defer func() { _ = resp.Body.Close() }()
-
-	data, err := io.ReadAll(io.LimitReader(resp.Body, MaxCoverImageBytes+1))
-	if err != nil {
-		return "", fmt.Errorf("reading cover image: %w", err)
-	}
-	if len(data) > MaxCoverImageBytes {
-		return "", fmt.Errorf("cover image exceeds %d bytes", MaxCoverImageBytes)
-	}
-
-	contentType := resp.Header.Get("Content-Type")
-	if contentType == "" {
-		contentType = http.DetectContentType(data)
-	}
-	return "data:" + contentType + ";base64," + base64.StdEncoding.EncodeToString(data), nil
-}
-
-// validateCoverURL enforces the SSRF defense for DownloadCoverImage.
-// Note: this does a single DNS lookup before the actual request — DNS
-// rebinding attacks are not mitigated. For our threat model (importing
-// someone else's JSON dump), the dump author would also need to control
-// DNS for a domain the importer resolves, which is a stretch.
-func validateCoverURL(rawURL string, allowPrivateNetworks bool) error {
-	u, err := url.Parse(rawURL)
-	if err != nil {
-		return fmt.Errorf("parsing URL: %w", err)
-	}
-	if u.Scheme != "http" && u.Scheme != "https" {
-		return fmt.Errorf("scheme %q not allowed (only http/https)", u.Scheme)
-	}
-	host := u.Hostname()
-	if host == "" {
-		return fmt.Errorf("URL has no host")
-	}
-	if allowPrivateNetworks {
-		return nil
-	}
-	if ip := net.ParseIP(host); ip != nil {
-		if isPrivateOrLocal(ip) {
-			return fmt.Errorf("host %s is a private/loopback address", ip)
-		}
-		return nil
-	}
-	ips, err := net.LookupIP(host)
-	if err != nil {
-		return fmt.Errorf("resolving host %q: %w", host, err)
-	}
-	for _, ip := range ips {
-		if isPrivateOrLocal(ip) {
-			return fmt.Errorf("host %q resolves to private/loopback IP %s", host, ip)
-		}
-	}
-	return nil
-}
-
-func isPrivateOrLocal(ip net.IP) bool {
-	return ip.IsLoopback() ||
-		ip.IsPrivate() ||
-		ip.IsLinkLocalUnicast() ||
-		ip.IsLinkLocalMulticast() ||
-		ip.IsInterfaceLocalMulticast() ||
-		ip.IsUnspecified()
+	return "data:" + asset.ContentType + ";base64," + base64.StdEncoding.EncodeToString(asset.Data), nil
 }

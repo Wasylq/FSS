@@ -1,6 +1,7 @@
 package nfo
 
 import (
+	"fmt"
 	"strings"
 	"testing"
 	"time"
@@ -110,5 +111,46 @@ func TestMarshalXMLEscaping(t *testing.T) {
 	}
 	if !strings.Contains(s, "&#34;") || !strings.Contains(s, "&lt;") {
 		t.Errorf("expected XML-escaped special chars in: %s", s)
+	}
+}
+
+// An expired signed thumbnail URL is a dead link; writing it makes the media
+// manager fetch and fail, so it must be omitted entirely.
+func TestFromMergedSceneOmitsExpiredThumbnail(t *testing.T) {
+	past := time.Now().Add(-24 * time.Hour).Unix()
+	m := match.MergedScene{
+		Title:     "Scene",
+		Thumbnail: fmt.Sprintf("https://cdn.example.com/a.jpg?expires=%d&token=abc", past),
+	}
+	if got := FromMergedScene(m); len(got.Thumbnails) != 0 {
+		t.Errorf("Thumbnails = %+v, want none for an expired URL", got.Thumbnails)
+	}
+
+	out, err := Marshal(FromMergedScene(m))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if strings.Contains(string(out), "<thumb") {
+		t.Errorf("expired thumbnail was written into the XML:\n%s", out)
+	}
+}
+
+// A URL with no expiry information is kept — we only drop what we can prove
+// is dead.
+func TestFromMergedSceneKeepsUndatedThumbnail(t *testing.T) {
+	m := match.MergedScene{Title: "Scene", Thumbnail: "https://cdn.example.com/a.jpg"}
+	got := FromMergedScene(m)
+	if len(got.Thumbnails) != 1 || got.Thumbnails[0].URL != m.Thumbnail {
+		t.Errorf("Thumbnails = %+v, want the URL preserved", got.Thumbnails)
+	}
+}
+
+// A still-valid signed URL is kept.
+func TestFromMergedSceneKeepsUnexpiredThumbnail(t *testing.T) {
+	future := time.Now().Add(24 * time.Hour).Unix()
+	url := fmt.Sprintf("https://cdn.example.com/a.jpg?expires=%d&token=abc", future)
+	got := FromMergedScene(match.MergedScene{Title: "Scene", Thumbnail: url})
+	if len(got.Thumbnails) != 1 {
+		t.Errorf("Thumbnails = %+v, want the unexpired URL kept", got.Thumbnails)
 	}
 }

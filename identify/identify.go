@@ -4,8 +4,10 @@
 package identify
 
 import (
+	"context"
 	"fmt"
 	"io/fs"
+	"net/http"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -13,6 +15,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/Wasylq/FSS/internal/httpx"
+	"github.com/Wasylq/FSS/internal/mediafetch"
 	"github.com/Wasylq/FSS/match"
 	"github.com/Wasylq/FSS/nfo"
 )
@@ -39,6 +43,12 @@ type Result struct {
 	Scene      *match.MergedScene
 	Skipped    bool
 	SkipReason string
+
+	// PosterPath is the downloaded poster file, set only with Options.Poster.
+	PosterPath string
+	// PosterError records why a poster could not be saved. The NFO is still
+	// written — a missing poster does not fail the identification.
+	PosterError error
 }
 
 // Options controls the identify run behaviour.
@@ -46,6 +56,19 @@ type Options struct {
 	Apply    bool
 	Force    bool
 	NoReport bool
+
+	// Poster downloads each matched scene's thumbnail to a `-poster` file
+	// beside the video and points the NFO at it. Off by default: it is a
+	// network fetch per scene against the same hosts a scrape rate-limits.
+	//
+	// Without it, a scene's thumbnail stays a remote URL — and scraped CDN
+	// URLs are frequently signed and short-lived, so the link is often dead
+	// by the time a media manager follows it.
+	Poster bool
+
+	// PosterAllowPrivate permits poster URLs resolving to private or loopback
+	// addresses, for locally-hosted media. See mediafetch.ValidateURL.
+	PosterAllowPrivate bool
 }
 
 // FindVideos recursively lists all video files under dir.
@@ -67,11 +90,22 @@ func FindVideos(dir string) ([]string, error) {
 	return videos, err
 }
 
-// Run matches each video against the scene index and optionally writes NFO sidecar files.
+// Run matches each video against the scene index and optionally writes NFO
+// sidecar files. It is RunContext with a background context.
 func Run(videos []string, idx *match.SceneIndex, opts Options) []Result {
+	return RunContext(context.Background(), videos, idx, opts)
+}
+
+// RunContext is Run with cancellation, which Options.Poster needs since it
+// performs network fetches.
+func RunContext(ctx context.Context, videos []string, idx *match.SceneIndex, opts Options) []Result {
 	var results []Result
+	client := httpx.NewClient(30 * time.Second)
 
 	for _, vpath := range videos {
+		if ctx.Err() != nil {
+			break
+		}
 		basename := filepath.Base(vpath)
 		nfoPath := nfoPathFor(vpath)
 
@@ -107,7 +141,17 @@ func Run(videos []string, idx *match.SceneIndex, opts Options) []Result {
 		}
 
 		if opts.Apply {
-			if err := writeNFO(nfoPath, merged); err != nil {
+			posterRef := ""
+			if opts.Poster && merged.Thumbnail != "" {
+				ref, err := savePoster(ctx, client, vpath, merged.Thumbnail, opts.PosterAllowPrivate)
+				if err != nil {
+					r.PosterError = err
+				} else {
+					posterRef = ref
+					r.PosterPath = filepath.Join(filepath.Dir(vpath), ref)
+				}
+			}
+			if err := writeNFO(nfoPath, merged, posterRef, opts.Poster); err != nil {
 				r.Skipped = true
 				r.SkipReason = fmt.Sprintf("write error: %v", err)
 			}
@@ -194,13 +238,66 @@ func nfoPathFor(videoPath string) string {
 	return videoPath[:len(videoPath)-len(ext)] + ".nfo"
 }
 
-func writeNFO(path string, m match.MergedScene) error {
+// writeNFO renders the NFO, resolving what `<thumb>` should point at:
+//
+//   - posterRef set — a downloaded file, present by definition;
+//   - posterWanted but no ref — the download was tried and failed, which
+//     proves the remote URL is dead, so no thumb at all;
+//   - otherwise — whatever FromMergedScene decides, which keeps the remote
+//     URL unless its signed expiry has already passed.
+func writeNFO(path string, m match.MergedScene, posterRef string, posterWanted bool) error {
 	mov := nfo.FromMergedScene(m)
+	switch {
+	case posterRef != "":
+		mov.Thumbnails = []nfo.Thumb{{Aspect: "poster", URL: posterRef}}
+	case posterWanted:
+		mov.Thumbnails = nil
+	}
 	data, err := nfo.Marshal(mov)
 	if err != nil {
 		return fmt.Errorf("marshalling NFO: %w", err)
 	}
 	return os.WriteFile(path, data, 0o600)
+}
+
+// posterExtensions maps the content types worth saving to a file extension.
+// Anything else is refused rather than written under a misleading name.
+var posterExtensions = map[string]string{
+	"image/jpeg": ".jpg",
+	"image/png":  ".png",
+	"image/webp": ".webp",
+	"image/avif": ".avif",
+	"image/gif":  ".gif",
+}
+
+// savePoster downloads thumbURL next to videoPath as `<basename>-poster.<ext>`,
+// the local-artwork convention Kodi, Jellyfin and Emby all recognise. It
+// returns the bare filename, which is what goes in the NFO.
+func savePoster(ctx context.Context, client *http.Client, videoPath, thumbURL string, allowPrivate bool) (string, error) {
+	if mediafetch.Expired(thumbURL, time.Now()) {
+		return "", fmt.Errorf("thumbnail URL signature expired — re-scrape the studio for a fresh URL")
+	}
+	asset, err := mediafetch.Fetch(ctx, client, thumbURL, allowPrivate)
+	if err != nil {
+		return "", err
+	}
+
+	mediaType := asset.ContentType
+	if i := strings.IndexByte(mediaType, ';'); i >= 0 {
+		mediaType = mediaType[:i]
+	}
+	ext, ok := posterExtensions[strings.ToLower(strings.TrimSpace(mediaType))]
+	if !ok {
+		return "", fmt.Errorf("unexpected content type %q — not writing a poster", asset.ContentType)
+	}
+
+	base := filepath.Base(videoPath)
+	base = base[:len(base)-len(filepath.Ext(base))]
+	name := base + "-poster" + ext
+	if err := os.WriteFile(filepath.Join(filepath.Dir(videoPath), name), asset.Data, 0o600); err != nil {
+		return "", fmt.Errorf("writing poster: %w", err)
+	}
+	return name, nil
 }
 
 // probeDuration returns the file's duration in seconds via ffprobe, or 0 if

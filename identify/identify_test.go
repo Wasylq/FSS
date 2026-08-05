@@ -1,6 +1,9 @@
 package identify
 
 import (
+	"context"
+	"net/http"
+	"net/http/httptest"
 	"os"
 	"path/filepath"
 	"strings"
@@ -266,5 +269,156 @@ func TestWriteReportSkipsWhenAllMatched(t *testing.T) {
 
 	if _, err := os.Stat(filepath.Join(dir, "fss-report.txt")); err == nil {
 		t.Error("report should not be written when all files matched")
+	}
+}
+
+// --poster is what makes the NFO thumbnail trustworthy: the file is downloaded
+// and the NFO points at it, so the reference is present by construction.
+func TestRunPosterDownloadsAndReferencesLocalFile(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.Header().Set("Content-Type", "image/jpeg")
+		_, _ = w.Write([]byte("jpegdata"))
+	}))
+	defer srv.Close()
+
+	dir := t.TempDir()
+	video := filepath.Join(dir, "Fostering the Bully.mp4")
+	if err := os.WriteFile(video, []byte("video"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+
+	idx := match.BuildIndex([]models.Scene{{
+		ID: "1", SiteID: "test", Title: "Fostering the Bully",
+		URL: "https://example.com/1", Thumbnail: srv.URL + "/cover.jpg",
+	}})
+
+	results := RunContext(context.Background(), []string{video}, idx, Options{
+		Apply: true, Poster: true, PosterAllowPrivate: true,
+	})
+	if len(results) != 1 {
+		t.Fatalf("got %d results", len(results))
+	}
+	if results[0].PosterError != nil {
+		t.Fatalf("PosterError = %v", results[0].PosterError)
+	}
+
+	posterPath := filepath.Join(dir, "Fostering the Bully-poster.jpg")
+	data, err := os.ReadFile(posterPath)
+	if err != nil {
+		t.Fatalf("poster not written: %v", err)
+	}
+	if string(data) != "jpegdata" {
+		t.Errorf("poster content = %q", data)
+	}
+
+	nfoData, err := os.ReadFile(filepath.Join(dir, "Fostering the Bully.nfo"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(string(nfoData), "Fostering the Bully-poster.jpg") {
+		t.Errorf("NFO does not reference the local poster:\n%s", nfoData)
+	}
+	if strings.Contains(string(nfoData), srv.URL) {
+		t.Errorf("NFO still contains the remote URL:\n%s", nfoData)
+	}
+}
+
+// A dead thumbnail must not fail the identification, and must not leave a
+// <thumb> pointing at something that isn't there.
+func TestRunPosterFailureStillWritesNFO(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusGone)
+	}))
+	defer srv.Close()
+
+	dir := t.TempDir()
+	video := filepath.Join(dir, "Scene One.mp4")
+	if err := os.WriteFile(video, []byte("video"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+
+	idx := match.BuildIndex([]models.Scene{{
+		ID: "1", SiteID: "test", Title: "Scene One",
+		URL: "https://example.com/1", Thumbnail: srv.URL + "/gone.jpg",
+	}})
+
+	results := RunContext(context.Background(), []string{video}, idx, Options{
+		Apply: true, Poster: true, PosterAllowPrivate: true,
+	})
+	if results[0].PosterError == nil {
+		t.Error("expected a PosterError for a 410 thumbnail")
+	}
+	if results[0].Skipped {
+		t.Error("a missing poster must not skip the scene")
+	}
+
+	nfoData, err := os.ReadFile(filepath.Join(dir, "Scene One.nfo"))
+	if err != nil {
+		t.Fatalf("NFO not written: %v", err)
+	}
+	if !strings.Contains(string(nfoData), "<title>Scene One</title>") {
+		t.Errorf("NFO missing metadata:\n%s", nfoData)
+	}
+	if strings.Contains(string(nfoData), srv.URL+"/gone.jpg") {
+		t.Errorf("NFO references a thumbnail that failed to download:\n%s", nfoData)
+	}
+}
+
+// Without --poster nothing is fetched and no poster file appears.
+func TestRunWithoutPosterDownloadsNothing(t *testing.T) {
+	var hits int
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		hits++
+		_, _ = w.Write([]byte("x"))
+	}))
+	defer srv.Close()
+
+	dir := t.TempDir()
+	video := filepath.Join(dir, "Scene One.mp4")
+	if err := os.WriteFile(video, []byte("video"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	idx := match.BuildIndex([]models.Scene{{
+		ID: "1", SiteID: "test", Title: "Scene One",
+		URL: "https://example.com/1", Thumbnail: srv.URL + "/cover.jpg",
+	}})
+
+	RunContext(context.Background(), []string{video}, idx, Options{Apply: true})
+
+	if hits != 0 {
+		t.Errorf("made %d requests without --poster, want 0", hits)
+	}
+	if entries, _ := filepath.Glob(filepath.Join(dir, "*-poster.*")); len(entries) != 0 {
+		t.Errorf("poster files written without --poster: %v", entries)
+	}
+}
+
+// Content types that are not images are refused rather than saved under a
+// misleading extension.
+func TestRunPosterRejectsNonImage(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.Header().Set("Content-Type", "text/html")
+		_, _ = w.Write([]byte("<html>login</html>"))
+	}))
+	defer srv.Close()
+
+	dir := t.TempDir()
+	video := filepath.Join(dir, "Scene One.mp4")
+	if err := os.WriteFile(video, []byte("video"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	idx := match.BuildIndex([]models.Scene{{
+		ID: "1", SiteID: "test", Title: "Scene One",
+		URL: "https://example.com/1", Thumbnail: srv.URL + "/cover.jpg",
+	}})
+
+	results := RunContext(context.Background(), []string{video}, idx, Options{
+		Apply: true, Poster: true, PosterAllowPrivate: true,
+	})
+	if results[0].PosterError == nil {
+		t.Error("expected an HTML response to be refused as a poster")
+	}
+	if entries, _ := filepath.Glob(filepath.Join(dir, "*-poster.*")); len(entries) != 0 {
+		t.Errorf("wrote a poster from a non-image response: %v", entries)
 	}
 }

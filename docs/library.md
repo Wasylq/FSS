@@ -325,6 +325,27 @@ stats := identify.Summarize(results)
 fmt.Printf("%d matched, %d unmatched\n", stats.Matched, stats.Unmatched)
 ```
 
+`RunContext` is the same with cancellation, which `Options.Poster` needs since it
+performs network fetches:
+
+```go
+results := identify.RunContext(ctx, videos, idx, identify.Options{
+    Apply:  true,
+    Poster: true, // download thumbnails to <basename>-poster.<ext> beside each video
+})
+for _, r := range results {
+    if r.PosterError != nil {
+        fmt.Printf("%s: no poster (%v)\n", r.VideoPath, r.PosterError)
+    }
+}
+```
+
+`Poster` is off by default — it is one request per matched scene. Without it a
+scene's `<thumb>` stays a remote URL, and scraped CDN URLs are usually signed and
+short-lived. Either way `<thumb>` is only written when the image is really there:
+`nfo.FromMergedScene` drops a thumbnail whose signed expiry has already passed,
+and a failed poster download drops it too rather than falling back to the URL.
+
 **Key types:** `Result`, `Options`, `Stats`.
 
 ## Stash Client (`stash`)
