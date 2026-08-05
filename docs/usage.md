@@ -390,26 +390,30 @@ The data directory is created automatically if it doesn't exist. When `--db` is 
 
 ### Schema
 
-Ten tables (three core + six junction/lookup + one metadata). Inspect with any SQLite client (`sqlite3`, DBeaver, TablePlus, etc.).
+Eleven tables (three core + six junction/lookup + one metadata + `schema_version`),
+at schema version 7. Inspect with any SQLite client (`sqlite3`, DB Browser for
+SQLite, DBeaver, Datasette, …). Migrations run automatically on open.
 
-**`scenes`** — one row per scene:
+**`scenes`** — one row per scene. Primary key is **`(id, site_id, studio_url)`**:
+the same scene reachable from two studio URLs is stored once per URL, so the
+studio URL is part of the identity.
 
 | Column | Type | Notes |
 |--------|------|-------|
-| `id` | TEXT | Site-specific ID (primary key with `site_id`) |
-| `site_id` | TEXT | e.g. `manyvids` |
-| `studio_url` | TEXT | Indexed |
+| `id` | TEXT | Site-specific ID (part of the primary key) |
+| `site_id` | TEXT | e.g. `manyvids` (part of the primary key) |
+| `studio_url` | TEXT | Part of the primary key; indexed |
 | `title` | TEXT | |
 | `url` | TEXT | |
 | `date` | TEXT | RFC3339 |
 | `description` | TEXT | |
-| `thumbnail` | TEXT | |
+| `thumbnail` | TEXT | Remote URL; often a short-lived signed CDN link |
 | `preview` | TEXT | |
-| `performers` | TEXT | JSON array |
+| `performers` | TEXT | **Legacy JSON array — no longer read or written.** Use `scene_performers` |
 | `director` | TEXT | |
 | `studio` | TEXT | |
-| `tags` | TEXT | JSON array |
-| `categories` | TEXT | JSON array |
+| `tags` | TEXT | **Legacy JSON array — no longer read or written.** Use `scene_tags` |
+| `categories` | TEXT | **Legacy JSON array — no longer read or written.** Use `scene_categories` |
 | `series` | TEXT | |
 | `series_part` | INTEGER | |
 | `duration` | INTEGER | Seconds |
@@ -422,22 +426,25 @@ Ten tables (three core + six junction/lookup + one metadata). Inspect with any S
 | `comments` | INTEGER | |
 | `lowest_price` | REAL | |
 | `lowest_price_date` | TEXT | RFC3339, nullable |
-| `scraped_at` | TEXT | RFC3339 |
+| `first_seen_at` | TEXT | RFC3339 — when the scene entered the store; never moves once set |
+| `scraped_at` | TEXT | RFC3339 — when it was last fetched |
 | `deleted_at` | TEXT | RFC3339, nullable — NULL means active |
+| `content_hash` | TEXT | Internal. Fingerprint of everything above except `scraped_at`/`first_seen_at`, so `Save` can skip unchanged rows. **Do not hand-edit** — a stale value makes a scene invisible to updates. Setting it to `''` forces a rewrite |
 
 **`price_history`** — one row per price snapshot per scene:
 
-| Column | Type |
-|--------|------|
-| `id` | INTEGER (autoincrement) |
-| `scene_id` | TEXT |
-| `site_id` | TEXT |
-| `date` | TEXT |
-| `regular` | REAL |
-| `discounted` | REAL |
-| `is_free` | INTEGER (0/1) |
-| `is_on_sale` | INTEGER (0/1) |
-| `discount_percent` | INTEGER |
+| Column | Type | Notes |
+|--------|------|-------|
+| `id` | INTEGER | autoincrement |
+| `scene_id` | TEXT | with `site_id`, `studio_url` identifies the scene |
+| `site_id` | TEXT | |
+| `studio_url` | TEXT | |
+| `date` | TEXT | RFC3339 |
+| `regular` | REAL | |
+| `discounted` | REAL | |
+| `is_free` | INTEGER | 0/1 |
+| `is_on_sale` | INTEGER | 0/1 |
+| `discount_percent` | INTEGER | |
 
 **`studios`** — one row per studio URL:
 
@@ -445,33 +452,51 @@ Ten tables (three core + six junction/lookup + one metadata). Inspect with any S
 |--------|------|-------|
 | `url` | TEXT | Primary key |
 | `site_id` | TEXT | e.g. `manyvids` |
-| `name` | TEXT | User-supplied label via `--name`; never cleared by a scrape that omits `--name` |
+| `name` | TEXT | Label via `--name`; never cleared by a scrape that omits `--name` |
 | `added_at` | TEXT | RFC3339 — when first scraped |
 | `last_scraped_at` | TEXT | RFC3339, nullable |
 
-**Normalized lookup tables** — performers, tags, and categories are stored in dedicated tables with junction tables linking them to scenes. This makes the data fully queryable without JSON parsing. The old JSON columns (`performers`, `tags`, `categories`) in the `scenes` table are kept for compatibility but are no longer used for reads.
+**Normalized lookup tables** — performers, tags and categories live in their own
+tables with junction tables linking them to scenes, so the data is queryable
+without JSON parsing. The lookup tables are **global**: one row per distinct
+name, shared across every studio. That is deliberate deduplication.
 
-**`performers`** — deduplicated performer names:
+**`performers`** / **`tags`** / **`categories`**:
 
 | Column | Type |
 |--------|------|
 | `id` | INTEGER (autoincrement) |
 | `name` | TEXT (unique) |
 
-**`tags`** / **`categories`** — same structure as `performers`.
-
-**`scene_performers`** — links scenes to performers:
+**`scene_performers`** / **`scene_tags`** / **`scene_categories`** — all three have
+the same shape, including `position`:
 
 | Column | Type | Notes |
 |--------|------|-------|
 | `scene_id` | TEXT | FK to scenes |
 | `site_id` | TEXT | FK to scenes |
-| `performer_id` | INTEGER | FK to performers |
-| `position` | INTEGER | Listing order (0 = first billed) |
+| `studio_url` | TEXT | FK to scenes — always join on all three |
+| `<entity>_id` | INTEGER | FK to `performers` / `tags` / `categories` |
+| `position` | INTEGER | Source order (0 = first). Scrapers emit meaningful order and it is preserved |
 
-**`scene_tags`** / **`scene_categories`** — same structure without `position`.
+**`scene_external_ids`** — cross-site identity, e.g. a StashDB UUID:
+
+| Column | Type | Notes |
+|--------|------|-------|
+| `scene_id` | TEXT | FK to scenes |
+| `site_id` | TEXT | FK to scenes |
+| `studio_url` | TEXT | FK to scenes |
+| `source` | TEXT | `stashdb`, `tpdb`, `iafd`, `indexxx`, or a stashbox site ID |
+| `external_id` | TEXT | The ID in that database |
+
+Indexed on `(source, external_id)`, so "which stored scenes are this StashDB
+UUID" is answerable across every site and studio.
 
 **`schema_version`** — tracks migration state (single `version INTEGER` column).
+
+> **Joining scene child rows:** always match on **all three** of `scene_id`,
+> `site_id` *and* `studio_url`. Dropping `studio_url` silently merges rows from
+> different studios that happen to share a scene ID.
 
 ### Listing studios
 
@@ -494,7 +519,8 @@ ORDER BY date DESC;
 -- Scenes that have ever been on sale
 SELECT s.title, ph.regular, ph.discounted, ph.date
 FROM scenes s
-JOIN price_history ph ON ph.scene_id = s.id AND ph.site_id = s.site_id
+JOIN price_history ph
+  ON ph.scene_id = s.id AND ph.site_id = s.site_id AND ph.studio_url = s.studio_url
 WHERE ph.is_on_sale = 1
 ORDER BY ph.date DESC;
 

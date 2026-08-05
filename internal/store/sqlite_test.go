@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"encoding/csv"
 	"encoding/json"
+	"fmt"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -1778,5 +1779,232 @@ func TestSceneContentHashDistinguishesFields(t *testing.T) {
 	bumped.FirstSeenAt = time.Now().UTC()
 	if sceneContentHash(bumped) != h0 {
 		t.Error("FirstSeenAt must not affect the content hash")
+	}
+}
+
+// TestSQLiteUpgradeFromPreHashDatabase covers the path every existing database
+// takes: migration 6 adds content_hash with a ” default, so pre-existing rows
+// carry no fingerprint. The first Save must rewrite them rather than mistake
+// the empty hash for a match, and the rewrite must reproduce relations and
+// price history intact.
+func TestSQLiteUpgradeFromPreHashDatabase(t *testing.T) {
+	s := newTestDB(t)
+	now := time.Now().UTC().Truncate(time.Second)
+
+	sc := models.Scene{
+		ID: "1", SiteID: "t", StudioURL: testStudioURL,
+		Title: "One", URL: "https://example.com/1",
+		Performers: []string{"Alice", "Bob"},
+		Tags:       []string{"z", "a"}, // deliberately not alphabetical
+		Categories: []string{"c1"},
+		ScrapedAt:  now,
+	}
+	sc.AddPrice(models.PriceSnapshot{Date: now, Regular: 4.99})
+	if err := s.Save(testStudioURL, []models.Scene{sc}); err != nil {
+		t.Fatal(err)
+	}
+
+	// Simulate the post-migration-6 state of a database populated by an older
+	// build: rows present, fingerprint absent.
+	if _, err := s.db.Exec(`UPDATE scenes SET content_hash = ''`); err != nil {
+		t.Fatal(err)
+	}
+
+	// A Save of the same content must take the full write path and re-stamp.
+	if err := s.Save(testStudioURL, []models.Scene{sc}); err != nil {
+		t.Fatal(err)
+	}
+	if h := storedHashes(t, s, testStudioURL)["1"]; h == "" {
+		t.Fatal("content_hash still empty after a save — pre-hash rows were skipped")
+	}
+
+	got, err := s.Load(testStudioURL)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(got) != 1 {
+		t.Fatalf("got %d scenes, want 1", len(got))
+	}
+	if len(got[0].Performers) != 2 || got[0].Performers[0] != "Alice" {
+		t.Errorf("performers = %v", got[0].Performers)
+	}
+	if len(got[0].Tags) != 2 || got[0].Tags[0] != "z" || got[0].Tags[1] != "a" {
+		t.Errorf("tags = %v, want [z a] (source order preserved)", got[0].Tags)
+	}
+	if len(got[0].PriceHistory) != 1 {
+		t.Errorf("price history = %v", got[0].PriceHistory)
+	}
+
+	// And the now-stamped row is skipped on the next save.
+	before := storedHashes(t, s, testStudioURL)
+	if err := s.Save(testStudioURL, []models.Scene{sc}); err != nil {
+		t.Fatal(err)
+	}
+	if storedHashes(t, s, testStudioURL)["1"] != before["1"] {
+		t.Error("hash changed on a no-op save")
+	}
+}
+
+// TestSQLiteRelationsAreStudioScoped guards the loadRelation rewrite. It used to
+// reach the studio through `JOIN scenes ... WHERE s.studio_url = ?`; it now
+// filters `j.studio_url = ?` directly. Two studios sharing scene IDs must still
+// get their own relations.
+func TestSQLiteRelationsAreStudioScoped(t *testing.T) {
+	s := newTestDB(t)
+	now := time.Now().UTC().Truncate(time.Second)
+
+	urlA := "https://a.example.com/studio"
+	urlB := "https://b.example.com/studio"
+
+	// Same scene ID and site ID in both studios, different relations.
+	mk := func(studioURL string, tags, performers []string) models.Scene {
+		return models.Scene{
+			ID: "shared-1", SiteID: "t", StudioURL: studioURL,
+			Title: "Shared", URL: studioURL + "/1",
+			Tags: tags, Performers: performers, ScrapedAt: now,
+		}
+	}
+	if err := s.Save(urlA, []models.Scene{mk(urlA, []string{"a-tag"}, []string{"Alice"})}); err != nil {
+		t.Fatal(err)
+	}
+	if err := s.Save(urlB, []models.Scene{mk(urlB, []string{"b-tag"}, []string{"Bob"})}); err != nil {
+		t.Fatal(err)
+	}
+
+	gotA, err := s.Load(urlA)
+	if err != nil {
+		t.Fatal(err)
+	}
+	gotB, err := s.Load(urlB)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(gotA) != 1 || len(gotB) != 1 {
+		t.Fatalf("got %d / %d scenes, want 1 each", len(gotA), len(gotB))
+	}
+	if len(gotA[0].Tags) != 1 || gotA[0].Tags[0] != "a-tag" {
+		t.Errorf("studio A tags = %v, want [a-tag]", gotA[0].Tags)
+	}
+	if len(gotB[0].Tags) != 1 || gotB[0].Tags[0] != "b-tag" {
+		t.Errorf("studio B tags = %v, want [b-tag]", gotB[0].Tags)
+	}
+	if len(gotA[0].Performers) != 1 || gotA[0].Performers[0] != "Alice" {
+		t.Errorf("studio A performers = %v", gotA[0].Performers)
+	}
+	if len(gotB[0].Performers) != 1 || gotB[0].Performers[0] != "Bob" {
+		t.Errorf("studio B performers = %v", gotB[0].Performers)
+	}
+}
+
+// TestSQLiteStudioIndexesExist pins migration 7. Without these, Load scans every
+// junction row in the database to read one studio's — correct, but O(all
+// studios). A dropped index would be a silent performance regression.
+func TestSQLiteStudioIndexesExist(t *testing.T) {
+	s := newTestDB(t)
+	want := []string{
+		"idx_scene_performers_studio",
+		"idx_scene_tags_studio",
+		"idx_scene_categories_studio",
+		"idx_scene_external_ids_studio",
+	}
+	for _, name := range want {
+		var got string
+		err := s.db.QueryRow(
+			`SELECT name FROM sqlite_master WHERE type='index' AND name=?`, name).Scan(&got)
+		if err != nil {
+			t.Errorf("index %s missing: %v", name, err)
+		}
+	}
+
+	// And the planner actually uses one, rather than scanning.
+	rows, err := s.db.Query(
+		`EXPLAIN QUERY PLAN SELECT scene_id FROM scene_tags WHERE studio_url = ?`, testStudioURL)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() { _ = rows.Close() }()
+	var plan string
+	for rows.Next() {
+		var a, b, c int
+		var detail string
+		if err := rows.Scan(&a, &b, &c, &detail); err != nil {
+			t.Fatal(err)
+		}
+		plan += detail + " "
+	}
+	if !strings.Contains(plan, "idx_scene_tags_studio") {
+		t.Errorf("planner did not use the studio index; plan was: %s", plan)
+	}
+}
+
+// TestSQLiteSchemaIsDocumented guards docs/usage.md against schema drift. The
+// documented column lists were wrong in six places before this existed —
+// missing `studio_url` on every child table, missing `first_seen_at`,
+// `content_hash` and the whole `scene_external_ids` table — and one example
+// query joined without `studio_url`, which silently merges studios.
+func TestSQLiteSchemaIsDocumented(t *testing.T) {
+	s := newTestDB(t)
+
+	docs, err := os.ReadFile(filepath.Join("..", "..", "docs", "usage.md"))
+	if err != nil {
+		t.Skipf("docs not readable: %v", err)
+	}
+	text := string(docs)
+
+	tables := []string{
+		"scenes", "price_history", "studios",
+		"performers", "tags", "categories",
+		"scene_performers", "scene_tags", "scene_categories",
+		"scene_external_ids", "schema_version",
+	}
+	for _, table := range tables {
+		if !strings.Contains(text, "`"+table+"`") {
+			t.Errorf("table %s is not mentioned in docs/usage.md", table)
+		}
+	}
+
+	// Every column of the tables whose layout the docs spell out must appear.
+	documented := []string{"scenes", "price_history", "studios", "scene_external_ids"}
+	for _, table := range documented {
+		rows, err := s.db.Query(`SELECT name FROM pragma_table_info(?)`, table)
+		if err != nil {
+			t.Fatalf("pragma_table_info(%s): %v", table, err)
+		}
+		var cols []string
+		for rows.Next() {
+			var c string
+			if err := rows.Scan(&c); err != nil {
+				t.Fatal(err)
+			}
+			cols = append(cols, c)
+		}
+		_ = rows.Close()
+		if len(cols) == 0 {
+			t.Fatalf("%s reported no columns", table)
+		}
+		for _, c := range cols {
+			if !strings.Contains(text, "`"+c+"`") {
+				t.Errorf("%s.%s is not documented in docs/usage.md", table, c)
+			}
+		}
+	}
+}
+
+// The schema version the code migrates to must match what the docs claim, so a
+// new migration cannot land without the docs being updated.
+func TestSQLiteDocumentedSchemaVersion(t *testing.T) {
+	s := newTestDB(t)
+	var version int
+	if err := s.db.QueryRow(`SELECT MAX(version) FROM schema_version`).Scan(&version); err != nil {
+		t.Fatal(err)
+	}
+
+	docs, err := os.ReadFile(filepath.Join("..", "..", "docs", "usage.md"))
+	if err != nil {
+		t.Skipf("docs not readable: %v", err)
+	}
+	want := fmt.Sprintf("schema version %d", version)
+	if !strings.Contains(string(docs), want) {
+		t.Errorf("docs/usage.md does not state %q — bump it when adding a migration", want)
 	}
 }
