@@ -124,6 +124,36 @@ Scrapers should still avoid emitting stray whitespace; normalising here also
 repairs catalogues already on disk, which no scraper fix can do without a full
 re-scrape.
 
+## Merge provenance
+
+`MergedScene.Sites` said *which* sites contributed, but not what each one
+contributed. Merging picks a winner per scalar field — first non-empty title,
+longest description, earliest date, largest duration — and the losing values
+were unrecoverable.
+
+`MergedScene.Sources` now maps each scalar field to a `FieldSource`:
+
+```go
+type FieldSource struct {
+    Site      string   // site ID whose value was kept ("" if it came from Stash)
+    Discarded []string // competing values that lost, as "siteID: value"
+}
+```
+
+Tracked fields: `title`, `description`, `date`, `studio`, `thumbnail`,
+`duration`, `resolution`. A field no site supplied has no entry. Identical
+values from two sites are agreement, not a conflict, so `Conflicted()` stays
+false.
+
+`fss stash import` prints conflicts during a dry run:
+
+```
+  ~ date: kept siteb, dropped sitea: 2026-01-05
+```
+
+This is what separates a merge from a guess — you can see that two sites
+disagreed instead of being shown one value as if it were uncontested.
+
 ## Compatibility
 
 Changes to the metadata layout are additive. Concretely:

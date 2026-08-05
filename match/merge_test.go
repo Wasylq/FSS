@@ -376,3 +376,79 @@ func TestMergeScenesCollapsesInternalWhitespace(t *testing.T) {
 		t.Errorf("Studio = %q, want %q", m.Studio, "Babes Network")
 	}
 }
+
+func TestMergeScenesRecordsProvenance(t *testing.T) {
+	jan1 := time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC)
+	jan5 := time.Date(2026, 1, 5, 0, 0, 0, 0, time.UTC)
+
+	scenes := []models.Scene{
+		{ID: "1", SiteID: "sitea", URL: "https://a/1",
+			Title: "The Scene", Date: jan5, Description: "short", Duration: 600},
+		{ID: "1", SiteID: "siteb", URL: "https://b/1",
+			Title: "The Scene (HD)", Date: jan1, Description: "a much longer description", Duration: 610},
+	}
+	m := MergeScenes(scenes, time.Time{})
+
+	// Title: first non-empty wins, the other is recorded as dropped.
+	title := m.Sources["title"]
+	if title.Site != "sitea" || !title.Conflicted() {
+		t.Errorf("title source = %+v, want sitea with a conflict", title)
+	}
+	if len(title.Discarded) != 1 || title.Discarded[0] != "siteb: The Scene (HD)" {
+		t.Errorf("title discarded = %v", title.Discarded)
+	}
+
+	// Date: earliest wins, so site B.
+	if got := m.Sources["date"]; got.Site != "siteb" || len(got.Discarded) != 1 {
+		t.Errorf("date source = %+v, want siteb with one discard", got)
+	}
+	// Description: longest wins.
+	if got := m.Sources["description"]; got.Site != "siteb" {
+		t.Errorf("description source = %+v, want siteb", got)
+	}
+	// Duration: largest wins.
+	if got := m.Sources["duration"]; got.Site != "siteb" {
+		t.Errorf("duration source = %+v, want siteb", got)
+	}
+	// A field nobody supplied is absent entirely.
+	if _, ok := m.Sources["thumbnail"]; ok {
+		t.Error("thumbnail should have no source entry")
+	}
+}
+
+// Agreement between sites is not a conflict.
+func TestMergeScenesProvenanceNoConflictOnAgreement(t *testing.T) {
+	scenes := []models.Scene{
+		{ID: "1", SiteID: "sitea", URL: "https://a/1", Title: "Same", Studio: "Babes"},
+		{ID: "1", SiteID: "siteb", URL: "https://b/1", Title: "Same", Studio: "Babes"},
+	}
+	m := MergeScenes(scenes, time.Time{})
+	for _, field := range []string{"title", "studio"} {
+		if got := m.Sources[field]; got.Conflicted() {
+			t.Errorf("%s reported a conflict: %+v", field, got)
+		} else if got.Site != "sitea" {
+			t.Errorf("%s site = %q, want sitea", field, got.Site)
+		}
+	}
+}
+
+// The Stash date can beat every site's; nothing in the scene set claims it.
+func TestMergeScenesProvenanceExistingDateWins(t *testing.T) {
+	scenes := []models.Scene{
+		{ID: "1", SiteID: "sitea", URL: "https://a/1",
+			Date: time.Date(2026, 3, 1, 0, 0, 0, 0, time.UTC)},
+	}
+	existing := time.Date(2025, 6, 1, 0, 0, 0, 0, time.UTC)
+	m := MergeScenes(scenes, existing)
+
+	if !m.Date.Equal(existing) {
+		t.Fatalf("Date = %v, want the earlier existing date", m.Date)
+	}
+	src := m.Sources["date"]
+	if src.Site != "" {
+		t.Errorf("date site = %q, want empty (value came from Stash)", src.Site)
+	}
+	if len(src.Discarded) != 1 {
+		t.Errorf("date discarded = %v, want the site's losing value", src.Discarded)
+	}
+}

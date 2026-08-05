@@ -417,6 +417,7 @@ func runStashImport(cmd *cobra.Command, _ []string) error {
 					fmt.Printf("    %s: %v → %v\n", field, diff.From, diff.To)
 				}
 			}
+			printMergeConflicts(merged)
 			if fieldAllowed(o.allowedFields, "tags") {
 				for _, t := range allTags {
 					lookup.checkTag(t)
@@ -491,6 +492,28 @@ func runStashImport(cmd *cobra.Command, _ []string) error {
 }
 
 // entityLookup caches Stash existence checks across scenes so the same tag /
+// printMergeConflicts reports scalar fields where the contributing sites
+// disagreed, so a dry run shows what the merge chose *against* rather than
+// presenting one site's value as if it were uncontested.
+func printMergeConflicts(merged match.MergedScene) {
+	for _, field := range []string{"title", "description", "date", "studio", "duration", "resolution"} {
+		src, ok := merged.Sources[field]
+		if !ok || !src.Conflicted() {
+			continue
+		}
+		fmt.Printf("    ~ %s: kept %s, dropped %s\n",
+			field, src.Site, strings.Join(truncateEach(src.Discarded, 40), "; "))
+	}
+}
+
+func truncateEach(values []string, max int) []string {
+	out := make([]string, len(values))
+	for i, v := range values {
+		out[i] = truncate(v, max)
+	}
+	return out
+}
+
 // performer / studio name isn't queried multiple times during a dry run. Used
 // to populate the "would create on apply" summary.
 //

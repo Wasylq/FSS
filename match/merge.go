@@ -2,6 +2,7 @@ package match
 
 import (
 	"regexp"
+	"strconv"
 	"strings"
 	"time"
 
@@ -69,7 +70,33 @@ type MergedScene struct {
 	Height      int
 	Resolution  string
 	Sites       []string // which site IDs contributed
+
+	// Sources records, per scalar field, which site's value was kept and which
+	// competing values were dropped. Keys are the lowercase field names listed
+	// in scalarFields. Absent for fields no site supplied.
+	Sources map[string]FieldSource
 }
+
+// FieldSource is the provenance of one merged scalar field.
+//
+// Merging picks a winner per field — first non-empty title, longest
+// description, earliest date — and the losers are otherwise unrecoverable.
+// Recording them is what distinguishes a merge from a guess: a caller can show
+// that two sites disagreed on a scene's date instead of silently presenting one.
+type FieldSource struct {
+	// Site is the site ID whose value was kept. Empty when the value came
+	// from outside the scene set — the existing Stash date, for instance.
+	Site string
+	// Discarded holds the competing values that lost, as "siteID: value",
+	// in the order the scenes were merged.
+	Discarded []string
+}
+
+// Conflicted reports whether more than one distinct value was offered.
+func (f FieldSource) Conflicted() bool { return len(f.Discarded) > 0 }
+
+// scalarFields are the merged fields whose provenance is tracked.
+var scalarFields = []string{"title", "description", "date", "studio", "thumbnail", "duration", "resolution"}
 
 // MergeScenes combines metadata from multiple FSS scenes (potentially from
 // different sites) into a single MergedScene. Optionally incorporates the
@@ -106,8 +133,22 @@ func MergeScenes(scenes []models.Scene, existingDate time.Time) MergedScene {
 	catSet := map[string]bool{}
 	perfSet := map[string]bool{}
 	siteSet := map[string]bool{}
+	offers := map[string][]offer{}
 
 	for _, s := range scenes {
+		record := func(field, value string) {
+			if value != "" {
+				offers[field] = append(offers[field], offer{site: s.SiteID, value: value})
+			}
+		}
+		record("title", s.Title)
+		record("description", cleanDescription(s.Description))
+		record("date", formatDate(s.Date))
+		record("studio", cleanName(s.Studio))
+		record("thumbnail", s.Thumbnail)
+		record("duration", formatCount(s.Duration))
+		record("resolution", s.Resolution)
+
 		if m.Title == "" && s.Title != "" {
 			m.Title = s.Title
 		}
@@ -158,7 +199,61 @@ func MergeScenes(scenes []models.Scene, existingDate time.Time) MergedScene {
 		m.Date = existingDate
 	}
 
+	m.Sources = resolveSources(offers, map[string]string{
+		"title":       m.Title,
+		"description": m.Description,
+		"date":        formatDate(m.Date),
+		"studio":      m.Studio,
+		"thumbnail":   m.Thumbnail,
+		"duration":    formatCount(m.Duration),
+		"resolution":  m.Resolution,
+	})
+
 	return m
+}
+
+// offer is one site's candidate value for a scalar field.
+type offer struct{ site, value string }
+
+// resolveSources attributes each merged scalar value to the site that supplied
+// it and lists the competing values that lost.
+func resolveSources(offers map[string][]offer, won map[string]string) map[string]FieldSource {
+	var sources map[string]FieldSource
+	for _, field := range scalarFields {
+		candidates := offers[field]
+		if len(candidates) == 0 {
+			continue
+		}
+		fs := FieldSource{}
+		for _, c := range candidates {
+			if c.value == won[field] {
+				if fs.Site == "" {
+					fs.Site = c.site
+				}
+				continue // an identical value from another site is agreement, not conflict
+			}
+			fs.Discarded = append(fs.Discarded, c.site+": "+c.value)
+		}
+		if sources == nil {
+			sources = map[string]FieldSource{}
+		}
+		sources[field] = fs
+	}
+	return sources
+}
+
+func formatDate(t time.Time) string {
+	if t.IsZero() {
+		return ""
+	}
+	return t.Format("2006-01-02")
+}
+
+func formatCount(n int) string {
+	if n == 0 {
+		return ""
+	}
+	return strconv.Itoa(n)
 }
 
 // ResolutionTags returns the single highest resolution tag for the video width.
