@@ -17,7 +17,6 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/Wasylq/FSS/match"
-	"github.com/Wasylq/FSS/models"
 	"github.com/Wasylq/FSS/stash"
 )
 
@@ -33,8 +32,7 @@ Default is dry-run — shows what would change. Pass --apply to actually write t
 func init() {
 	stashCmd.AddCommand(stashImportCmd)
 
-	stashImportCmd.Flags().String("dir", "", "directory containing FSS JSON files (default: config out_dir)")
-	stashImportCmd.Flags().StringSlice("json", nil, "specific JSON files to load")
+	addSceneSourceFlags(stashImportCmd)
 	stashImportCmd.Flags().String("tag", "", "import marker tag (default from config)")
 	stashImportCmd.Flags().Bool("resolution-tags", false, "add resolution tags (4K/FHD/HD Available)")
 	stashImportCmd.Flags().Bool("organized", false, "set organized flag on imported scenes")
@@ -142,33 +140,30 @@ func resolveImportOpts(cmd *cobra.Command) (importOpts, error) {
 	return o, nil
 }
 
-func loadFSSIndex(cmd *cobra.Command) (*match.SceneIndex, string, error) {
-	jsonFiles, _ := cmd.Flags().GetStringSlice("json")
-	dir, _ := cmd.Flags().GetString("dir")
-	if dir == "" {
-		dir = cfg.OutDir
-	}
-
-	fmt.Print("Loading FSS JSON files...")
-	var fssScenes []models.Scene
-	var err error
-	if len(jsonFiles) > 0 {
-		fmt.Printf(" %d file(s)...", len(jsonFiles))
-		fssScenes, err = match.LoadJSONFiles(jsonFiles)
-	} else {
-		fmt.Printf(" from %s...", dir)
-		fssScenes, err = match.LoadJSONDir(dir)
-	}
+func loadFSSIndex(cmd *cobra.Command) (*match.SceneIndex, error) {
+	fmt.Print("Loading FSS scenes...")
+	scenes, src, err := loadFSSScenes(cmd)
 	if err != nil {
-		return nil, dir, fmt.Errorf("loading FSS data: %w", err)
+		fmt.Println()
+		return nil, err
 	}
-	fmt.Println()
-	if len(fssScenes) == 0 {
-		return nil, dir, fmt.Errorf("no FSS scenes found in %s", dir)
-	}
-	fmt.Printf("Loaded %d FSS scenes\n", len(fssScenes))
+	fmt.Printf(" from %s\n", src)
+	fmt.Printf("Loaded %d FSS scenes\n", len(scenes))
+	return match.BuildIndex(scenes), nil
+}
 
-	return match.BuildIndex(fssScenes), dir, nil
+// changelogDir is where the stashbox changelog is written and where
+// `fss stash revert` looks for it. It is deliberately independent of where
+// scenes were loaded from: with --db there is no scene directory, but the
+// changelog still needs the same stable home revert expects.
+func changelogDir(cmd *cobra.Command) string {
+	if dir, _ := cmd.Flags().GetString("dir"); dir != "" {
+		return dir
+	}
+	if cfg != nil {
+		return cfg.OutDir
+	}
+	return "."
 }
 
 func queryStashScenes(ctx context.Context, client *stash.Client, o importOpts) ([]stash.StashScene, error) {
@@ -194,6 +189,11 @@ func queryStashScenes(ctx context.Context, client *stash.Client, o importOpts) (
 	}
 	fmt.Println()
 	if err != nil {
+		// A filter naming something Stash does not have is a user error worth
+		// stating plainly — it used to look identical to "nothing matched".
+		if errors.Is(err, stash.ErrPerformerNotFound) || errors.Is(err, stash.ErrStudioNotFound) {
+			return nil, fmt.Errorf("%w (Stash matches names exactly — check spelling and trailing spaces)", err)
+		}
 		return nil, fmt.Errorf("querying stash scenes: %w", err)
 	}
 	fmt.Printf("Found %d Stash scenes to process\n", len(scenes))
@@ -324,7 +324,7 @@ func runStashImport(cmd *cobra.Command, _ []string) error {
 	}
 	fmt.Println("Connected to Stash")
 
-	idx, dir, err := loadFSSIndex(cmd)
+	idx, err := loadFSSIndex(cmd)
 	if err != nil {
 		return err
 	}
@@ -469,7 +469,7 @@ func runStashImport(cmd *cobra.Command, _ []string) error {
 	}
 
 	if len(changelog) > 0 {
-		if err := appendChangelog(dir, changelog); err != nil {
+		if err := appendChangelog(changelogDir(cmd), changelog); err != nil {
 			fmt.Fprintf(os.Stderr, "warning: could not write stashbox changelog: %v\n", err)
 		}
 	}

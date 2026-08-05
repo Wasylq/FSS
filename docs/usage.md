@@ -90,6 +90,36 @@ fss export --db --out-dir ./out -o json,csv
 
 A JSON → database → JSON round trip is lossless except for sub-second timestamp precision, which SQLite has never stored (times are written as RFC 3339 to the second).
 
+### Scene sources (`fss stash import`, `fss identify`)
+
+Both commands read previously-scraped scenes. They share one set of flags for choosing where those scenes come from:
+
+| `--json` | []string | _(none)_ | Specific JSON files to load |
+| `--dir` | string | _(config `out_dir`)_ | Directory of FSS JSON files |
+| `--db` | string | _(from config)_ | Load scenes from the SQLite store instead of JSON (`--db` alone uses the default path; `--db=/path` for a custom one). Cannot be combined with `--json`/`--dir` |
+| `--from-studio` | []string | _(none)_ | Only use scenes from these studios. Accepts a studio URL, a studio display name, or a per-scene studio/sub-brand name. Repeatable — any match |
+| `--from-performer` | []string | _(none)_ | Only use scenes featuring these performers. Repeatable — any match |
+
+**Precedence:** `--json` → `--db` → `--dir` → the config's `db:` if set → the config's `out_dir`. Passing `--db` together with `--json` or `--dir` is an error rather than a silent winner. Each run prints the source it resolved to.
+
+If you have `db:` in your config, these commands read the database by default — no need to pass `--db` everywhere. Export JSON only if you want it.
+
+**How `--from-studio` resolves**, most specific first:
+
+1. A value containing `://` matches the scene's studio URL exactly.
+2. A value naming a per-scene studio matches **that sub-brand only**. Scrapers record a per-scene studio name, which for a network is the sub-brand — one scrape of `sexlikereal.com` carries 705 distinct values (`SLR Originals`, `perVRt`, …). This gives you one level of grouping even though FSS records no studio hierarchy.
+3. Otherwise it is matched against the studios table's display names and selects every scene under those URLs.
+
+Step 2 comes first deliberately: a studio's display name is often *derived* from its first scene, so it is frequently a sub-brand itself. Matching display names first would make `--from-studio "SLR Originals"` select the entire network.
+
+Names are matched canonically — case-folded with whitespace collapsed — so `"ABC "`, `"abc"` and `"ABC"` are the same studio. This is the same rule `MergeScenes` uses to deduplicate names, so filtering and merging always agree.
+
+A filter matching nothing is an **error listing the available names**, not an empty run.
+
+**Combining filters:** repeated values of one flag are OR; different flags are AND. `--from-studio X --from-performer A` means scenes from X that also feature A.
+
+Note `--from-studio`/`--from-performer` filter the **FSS metadata**, while `fss stash import`'s `--studio`/`--performer` filter which **Stash scenes** are queried. They apply to opposite sides of the match and combine as AND.
+
 ### `fss check <url>`
 
 Checks whether a URL is supported by any registered scraper. Prints the scraper ID and its URL patterns if matched. If unsupported, prints a pre-filled link to open a new-scraper request issue on GitHub.

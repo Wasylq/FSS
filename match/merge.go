@@ -23,11 +23,22 @@ func cleanName(s string) string {
 	return strings.Join(strings.Fields(s), " ")
 }
 
-// normName is the deduplication key: cleanName, case-folded. Two spellings that
-// differ only in case or spacing are one entry.
-func normName(s string) string {
+// NormalizeName is the canonical key for a performer, tag, category or studio
+// name: surrounding whitespace removed, internal runs collapsed, case folded.
+// Two spellings that differ only in case or spacing map to one key.
+//
+// It is exported so that anything filtering on these names agrees with how
+// merging deduplicates them — otherwise `--from-studio "ABC"` would miss a
+// stored `"ABC "` that MergeScenes considers the same studio.
+//
+// This is deliberately not [Normalize], which strips scene *titles* for
+// filename matching and is far more aggressive.
+func NormalizeName(s string) string {
 	return strings.ToLower(cleanName(s))
 }
+
+// normName is the internal spelling of NormalizeName.
+func normName(s string) string { return NormalizeName(s) }
 
 // appendNames adds each cleaned name to out unless its canonical key was
 // already seen, recording keys in seen.

@@ -47,6 +47,9 @@ Matches FSS JSON scenes against Stash scenes by filename and pushes metadata. **
 | `--api-key` | string | _(empty)_ | Stash API key (also: `FSS_STASH_API_KEY` env var) |
 | `--dir` | string | config `out_dir` | Directory to scan — loads every `*.json` file in it |
 | `--json` | []string | _(none)_ | Load only these specific JSON files (overrides `--dir`) |
+| `--db` | string | _(from config)_ | Load scenes from the SQLite store instead of JSON. Cannot be combined with `--json`/`--dir` |
+| `--from-studio` | []string | _(none)_ | Only use scenes from these studios — URL, studio name, or sub-brand. Repeatable |
+| `--from-performer` | []string | _(none)_ | Only use scenes featuring these performers. Repeatable |
 | `--tag` | string | `fss_import` | Import marker tag applied to every matched scene |
 | `--resolution-tags` | bool | from config | Add resolution tags (`4K Available`, `Full HD Available`, `HD Available`) |
 | `--organized` | bool | `false` | Set the organized flag on imported scenes |
@@ -115,6 +118,28 @@ Would create on apply:
 
 Dry-run: 12 would match, 38 already up-to-date, 5 skipped, 0 ambiguous
 ```
+
+## Scene sources and filters
+
+Scenes can come from JSON files or the SQLite store; see
+[Scene sources](usage.md#scene-sources-fss-stash-import-fss-identify) for the
+precedence rules and how `--from-studio` resolves. With `db:` set in config,
+`stash import` reads the database by default.
+
+**`--from-*` and `--studio`/`--performer` are different filters.**
+`--from-studio`/`--from-performer` narrow the **FSS metadata** used for matching.
+`--studio`/`--performer` narrow which **Stash scenes** are queried. They apply to
+opposite sides of the match, and combine as AND — a scene is updated only if it
+passes both.
+
+One consequence worth knowing: `--from-studio` does not reduce how many Stash
+scenes are walked, so restricting the metadata to one sub-brand will report
+everything else as `unmatched`. Pair it with `--studio`/`--filter` if you want a
+quiet run.
+
+`--studio` and `--performer` are matched by Stash **exactly**. A name Stash does
+not have is now an error naming the value, rather than a run that finds zero
+scenes and exits 0.
 
 ## Matching strategy
 

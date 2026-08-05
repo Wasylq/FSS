@@ -33,7 +33,8 @@ FSS is three stages, and only the middle one is storage:
 The important consequence: **storage is an implementation detail of stage 2.**
 Nothing about a scraper changes when you switch stores.
 
-Except — today, it does change stage 3. See [What blocks the switch](#what-blocks-the-switch).
+Every consumer reads either source, so switching stores changes nothing
+downstream.
 
 ---
 
@@ -129,22 +130,16 @@ tables. See [usage.md](usage.md#sqlite).
 
 ## What blocks the switch
 
-Two things must land before SQLite can reasonably become the default. Neither is
-about the store itself.
+### 1. ~~The consumers are JSON-only~~ — done
 
-### 1. The consumers are JSON-only
+`fss stash import` and `fss identify` now accept `--db`, plus `--from-studio`
+and `--from-performer` to narrow what they load. With `db:` set in config they
+read the database by default, so JSON is no longer a mandatory intermediate —
+export it only if you want it.
 
-`fss stash import` and `fss identify` do **not** accept `--db`. Both call
-`match.LoadJSONFiles` / `match.LoadJSONDir` and can only read `.json` files.
-
-So today, if you scrape with `--db`, you still need JSON to do anything with the
-result — which is why `fss scrape --db -o json` writes both. **JSON is not
-optional right now; it is a mandatory intermediate.**
-
-This is a small fix, not a redesign. `match.BuildIndex` already takes a plain
-`[]models.Scene`, so the change is loading that slice from a `store.Store`
-instead of from disk. Until it lands, "switch to the database" is not a real
-option — it just adds a step.
+Both share one loader (`loadFSSScenes` in `cmd/scenesource.go`), and a test
+asserts the JSON and database paths produce the same scene set, so the database
+route cannot drift into a second, subtly different implementation.
 
 ### 2. ~~`Save` must become diff-aware~~ — done
 

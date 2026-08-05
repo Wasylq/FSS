@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -470,5 +471,27 @@ func TestClientDoJoinsAndRedactsGraphQLErrors(t *testing.T) {
 	}
 	if !strings.Contains(msg, "second failure") {
 		t.Errorf("second error was not joined into result, got: %s", msg)
+	}
+}
+
+// A --performer/--studio value Stash does not have used to yield zero scenes and
+// no error, so a typo or a trailing space looked exactly like "nothing matched"
+// and the command exited 0.
+func TestFindScenesReportsMissingFilterTargets(t *testing.T) {
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		// Every lookup comes back empty.
+		_, _ = w.Write([]byte(`{"data":{"findPerformers":{"performers":[]},"findStudios":{"studios":[]}}}`))
+	}))
+	defer ts.Close()
+	c := &Client{url: ts.URL, http: ts.Client()}
+
+	_, _, err := c.FindScenes(context.Background(), FindScenesFilter{PerformerName: "Nobody"}, 1, 10)
+	if !errors.Is(err, ErrPerformerNotFound) {
+		t.Errorf("performer: got %v, want ErrPerformerNotFound", err)
+	}
+
+	_, _, err = c.FindScenes(context.Background(), FindScenesFilter{StudioName: "Nothing"}, 1, 10)
+	if !errors.Is(err, ErrStudioNotFound) {
+		t.Errorf("studio: got %v, want ErrStudioNotFound", err)
 	}
 }

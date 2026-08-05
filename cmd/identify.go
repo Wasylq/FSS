@@ -12,7 +12,6 @@ import (
 
 	"github.com/Wasylq/FSS/identify"
 	"github.com/Wasylq/FSS/match"
-	"github.com/Wasylq/FSS/models"
 )
 
 var identifyCmd = &cobra.Command{
@@ -31,8 +30,7 @@ Default is dry-run — shows what would be written. Pass --apply to write.`,
 func init() {
 	rootCmd.AddCommand(identifyCmd)
 
-	identifyCmd.Flags().StringSlice("json", nil, "FSS JSON files to load")
-	identifyCmd.Flags().String("dir", "", "directory containing FSS JSON files (default: config out_dir)")
+	addSceneSourceFlags(identifyCmd)
 	identifyCmd.Flags().Bool("apply", false, "actually write .nfo files (default is dry-run)")
 	identifyCmd.Flags().Bool("force", false, "overwrite existing .nfo files")
 	identifyCmd.Flags().Bool("no-report", false, "do not write fss-report.txt")
@@ -49,28 +47,13 @@ func runIdentify(cmd *cobra.Command, args []string) error {
 	}
 
 	// --- load FSS scenes ---
-	jsonFiles, _ := cmd.Flags().GetStringSlice("json")
-	dir, _ := cmd.Flags().GetString("dir")
-	if dir == "" && len(jsonFiles) == 0 {
-		dir = cfg.OutDir
-	}
-
-	fmt.Print("Loading FSS JSON files...")
-	var fssScenes []models.Scene
-	if len(jsonFiles) > 0 {
-		fmt.Printf(" %d file(s)...", len(jsonFiles))
-		fssScenes, err = match.LoadJSONFiles(jsonFiles)
-	} else {
-		fmt.Printf(" from %s...", dir)
-		fssScenes, err = match.LoadJSONDir(dir)
-	}
+	fmt.Print("Loading FSS scenes...")
+	fssScenes, src, err := loadFSSScenes(cmd)
 	if err != nil {
-		return fmt.Errorf("loading FSS data: %w", err)
+		fmt.Println()
+		return err
 	}
-	fmt.Println()
-	if len(fssScenes) == 0 {
-		return fmt.Errorf("no FSS scenes found")
-	}
+	fmt.Printf(" from %s\n", src)
 	fmt.Printf("Loaded %d FSS scenes\n", len(fssScenes))
 
 	idx := match.BuildIndex(fssScenes)

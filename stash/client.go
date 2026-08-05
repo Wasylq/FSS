@@ -8,6 +8,7 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -16,6 +17,17 @@ import (
 
 	"github.com/Wasylq/FSS/internal/httpx"
 	"github.com/Wasylq/FSS/internal/mediafetch"
+)
+
+// Filter targets that do not exist in Stash. FindScenes used to return zero
+// scenes and no error for these, so a typo or a stray space in --performer /
+// --studio looked exactly like "nothing matched" and the command exited 0.
+var (
+	// ErrPerformerNotFound means no Stash performer has the requested name.
+	// Stash matches names exactly, so this is usually a typo or stray whitespace.
+	ErrPerformerNotFound = errors.New("no such performer in Stash")
+	// ErrStudioNotFound means no Stash studio has the requested name.
+	ErrStudioNotFound = errors.New("no such studio in Stash")
 )
 
 // MaxCoverImageBytes caps DownloadCoverImage response reads to prevent a
@@ -269,7 +281,7 @@ func (c *Client) FindScenes(ctx context.Context, filter FindScenesFilter, page, 
 			return nil, 0, fmt.Errorf("finding performer %q: %w", filter.PerformerName, err)
 		}
 		if !found {
-			return nil, 0, nil
+			return nil, 0, fmt.Errorf("%w: %q", ErrPerformerNotFound, filter.PerformerName)
 		}
 		sceneFilter["performers"] = map[string]any{
 			"value":    []string{perfID},
@@ -283,7 +295,7 @@ func (c *Client) FindScenes(ctx context.Context, filter FindScenesFilter, page, 
 			return nil, 0, fmt.Errorf("finding studio %q: %w", filter.StudioName, err)
 		}
 		if !found {
-			return nil, 0, nil
+			return nil, 0, fmt.Errorf("%w: %q", ErrStudioNotFound, filter.StudioName)
 		}
 		sceneFilter["studios"] = map[string]any{
 			"value":    []string{studioID},

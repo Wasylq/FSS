@@ -40,6 +40,8 @@ fss identify /path/to/videos --json studio.json --apply --no-report
 |------|------|---------|-------------|
 | `--json` | []string | _(none)_ | FSS JSON files to load |
 | `--dir` | string | config `out_dir` | Directory containing FSS JSON files (loads all `*.json`) |
+| `--json` / `--dir` / `--db` | | | Where scenes come from — see [Scene sources](usage.md#scene-sources-fss-stash-import-fss-identify) |
+| `--from-studio` / `--from-performer` | []string | _(none)_ | Narrow which scenes are used for matching — see [Scene sources](usage.md#scene-sources-fss-stash-import-fss-identify) |
 | `--apply` | bool | `false` | Actually write `.nfo` files (default is dry-run) |
 | `--force` | bool | `false` | Overwrite existing `.nfo` files |
 | `--no-report` | bool | `false` | Do not write `fss-report.txt` |

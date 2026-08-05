@@ -11,6 +11,7 @@ import (
 	"github.com/spf13/pflag"
 
 	"github.com/Wasylq/FSS/internal/config"
+	"github.com/Wasylq/FSS/internal/store"
 	"github.com/Wasylq/FSS/models"
 )
 
@@ -254,40 +255,42 @@ func writeStudioFile(t *testing.T, path string, titles ...string) {
 	}
 }
 
-// loadFSSIndex picks the data every later decision is made from, and it returns
-// the directory it settled on so the error messages name the right place. The
-// --dir/--json/config precedence is the part worth pinning: silently reading the
-// config's out_dir when the user pointed --dir elsewhere would import from the
-// wrong catalogue.
-func TestLoadFSSIndexSourcePrecedence(t *testing.T) {
+// loadFSSScenes picks the data every later decision is made from. The
+// --json/--db/--dir/config precedence is the part worth pinning: silently
+// reading the config's out_dir when the user pointed --dir elsewhere would
+// import from the wrong catalogue.
+func TestLoadFSSScenesSourcePrecedence(t *testing.T) {
 	cfgDir := t.TempDir()
 	flagDir := t.TempDir()
 	writeStudioFile(t, filepath.Join(cfgDir, "a.json"), "From Config Dir")
 	writeStudioFile(t, filepath.Join(flagDir, "b.json"), "From Flag Dir", "Second")
 	withCfg(t, &config.Config{OutDir: cfgDir})
 
-	t.Run("no --dir falls back to config out_dir", func(t *testing.T) {
-		idx, dir, err := loadFSSIndex(newImportTestCmd(t))
+	t.Run("no flags falls back to config out_dir", func(t *testing.T) {
+		scenes, src, err := loadFSSScenes(newImportTestCmd(t))
 		if err != nil {
 			t.Fatal(err)
 		}
-		if dir != cfgDir {
-			t.Errorf("dir = %q, want the config out_dir %q", dir, cfgDir)
+		if src.desc != cfgDir {
+			t.Errorf("source = %q, want the config out_dir %q", src.desc, cfgDir)
 		}
-		if idx == nil {
-			t.Fatal("nil index")
+		if len(scenes) != 1 {
+			t.Errorf("got %d scenes, want 1", len(scenes))
 		}
 	})
 
 	t.Run("--dir wins over config", func(t *testing.T) {
 		c := newImportTestCmd(t)
 		setFlag(t, c, "dir", flagDir)
-		_, dir, err := loadFSSIndex(c)
+		scenes, src, err := loadFSSScenes(c)
 		if err != nil {
 			t.Fatal(err)
 		}
-		if dir != flagDir {
-			t.Errorf("dir = %q, want the --dir value %q", dir, flagDir)
+		if src.desc != flagDir {
+			t.Errorf("source = %q, want the --dir value %q", src.desc, flagDir)
+		}
+		if len(scenes) != 2 {
+			t.Errorf("got %d scenes, want 2", len(scenes))
 		}
 	})
 
@@ -295,35 +298,92 @@ func TestLoadFSSIndexSourcePrecedence(t *testing.T) {
 		c := newImportTestCmd(t)
 		setFlag(t, c, "dir", flagDir)
 		setFlag(t, c, "json", filepath.Join(cfgDir, "a.json"))
-		idx, _, err := loadFSSIndex(c)
+		scenes, src, err := loadFSSScenes(c)
 		if err != nil {
 			t.Fatal(err)
 		}
-		if idx == nil {
-			t.Fatal("nil index")
+		if src.kind != "json" || len(scenes) != 1 {
+			t.Errorf("source = %+v, %d scenes; want the single --json file", src, len(scenes))
+		}
+	})
+
+	t.Run("--db and --json together is an error", func(t *testing.T) {
+		c := newImportTestCmd(t)
+		setFlag(t, c, "db", "default")
+		setFlag(t, c, "json", filepath.Join(cfgDir, "a.json"))
+		if _, _, err := loadFSSScenes(c); err == nil {
+			t.Fatal("expected an error when --db is combined with --json")
 		}
 	})
 }
 
-// An empty directory is an error rather than an empty import: proceeding would
-// walk every scene in Stash, match nothing, and report "0 changes" as if the
-// library were already up to date.
-func TestLoadFSSIndexEmptyDirIsAnError(t *testing.T) {
-	empty := t.TempDir()
-	withCfg(t, &config.Config{OutDir: empty})
+// A configured `db:` becomes the default source, so a database user does not
+// have to pass --db to every consumer command.
+func TestLoadFSSScenesPrefersConfiguredDB(t *testing.T) {
+	dir := t.TempDir()
+	dbPath := filepath.Join(dir, "fss.db")
+	seedTestDB(t, dbPath, "https://example.com", "DB Scene")
+	// out_dir also has JSON, to prove the database wins.
+	writeStudioFile(t, filepath.Join(dir, "a.json"), "JSON Scene")
+	withCfg(t, &config.Config{OutDir: dir, DB: dbPath})
 
-	_, dir, err := loadFSSIndex(newImportTestCmd(t))
-	if err == nil {
-		t.Fatal("expected an error for a directory with no JSON files")
+	scenes, src, err := loadFSSScenes(newImportTestCmd(t))
+	if err != nil {
+		t.Fatal(err)
 	}
-	if dir != empty {
-		t.Errorf("dir = %q, want %q — the error message names this path", dir, empty)
+	if src.kind != "db" {
+		t.Fatalf("source kind = %q, want db", src.kind)
+	}
+	if len(scenes) != 1 || scenes[0].Title != "DB Scene" {
+		t.Errorf("got %+v, want the scene from the database", scenes)
 	}
 }
 
-func TestLoadFSSIndexMissingDirIsAnError(t *testing.T) {
+// An empty source is an error rather than an empty import: proceeding would
+// walk every scene in Stash, match nothing, and report "0 changes" as if the
+// library were already up to date.
+func TestLoadFSSScenesEmptySourceIsAnError(t *testing.T) {
+	empty := t.TempDir()
+	withCfg(t, &config.Config{OutDir: empty})
+
+	_, src, err := loadFSSScenes(newImportTestCmd(t))
+	if err == nil {
+		t.Fatal("expected an error for a directory with no JSON files")
+	}
+	if src.desc != empty {
+		t.Errorf("source = %q, want %q — the error message names this path", src.desc, empty)
+	}
+}
+
+func TestLoadFSSScenesMissingDirIsAnError(t *testing.T) {
 	withCfg(t, &config.Config{OutDir: filepath.Join(t.TempDir(), "does-not-exist")})
-	if _, _, err := loadFSSIndex(newImportTestCmd(t)); err == nil {
+	if _, _, err := loadFSSScenes(newImportTestCmd(t)); err == nil {
 		t.Fatal("expected an error for a nonexistent directory")
+	}
+}
+
+// seedTestDB creates a SQLite store at path holding one studio's scenes.
+func seedTestDB(t *testing.T, path, studioURL string, titles ...string) {
+	t.Helper()
+	db, err := store.NewSQLite(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() { _ = db.Close() }()
+
+	var scenes []models.Scene
+	for i, title := range titles {
+		scenes = append(scenes, models.Scene{
+			ID: string(rune('a' + i)), SiteID: "example", StudioURL: studioURL,
+			Title: title, URL: studioURL + "/scene/1", ScrapedAt: time.Now().UTC(),
+		})
+	}
+	if err := db.Save(studioURL, scenes); err != nil {
+		t.Fatal(err)
+	}
+	if err := db.UpsertStudio(models.Studio{
+		URL: studioURL, SiteID: "example", Name: "Example Studio", AddedAt: time.Now().UTC(),
+	}); err != nil {
+		t.Fatal(err)
 	}
 }
