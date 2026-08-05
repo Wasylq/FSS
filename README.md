@@ -256,6 +256,8 @@ CLI flags always override config values. See [docs/usage.md](docs/usage.md#confi
 | [docs/scrapers.md](docs/scrapers.md) | Supported sites, URL patterns, shared packages |
 | [docs/sites.md](docs/sites.md) | Searchable A-Z list of every covered domain |
 | [docs/usage.md](docs/usage.md) | CLI reference, data model, output formats, SQLite |
+| [docs/storage.md](docs/storage.md) | Choosing a store, measured JSON vs SQLite trade-offs, inspecting a database, moving between them |
+| [docs/metadata.md](docs/metadata.md) | The scene model: schema versioning, first-seen tracking, external IDs, merge rules |
 | [docs/identify.md](docs/identify.md) | NFO sidecar file generation: matching videos, writing .nfo files |
 | [docs/stash.md](docs/stash.md) | Stash integration: matching, merging, import workflow |
 | [docs/docker.md](docs/docker.md) | Running FSS in Docker — image tags, volumes, compose examples |

@@ -9,16 +9,20 @@ the two stores relate.
 |---|---|---|
 | Layout | one `<slug>.json` per studio | one database, all studios |
 | Read cost | full parse of the whole file | indexed query per studio |
-| Write cost | full rewrite of the whole file | upsert of changed rows only |
-| Scales to | tens of thousands of scenes | millions |
+| Write cost | full rewrite of the whole file | upsert of every scene in the set |
+| Queryable across studios | no | yes |
 
 Both implement `store.Store` and are covered by the same contract tests
 (`internal/store/contract_test.go`), so behaviour is identical apart from cost.
 
-**The flat store rewrites everything on every save.** A studio with 59k scenes is
-a ~100 MB JSON file; an incremental run that finds three new scenes still parses
-and rewrites all 100 MB. Use `--db` for large catalogues and treat JSON as an
-export format.
+**Neither store is incremental on write.** `Save` is authoritative over the full
+scene set, so the flat store rewrites the whole JSON file and SQLite upserts
+every row — about 296,000 statements to record one new scene in a 59k-scene
+studio. Measured on that catalogue, SQLite is currently **5× slower** than flat
+and uses 2.4× the disk; its only win is roughly half the peak memory.
+
+Pick a store from the measured trade-offs in [storage.md](storage.md), not from
+the assumption that a database must be faster.
 
 ### Moving between them
 
