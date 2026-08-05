@@ -169,10 +169,34 @@ Two properties make it correct:
 for exactly this reason — without that, re-saving a soft-deleted scene with
 `DeletedAt == nil` would be skipped and the delete would never lift.
 
-`Load` was optimised alongside it (3.2 s → 2.0 s) by dropping two `ORDER BY`
-clauses that made SQLite build temp B-trees over every row and every junction
-row in the studio. The ordering now happens in Go, on slices that are already
-materialised, and is identical.
+`Load` was optimised alongside it in two steps:
+
+- **Dropping two `ORDER BY` clauses** that made SQLite build temp B-trees over
+  every scene row and every junction row in the studio, to order lists that are
+  a handful of entries each. Ordering now happens in Go on already-materialised
+  slices, identically. Single-studio `Load`: 3.2 s → 2.0 s.
+- **Indexing the child tables by `studio_url`** (migration 7). Their primary
+  keys start with `scene_id`, so a `studio_url` predicate could not use them and
+  every `Load` scanned the entire table — the whole database's junction rows to
+  read one studio's. Harmless with one studio, O(all studios) with many. Loading
+  one studio out of 40: **148 ms → 50 ms**.
+
+The indexes are deliberately narrow (`studio_url` alone). Covering variants
+carrying `scene_id`/`site_id`/`position` measured 47 ms against 50 ms — 3 ms, for
+31 MB more on a 300 MB database.
+
+### What is still not optimised
+
+**Initial ingest: ~52 s for 59k scenes.** Every scene is new, so nothing can be
+skipped, and each goes through the full write path via individual `Exec` calls
+that re-prepare their statement each time. This is a one-off cost — paid on
+`fss import` of an existing catalogue, or a first `--full` scrape — and it has
+not been tuned. Reusing prepared statements across the loop is the obvious fix
+if it starts to matter.
+
+**Single-studio `Load` (2.0 s for 59k scenes)** is still ~3× the flat store's
+0.7 s. The time is in row scanning and `time.Parse` (three per scene), not in
+the query plan. Only relevant for a single studio far larger than any other.
 
 ---
 
