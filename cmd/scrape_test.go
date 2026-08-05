@@ -358,7 +358,7 @@ func TestScrapeAll_preservesPriceHistory(t *testing.T) {
 				id:      "fakesite",
 				batches: [][]models.Scene{{build(t1, 4.99)}},
 			}
-			scenes, err := scrapeAll(context.Background(), sc, st, studioURL, 1, 0)
+			scenes, err := scrapeAll(context.Background(), sc, st, studioURL, 1, 0, true)
 			if err != nil {
 				t.Fatalf("scrapeAll: %v", err)
 			}
@@ -418,7 +418,7 @@ func TestScrapeAll_dropsMissingScenes(t *testing.T) {
 		id:      "fakesite",
 		batches: [][]models.Scene{{build("2")}},
 	}
-	scenes, err := scrapeAll(context.Background(), sc, st, studioURL, 1, 0)
+	scenes, err := scrapeAll(context.Background(), sc, st, studioURL, 1, 0, true)
 	if err != nil {
 		t.Fatalf("scrapeAll: %v", err)
 	}
@@ -535,7 +535,7 @@ func TestScrapeRefresh_softDeleteAndRevive(t *testing.T) {
 		id:      "fakesite",
 		batches: [][]models.Scene{{build("1"), build("3")}},
 	}
-	result, err := scrapeRefresh(context.Background(), sc, st, studioURL, 1, 0)
+	result, err := scrapeRefresh(context.Background(), sc, st, studioURL, 1, 0, true)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -560,7 +560,7 @@ func TestScrapeRefresh_softDeleteAndRevive(t *testing.T) {
 		id:      "fakesite",
 		batches: [][]models.Scene{{build("1"), build("2"), build("3")}},
 	}
-	result2, err := scrapeRefresh(context.Background(), sc2, st, studioURL, 1, 0)
+	result2, err := scrapeRefresh(context.Background(), sc2, st, studioURL, 1, 0, true)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -684,7 +684,7 @@ func TestScrapeOne_normalizesStudioURL(t *testing.T) {
 
 	st := store.NewFlat(t.TempDir(), []string{"json"})
 	if err := scrapeOne(context.Background(), st, requested, "", "", "", []string{"json"},
-		false, false, false, 1, 0, nil); err != nil {
+		false, false, false, true, 1, 0, nil); err != nil {
 		t.Fatalf("scrapeOne: %v", err)
 	}
 
@@ -721,7 +721,7 @@ func TestScrapeAll_multiSiteKeyAndDedup(t *testing.T) {
 	}
 
 	st := store.NewFlat(t.TempDir(), []string{"json"})
-	scenes, err := scrapeAll(context.Background(), sc, st, studioURL, 1, 0)
+	scenes, err := scrapeAll(context.Background(), sc, st, studioURL, 1, 0, true)
 	if err != nil {
 		t.Fatalf("scrapeAll: %v", err)
 	}
@@ -759,7 +759,7 @@ func TestScrapeAll_incompletePreservesExisting(t *testing.T) {
 
 	// A run that re-collects only scene 1 but reports a fetch error (incomplete).
 	sc := &mixedScraper{id: "a1", scenes: []models.Scene{mk("1")}, errors: 1}
-	scenes, err := scrapeAll(context.Background(), sc, st, studioURL, 1, 0)
+	scenes, err := scrapeAll(context.Background(), sc, st, studioURL, 1, 0, true)
 	if err != nil {
 		t.Fatalf("scrapeAll: %v", err)
 	}
@@ -792,7 +792,7 @@ func TestScrapeAll_completeDropsMissing(t *testing.T) {
 		t.Fatalf("seed: %v", err)
 	}
 	sc := &fakeScraper{id: "a1c", batches: [][]models.Scene{{mk("1")}}} // clean, only scene 1
-	scenes, err := scrapeAll(context.Background(), sc, st, studioURL, 1, 0)
+	scenes, err := scrapeAll(context.Background(), sc, st, studioURL, 1, 0, true)
 	if err != nil {
 		t.Fatalf("scrapeAll: %v", err)
 	}
@@ -818,7 +818,7 @@ func TestScrapeRefresh_incompleteSkipsSoftDelete(t *testing.T) {
 
 	// Re-collect only scene 1, with an error (incomplete).
 	sc := &mixedScraper{id: "a1r", scenes: []models.Scene{mk("1")}, errors: 1}
-	scenes, err := scrapeRefresh(context.Background(), sc, st, studioURL, 1, 0)
+	scenes, err := scrapeRefresh(context.Background(), sc, st, studioURL, 1, 0, true)
 	if err != nil {
 		t.Fatalf("scrapeRefresh: %v", err)
 	}
@@ -846,7 +846,7 @@ func TestScrapeOne_emptyWipeGuard(t *testing.T) {
 
 	// --full, no --force: must refuse and keep the existing scene.
 	if err := scrapeOne(context.Background(), st, url, "", "", "", []string{"json"},
-		true, false, false, 1, 0, nil); err != nil {
+		true, false, false, true, 1, 0, nil); err != nil {
 		t.Fatalf("scrapeOne (guard): %v", err)
 	}
 	got, _ := st.Load(url)
@@ -856,7 +856,7 @@ func TestScrapeOne_emptyWipeGuard(t *testing.T) {
 
 	// --force: the wipe is allowed.
 	if err := scrapeOne(context.Background(), st, url, "", "", "", []string{"json"},
-		true, false, true, 1, 0, nil); err != nil {
+		true, false, true, true, 1, 0, nil); err != nil {
 		t.Fatalf("scrapeOne (force): %v", err)
 	}
 	got, _ = st.Load(url)
@@ -878,4 +878,81 @@ func (f *fakeRegistered) ListScenes(_ context.Context, _ string, _ scraper.ListO
 	ch := make(chan scraper.SceneResult)
 	close(ch)
 	return ch, nil
+}
+
+// TestScrapeRefresh_preservesEnrichment covers the parser-regression case: a
+// site redesign makes the scraper return scenes with the right IDs but no tags,
+// performers or description. Save is authoritative, so without preservation the
+// refresh would replace good stored metadata with nothing.
+func TestScrapeRefresh_preservesEnrichment(t *testing.T) {
+	const studioURL = "https://example.com/studio/preserve"
+	t0 := time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC)
+
+	rich := models.Scene{
+		ID: "1", SiteID: "fakesite", StudioURL: studioURL,
+		Title: "Scene 1", URL: "https://example.com/1",
+		Description: "a long description",
+		Performers:  []string{"Alice", "Bob"},
+		Tags:        []string{"tag-a"},
+		Categories:  []string{"cat-a"},
+		Thumbnail:   "https://example.com/1.jpg",
+		Duration:    600,
+		Date:        t0.Add(-24 * time.Hour),
+		ExternalIDs: map[string]string{models.ExternalStashDB: "uuid-1"},
+		ScrapedAt:   t0,
+	}
+	// What a broken parser emits: identity intact, everything else blank.
+	stripped := models.Scene{
+		ID: "1", SiteID: "fakesite", StudioURL: studioURL,
+		Title: "Scene 1", URL: "https://example.com/1",
+		ScrapedAt: t0.Add(24 * time.Hour),
+	}
+
+	run := func(t *testing.T, preserve bool) models.Scene {
+		t.Helper()
+		st := store.NewFlat(t.TempDir(), []string{"json"})
+		if err := st.Save(studioURL, []models.Scene{rich}); err != nil {
+			t.Fatal(err)
+		}
+		sc := &fakeScraper{id: "fakesite", batches: [][]models.Scene{{stripped}}}
+		result, err := scrapeRefresh(context.Background(), sc, st, studioURL, 1, 0, preserve)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if err := st.Save(studioURL, result); err != nil {
+			t.Fatal(err)
+		}
+		loaded, _ := st.Load(studioURL)
+		if len(loaded) != 1 {
+			t.Fatalf("got %d scenes, want 1", len(loaded))
+		}
+		return loaded[0]
+	}
+
+	t.Run("preserve", func(t *testing.T) {
+		got := run(t, true)
+		if got.Description != rich.Description {
+			t.Errorf("description = %q, want preserved", got.Description)
+		}
+		if len(got.Performers) != 2 || len(got.Tags) != 1 || len(got.Categories) != 1 {
+			t.Errorf("relations lost: performers=%v tags=%v categories=%v", got.Performers, got.Tags, got.Categories)
+		}
+		if got.Thumbnail == "" || got.Duration != 600 || got.Date.IsZero() {
+			t.Errorf("scalars lost: thumb=%q duration=%d date=%v", got.Thumbnail, got.Duration, got.Date)
+		}
+		if got.ExternalIDs[models.ExternalStashDB] != "uuid-1" {
+			t.Errorf("externalIDs lost: %v", got.ExternalIDs)
+		}
+		// The fresh scrape still wins where it has data.
+		if !got.ScrapedAt.Equal(stripped.ScrapedAt) {
+			t.Errorf("scrapedAt = %v, want the fresh value", got.ScrapedAt)
+		}
+	})
+
+	t.Run("no-preserve", func(t *testing.T) {
+		got := run(t, false)
+		if got.Description != "" || len(got.Performers) != 0 || len(got.Tags) != 0 {
+			t.Errorf("--no-preserve should let the blank scrape win, got %+v", got)
+		}
+	})
 }

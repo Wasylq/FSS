@@ -31,6 +31,7 @@ For NFO sidecar file generation, see [identify.md](identify.md).
 | `--full` | bool | false | Full traversal (no early-stop); preserves price history; drops scenes no longer on the site |
 | `--refresh` | bool | false | Re-fetch metadata for all known scenes; soft-delete missing ones |
 | `--force` | bool | false | Allow a `--full`/`--refresh` that returns 0 scenes to wipe a previously-populated studio (otherwise the destructive save is refused) |
+| `--no-preserve` | bool | false | Let a re-scrape blank fields it no longer returns. By default a fresh scene inherits any field it left empty from the stored one, so a broken parser cannot wipe metadata — see [metadata.md](metadata.md) |
 | `--output`, `-o` | string | `json` | Export format(s): `json`, `csv`, or `json,csv` |
 | `--out-dir` | string | `.` | Output directory |
 | `--db` | string | _(disabled)_ | Enable SQLite store (`--db` alone uses `~/.local/share/fss/fss.db`; `--db /path` uses a custom path) |

@@ -34,6 +34,7 @@ func init() {
 	scrapeCmd.Flags().Bool("full", false, "ignore existing data, scrape everything from scratch")
 	scrapeCmd.Flags().Bool("refresh", false, "re-fetch metadata for all known scenes, soft-delete missing")
 	scrapeCmd.Flags().Bool("force", false, "allow a 0-scene --full/--refresh to wipe a previously-populated studio")
+	scrapeCmd.Flags().Bool("no-preserve", false, "let a re-scrape blank fields it no longer returns (default: keep the stored value)")
 	scrapeCmd.Flags().StringP("output", "o", "", "export formats: json, csv, or json,csv (default from config)")
 	scrapeCmd.Flags().String("out-dir", "", "output directory (default from config)")
 	scrapeCmd.Flags().String("db", "", "enable SQLite store (no value = ~/.local/share/fss/fss.db; or pass a path)")
@@ -48,6 +49,7 @@ func runScrape(cmd *cobra.Command, args []string) error {
 	full, _ := cmd.Flags().GetBool("full")
 	refresh, _ := cmd.Flags().GetBool("refresh")
 	force, _ := cmd.Flags().GetBool("force")
+	noPreserve, _ := cmd.Flags().GetBool("no-preserve")
 	if full && refresh {
 		return fmt.Errorf("--full and --refresh are mutually exclusive")
 	}
@@ -137,7 +139,7 @@ func runScrape(cmd *cobra.Command, args []string) error {
 		if i > 0 {
 			fmt.Println()
 		}
-		if err := scrapeOne(ctx, st, studioURL, name, dbPath, outDir, formats, full, refresh, force, workers, defaultDelay, siteDelays); err != nil {
+		if err := scrapeOne(ctx, st, studioURL, name, dbPath, outDir, formats, full, refresh, force, !noPreserve, workers, defaultDelay, siteDelays); err != nil {
 			fmt.Fprintf(os.Stderr, "error scraping %s: %v\n", studioURL, err)
 			if firstErr == nil {
 				firstErr = err
@@ -150,7 +152,7 @@ func runScrape(cmd *cobra.Command, args []string) error {
 	return firstErr
 }
 
-func scrapeOne(ctx context.Context, st store.Store, studioURL, name, dbPath, outDir string, formats []string, full, refresh, force bool, workers int, defaultDelay time.Duration, siteDelays map[string]int) error {
+func scrapeOne(ctx context.Context, st store.Store, studioURL, name, dbPath, outDir string, formats []string, full, refresh, force, preserve bool, workers int, defaultDelay time.Duration, siteDelays map[string]int) error {
 	start := time.Now()
 
 	sc, err := scraper.ForURL(studioURL)
@@ -171,13 +173,13 @@ func scrapeOne(ctx context.Context, st store.Store, studioURL, name, dbPath, out
 	switch {
 	case full:
 		fmt.Printf("Full scrape: %s\n", studioURL)
-		scenes, err = scrapeAll(ctx, sc, st, studioURL, workers, delay)
+		scenes, err = scrapeAll(ctx, sc, st, studioURL, workers, delay, preserve)
 	case refresh:
 		fmt.Printf("Refresh scrape: %s\n", studioURL)
-		scenes, err = scrapeRefresh(ctx, sc, st, studioURL, workers, delay)
+		scenes, err = scrapeRefresh(ctx, sc, st, studioURL, workers, delay, preserve)
 	default:
 		fmt.Printf("Incremental scrape: %s\n", studioURL)
-		scenes, err = scrapeIncremental(ctx, sc, st, studioURL, workers, delay)
+		scenes, err = scrapeIncremental(ctx, sc, st, studioURL, workers, delay, preserve)
 	}
 	if err != nil {
 		return err
@@ -255,7 +257,7 @@ type sceneKey struct{ id, siteID string }
 
 func keyOf(s models.Scene) sceneKey { return sceneKey{id: s.ID, siteID: s.SiteID} }
 
-func scrapeAll(ctx context.Context, sc scraper.StudioScraper, st store.Store, studioURL string, workers int, delay time.Duration) ([]models.Scene, error) {
+func scrapeAll(ctx context.Context, sc scraper.StudioScraper, st store.Store, studioURL string, workers int, delay time.Duration, preserve bool) ([]models.Scene, error) {
 	existing, err := st.Load(studioURL)
 	if err != nil {
 		return nil, fmt.Errorf("loading existing scenes: %w", err)
@@ -279,7 +281,7 @@ func scrapeAll(ctx context.Context, sc scraper.StudioScraper, st store.Store, st
 		}
 		seen[k] = true
 		if prev, ok := existingByKey[k]; ok {
-			s = carryOverPriceHistory(s, prev)
+			s = carryOver(s, prev, preserve)
 		}
 		result = append(result, s)
 	}
@@ -306,7 +308,7 @@ func scrapeAll(ctx context.Context, sc scraper.StudioScraper, st store.Store, st
 // Scrapers that cannot use early-stop (e.g. recommended-sorted sites) may emit
 // known scenes in correct site order. In that case fresh takes priority and
 // price history is carried forward so no history is lost.
-func scrapeIncremental(ctx context.Context, sc scraper.StudioScraper, st store.Store, studioURL string, workers int, delay time.Duration) ([]models.Scene, error) {
+func scrapeIncremental(ctx context.Context, sc scraper.StudioScraper, st store.Store, studioURL string, workers int, delay time.Duration, preserve bool) ([]models.Scene, error) {
 	existing, err := st.Load(studioURL)
 	if err != nil {
 		return nil, fmt.Errorf("loading existing scenes: %w", err)
@@ -340,7 +342,7 @@ func scrapeIncremental(ctx context.Context, sc scraper.StudioScraper, st store.S
 		}
 		freshKeys[k] = true
 		if prev, ok := existingByKey[k]; ok {
-			s = carryOverPriceHistory(s, prev)
+			s = carryOver(s, prev, preserve)
 		} else {
 			newCount++
 		}
@@ -358,7 +360,7 @@ func scrapeIncremental(ctx context.Context, sc scraper.StudioScraper, st store.S
 
 // scrapeRefresh re-fetches all scenes and soft-deletes any that have disappeared.
 // Price history from prior scrapes is carried forward onto each re-fetched scene.
-func scrapeRefresh(ctx context.Context, sc scraper.StudioScraper, st store.Store, studioURL string, workers int, delay time.Duration) ([]models.Scene, error) {
+func scrapeRefresh(ctx context.Context, sc scraper.StudioScraper, st store.Store, studioURL string, workers int, delay time.Duration, preserve bool) ([]models.Scene, error) {
 	existing, err := st.Load(studioURL)
 	if err != nil {
 		return nil, fmt.Errorf("loading existing scenes: %w", err)
@@ -384,7 +386,7 @@ func scrapeRefresh(ctx context.Context, sc scraper.StudioScraper, st store.Store
 		}
 		scrapedKeys[k] = true
 		if prev, ok := existingByKey[k]; ok {
-			s = carryOverPriceHistory(s, prev)
+			s = carryOver(s, prev, preserve)
 		}
 		result = append(result, s)
 	}
@@ -468,6 +470,89 @@ func collectScenes(ctx context.Context, sc scraper.StudioScraper, studioURL stri
 	}
 	incomplete := errCount > 0 || ctx.Err() != nil
 	return scenes, incomplete, nil
+}
+
+// carryOver folds a stored scene into the freshly-scraped one that replaces it:
+// price history is always replayed, and unless the operator opted out, fields
+// the fresh scrape returned empty fall back to the stored value.
+func carryOver(fresh, existing models.Scene, preserve bool) models.Scene {
+	if preserve {
+		fresh = preserveEnrichment(fresh, existing)
+	}
+	return carryOverPriceHistory(fresh, existing)
+}
+
+// preserveEnrichment restores fields that the fresh scrape left empty from the
+// stored scene.
+//
+// Save is authoritative, so without this a parser that breaks on a site redesign
+// and starts returning blank tags, performers or descriptions silently replaces
+// good stored metadata with nothing on the next --refresh. Price history had
+// this protection; nothing else did.
+//
+// The trade is deliberate: a field the site genuinely emptied stays populated
+// here. Losing a whole catalogue's metadata to a parser regression is the worse
+// failure, and `--no-preserve` exists for a real rebuild. Only wholly-empty
+// fields are restored — a scrape returning 2 of 3 tags still wins outright.
+func preserveEnrichment(fresh, existing models.Scene) models.Scene {
+	keepStr := func(f, e string) string {
+		if f == "" {
+			return e
+		}
+		return f
+	}
+	keepInt := func(f, e int) int {
+		if f == 0 {
+			return e
+		}
+		return f
+	}
+	keepSlice := func(f, e []string) []string {
+		if len(f) == 0 {
+			return e
+		}
+		return f
+	}
+
+	fresh.Title = keepStr(fresh.Title, existing.Title)
+	fresh.URL = keepStr(fresh.URL, existing.URL)
+	fresh.Description = keepStr(fresh.Description, existing.Description)
+	fresh.Thumbnail = keepStr(fresh.Thumbnail, existing.Thumbnail)
+	fresh.Preview = keepStr(fresh.Preview, existing.Preview)
+	fresh.Director = keepStr(fresh.Director, existing.Director)
+	fresh.Studio = keepStr(fresh.Studio, existing.Studio)
+	fresh.Series = keepStr(fresh.Series, existing.Series)
+	fresh.Resolution = keepStr(fresh.Resolution, existing.Resolution)
+	fresh.Format = keepStr(fresh.Format, existing.Format)
+
+	fresh.SeriesPart = keepInt(fresh.SeriesPart, existing.SeriesPart)
+	fresh.Duration = keepInt(fresh.Duration, existing.Duration)
+	fresh.Width = keepInt(fresh.Width, existing.Width)
+	fresh.Height = keepInt(fresh.Height, existing.Height)
+	fresh.Views = keepInt(fresh.Views, existing.Views)
+	fresh.Likes = keepInt(fresh.Likes, existing.Likes)
+	fresh.Comments = keepInt(fresh.Comments, existing.Comments)
+
+	fresh.Performers = keepSlice(fresh.Performers, existing.Performers)
+	fresh.Tags = keepSlice(fresh.Tags, existing.Tags)
+	fresh.Categories = keepSlice(fresh.Categories, existing.Categories)
+
+	if fresh.Date.IsZero() {
+		fresh.Date = existing.Date
+	}
+
+	// External IDs accumulate across scrapes — different sources learn the
+	// scene at different times — so union rather than replace.
+	for source, id := range existing.ExternalIDs {
+		if fresh.ExternalIDs == nil {
+			fresh.ExternalIDs = map[string]string{}
+		}
+		if _, ok := fresh.ExternalIDs[source]; !ok {
+			fresh.ExternalIDs[source] = id
+		}
+	}
+
+	return fresh
 }
 
 // carryOverPriceHistory replays the existing scene's price history plus every

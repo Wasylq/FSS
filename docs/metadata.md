@@ -58,6 +58,27 @@ a measurement.
 
 `firstSeenAt` is also a CSV column, placed before `scrapedAt`.
 
+## Re-scrapes never blank a field
+
+`Save` is authoritative: it writes what it is given and hard-deletes the rest.
+That made a parser regression destructive — a site redesign that left the
+scraper returning correct IDs but empty tags, performers and descriptions would
+replace good stored metadata with nothing on the next `--refresh`.
+
+So a freshly-scraped scene that matches a stored one now inherits every field it
+left empty (`preserveEnrichment` in `cmd/scrape.go`). Price history was already
+protected this way; the rest of the record now is too. `externalIds` are unioned
+rather than replaced, since different sources learn a scene at different times.
+
+Two things this deliberately does *not* do:
+
+- **Detect partial loss.** A scrape returning 2 of 3 tags wins outright. Only
+  wholly-empty fields fall back.
+- **Allow genuine removals.** A field the site really emptied stays populated.
+  That is the accepted cost; losing a catalogue to a parser bug is worse.
+
+`fss scrape --no-preserve` restores the old behaviour for a real rebuild.
+
 ## Cross-site identity
 
 `(id, siteId)` is site-local: the same scene scraped from two sites has two
