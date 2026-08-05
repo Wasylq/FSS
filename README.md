@@ -179,7 +179,11 @@ fss scrape --output json,csv --out-dir ./data <url>
 fss scrape --db --name "Bettie Bondage" <url>
 
 # Use SQLite at a custom path
-fss scrape --db /path/to/fss.db <url>
+fss scrape --db=/path/to/fss.db <url>
+
+# Move existing JSON files into the database, and back out again
+fss import --db ./data/
+fss export --db --out-dir ./data -o json,csv
 
 # See supported sites
 fss list-scrapers

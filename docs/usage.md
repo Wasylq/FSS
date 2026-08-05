@@ -34,7 +34,7 @@ For NFO sidecar file generation, see [identify.md](identify.md).
 | `--no-preserve` | bool | false | Let a re-scrape blank fields it no longer returns. By default a fresh scene inherits any field it left empty from the stored one, so a broken parser cannot wipe metadata — see [metadata.md](metadata.md) |
 | `--output`, `-o` | string | `json` | Export format(s): `json`, `csv`, or `json,csv` |
 | `--out-dir` | string | `.` | Output directory |
-| `--db` | string | _(disabled)_ | Enable SQLite store (`--db` alone uses `~/.local/share/fss/fss.db`; `--db /path` uses a custom path) |
+| `--db` | string | _(disabled)_ | Enable SQLite store (`--db` alone uses `~/.local/share/fss/fss.db`; `--db=/path` uses a custom path — note the `=`, a space-separated value is not parsed) |
 | `--delay` | int | `500` | Milliseconds to sleep between page requests (default from config; `--delay 0` disables) |
 | `--site-delay` | []string | _(none)_ | Per-scraper delay overrides as `name=ms` pairs, e.g. `--site-delay manyvids=0,pornhub=2000` |
 | `--name` | string | _(none)_ | Human-readable label for this studio (stored when `--db` is set) |
@@ -54,6 +54,39 @@ Prints all registered scrapers and the URL patterns each one handles.
 ### `fss list-studios`
 
 Lists all studios in the SQLite database with scene counts and last-scraped timestamps. Needs a database: pass `--db`, or set `db:` in the config file and omit the flag.
+
+### `fss import <file-or-dir> ...`
+
+Loads studio JSON files into the SQLite database. Directories contribute their `*.json` entries (not recursive). Each file's own `studioUrl` decides which studio it belongs to — filenames are never parsed, since `Slugify` is lossy.
+
+| Flag | Type | Default | Description |
+|------|------|---------|-------------|
+| `--db` | string | _(from config)_ | Target database (`--db` alone uses the default path; `--db=/path` for a custom one) |
+| `--replace` | bool | false | Make each file authoritative: delete stored scenes it does not contain |
+| `--dry-run` | bool | false | Report what would be imported without writing |
+
+The database schema is a superset of the JSON layout, so nothing is lost. By default the file is *merged* into the database: scenes present in both take the file's values, price history is carried forward, fields the file omits keep their stored values, and scenes only in the database are left alone.
+
+```bash
+fss import --db ./out/                      # every studio file in ./out
+fss import --db=/custom/path.db studio.json # one file into a custom database
+```
+
+### `fss export [studio-url ...]`
+
+Writes studio JSON/CSV files out of the SQLite database, named exactly as the flat store names them. With no arguments, every tracked studio is exported.
+
+| Flag | Type | Default | Description |
+|------|------|---------|-------------|
+| `--db` | string | _(from config)_ | Source database |
+| `--output`, `-o` | string | `json` | Export format(s): `json`, `csv`, or `json,csv` |
+| `--out-dir` | string | `.` | Output directory |
+
+```bash
+fss export --db --out-dir ./out -o json,csv
+```
+
+A JSON → database → JSON round trip is lossless except for sub-second timestamp precision, which SQLite has never stored (times are written as RFC 3339 to the second).
 
 ### `fss check <url>`
 
@@ -340,8 +373,8 @@ Use periodically (e.g. weekly) to catch deletions and accumulate accurate price 
 Pass `--db` to any scrape command, or set `db` in your config file:
 
 ```bash
-fss scrape --db <studio-url>                # uses default path: ~/.local/share/fss/fss.db
-fss scrape --db /custom/path.db <studio-url> # uses a custom path
+fss scrape --db <studio-url>                  # uses default path: ~/.local/share/fss/fss.db
+fss scrape --db=/custom/path.db <studio-url>  # uses a custom path — the `=` is required
 ```
 
 Or in `config.yaml`:

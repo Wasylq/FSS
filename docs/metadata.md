@@ -18,7 +18,24 @@ Both implement `store.Store` and are covered by the same contract tests
 **The flat store rewrites everything on every save.** A studio with 59k scenes is
 a ~100 MB JSON file; an incremental run that finds three new scenes still parses
 and rewrites all 100 MB. Use `--db` for large catalogues and treat JSON as an
-export format (`fss export`).
+export format.
+
+### Moving between them
+
+The SQLite schema is a strict superset of the JSON layout, so the conversion is
+just a loop over studio files:
+
+```bash
+fss import --db ./out/                     # JSON files → database
+fss export --db --out-dir ./out -o json    # database → JSON files
+```
+
+A round trip is lossless except for sub-second timestamp precision, which SQLite
+has never stored. `import` merges by default and takes `--replace` to make the
+file authoritative; see [usage.md](usage.md).
+
+Studio rows (`name`, `added_at`) are not in the JSON, so `import` derives them:
+site ID and name from the scenes, `added_at` from the earliest `firstSeenAt`.
 
 ## Schema versioning
 
