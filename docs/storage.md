@@ -69,11 +69,6 @@ The two are now within ~25% on wall clock, and SQLite uses a third less memory.
   (`content_hash`) and skips any whose stored fingerprint matches, so an
   incremental scrape touches a handful of rows instead of all 59,254.
 
-Earlier versions rewrote every row on every save — roughly **296,000 statements
-to record one new scene** — which made the database several times slower than
-brute-force JSON. That is fixed; if you are reading older notes claiming SQLite
-is slower, they predate this.
-
 The remaining one-off cost is the **initial ingest** (~13 s for 59k scenes),
 paid once when you `fss import` an existing catalogue.
 
@@ -128,88 +123,57 @@ tables. See [usage.md](usage.md#sqlite).
 
 ---
 
-## What blocks the switch
+## How the SQLite store stays fast
 
-### 1. ~~The consumers are JSON-only~~ — done
+Four things carry the performance in the table above. Each is easy to undo by
+accident, so they are written down rather than left to be rediscovered.
 
-`fss stash import` and `fss identify` now accept `--db`, plus `--from-studio`
-and `--from-performer` to narrow what they load. With `db:` set in config they
-read the database by default, so JSON is no longer a mandatory intermediate —
-export it only if you want it.
+**`Save` writes only what changed.** Each scene is fingerprinted into
+`content_hash`; a scene whose stored fingerprint matches skips the row upsert,
+all three relation syncs and the price-history diff. When only `scraped_at`
+moved, it issues one narrow `UPDATE`.
 
-Both share one loader (`loadFSSScenes` in `cmd/scenesource.go`), and a test
-asserts the JSON and database paths produce the same scene set, so the database
-route cannot drift into a second, subtly different implementation.
-
-### 2. ~~`Save` must become diff-aware~~ — done
-
-`Save` now fingerprints each scene into `content_hash` and skips the expensive
-write path (row upsert plus three relation syncs plus price-history diffing) for
-any scene whose stored fingerprint matches. Measured on the 59k-scene catalogue,
-`Save` went from **6.7 s to 0.5 s**.
-
-Two properties make it correct:
+Two properties make that correct:
 
 - The hash is computed over the **stored** representation, using the same
-  `timeStr` conversions as the writer. Hashing the in-memory values would make a
+  `timeStr` conversions as the writer. Hashing in-memory values would make a
   freshly scraped scene (nanosecond timestamps) differ from the same scene
   loaded back (second precision), and nothing would ever be skipped.
-- `ScrapedAt` and `FirstSeenAt` are excluded. `ScrapedAt` changes on every
-  scrape by definition, so including it would defeat the mechanism; when it is
-  the only difference, `Save` issues one narrow `UPDATE` instead of the full
-  path. `FirstSeenAt` is store-owned and never changes once set.
+- `ScrapedAt` and `FirstSeenAt` are excluded — the first changes on every scrape
+  by definition, and the second is store-owned and never changes once set.
 
-**Invariant for future work:** anything that writes scene state outside
-`upsertScene` must invalidate `content_hash`. `MarkDeleted` sets it to `''`
-for exactly this reason — without that, re-saving a soft-deleted scene with
-`DeletedAt == nil` would be skipped and the delete would never lift.
+> **Invariant:** anything writing scene state outside `upsertScene` must
+> invalidate `content_hash`. `MarkDeleted` sets it to `''` for exactly this
+> reason — without that, re-saving a soft-deleted scene with `DeletedAt == nil`
+> would be skipped and the delete would never lift.
 
-`Load` was optimised alongside it in two steps:
+**`Load` orders in Go, not SQL.** `ORDER BY` made SQLite build temp B-trees over
+every scene row and every junction row in the studio, to order lists that are a
+handful of entries each. Do not add it back.
 
-- **Dropping two `ORDER BY` clauses** that made SQLite build temp B-trees over
-  every scene row and every junction row in the studio, to order lists that are
-  a handful of entries each. Ordering now happens in Go on already-materialised
-  slices, identically. Single-studio `Load`: 3.2 s → 2.0 s.
-- **Indexing the child tables by `studio_url`** (migration 7). Their primary
-  keys start with `scene_id`, so a `studio_url` predicate could not use them and
-  every `Load` scanned the entire table — the whole database's junction rows to
-  read one studio's. Harmless with one studio, O(all studios) with many. Loading
-  one studio out of 40: **148 ms → 50 ms**.
+**The child tables are indexed by `studio_url`** (migration 7). Their primary
+keys start with `scene_id`, so a `studio_url` predicate cannot use them; without
+the index every `Load` scans the whole table — the entire database's junction
+rows to read one studio's. The indexes are deliberately narrow: covering
+variants measured 3 ms faster for 31 MB more on a 300 MB database.
 
-The indexes are deliberately narrow (`studio_url` alone). Covering variants
-carrying `scene_id`/`site_id`/`position` measured 47 ms against 50 ms — 3 ms, for
-31 MB more on a 300 MB database.
+**Large saves share a `saveSession`** (`internal/store/savesession.go`), caching
+prepared statements by SQL text and entity name→id lookups. Without it a first
+ingest spent a third of its CPU re-parsing SQL and resolved every
+performer/tag/category name with its own round trip. Its statements are bound to
+the transaction, so the session is closed before `Commit`.
 
-### 3. Initial ingest — tuned, 54 s → 13 s
-
-A first ingest can skip nothing, so it pays the full write path for every scene.
-A CPU profile of 59,254 scenes found the cost was mostly not the writes:
-
-- **33% in `sqlite3_prepare_v2`** — `database/sql` prepares, executes and
-  discards on every `Exec`, so each of ~300,000 statements re-parsed its SQL.
-- **48% cumulative in `Tx.QueryRow`** — nearly all of it `syncRelation`
-  resolving performer/tag/category names to row IDs, one round trip per name per
-  scene (~900,000 calls) for names that are globally unique and, after the first
-  few thousand scenes, already stored.
-
-`saveSession` (`internal/store/savesession.go`) fixes both with two caches held
-for the lifetime of one `Save`: prepared statements keyed by SQL text, and
-resolved entity IDs keyed by table and name. Ingest went from **54 s to 13 s**,
-and the profile now shows the time in statement execution rather than parsing.
-
-Statements are bound to the transaction, so the session is closed before
-`Commit`, not after.
-
-### What is still not optimised
+## What is still not optimised
 
 **Single-studio `Load` (2.0 s for 59k scenes)** is still ~3× the flat store's
 0.7 s. The query plans are clean; the time is in row scanning and `time.Parse`
 (three per scene). It only matters for a single studio far larger than the rest,
 and loading one studio out of many is already proportional (50 ms of 40).
 
----
+## Making SQLite the default
 
-## The flag question
+Nothing technical blocks it now: both consumers read either source, and the
+database is competitive on the numbers above. What is left is the rollout.
 
 The natural instinct is to flip `--db` to `--no-db`. Recommended: **don't.**
 
@@ -220,7 +184,7 @@ The natural instinct is to flip `--db` to `--no-db`. Recommended: **don't.**
 - It couples the *default* to a *flag rename*. Those are separate decisions and
   should ship separately.
 
-Preferred shape, when the blockers above are cleared:
+Preferred shape:
 
 ```bash
 fss scrape <url>                       # uses whatever the config default is

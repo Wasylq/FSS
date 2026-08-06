@@ -129,20 +129,18 @@ and studio.
 ## Name normalisation in cross-site merges
 
 `Performers`, `Tags` and `Categories` are plain `[]string`, so the display name
-*is* the join key everywhere downstream — `fss stash import` looks entities up
-in Stash by exact name. Two sites spelling one performer differently therefore
-produced two Stash performers.
+*is* the join key everywhere downstream — `fss stash import` looks entities up in
+Stash by exact name.
 
-`match.MergeScenes` now deduplicates on a canonical key (`normName`:
+`match.MergeScenes` deduplicates on a canonical key (`NormalizeName`:
 case-folded, whitespace-collapsed) while storing the first contributing site's
 spelling (`cleanName`: trimmed, internal whitespace collapsed, case untouched).
 So `"Nikki Nuttz"` and `"nikki  nuttz"` merge to one entry written as
-`Nikki Nuttz`.
+`Nikki Nuttz`. Which spelling wins follows the order scenes are passed in —
+deterministic, but not "best".
 
-This reverses an earlier decision to keep both spellings. Keeping both never
-helped — it just created two Stash entities — and the value written is still a
-real site spelling, not a folded one. Which spelling wins is determined by the
-order scenes are passed in, so it is deterministic but not "best".
+Keeping both spellings instead would create two Stash performers for one person,
+which is why the key is folded even though the stored value is not.
 
 Scrapers should still avoid emitting stray whitespace; normalising here also
 repairs catalogues already on disk, which no scraper fix can do without a full
