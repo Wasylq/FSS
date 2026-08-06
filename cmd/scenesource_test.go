@@ -274,3 +274,46 @@ func TestFilterScenesDistinctDisplayNameSelectsWholeStudio(t *testing.T) {
 		t.Errorf("got [%s], want [1,2]", ids(got))
 	}
 }
+
+// A bare --db must mean "the database I configured", not a different one at the
+// XDG default. pflag gives the valueless flag the sentinel "default", and
+// resolving that literally opened an empty database while the operator's own
+// path sat in `db:`.
+func TestResolveDBPathBareFlagUsesConfiguredPath(t *testing.T) {
+	configured := filepath.Join(t.TempDir(), "mine.db")
+
+	t.Run("bare --db with a configured path", func(t *testing.T) {
+		withCfg(t, &config.Config{DB: config.DBRef(configured)})
+		c := newImportTestCmd(t)
+		setFlag(t, c, "db", "default")
+		if got := resolveDBPath(c); got != configured {
+			t.Errorf("resolveDBPath = %q, want the configured %q", got, configured)
+		}
+	})
+
+	t.Run("explicit path still wins", func(t *testing.T) {
+		withCfg(t, &config.Config{DB: config.DBRef(configured)})
+		other := filepath.Join(t.TempDir(), "other.db")
+		c := newImportTestCmd(t)
+		setFlag(t, c, "db", other)
+		if got := resolveDBPath(c); got != other {
+			t.Errorf("resolveDBPath = %q, want the explicit %q", got, other)
+		}
+	})
+
+	t.Run("bare --db with nothing configured falls back to the default location", func(t *testing.T) {
+		withCfg(t, &config.Config{})
+		c := newImportTestCmd(t)
+		setFlag(t, c, "db", "default")
+		if got := resolveDBPath(c); got == "" || got == "default" {
+			t.Errorf("resolveDBPath = %q, want the XDG default path", got)
+		}
+	})
+
+	t.Run("no flag and an explicit empty db: means no database", func(t *testing.T) {
+		withCfg(t, &config.Config{DB: config.DBRef("")})
+		if got := resolveDBPath(newImportTestCmd(t)); got != "" {
+			t.Errorf("resolveDBPath = %q, want empty", got)
+		}
+	})
+}

@@ -25,7 +25,7 @@ func (s sceneSource) String() string { return s.desc }
 func addSceneSourceFlags(cmd *cobra.Command) {
 	cmd.Flags().StringSlice("json", nil, "specific JSON files to load")
 	cmd.Flags().String("dir", "", "directory containing FSS JSON files (default: config out_dir)")
-	cmd.Flags().String("db", "", "load scenes from the SQLite store instead of JSON (no value = default location)")
+	cmd.Flags().String("db", "", "load scenes from the SQLite store instead of JSON (no value = the configured db, or the default location)")
 	cmd.Flags().Lookup("db").NoOptDefVal = "default"
 	cmd.Flags().StringSlice("from-studio", nil,
 		"only use scenes from these studios — a studio URL, a studio name, or a per-scene studio/sub-brand name (repeatable: any match)")
@@ -33,29 +33,36 @@ func addSceneSourceFlags(cmd *cobra.Command) {
 		"only use scenes featuring these performers (repeatable: any match)")
 }
 
-// configuredDB returns the config's `db:` value, or "" when it is absent.
-func configuredDB(c *config.Config) string {
-	v, _ := c.DBSetting()
-	return v
-}
-
-// resolveDBPath returns the database path for a command: the --db flag if set,
-// otherwise the config's `db:` value, resolved to an absolute path. Empty means
-// no database is configured.
+// resolveDBPath returns the database path for a command.
+//
+// `--db=/path` wins. A bare `--db` means "the database I configured": pflag
+// gives the valueless flag the sentinel "default", and resolving that straight
+// to the XDG location would open a different — probably empty — database than
+// the one the operator put in `db:`. The XDG default applies only when nothing
+// is configured.
+//
+// An empty result means no database at all.
 func resolveDBPath(cmd *cobra.Command) string {
 	flag, _ := cmd.Flags().GetString("db")
-	if flag == "" && cfg != nil {
-		flag, _ = cfg.DBSetting()
+	configured, _ := cfg.DBSetting()
+	if (flag == "" || flag == "default") && configured != "" {
+		flag = configured
 	}
 	return config.ResolveDBPath(flag)
 }
 
 // loadFSSScenes resolves where scenes come from and returns them filtered.
 //
-// Precedence: --json, then --db, then --dir, then the config's `db:` if set,
-// and finally the config's out_dir. Explicitly combining --db with --json/--dir
-// is an error rather than a silent winner, since which one wins is not
-// guessable from the command line.
+// Precedence: --json, then --db, then --dir, and finally the config's out_dir.
+// Explicitly combining --db with --json/--dir is an error rather than a silent
+// winner, since which one wins is not guessable from the command line.
+//
+// A configured `db:` deliberately does NOT make the database the default source
+// here. It is the store `fss scrape` writes to, not an instruction about where
+// these commands read from, and flipping that silently is exactly what the
+// upcoming-default notice promises not to do yet. Reading the database is an
+// explicit `--db` until the announced switch, at which point this is the branch
+// that changes.
 func loadFSSScenes(cmd *cobra.Command) ([]models.Scene, sceneSource, error) {
 	jsonFiles, _ := cmd.Flags().GetStringSlice("json")
 	dirFlag, _ := cmd.Flags().GetString("dir")
@@ -81,9 +88,6 @@ func loadFSSScenes(cmd *cobra.Command) ([]models.Scene, sceneSource, error) {
 	case dirFlag != "":
 		src = sceneSource{kind: "json", desc: dirFlag}
 		scenes, err = match.LoadJSONDir(dirFlag)
-	case configuredDB(cfg) != "":
-		src = sceneSource{kind: "db", desc: resolveDBPath(cmd)}
-		scenes, studioNames, err = loadScenesFromDB(src.desc)
 	default:
 		dir := ""
 		if cfg != nil {

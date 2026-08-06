@@ -7,7 +7,6 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/Wasylq/FSS/internal/config"
 	"github.com/Wasylq/FSS/internal/store"
 	"github.com/Wasylq/FSS/output"
 )
@@ -24,18 +23,14 @@ With no arguments every tracked studio is exported.`,
 
 func init() {
 	rootCmd.AddCommand(exportCmd)
-	exportCmd.Flags().String("db", "", "path to SQLite database (no value = default location)")
+	exportCmd.Flags().String("db", "", "path to SQLite database (no value = the configured db, or the default location)")
 	exportCmd.Flags().Lookup("db").NoOptDefVal = "default"
 	exportCmd.Flags().StringP("output", "o", "", "export formats: json, csv, or json,csv (default from config)")
 	exportCmd.Flags().String("out-dir", "", "output directory (default from config)")
 }
 
 func runExport(cmd *cobra.Command, args []string) error {
-	dbFlag, _ := cmd.Flags().GetString("db")
-	if dbFlag == "" && cfg != nil {
-		dbFlag, _ = cfg.DBSetting()
-	}
-	dbPath := config.ResolveDBPath(dbFlag)
+	dbPath := resolveDBPath(cmd)
 	if dbPath == "" {
 		return fmt.Errorf("--db is required (pass --db for the default location, or --db /path/to/file.db)")
 	}

@@ -13,7 +13,6 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/Wasylq/FSS/internal/config"
 	"github.com/Wasylq/FSS/internal/store"
 	"github.com/Wasylq/FSS/models"
 	"github.com/Wasylq/FSS/output"
@@ -37,7 +36,7 @@ func init() {
 	scrapeCmd.Flags().Bool("no-preserve", false, "let a re-scrape blank fields it no longer returns (default: keep the stored value)")
 	scrapeCmd.Flags().StringP("output", "o", "", "export formats: json, csv, or json,csv (default from config)")
 	scrapeCmd.Flags().String("out-dir", "", "output directory (default from config)")
-	scrapeCmd.Flags().String("db", "", "enable SQLite store (no value = ~/.local/share/fss/fss.db; or pass a path)")
+	scrapeCmd.Flags().String("db", "", "enable SQLite store (no value = the configured db, or ~/.local/share/fss/fss.db; or pass a path)")
 	scrapeCmd.Flags().Lookup("db").NoOptDefVal = "default"
 	scrapeCmd.Flags().String("name", "", "human-readable label for this studio (stored when --db is set)")
 	scrapeCmd.Flags().Int("delay", 0, "milliseconds between page requests (default 500 from config; 0 = no delay)")
@@ -74,11 +73,7 @@ func runScrape(cmd *cobra.Command, args []string) error {
 		outDir = cfg.OutDir
 	}
 
-	dbPath, _ := cmd.Flags().GetString("db")
-	if dbPath == "" {
-		dbPath, _ = cfg.DBSetting()
-	}
-	dbPath = config.ResolveDBPath(dbPath)
+	dbPath := resolveDBPath(cmd)
 
 	name, _ := cmd.Flags().GetString("name")
 	if name != "" && len(args) > 1 {

@@ -105,7 +105,7 @@ fss stash import --dir ./data --top 50
 
 **Choosing a source:** `--dir` loads every `*.json` file in a directory and pools all studios into one index — what you want when you've scraped a performer from multiple sites (e.g. ManyVids + Clips4Sale) and want cross-site merging. `--json` narrows that to specific files. `--db` reads the SQLite store, pooling every tracked studio the same way.
 
-With **nothing specified**, a `db:` entry in your config wins and the database is read; otherwise the configured `out_dir` is scanned. Every run prints the source it resolved to.
+With **nothing specified**, the configured `out_dir` is scanned for JSON — a `db:` entry in your config does not change that, since it describes where `fss scrape` writes rather than where this command reads. Pass `--db` explicitly to use the database. Every run prints the source it resolved to.
 
 To narrow the pool without splitting files, use `--from-studio` / `--from-performer` — these work on any source, including `--dir`.
 

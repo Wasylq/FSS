@@ -100,9 +100,9 @@ Both commands read previously-scraped scenes. They share one set of flags for ch
 | `--from-studio` | []string | _(none)_ | Only use scenes from these studios. Accepts a studio URL, a studio display name, or a per-scene studio/sub-brand name. Repeatable — any match |
 | `--from-performer` | []string | _(none)_ | Only use scenes featuring these performers. Repeatable — any match |
 
-**Precedence:** `--json` → `--db` → `--dir` → the config's `db:` if set → the config's `out_dir`. Passing `--db` together with `--json` or `--dir` is an error rather than a silent winner. Each run prints the source it resolved to.
+**Precedence:** `--json` → `--db` → `--dir` → the config's `out_dir`. Passing `--db` together with `--json` or `--dir` is an error rather than a silent winner. Each run prints the source it resolved to.
 
-If you have `db:` in your config, these commands read the database by default — no need to pass `--db` everywhere. Export JSON only if you want it.
+**JSON remains the default source**, even if you have `db:` set in your config. That setting says where `fss scrape` *writes*; it does not change where these commands *read*. Reading the database is an explicit `--db` until the [announced default switch](storage.md#making-sqlite-the-default) — until then nothing about your existing workflow changes.
 
 **How `--from-studio` resolves**, most specific first:
 

@@ -240,7 +240,9 @@ empty" from "never set", precisely so that opt-out survives the change.
 
 So `db: "./fss.db"` keeps the database next to your JSON output rather than
 under `~/.local/share`, which is what you want for a self-contained directory or
-a bind-mounted container volume. The same values work as `--db=<value>`.
+a bind-mounted container volume. The same values work as `--db=<value>`, and a
+bare `--db` uses whatever you configured — it only falls back to the XDG path
+when `db:` is unset.
 
 Until then, `fss scrape` prints a one-line notice when it uses the flat store,
 so the change is announced well before it happens rather than discovered

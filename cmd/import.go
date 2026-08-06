@@ -10,7 +10,6 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/Wasylq/FSS/internal/config"
 	"github.com/Wasylq/FSS/internal/store"
 	"github.com/Wasylq/FSS/models"
 	"github.com/Wasylq/FSS/scraper"
@@ -36,18 +35,14 @@ which deletes database scenes absent from it.`,
 
 func init() {
 	rootCmd.AddCommand(importCmd)
-	importCmd.Flags().String("db", "", "path to SQLite database (no value = default location)")
+	importCmd.Flags().String("db", "", "path to SQLite database (no value = the configured db, or the default location)")
 	importCmd.Flags().Lookup("db").NoOptDefVal = "default"
 	importCmd.Flags().Bool("replace", false, "make each file authoritative: delete stored scenes it does not contain")
 	importCmd.Flags().Bool("dry-run", false, "report what would be imported without writing")
 }
 
 func runImport(cmd *cobra.Command, args []string) error {
-	dbFlag, _ := cmd.Flags().GetString("db")
-	if dbFlag == "" && cfg != nil {
-		dbFlag, _ = cfg.DBSetting()
-	}
-	dbPath := config.ResolveDBPath(dbFlag)
+	dbPath := resolveDBPath(cmd)
 	if dbPath == "" {
 		return fmt.Errorf("--db is required (pass --db for the default location, or --db /path/to/file.db)")
 	}

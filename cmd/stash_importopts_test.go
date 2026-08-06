@@ -317,13 +317,14 @@ func TestLoadFSSScenesSourcePrecedence(t *testing.T) {
 	})
 }
 
-// A configured `db:` becomes the default source, so a database user does not
-// have to pass --db to every consumer command.
-func TestLoadFSSScenesPrefersConfiguredDB(t *testing.T) {
+// A configured `db:` must NOT silently become the default source. It says where
+// `fss scrape` writes, not where these commands read, and changing that without
+// being asked is precisely what the upcoming-default notice promises not to do
+// yet. Reading the database stays an explicit --db until the announced switch.
+func TestLoadFSSScenesConfiguredDBDoesNotOverrideJSON(t *testing.T) {
 	dir := t.TempDir()
 	dbPath := filepath.Join(dir, "fss.db")
 	seedTestDB(t, dbPath, "https://example.com", "DB Scene")
-	// out_dir also has JSON, to prove the database wins.
 	writeStudioFile(t, filepath.Join(dir, "a.json"), "JSON Scene")
 	withCfg(t, &config.Config{OutDir: dir, DB: config.DBRef(dbPath)})
 
@@ -331,11 +332,22 @@ func TestLoadFSSScenesPrefersConfiguredDB(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if src.kind != "db" {
-		t.Fatalf("source kind = %q, want db", src.kind)
+	if src.kind != "json" {
+		t.Fatalf("source kind = %q, want json — a configured db: must not change the source", src.kind)
 	}
-	if len(scenes) != 1 || scenes[0].Title != "DB Scene" {
-		t.Errorf("got %+v, want the scene from the database", scenes)
+	if len(scenes) != 1 || scenes[0].Title != "JSON Scene" {
+		t.Errorf("got %+v, want the scene from JSON", scenes)
+	}
+
+	// ...but an explicit --db still reaches the database.
+	c := newImportTestCmd(t)
+	setFlag(t, c, "db", dbPath)
+	scenes, src, err = loadFSSScenes(c)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if src.kind != "db" || len(scenes) != 1 || scenes[0].Title != "DB Scene" {
+		t.Errorf("explicit --db did not read the database: kind=%q scenes=%+v", src.kind, scenes)
 	}
 }
 

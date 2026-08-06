@@ -57,9 +57,9 @@ precedence, same filter semantics. See
 full rules.
 
 In short: `--json` loads specific files, `--dir` loads every `*.json` in a
-directory, `--db` reads the SQLite store. With **nothing specified**, a `db:`
-entry in your config wins and the database is read; otherwise the configured
-`out_dir` is scanned for JSON. Every run prints which source it resolved to.
+directory, `--db` reads the SQLite store. With **nothing specified**, the
+configured `out_dir` is scanned for JSON — a `db:` entry in your config does not
+change that. Every run prints which source it resolved to.
 
 ## Video discovery
 
