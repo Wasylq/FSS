@@ -54,8 +54,9 @@ one incremental round trip (`Load`, add a single new scene, `Save`):
 
 | | Flat | SQLite |
 |---|---|---|
-| Load + Save | 2.0 s | **2.5 s** |
+| Load + Save | 2.0 s | **2.2 s** |
 | ↳ of which Save | 1.3 s | **0.5 s** |
+| ↳ of which Load | 0.7 s | 1.7 s |
 | Peak RSS | 964 MB | **634 MB** |
 | On disk | **104 MB** | 248 MB |
 | Initial ingest | — | 13 s (one-off) |
@@ -147,15 +148,26 @@ Two properties make that correct:
 > reason — without that, re-saving a soft-deleted scene with `DeletedAt == nil`
 > would be skipped and the delete would never lift.
 
-**`Load` orders in Go, not SQL.** `ORDER BY` made SQLite build temp B-trees over
-every scene row and every junction row in the studio, to order lists that are a
-handful of entries each. Do not add it back.
+**`Load` groups relations in SQL and orders them in Go.** A 59k-scene studio has
+1.4M `scene_tags` rows; returning one driver row per name put ~70% of `Load` in
+`database/sql`'s `Rows.Next`. The query now aggregates names into JSON arrays,
+one row per scene, and the ordering is applied in Go from the stored `position`.
 
-**The child tables are indexed by `studio_url`** (migration 7). Their primary
-keys start with `scene_id`, so a `studio_url` predicate cannot use them; without
-the index every `Load` scans the whole table — the entire database's junction
-rows to read one studio's. The indexes are deliberately narrow: covering
-variants measured 3 ms faster for 31 MB more on a 300 MB database.
+Do not add `ORDER BY` back to these queries: it makes SQLite build temp B-trees
+over every row in the studio to order lists that are a handful of entries each.
+
+**The child tables are indexed by `(studio_url, scene_id, site_id, position, …)`**
+(migration 8). Their primary keys start with `scene_id`, so a `studio_url`
+predicate cannot use them; without an index every `Load` scans the whole table.
+The index leads with `studio_url` for the filter and continues with the grouping
+columns so the `GROUP BY` streams instead of building a temp B-tree — with a
+narrow `studio_url`-only index the aggregate is *slower* than returning flat
+rows (0.72 s vs 0.46 s), and with the covering index it is faster (0.33 s).
+
+That is the opposite of the right answer before the query grouped, which is why
+migration 8 supersedes migration 7's narrow indexes. The cost is real: on a
+40-studio database the covering indexes add ~29 MB to ~303 MB, almost all of it
+`idx_scene_tags_studio` over those 1.4M rows.
 
 **Large saves share a `saveSession`** (`internal/store/savesession.go`), caching
 prepared statements by SQL text and entity name→id lookups. Without it a first
@@ -165,10 +177,16 @@ the transaction, so the session is closed before `Commit`.
 
 ## What is still not optimised
 
-**Single-studio `Load` (2.0 s for 59k scenes)** is still ~3× the flat store's
-0.7 s. The query plans are clean; the time is in row scanning and `time.Parse`
-(three per scene). It only matters for a single studio far larger than the rest,
-and loading one studio out of many is already proportional (50 ms of 40).
+**Single-studio `Load` (1.7 s for 59k scenes)** is still ~2.5× the flat store's
+0.7 s. What remains is SQLite executing the query — `sqlite3VdbeExec` is 46% of
+the profile — plus decoding the grouped JSON. There is no obvious next step that
+does not trade correctness for speed.
+
+One structural option is left: reorder the junction primary keys to lead with
+`studio_url`. The PK index would then serve both the filter and the grouping,
+the separate `idx_scene_*_studio` indexes could be dropped entirely, and the
+~29 MB they cost would come back. It needs a table rebuild of the junction
+tables, which is why it has not been done for a ~20% gain on one query.
 
 ## Making SQLite the default
 

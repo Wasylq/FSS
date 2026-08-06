@@ -334,6 +334,11 @@ func (s *SQLite) migrate() error {
 			return fmt.Errorf("migration 7: %w", err)
 		}
 	}
+	if version < 8 {
+		if err := s.applyMigration8(); err != nil {
+			return fmt.Errorf("migration 8: %w", err)
+		}
+	}
 	return nil
 }
 
@@ -387,6 +392,35 @@ CREATE INDEX IF NOT EXISTS idx_scene_external_ids_studio ON scene_external_ids(s
 
 func (s *SQLite) applyMigration7() error {
 	return s.applyMigration(migration7, 7)
+}
+
+// migration8 widens the junction studio indexes to cover the columns Load
+// aggregates on.
+//
+// Load groups relation rows per scene in SQL rather than shipping one driver
+// row per name — a 59k-scene studio had 1.4M scene_tags rows, and crossing
+// database/sql that many times cost more than the query itself. Grouping needs
+// the rows to arrive already ordered by (scene_id, site_id) or SQLite builds a
+// temp B-tree, which costs more than it saves. These indexes make the whole
+// query index-only and let the GROUP BY stream.
+//
+// This supersedes migration 7's narrow indexes, which are dropped. Narrow was
+// the right call when the query returned flat rows; it is not once it groups.
+const migration8 = `
+DROP INDEX IF EXISTS idx_scene_performers_studio;
+DROP INDEX IF EXISTS idx_scene_tags_studio;
+DROP INDEX IF EXISTS idx_scene_categories_studio;
+
+CREATE INDEX IF NOT EXISTS idx_scene_performers_studio
+    ON scene_performers(studio_url, scene_id, site_id, position, performer_id);
+CREATE INDEX IF NOT EXISTS idx_scene_tags_studio
+    ON scene_tags(studio_url, scene_id, site_id, position, tag_id);
+CREATE INDEX IF NOT EXISTS idx_scene_categories_studio
+    ON scene_categories(studio_url, scene_id, site_id, position, category_id);
+`
+
+func (s *SQLite) applyMigration8() error {
+	return s.applyMigration(migration8, 8)
 }
 
 // migration4 adds first_seen_at, backfilled from scraped_at. That is an upper
@@ -1293,13 +1327,20 @@ func syncPriceHistory(sess *saveSession, sc models.Scene) error {
 // ---- load helpers ----
 
 // loadRelation batch-loads a string relation (performers, tags, or categories)
-// for all scenes belonging to studioURL and attaches results to the scene slice.
+// for every scene in studioURL and attaches the results.
 //
-// Rows come back unordered and are sorted per scene afterwards. Asking SQLite
-// for `ORDER BY scene_id, site_id, position` built a temp B-tree over every
-// junction row in the studio — hundreds of thousands of them — to order lists
-// that are a handful of entries each. Sorting those small slices in Go is
-// dramatically cheaper and yields the same order.
+// The names are grouped into JSON arrays in SQL rather than returned one row
+// per name. A 59k-scene studio has 1.4M scene_tags rows, and crossing the
+// database/sql boundary that many times cost more than the query itself —
+// profiling put ~70% of Load in Rows.Next. Grouping returns one row per scene
+// instead, and the covering indexes from migration 8 let SQLite stream the
+// GROUP BY rather than build a temp B-tree.
+//
+// Two parallel aggregates are used instead of one array of objects: both are
+// fed the same row sequence, so index i in each refers to the same junction
+// row, and []string / []int decode far more cheaply than a slice of structs.
+// Order is taken from the position column, never from the order rows happen to
+// arrive in.
 func (s *SQLite) loadRelation(studioURL, junctionTable, entityTable, fkCol string, scenes []models.Scene) error {
 	if err := validateRelationIDs(junctionTable, entityTable, fkCol); err != nil {
 		return err
@@ -1307,55 +1348,37 @@ func (s *SQLite) loadRelation(studioURL, junctionTable, entityTable, fkCol strin
 	if len(scenes) == 0 {
 		return nil
 	}
-	// Index by the composite primary key `(id, site_id)`. Using a struct
-	// key instead of the previous `siteID+":"+id` string concatenation
-	// avoids collisions if a scraper ever stores IDs that contain a
-	// colon — `("a","b:c")` and `("a:b","c")` both used to map to the
-	// same string `"a:b:c"`.
+	// Index by the composite primary key `(id, site_id)`. Using a struct key
+	// instead of a `siteID+":"+id` concatenation avoids collisions if a scraper
+	// ever stores IDs containing a colon.
 	idx := make(map[sceneKey]int, len(scenes))
 	for i, sc := range scenes {
 		idx[sceneKey{id: sc.ID, siteID: sc.SiteID}] = i
 	}
 
-	rows, err := s.db.Query(`SELECT j.scene_id, j.site_id, e.name, j.position
+	rows, err := s.db.Query(`SELECT j.scene_id, j.site_id,
+			json_group_array(e.name), json_group_array(j.position)
 		FROM `+junctionTable+` j
 		JOIN `+entityTable+` e ON j.`+fkCol+` = e.id
-		WHERE j.studio_url = ?`, studioURL)
+		WHERE j.studio_url = ?
+		GROUP BY j.scene_id, j.site_id`, studioURL)
 	if err != nil {
 		return err
 	}
 	defer func() { _ = rows.Close() }()
 
-	type positioned struct {
-		name string
-		pos  int
-	}
-	buckets := make([][]positioned, len(scenes))
-
 	for rows.Next() {
-		var sceneID, siteID, name string
-		var pos int
-		if err := rows.Scan(&sceneID, &siteID, &name, &pos); err != nil {
+		var sceneID, siteID, namesJSON, positionsJSON string
+		if err := rows.Scan(&sceneID, &siteID, &namesJSON, &positionsJSON); err != nil {
 			return err
 		}
 		i, ok := idx[sceneKey{id: sceneID, siteID: siteID}]
 		if !ok {
 			continue
 		}
-		buckets[i] = append(buckets[i], positioned{name: name, pos: pos})
-	}
-	if err := rows.Err(); err != nil {
-		return err
-	}
-
-	for i, bucket := range buckets {
-		if len(bucket) == 0 {
-			continue
-		}
-		sort.SliceStable(bucket, func(a, b int) bool { return bucket[a].pos < bucket[b].pos })
-		names := make([]string, len(bucket))
-		for n, p := range bucket {
-			names[n] = p.name
+		names, err := orderedNames(namesJSON, positionsJSON)
+		if err != nil {
+			return fmt.Errorf("decoding %s for scene %s: %w", junctionTable, sceneID, err)
 		}
 		switch junctionTable {
 		case "scene_performers":
@@ -1366,7 +1389,38 @@ func (s *SQLite) loadRelation(studioURL, junctionTable, entityTable, fkCol strin
 			scenes[i].Categories = names
 		}
 	}
-	return nil
+	return rows.Err()
+}
+
+// orderedNames decodes the two parallel JSON aggregates and returns the names
+// sorted by their stored position.
+func orderedNames(namesJSON, positionsJSON string) ([]string, error) {
+	var names []string
+	if err := json.Unmarshal([]byte(namesJSON), &names); err != nil {
+		return nil, err
+	}
+	var positions []int
+	if err := json.Unmarshal([]byte(positionsJSON), &positions); err != nil {
+		return nil, err
+	}
+	if len(positions) != len(names) {
+		return nil, fmt.Errorf("aggregate length mismatch: %d names, %d positions", len(names), len(positions))
+	}
+	// Already ordered in the common case — the covering index feeds rows in
+	// position order — so check before paying for a sort.
+	if sort.IntsAreSorted(positions) {
+		return names, nil
+	}
+	order := make([]int, len(names))
+	for i := range order {
+		order[i] = i
+	}
+	sort.SliceStable(order, func(a, b int) bool { return positions[order[a]] < positions[order[b]] })
+	out := make([]string, len(names))
+	for i, o := range order {
+		out[i] = names[o]
+	}
+	return out, nil
 }
 
 func (s *SQLite) loadExternalIDs(studioURL string, scenes []models.Scene) error {
