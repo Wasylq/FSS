@@ -24,7 +24,8 @@ out_dir: "."
 # "default" — use XDG data dir (~/.local/share/fss/fss.db on Linux)
 # "/path"   — use an explicit path
 # The CLI equivalent is `--db` (no value = default) or `--db /path`.
-db: ""
+db: ""              # "" = flat JSON store (explicit); "default" = XDG data dir;
+                    # or a path — "./fss.db" keeps it in the working directory
 
 # Default delay between page requests, in milliseconds.
 # Set to 0 to disable. Prevents rate-limiting by sites with WAFs.

@@ -76,7 +76,7 @@ func runScrape(cmd *cobra.Command, args []string) error {
 
 	dbPath, _ := cmd.Flags().GetString("db")
 	if dbPath == "" {
-		dbPath = cfg.DB
+		dbPath, _ = cfg.DBSetting()
 	}
 	dbPath = config.ResolveDBPath(dbPath)
 

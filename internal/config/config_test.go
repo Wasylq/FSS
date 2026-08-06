@@ -118,8 +118,8 @@ stash:
 	if cfg.OutDir != "D:/data/fss/output" {
 		t.Errorf("OutDir = %q, want D:/data/fss/output", cfg.OutDir)
 	}
-	if cfg.DB != "C:/Users/nlaci/bin/fss.db" {
-		t.Errorf("DB = %q, want C:/Users/nlaci/bin/fss.db", cfg.DB)
+	if db, set := cfg.DBSetting(); !set || db != "C:/Users/nlaci/bin/fss.db" {
+		t.Errorf("DB = %q (set=%v), want C:/Users/nlaci/bin/fss.db", db, set)
 	}
 	if cfg.Delay != 500 {
 		t.Errorf("Delay = %d, want 500", cfg.Delay)
@@ -385,6 +385,46 @@ func TestResolveDBPath(t *testing.T) {
 			got := ResolveDBPath(tt.in)
 			if got != tt.want {
 				t.Errorf("ResolveDBPath(%q) = %q, want %q", tt.in, got, tt.want)
+			}
+		})
+	}
+}
+
+// TestDBSettingDistinguishesAbsentFromEmpty pins the reason `db:` is a pointer.
+//
+// SQLite is planned to become the default store, and `fss scrape` tells users to
+// set `db: ""` to keep JSON files. If absent and explicitly-empty decoded to the
+// same value, that instruction would stop working the moment the default flipped
+// — an explicit opt-out would be indistinguishable from never having chosen.
+func TestDBSettingDistinguishesAbsentFromEmpty(t *testing.T) {
+	cases := []struct {
+		name      string
+		yaml      string
+		wantValue string
+		wantSet   bool
+	}{
+		{"absent", "workers: 3\n", "", false},
+		{"explicitly empty", "db: \"\"\n", "", true},
+		{"default keyword", "db: \"default\"\n", "default", true},
+		{"explicit path", "db: \"./local.db\"\n", "./local.db", true},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			dir := isolateXDG(t)
+			cfgDir := filepath.Join(dir, "fss")
+			if err := os.MkdirAll(cfgDir, 0o755); err != nil {
+				t.Fatal(err)
+			}
+			if err := os.WriteFile(filepath.Join(cfgDir, "config.yaml"), []byte(c.yaml), 0o600); err != nil {
+				t.Fatal(err)
+			}
+			cfg, err := Load()
+			if err != nil {
+				t.Fatal(err)
+			}
+			got, set := cfg.DBSetting()
+			if got != c.wantValue || set != c.wantSet {
+				t.Errorf("DBSetting() = (%q, %v), want (%q, %v)", got, set, c.wantValue, c.wantSet)
 			}
 		})
 	}

@@ -16,12 +16,13 @@ func TestListStudiosFallsBackToConfigDB(t *testing.T) {
 	cases := []struct {
 		name string
 		flag string
-		conf string
+		conf *string
 		want string
 	}{
-		{"flag wins over config", "/from/flag.db", "/from/config.db", "/from/flag.db"},
-		{"config used when flag unset", "", "/from/config.db", "/from/config.db"},
-		{"neither set", "", "", ""},
+		{"flag wins over config", "/from/flag.db", config.DBRef("/from/config.db"), "/from/flag.db"},
+		{"config used when flag unset", "", config.DBRef("/from/config.db"), "/from/config.db"},
+		{"neither set", "", nil, ""},
+		{"config explicitly empty", "", config.DBRef(""), ""},
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {

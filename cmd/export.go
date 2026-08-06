@@ -33,7 +33,7 @@ func init() {
 func runExport(cmd *cobra.Command, args []string) error {
 	dbFlag, _ := cmd.Flags().GetString("db")
 	if dbFlag == "" && cfg != nil {
-		dbFlag = cfg.DB
+		dbFlag, _ = cfg.DBSetting()
 	}
 	dbPath := config.ResolveDBPath(dbFlag)
 	if dbPath == "" {

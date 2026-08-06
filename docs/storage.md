@@ -221,6 +221,27 @@ Changing a default silently reorganises where people's data lives. The migration
 path has to exist and be documented before the default moves, which is what
 `fss import` and `fss export` are for.
 
+### Staying on JSON
+
+The flat store is not going away. An explicit `db: ""` in your config pins it,
+and keeps doing so after the default flips — the config distinguishes "set to
+empty" from "never set", precisely so that opt-out survives the change.
+
+### Choosing where the database lives
+
+`db:` accepts three kinds of value:
+
+| Value | Meaning |
+|---|---|
+| absent | not configured (today: flat store) |
+| `""` | flat store, explicitly — survives the default flip |
+| `"default"` | the XDG data path, `~/.local/share/fss/fss.db` |
+| any path | exactly that file, absolute or **relative to the working directory** |
+
+So `db: "./fss.db"` keeps the database next to your JSON output rather than
+under `~/.local/share`, which is what you want for a self-contained directory or
+a bind-mounted container volume. The same values work as `--db=<value>`.
+
 Until then, `fss scrape` prints a one-line notice when it uses the flat store,
 so the change is announced well before it happens rather than discovered
 afterwards. It appears once per process, on stderr, and is silenced with

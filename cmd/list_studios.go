@@ -32,7 +32,8 @@ func resolveListStudiosDB() string {
 		return listStudiosDB
 	}
 	if cfg != nil {
-		return cfg.DB
+		v, _ := cfg.DBSetting()
+		return v
 	}
 	return ""
 }

@@ -185,7 +185,7 @@ func TestChangelogDirIsIndependentOfSceneSource(t *testing.T) {
 	outDir := t.TempDir()
 	dbPath := filepath.Join(t.TempDir(), "fss.db")
 	seedTestDB(t, dbPath, "https://example.com", "Alpha")
-	withCfg(t, &config.Config{OutDir: outDir, DB: dbPath})
+	withCfg(t, &config.Config{OutDir: outDir, DB: config.DBRef(dbPath)})
 
 	t.Run("db source still uses out_dir", func(t *testing.T) {
 		c := newImportTestCmd(t)

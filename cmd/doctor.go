@@ -63,7 +63,7 @@ func runDoctor(cmd *cobra.Command, _ []string) error {
 	check("SQLite", func() (string, bool) {
 		dbPath := ""
 		if cfg != nil {
-			dbPath = cfg.DB
+			dbPath, _ = cfg.DBSetting()
 		}
 		if dbPath == "" {
 			return "disabled (flat JSON mode)", true

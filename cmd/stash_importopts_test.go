@@ -325,7 +325,7 @@ func TestLoadFSSScenesPrefersConfiguredDB(t *testing.T) {
 	seedTestDB(t, dbPath, "https://example.com", "DB Scene")
 	// out_dir also has JSON, to prove the database wins.
 	writeStudioFile(t, filepath.Join(dir, "a.json"), "JSON Scene")
-	withCfg(t, &config.Config{OutDir: dir, DB: dbPath})
+	withCfg(t, &config.Config{OutDir: dir, DB: config.DBRef(dbPath)})
 
 	scenes, src, err := loadFSSScenes(newImportTestCmd(t))
 	if err != nil {

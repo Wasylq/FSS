@@ -17,12 +17,15 @@ import (
 )
 
 type Config struct {
-	Workers   int    `yaml:"workers"`
-	Output    string `yaml:"output"`
-	OutDir    string `yaml:"out_dir"`
-	DB        string `yaml:"db"`
-	Delay     int    `yaml:"delay"`
-	UserAgent string `yaml:"user_agent"`
+	Workers int    `yaml:"workers"`
+	Output  string `yaml:"output"`
+	OutDir  string `yaml:"out_dir"`
+	// DB is the store selector: absent (nil) means "not configured", an
+	// explicit empty string means "deliberately the flat store". They must
+	// stay distinguishable — see DBSetting.
+	DB        *string `yaml:"db"`
+	Delay     int     `yaml:"delay"`
+	UserAgent string  `yaml:"user_agent"`
 	// Notices controls advisory messages, such as a heads-up that a default
 	// is going to change in a future release. Absent means enabled; set
 	// `notices: false` to silence them. A pointer so "absent" and "explicitly
@@ -53,7 +56,6 @@ func defaults() *Config {
 		Workers: 3,
 		Output:  "json",
 		OutDir:  ".",
-		DB:      "",
 		Delay:   500,
 		Stash: StashConfig{
 			URL:            "http://localhost:9999",
@@ -78,6 +80,26 @@ func DefaultDBPath() string {
 
 // ResolveDBPath interprets the db config value. Empty means disabled, "default"
 // or "true" means DefaultDBPath(), anything else is a literal path.
+// DBRef is a helper for constructing a Config in tests and callers that need a
+// literal `db:` value.
+func DBRef(v string) *string { return &v }
+
+// DBSetting returns the configured `db:` value and whether the key was present
+// at all.
+//
+// The distinction matters for a change already planned: SQLite is to become the
+// default store, and `fss scrape` tells operators to set `db: ""` if they want
+// to keep JSON files. If absent and explicitly-empty were the same value, that
+// instruction would stop working the moment the default flipped — an explicit
+// opt-out would be indistinguishable from never having chosen. A nil pointer
+// keeps them apart.
+func (c *Config) DBSetting() (value string, set bool) {
+	if c == nil || c.DB == nil {
+		return "", false
+	}
+	return *c.DB, true
+}
+
 func ResolveDBPath(raw string) string {
 	switch raw {
 	case "":

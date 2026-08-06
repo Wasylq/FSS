@@ -33,13 +33,19 @@ func addSceneSourceFlags(cmd *cobra.Command) {
 		"only use scenes featuring these performers (repeatable: any match)")
 }
 
+// configuredDB returns the config's `db:` value, or "" when it is absent.
+func configuredDB(c *config.Config) string {
+	v, _ := c.DBSetting()
+	return v
+}
+
 // resolveDBPath returns the database path for a command: the --db flag if set,
 // otherwise the config's `db:` value, resolved to an absolute path. Empty means
 // no database is configured.
 func resolveDBPath(cmd *cobra.Command) string {
 	flag, _ := cmd.Flags().GetString("db")
 	if flag == "" && cfg != nil {
-		flag = cfg.DB
+		flag, _ = cfg.DBSetting()
 	}
 	return config.ResolveDBPath(flag)
 }
@@ -75,7 +81,7 @@ func loadFSSScenes(cmd *cobra.Command) ([]models.Scene, sceneSource, error) {
 	case dirFlag != "":
 		src = sceneSource{kind: "json", desc: dirFlag}
 		scenes, err = match.LoadJSONDir(dirFlag)
-	case cfg != nil && cfg.DB != "":
+	case configuredDB(cfg) != "":
 		src = sceneSource{kind: "db", desc: resolveDBPath(cmd)}
 		scenes, studioNames, err = loadScenesFromDB(src.desc)
 	default:
