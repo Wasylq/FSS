@@ -694,27 +694,32 @@ func (s *SQLite) Save(studioURL string, scenes []models.Scene) error {
 	//
 	// This is what makes an incremental scrape cheap: without it, recording a
 	// single new scene in a 59k-scene studio issued ~296,000 statements.
-	touch, err := tx.Prepare(
-		`UPDATE scenes SET scraped_at = ? WHERE id = ? AND site_id = ? AND studio_url = ?`)
-	if err != nil {
-		return fmt.Errorf("preparing scraped_at update: %w", err)
-	}
-	defer func() { _ = touch.Close() }()
+	// One session per Save: it caches prepared statements and entity-name
+	// lookups, which is what keeps a first ingest of tens of thousands of
+	// scenes from re-parsing its SQL and re-resolving the same names.
+	sess := newSaveSession(tx)
+	defer sess.close()
+
+	const touchSQL = `UPDATE scenes SET scraped_at = ? WHERE id = ? AND site_id = ? AND studio_url = ?`
 
 	for _, sc := range scenes {
 		hash := sceneContentHash(sc)
 		if prev, ok := stored[sceneKey{id: sc.ID, siteID: sc.SiteID}]; ok && prev.hash == hash {
 			if now := timeStr(sc.ScrapedAt); now != prev.scrapedAt {
-				if _, err := touch.Exec(now, sc.ID, sc.SiteID, sc.StudioURL); err != nil {
+				if _, err := sess.exec(touchSQL, now, sc.ID, sc.SiteID, sc.StudioURL); err != nil {
 					return fmt.Errorf("updating scraped_at for %s: %w", sc.ID, err)
 				}
 			}
 			continue
 		}
-		if err := upsertScene(tx, sc, hash); err != nil {
+		if err := upsertScene(sess, sc, hash); err != nil {
 			return err
 		}
 	}
+
+	// Prepared statements are bound to the transaction, so release them before
+	// committing rather than on the deferred path.
+	sess.close()
 	return tx.Commit()
 }
 
@@ -822,8 +827,8 @@ func (s *SQLite) Export(format, path, studioURL string) error {
 
 // ---- upsert helpers ----
 
-func upsertScene(tx *sql.Tx, sc models.Scene, contentHash string) error {
-	_, err := tx.Exec(`
+func upsertScene(sess *saveSession, sc models.Scene, contentHash string) error {
+	_, err := sess.exec(`
 		INSERT INTO scenes (
 		    id, site_id, studio_url, title, url, date, description,
 		    thumbnail, preview, performers, director, studio,
@@ -877,26 +882,26 @@ func upsertScene(tx *sql.Tx, sc models.Scene, contentHash string) error {
 		return fmt.Errorf("upserting scene %s: %w", sc.ID, err)
 	}
 
-	if err := syncRelation(tx, "performers", "scene_performers", "performer_id", sc.ID, sc.SiteID, sc.StudioURL, sc.Performers, true); err != nil {
+	if err := syncRelation(sess, "performers", "scene_performers", "performer_id", sc.ID, sc.SiteID, sc.StudioURL, sc.Performers, true); err != nil {
 		return fmt.Errorf("upserting performers for %s: %w", sc.ID, err)
 	}
-	if err := syncRelation(tx, "tags", "scene_tags", "tag_id", sc.ID, sc.SiteID, sc.StudioURL, sc.Tags, true); err != nil {
+	if err := syncRelation(sess, "tags", "scene_tags", "tag_id", sc.ID, sc.SiteID, sc.StudioURL, sc.Tags, true); err != nil {
 		return fmt.Errorf("upserting tags for %s: %w", sc.ID, err)
 	}
-	if err := syncRelation(tx, "categories", "scene_categories", "category_id", sc.ID, sc.SiteID, sc.StudioURL, sc.Categories, true); err != nil {
+	if err := syncRelation(sess, "categories", "scene_categories", "category_id", sc.ID, sc.SiteID, sc.StudioURL, sc.Categories, true); err != nil {
 		return fmt.Errorf("upserting categories for %s: %w", sc.ID, err)
 	}
 
-	if err := syncExternalIDs(tx, sc); err != nil {
+	if err := syncExternalIDs(sess, sc); err != nil {
 		return fmt.Errorf("upserting external IDs for %s: %w", sc.ID, err)
 	}
 
-	return syncPriceHistory(tx, sc)
+	return syncPriceHistory(sess, sc)
 }
 
 // syncExternalIDs reconciles a scene's external-ID rows: drop sources no longer
 // claimed, upsert the rest. Blank sources and blank IDs are skipped.
-func syncExternalIDs(tx *sql.Tx, sc models.Scene) error {
+func syncExternalIDs(sess *saveSession, sc models.Scene) error {
 	sources := make([]string, 0, len(sc.ExternalIDs))
 	for source, id := range sc.ExternalIDs {
 		if source == "" || id == "" {
@@ -914,12 +919,12 @@ func syncExternalIDs(tx *sql.Tx, sc models.Scene) error {
 			args = append(args, source)
 		}
 	}
-	if _, err := tx.Exec(del, args...); err != nil {
+	if _, err := sess.exec(del, args...); err != nil {
 		return err
 	}
 
 	for _, source := range sources {
-		if _, err := tx.Exec(`
+		if _, err := sess.exec(`
 			INSERT INTO scene_external_ids (scene_id, site_id, studio_url, source, external_id)
 			VALUES (?,?,?,?,?)
 			ON CONFLICT(scene_id, site_id, studio_url, source)
@@ -1077,7 +1082,7 @@ func syncRelationLegacy(tx *sql.Tx, entityTable, junctionTable, fkCol, sceneID, 
 // syncRelation reconciles a scene's junction rows (performers/tags/categories)
 // against the desired name list. Rows are keyed by (scene_id, site_id,
 // studio_url) so two studio URLs on the same site keep separate relations.
-func syncRelation(tx *sql.Tx, entityTable, junctionTable, fkCol, sceneID, siteID, studioURL string, names []string, withPosition bool) error {
+func syncRelation(sess *saveSession, entityTable, junctionTable, fkCol, sceneID, siteID, studioURL string, names []string, withPosition bool) error {
 	if err := validateRelationIDs(entityTable, junctionTable, fkCol); err != nil {
 		return err
 	}
@@ -1110,7 +1115,7 @@ func syncRelation(tx *sql.Tx, entityTable, junctionTable, fkCol, sceneID, siteID
 	if withPosition {
 		posCol = "j.position"
 	}
-	rows, err := tx.Query(
+	rows, err := sess.query(
 		`SELECT e.name, j.`+fkCol+`, `+posCol+`
 		 FROM `+junctionTable+` j
 		 JOIN `+entityTable+` e ON j.`+fkCol+` = e.id
@@ -1140,7 +1145,7 @@ func syncRelation(tx *sql.Tx, entityTable, junctionTable, fkCol, sceneID, siteID
 		if _, keep := desiredSet[name]; keep {
 			continue
 		}
-		if _, err := tx.Exec(
+		if _, err := sess.exec(
 			`DELETE FROM `+junctionTable+
 				` WHERE scene_id = ? AND site_id = ? AND studio_url = ? AND `+fkCol+` = ?`,
 			sceneID, siteID, studioURL, l.id,
@@ -1155,7 +1160,7 @@ func syncRelation(tx *sql.Tx, entityTable, junctionTable, fkCol, sceneID, siteID
 	for _, w := range desired {
 		if l, ok := existing[w.name]; ok {
 			if withPosition && l.position != w.position {
-				if _, err := tx.Exec(
+				if _, err := sess.exec(
 					`UPDATE `+junctionTable+
 						` SET position = ? WHERE scene_id = ? AND site_id = ? AND studio_url = ? AND `+fkCol+` = ?`,
 					w.position, sceneID, siteID, studioURL, l.id,
@@ -1166,22 +1171,20 @@ func syncRelation(tx *sql.Tx, entityTable, junctionTable, fkCol, sceneID, siteID
 			continue
 		}
 
-		var id int64
-		if err := tx.QueryRow(
-			`INSERT INTO `+entityTable+` (name) VALUES (?)
-			 ON CONFLICT(name) DO UPDATE SET name = excluded.name
-			 RETURNING id`,
-			w.name,
-		).Scan(&id); err != nil {
+		// Resolved through the session cache: names are globally unique per
+		// table, so the first lookup in this transaction serves every later
+		// scene that uses the same name.
+		id, err := sess.entityID(entityTable, w.name)
+		if err != nil {
 			return err
 		}
 		if withPosition {
-			_, err = tx.Exec(
+			_, err = sess.exec(
 				`INSERT INTO `+junctionTable+` (scene_id, site_id, studio_url, `+fkCol+`, position) VALUES (?,?,?,?,?)`,
 				sceneID, siteID, studioURL, id, w.position,
 			)
 		} else {
-			_, err = tx.Exec(
+			_, err = sess.exec(
 				`INSERT INTO `+junctionTable+` (scene_id, site_id, studio_url, `+fkCol+`) VALUES (?,?,?,?)`,
 				sceneID, siteID, studioURL, id,
 			)
@@ -1199,7 +1202,7 @@ func syncRelation(tx *sql.Tx, entityTable, junctionTable, fkCol, sceneID, siteID
 // Identity is the full snapshot tuple (date + price fields), so re-saves with
 // unchanged history are a single SELECT, and adding one snapshot is a single
 // INSERT — instead of the old DELETE-all + reinsert-all pattern.
-func syncPriceHistory(tx *sql.Tx, sc models.Scene) error {
+func syncPriceHistory(sess *saveSession, sc models.Scene) error {
 	type key struct {
 		date            string
 		regular         float64
@@ -1224,7 +1227,7 @@ func syncPriceHistory(tx *sql.Tx, sc models.Scene) error {
 		desired[keyOf(p)]++
 	}
 
-	rows, err := tx.Query(`
+	rows, err := sess.query(`
 		SELECT id, date, regular, discounted, is_free, is_on_sale, discount_percent
 		FROM price_history WHERE scene_id = ? AND site_id = ? AND studio_url = ?`,
 		sc.ID, sc.SiteID, sc.StudioURL,
@@ -1260,7 +1263,7 @@ func syncPriceHistory(tx *sql.Tx, sc models.Scene) error {
 			desired[r.key]--
 			continue
 		}
-		if _, err := tx.Exec(
+		if _, err := sess.exec(
 			`DELETE FROM price_history WHERE id = ?`, r.id,
 		); err != nil {
 			return err
@@ -1274,7 +1277,7 @@ func syncPriceHistory(tx *sql.Tx, sc models.Scene) error {
 			continue
 		}
 		desired[k]--
-		if _, err := tx.Exec(`
+		if _, err := sess.exec(`
 			INSERT INTO price_history (scene_id, site_id, studio_url, date, regular, discounted, is_free, is_on_sale, discount_percent)
 			VALUES (?,?,?,?,?,?,?,?,?)`,
 			sc.ID, sc.SiteID, sc.StudioURL, k.date,

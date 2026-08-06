@@ -36,8 +36,8 @@ func New() *Scraper {
 	// perPage is 1000, so the listing call pulls the whole catalogue in one
 	// response and the origin needs ~28s to produce it — measured against a
 	// 30s timeout, a ~1.5s margin that intermittently lost, turning the whole
-	// scrape into "0 scenes" plus a retry storm. Per CLAUDE.md the client
-	// timeout must clear the origin's own ceiling rather than race it.
+	// scrape into "0 scenes" plus a retry storm. A client timeout must clear
+	// the origin's own ceiling rather than race it.
 	return &Scraper{client: httpx.NewClient(90 * time.Second)}
 }
 

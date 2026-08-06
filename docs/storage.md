@@ -58,7 +58,7 @@ one incremental round trip (`Load`, add a single new scene, `Save`):
 | ↳ of which Save | 1.3 s | **0.5 s** |
 | Peak RSS | 964 MB | **634 MB** |
 | On disk | **104 MB** | 248 MB |
-| Initial ingest | — | 52 s (one-off) |
+| Initial ingest | — | 13 s (one-off) |
 
 The two are now within ~25% on wall clock, and SQLite uses a third less memory.
 
@@ -74,7 +74,7 @@ to record one new scene** — which made the database several times slower than
 brute-force JSON. That is fixed; if you are reading older notes claiming SQLite
 is slower, they predate this.
 
-The remaining one-off cost is the **initial ingest** (~52 s for 59k scenes),
+The remaining one-off cost is the **initial ingest** (~13 s for 59k scenes),
 paid once when you `fss import` an existing catalogue.
 
 ### Which should I use today
@@ -180,18 +180,32 @@ The indexes are deliberately narrow (`studio_url` alone). Covering variants
 carrying `scene_id`/`site_id`/`position` measured 47 ms against 50 ms — 3 ms, for
 31 MB more on a 300 MB database.
 
+### 3. Initial ingest — tuned, 54 s → 13 s
+
+A first ingest can skip nothing, so it pays the full write path for every scene.
+A CPU profile of 59,254 scenes found the cost was mostly not the writes:
+
+- **33% in `sqlite3_prepare_v2`** — `database/sql` prepares, executes and
+  discards on every `Exec`, so each of ~300,000 statements re-parsed its SQL.
+- **48% cumulative in `Tx.QueryRow`** — nearly all of it `syncRelation`
+  resolving performer/tag/category names to row IDs, one round trip per name per
+  scene (~900,000 calls) for names that are globally unique and, after the first
+  few thousand scenes, already stored.
+
+`saveSession` (`internal/store/savesession.go`) fixes both with two caches held
+for the lifetime of one `Save`: prepared statements keyed by SQL text, and
+resolved entity IDs keyed by table and name. Ingest went from **54 s to 13 s**,
+and the profile now shows the time in statement execution rather than parsing.
+
+Statements are bound to the transaction, so the session is closed before
+`Commit`, not after.
+
 ### What is still not optimised
 
-**Initial ingest: ~52 s for 59k scenes.** Every scene is new, so nothing can be
-skipped, and each goes through the full write path via individual `Exec` calls
-that re-prepare their statement each time. This is a one-off cost — paid on
-`fss import` of an existing catalogue, or a first `--full` scrape — and it has
-not been tuned. Reusing prepared statements across the loop is the obvious fix
-if it starts to matter.
-
 **Single-studio `Load` (2.0 s for 59k scenes)** is still ~3× the flat store's
-0.7 s. The time is in row scanning and `time.Parse` (three per scene), not in
-the query plan. Only relevant for a single studio far larger than any other.
+0.7 s. The query plans are clean; the time is in row scanning and `time.Parse`
+(three per scene). It only matters for a single studio far larger than the rest,
+and loading one studio out of many is already proportional (50 ms of 40).
 
 ---
 

@@ -40,8 +40,8 @@ func sampleURL(s scraper.StudioScraper) (string, bool) {
 // TestScrapersExitOnCancelledContext checks that no scraper hangs when its
 // context is already dead.
 //
-// CLAUDE.md requires every scraper to select on ctx.Done() in its channel sends
-// and to check ctx.Err() in helper pagination loops, but almost no package tests
+// Every scraper must select on ctx.Done() in its channel sends and check
+// ctx.Err() in helper pagination loops (see CONTRIBUTING.md), but almost no package tests
 // it — deleting the select breaks nothing else, and the cost is a goroutine that
 // keeps fetching pages nobody will read, per cancelled scrape. testutil's
 // AssertCancellable covers mid-flight cancellation but needs a per-scraper test

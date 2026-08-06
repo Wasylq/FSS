@@ -24,6 +24,7 @@ Measured on a 59,254-scene studio (104 MB JSON):
 |---|---|---|---|
 | Save | 6.7 s | **0.5 s** | 1.3 s |
 | Load | 3.2 s | **2.0 s** | 0.7 s |
+| Initial ingest | 54 s | **13 s** | — |
 | Peak RSS | 532 MB | 634 MB | 964 MB |
 
 See [storage.md](storage.md) for the correctness properties and the

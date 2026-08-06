@@ -11,8 +11,8 @@ import (
 	"testing"
 )
 
-// CLAUDE.md requires every send to a scraper's output channel to sit in a select
-// that also selects on ctx.Done(). Nothing verified it. Deleting the guard breaks
+// Every send to a scraper's output channel must sit in a select that also
+// selects on ctx.Done() (see CONTRIBUTING.md). Nothing verified it. Deleting the guard breaks
 // no test — the scrape still works — and the cost is a goroutine that keeps
 // fetching pages nobody will read, one per cancelled scrape.
 //
@@ -113,8 +113,8 @@ func TestScraperSendsAreGuardedByContext(t *testing.T) {
 	for _, u := range unguarded {
 		t.Errorf("%s/%s:%d: send to the output channel is not inside a select with "+
 			"ctx.Done() — on cancellation this blocks forever and leaks the scraper "+
-			"goroutine (CLAUDE.md: \"every channel send must be in a select with "+
-			"case <-ctx.Done()\")", u.pkg, u.file, u.line)
+			"goroutine. Every channel send must be in a select with "+
+			"case <-ctx.Done(); see CONTRIBUTING.md", u.pkg, u.file, u.line)
 	}
 
 	// Reported so a drop in coverage is visible rather than looking like a pass:
