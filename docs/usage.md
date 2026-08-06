@@ -194,6 +194,7 @@ out_dir: .        # str   — output directory path
 db: ""            # str   — "" = disabled; "default" = ~/.local/share/fss/fss.db; or a path
 delay: 500        # int   — ms between page requests; 0 disables
 user_agent: ""    # str   — "firefox" (default), "chrome", or a custom UA string
+notices: true     # bool  — advisory messages (e.g. an upcoming default change); false silences them
 
 site_delays:      # map[string]int — per-scraper delay overrides (overrides `delay` for matching sites)
   # manyvids: 0

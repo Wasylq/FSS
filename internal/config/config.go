@@ -23,6 +23,11 @@ type Config struct {
 	DB        string `yaml:"db"`
 	Delay     int    `yaml:"delay"`
 	UserAgent string `yaml:"user_agent"`
+	// Notices controls advisory messages, such as a heads-up that a default
+	// is going to change in a future release. Absent means enabled; set
+	// `notices: false` to silence them. A pointer so "absent" and "explicitly
+	// false" are distinguishable.
+	Notices *bool `yaml:"notices"`
 	// SiteDelays overrides Delay per scraper ID (e.g. "manyvids", "pornhub").
 	// Sites without an entry fall back to Delay.
 	SiteDelays map[string]int   `yaml:"site_delays"`

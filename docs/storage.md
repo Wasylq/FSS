@@ -221,6 +221,11 @@ Changing a default silently reorganises where people's data lives. The migration
 path has to exist and be documented before the default moves, which is what
 `fss import` and `fss export` are for.
 
+Until then, `fss scrape` prints a one-line notice when it uses the flat store,
+so the change is announced well before it happens rather than discovered
+afterwards. It appears once per process, on stderr, and is silenced with
+`notices: false` in config or `FSS_NO_NOTICES=1`.
+
 ---
 
 ## Moving between stores

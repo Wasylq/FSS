@@ -127,6 +127,8 @@ func runScrape(cmd *cobra.Command, args []string) error {
 		}
 	}
 
+	warnFlatStoreDefaultChanging(dbPath != "")
+
 	// --- graceful shutdown on Ctrl+C ---
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
