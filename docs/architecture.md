@@ -124,10 +124,17 @@ Two things make it more than a swap-in:
   price-history diff. When only `scraped_at` moved it issues one narrow `UPDATE`.
   Anything writing scene state outside `upsertScene` must clear `content_hash` —
   `MarkDeleted` does, or a soft-delete would never lift.
-- **`Load` orders in Go, not SQL.** `ORDER BY` clauses made SQLite build temp
-  B-trees over every row and every junction row in the studio. The child tables
-  are indexed by `studio_url` because their primary keys start with `scene_id`,
-  so a studio filter could not use them and every load scanned the whole table.
+- **`Load` groups relations in SQL and orders them in Go.** Names come back as
+  JSON arrays, one row per scene rather than one per name — a 59k-scene studio
+  has 1.4M `scene_tags` rows and crossing `database/sql` that many times cost
+  more than the query. `ORDER BY` is deliberately absent: it made SQLite build
+  temp B-trees over every row in the studio.
+- **The child tables carry covering indexes** leading with `studio_url`
+  (migration 8). Their primary keys start with `scene_id`, so a studio filter
+  cannot use them, and the trailing columns let the `GROUP BY` stream instead of
+  sorting.
+- **Large saves share a `saveSession`**, caching prepared statements and entity
+  name→id lookups for the lifetime of one `Save`.
 
 `Export()` regenerates JSON/CSV from the database; `fss import` goes the other
 way. `SetMaxOpenConns(1)` because SQLite has no concurrent writers.
