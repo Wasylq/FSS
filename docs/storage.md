@@ -208,12 +208,14 @@ Preferred shape:
 
 ```bash
 fss scrape <url>                       # uses whatever the config default is
-fss scrape --store flat <url>          # explicit opt-out
+fss scrape --store files <url>         # keep JSON files
 fss scrape --db=/custom/path.db <url>  # unchanged, still works
 ```
 
-- Add `--store flat|sqlite` as the canonical selector. No negation, and it reads
-  correctly in both directions.
+- Add `--store files|sqlite` as the canonical selector. The value is `files`
+  rather than `flat` (Go type-name jargon) or `json` (which collides with
+  `--output json,csv`, a different concept — and the flat store writes JSON
+  regardless of `--output`, since that is its backing format).
 - Keep `--db[=PATH]` exactly as it is — it stays sugar for
   `--store sqlite` plus a path. **Nothing anyone has written breaks.**
 - Flip the *config default* (`db:`) in a release that says so loudly, with a
