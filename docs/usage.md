@@ -622,6 +622,63 @@ GROUP BY p.name
 ORDER BY scenes DESC;
 ```
 
+**Combining performers**
+
+The difference between *any* and *all* is `IN` versus a `GROUP BY … HAVING`
+count — a common thing to get wrong, since the obvious `p.name = 'A' AND
+p.name = 'B'` matches nothing (one row cannot hold two names).
+
+```sql
+-- Scenes featuring ANY of these performers
+SELECT DISTINCT s.date, s.title,
+       COALESCE(NULLIF(s.studio, ''), s.studio_url) AS studio
+FROM scenes s
+JOIN scene_performers sp
+  ON sp.scene_id = s.id AND sp.site_id = s.site_id AND sp.studio_url = s.studio_url
+JOIN performers p ON p.id = sp.performer_id
+WHERE p.name COLLATE NOCASE IN ('PERFORMER A', 'PERFORMER B')
+  AND s.deleted_at IS NULL
+ORDER BY s.date DESC;
+
+-- Scenes featuring ALL of them together. Raise the HAVING count to match how
+-- many names you listed.
+SELECT s.date, s.title,
+       COALESCE(NULLIF(s.studio, ''), s.studio_url) AS studio
+FROM scenes s
+JOIN scene_performers sp
+  ON sp.scene_id = s.id AND sp.site_id = s.site_id AND sp.studio_url = s.studio_url
+JOIN performers p ON p.id = sp.performer_id
+WHERE p.name COLLATE NOCASE IN ('PERFORMER A', 'PERFORMER B')
+  AND s.deleted_at IS NULL
+GROUP BY s.id, s.site_id, s.studio_url
+HAVING COUNT(DISTINCT p.name COLLATE NOCASE) = 2
+ORDER BY s.date DESC;
+
+-- Who one performer appears with most often
+SELECT co.name AS co_performer, COUNT(*) AS shared_scenes
+FROM performers p
+JOIN scene_performers sp  ON sp.performer_id = p.id
+JOIN scene_performers sp2 ON sp2.scene_id  = sp.scene_id
+                         AND sp2.site_id   = sp.site_id
+                         AND sp2.studio_url = sp.studio_url
+                         AND sp2.performer_id <> sp.performer_id
+JOIN performers co ON co.id = sp2.performer_id
+WHERE p.name = 'PERFORMER NAME' COLLATE NOCASE
+GROUP BY co.name
+ORDER BY shared_scenes DESC
+LIMIT 25;
+
+-- Solo scenes: exactly one credited performer
+SELECT s.date, s.title
+FROM scenes s
+JOIN scene_performers sp
+  ON sp.scene_id = s.id AND sp.site_id = s.site_id AND sp.studio_url = s.studio_url
+WHERE s.deleted_at IS NULL
+GROUP BY s.id, s.site_id, s.studio_url
+HAVING COUNT(*) = 1
+ORDER BY s.date DESC;
+```
+
 **Tags and cast**
 
 ```sql
@@ -651,6 +708,35 @@ JOIN tags t ON t.id = j.tag_id
 GROUP BY t.name
 ORDER BY scenes DESC
 LIMIT 25;
+
+-- One tag but not another
+SELECT s.date, s.title
+FROM scenes s
+JOIN scene_tags j
+  ON j.scene_id = s.id AND j.site_id = s.site_id AND j.studio_url = s.studio_url
+JOIN tags t ON t.id = j.tag_id
+WHERE t.name = 'WANTED TAG'
+  AND s.deleted_at IS NULL
+  AND NOT EXISTS (
+    SELECT 1 FROM scene_tags j2
+    JOIN tags t2 ON t2.id = j2.tag_id
+    WHERE j2.scene_id = s.id AND j2.site_id = s.site_id AND j2.studio_url = s.studio_url
+      AND t2.name = 'UNWANTED TAG')
+ORDER BY s.date DESC;
+
+-- A performer and a tag together
+SELECT s.date, s.title
+FROM scenes s
+JOIN scene_performers sp
+  ON sp.scene_id = s.id AND sp.site_id = s.site_id AND sp.studio_url = s.studio_url
+JOIN performers p ON p.id = sp.performer_id
+JOIN scene_tags j
+  ON j.scene_id = s.id AND j.site_id = s.site_id AND j.studio_url = s.studio_url
+JOIN tags t ON t.id = j.tag_id
+WHERE p.name = 'PERFORMER NAME' COLLATE NOCASE
+  AND t.name = 'TAG NAME'
+  AND s.deleted_at IS NULL
+ORDER BY s.date DESC;
 ```
 
 **What changed**
@@ -705,3 +791,20 @@ ORDER BY copies DESC;
 Returns nothing until something populates `scene_external_ids` — today the
 stashbox scraper is the only producer. See
 [metadata.md](metadata.md#cross-site-identity).
+
+Without external IDs, matching titles is the rough approximation — useful for
+spotting the same release sold through several studios:
+
+```sql
+SELECT title, COUNT(DISTINCT studio_url) AS studios
+FROM scenes
+WHERE deleted_at IS NULL
+GROUP BY lower(title)
+HAVING studios > 1
+ORDER BY studios DESC, title
+LIMIT 50;
+```
+
+Titles are not identifiers, so expect both misses and coincidences. `match`
+normalises far more aggressively than `lower()` when it does this properly — see
+[stash.md](stash.md#matching-strategy).
