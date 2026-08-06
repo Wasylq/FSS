@@ -544,64 +544,164 @@ fss list-studios                   # uses the config file's `db:` value
 
 ### Example queries
 
+Placeholders in ALL CAPS — substitute your own values. Run with
+`sqlite3 -header -column ~/.local/share/fss/fss.db` (or `.mode box`) for readable
+output.
+
+> **Joining child rows:** `scene_performers`, `scene_tags`, `scene_categories`,
+> `price_history` and `scene_external_ids` are keyed on **`scene_id`, `site_id`
+> *and* `studio_url`**. Match on all three. Dropping `studio_url` appears to work
+> until a scene ID is reused across two studios, at which point rows silently
+> multiply.
+
+**Browsing a studio**
+
 ```sql
--- All active scenes for a studio
+-- Everything currently on a studio
 SELECT title, date, duration, lowest_price
 FROM scenes
-WHERE studio_url = 'https://www.manyvids.com/Profile/590705/bettie-bondage/Store/Videos'
+WHERE studio_url = 'STUDIO_URL'
   AND deleted_at IS NULL
 ORDER BY date DESC;
 
--- Scenes that have ever been on sale
-SELECT s.title, ph.regular, ph.discounted, ph.date
+-- Every studio, with how much is stored and when it was last scraped
+SELECT st.name, st.site_id, st.last_scraped_at, COUNT(sc.id) AS scenes
+FROM studios st
+LEFT JOIN scenes sc ON sc.studio_url = st.url AND sc.deleted_at IS NULL
+GROUP BY st.url
+ORDER BY scenes DESC;
+
+-- Studios not scraped in the last 30 days
+SELECT url, site_id, last_scraped_at
+FROM studios
+WHERE last_scraped_at < date('now', '-30 day')
+ORDER BY last_scraped_at;
+```
+
+**Following a performer across sites**
+
+This is the query the flat JSON store cannot answer at all — it spans every
+studio and site in one pass.
+
+```sql
+-- Every scene featuring a performer, with the studio it came from
+SELECT s.date,
+       s.title,
+       COALESCE(NULLIF(s.studio, ''), NULLIF(st.name, ''), s.studio_url) AS studio,
+       s.site_id
+FROM scenes s
+JOIN scene_performers sp
+  ON sp.scene_id = s.id AND sp.site_id = s.site_id AND sp.studio_url = s.studio_url
+JOIN performers p ON p.id = sp.performer_id
+LEFT JOIN studios st ON st.url = s.studio_url
+WHERE p.name = 'PERFORMER NAME' COLLATE NOCASE
+  AND s.deleted_at IS NULL
+ORDER BY s.date DESC;
+
+-- Which studios they appear in, and how often
+SELECT COALESCE(NULLIF(s.studio, ''), s.studio_url) AS studio, COUNT(*) AS scenes
+FROM scenes s
+JOIN scene_performers sp
+  ON sp.scene_id = s.id AND sp.site_id = s.site_id AND sp.studio_url = s.studio_url
+JOIN performers p ON p.id = sp.performer_id
+WHERE p.name = 'PERFORMER NAME' COLLATE NOCASE
+GROUP BY studio
+ORDER BY scenes DESC;
+```
+
+`COLLATE NOCASE` handles capitalisation, but sites also differ on *spelling*.
+Merging folds case for deduplication while storing each site's own spelling, so
+check for variants before trusting a total:
+
+```sql
+SELECT p.name, COUNT(*) AS scenes
+FROM performers p
+JOIN scene_performers sp ON sp.performer_id = p.id
+WHERE p.name LIKE '%SURNAME%'
+GROUP BY p.name
+ORDER BY scenes DESC;
+```
+
+**Tags and cast**
+
+```sql
+-- Scenes carrying a tag
+SELECT s.title, s.date
+FROM scenes s
+JOIN scene_tags j
+  ON j.scene_id = s.id AND j.site_id = s.site_id AND j.studio_url = s.studio_url
+JOIN tags t ON t.id = j.tag_id
+WHERE t.name = 'TAG NAME'
+  AND s.deleted_at IS NULL
+ORDER BY s.date DESC;
+
+-- The cast of one scene, in billing order
+SELECT p.name
+FROM scene_performers sp
+JOIN performers p ON p.id = sp.performer_id
+WHERE sp.scene_id = 'SCENE_ID'
+  AND sp.site_id = 'SITE_ID'
+  AND sp.studio_url = 'STUDIO_URL'
+ORDER BY sp.position;
+
+-- Most used tags overall
+SELECT t.name, COUNT(*) AS scenes
+FROM scene_tags j
+JOIN tags t ON t.id = j.tag_id
+GROUP BY t.name
+ORDER BY scenes DESC
+LIMIT 25;
+```
+
+**What changed**
+
+```sql
+-- Scenes that entered the store since a date (see firstSeenAt in metadata.md)
+SELECT title, first_seen_at, studio_url
+FROM scenes
+WHERE first_seen_at >= '2026-01-01'
+ORDER BY first_seen_at DESC;
+
+-- Scenes that disappeared from their site (soft-deleted by --refresh)
+SELECT title, studio_url, deleted_at
+FROM scenes
+WHERE deleted_at IS NOT NULL
+ORDER BY deleted_at DESC;
+```
+
+**Pricing**
+
+```sql
+-- Deepest discounts ever recorded
+SELECT s.title, ph.regular, ph.discounted, ph.discount_percent, ph.date
 FROM scenes s
 JOIN price_history ph
   ON ph.scene_id = s.id AND ph.site_id = s.site_id AND ph.studio_url = s.studio_url
 WHERE ph.is_on_sale = 1
-ORDER BY ph.date DESC;
+ORDER BY ph.discount_percent DESC
+LIMIT 25;
 
--- Price history for one scene
+-- Price timeline for one scene
 SELECT date, regular, discounted, is_on_sale, discount_percent
 FROM price_history
-WHERE scene_id = '7342578' AND site_id = 'manyvids'
+WHERE scene_id = 'SCENE_ID' AND site_id = 'SITE_ID' AND studio_url = 'STUDIO_URL'
 ORDER BY date ASC;
-
--- All studios and their scene counts
-SELECT st.name, st.site_id, st.last_scraped_at, COUNT(sc.id) AS scenes
-FROM studios st
-LEFT JOIN scenes sc ON sc.studio_url = st.url AND sc.deleted_at IS NULL
-GROUP BY st.url;
-
--- Scenes with a specific tag (via junction table)
-SELECT s.title
-FROM scenes s
-JOIN scene_tags st ON s.id = st.scene_id AND s.site_id = st.site_id
-JOIN tags t ON st.tag_id = t.id
-WHERE t.name = 'MILF'
-  AND s.deleted_at IS NULL;
-
--- All performers for a scene (ordered by billing)
-SELECT p.name
-FROM scene_performers sp
-JOIN performers p ON sp.performer_id = p.id
-WHERE sp.scene_id = '7342578' AND sp.site_id = 'manyvids'
-ORDER BY sp.position;
-
--- Scenes by performer (across all sites)
-SELECT s.title, s.site_id, s.date
-FROM scenes s
-JOIN scene_performers sp ON s.id = sp.scene_id AND s.site_id = sp.site_id
-JOIN performers p ON sp.performer_id = p.id
-WHERE p.name = 'Rachel Steele'
-  AND s.deleted_at IS NULL
-ORDER BY s.date DESC;
-
--- Most common tags
-SELECT t.name, COUNT(*) AS scene_count
-FROM scene_tags st
-JOIN tags t ON st.tag_id = t.id
-GROUP BY t.name
-ORDER BY scene_count DESC
-LIMIT 20;
 ```
 
+Price history is a log of *changes*, not of scrapes: a snapshot identical to the
+previous one is dropped, so consecutive rows always differ.
+
+**Cross-site identity**
+
+```sql
+-- Scenes that different sites agree are the same, via a shared external ID
+SELECT e.source, e.external_id, COUNT(*) AS copies
+FROM scene_external_ids e
+GROUP BY e.source, e.external_id
+HAVING copies > 1
+ORDER BY copies DESC;
+```
+
+Returns nothing until something populates `scene_external_ids` — today the
+stashbox scraper is the only producer. See
+[metadata.md](metadata.md#cross-site-identity).

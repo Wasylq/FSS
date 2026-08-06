@@ -120,7 +120,9 @@ scene with every field as a column — the most approachable view there is.
 
 The schema is small and readable: `scenes`, `studios`, `price_history`,
 `scene_external_ids`, plus `performers`/`tags`/`categories` and their junction
-tables. See [usage.md](usage.md#sqlite).
+tables. See [usage.md](usage.md#sqlite) for the full column list and
+[example queries](usage.md#example-queries) covering studios, following a
+performer across sites, tags, price history and what changed since a date.
 
 ---
 
