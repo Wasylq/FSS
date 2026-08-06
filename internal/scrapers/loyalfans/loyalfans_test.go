@@ -401,3 +401,46 @@ func TestGoldenAdvancedSearchCarriesNoSessionCookie(t *testing.T) {
 		t.Error(`fixture lost the created_at object form; a re-encode may have flattened it`)
 	}
 }
+
+// TestListScenesSkipsRepeatsAcrossPages reproduces what the live cursor API
+// does: hand back videos already returned on an earlier page. A saved catalogue
+// had 187 of 493 videos emitted twice, differing only in when they were
+// scraped. Re-sending them inflates the live progress count and repeats
+// downstream work, so the walk must emit each video once.
+func TestListScenesSkipsRepeatsAcrossPages(t *testing.T) {
+	slug := "test_creator"
+	page1 := makeVideos(slug, 20)
+
+	// Page 2 overlaps page 1 by half, then adds five genuinely new videos —
+	// the shape a shifting window produces.
+	page2 := make([]video, 0, 15)
+	page2 = append(page2, page1[10:]...) // 10 repeats
+	fresh := makeVideos(slug, 5)
+	for i := range fresh {
+		fresh[i].Slug = fmt.Sprintf("scene-%d", 21+i)
+		fresh[i].Title = fmt.Sprintf("Scene %d", 21+i)
+	}
+	page2 = append(page2, fresh...)
+
+	ts := newTestServer([][]video{page1, page2})
+	defer ts.Close()
+
+	s := &Scraper{client: ts.Client(), base: ts.URL}
+	ch, err := s.ListScenes(context.Background(), ts.URL+"/test_creator", scraper.ListOpts{})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	scenes := testutil.CollectScenes(t, ch)
+	if len(scenes) != 25 {
+		t.Fatalf("got %d scenes, want 25 (20 + 5 new; 10 repeats dropped)", len(scenes))
+	}
+
+	seen := map[string]bool{}
+	for _, sc := range scenes {
+		if seen[sc.ID] {
+			t.Errorf("scene %q emitted more than once", sc.ID)
+		}
+		seen[sc.ID] = true
+	}
+}

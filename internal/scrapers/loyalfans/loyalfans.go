@@ -90,6 +90,15 @@ func (s *Scraper) run(ctx context.Context, studioURL, slug string, opts scraper.
 	var pageToken string
 	firstPage := true
 
+	// The cursor API can hand back a video already returned on an earlier page —
+	// a saved catalogue showed 187 of 493 videos emitted twice, differing only
+	// in the moment they were scraped. Whether the window shifts underneath the
+	// token or the pages overlap by design, re-sending a scene inflates the live
+	// progress count and repeats downstream work. The cmd layer drops duplicates
+	// before saving, but it should not have to.
+	seen := make(map[string]bool)
+	duplicates := 0
+
 	for {
 		results, nextToken, err := s.fetchPage(ctx, slug, pageToken, cookies)
 		if err != nil {
@@ -108,6 +117,11 @@ func (s *Scraper) run(ctx context.Context, studioURL, slug string, opts scraper.
 				continue
 			}
 			scene := toScene(studioURL, slug, v)
+			if seen[scene.ID] {
+				duplicates++
+				continue
+			}
+			seen[scene.ID] = true
 			if opts.KnownIDs[scene.ID] {
 				scraper.Debugf(1, "loyalfans: hit known ID, stopping early")
 				send(ctx, out, scraper.StoppedEarly())
@@ -119,6 +133,9 @@ func (s *Scraper) run(ctx context.Context, studioURL, slug string, opts scraper.
 		}
 
 		if nextToken == "" || len(results) < perPage {
+			if duplicates > 0 {
+				scraper.Debugf(1, "loyalfans: skipped %d video(s) the API returned more than once", duplicates)
+			}
 			break
 		}
 		pageToken = nextToken
