@@ -262,7 +262,9 @@ fss export --db --out-dir ./data -o json # database → JSON files
 ```
 
 `import` keys on each file's own `studioUrl`, never the filename — `Slugify` is
-lossy and its hash suffix is not reversible. It also derives the `studios` row,
+lossy and its hash suffix is not reversible. Files are processed oldest-first by
+modification time so a re-scrape wins over the original it sits beside, and two
+files describing one studio are reported rather than silently resolved. It also derives the `studios` row,
 which JSON does not carry, from the scenes themselves.
 
 Nothing in the database schema needed to change to support this: it is a strict

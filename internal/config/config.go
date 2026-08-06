@@ -78,10 +78,8 @@ func DefaultDBPath() string {
 	return filepath.Join(xdg.DataHome, "fss", "fss.db")
 }
 
-// ResolveDBPath interprets the db config value. Empty means disabled, "default"
-// or "true" means DefaultDBPath(), anything else is a literal path.
-// DBRef is a helper for constructing a Config in tests and callers that need a
-// literal `db:` value.
+// DBRef is a helper for building a Config with a literal `db:` value, since the
+// field is a pointer.
 func DBRef(v string) *string { return &v }
 
 // DBSetting returns the configured `db:` value and whether the key was present
@@ -100,6 +98,9 @@ func (c *Config) DBSetting() (value string, set bool) {
 	return *c.DB, true
 }
 
+// ResolveDBPath interprets the db config value: empty means no database,
+// "default" or "true" means DefaultDBPath(), anything else is a literal path
+// (absolute, or relative to the working directory).
 func ResolveDBPath(raw string) string {
 	switch raw {
 	case "":

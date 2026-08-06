@@ -57,7 +57,7 @@ func TestImportFileRoundTrip(t *testing.T) {
 	})
 
 	db := newImportDB(t)
-	n, err := importFile(db, path, false, false)
+	n, _, err := importFile(db, path, false, false)
 	if err != nil {
 		t.Fatalf("importFile: %v", err)
 	}
@@ -104,7 +104,7 @@ func TestImportMergesByDefault(t *testing.T) {
 		StudioURL: importURL,
 		Scenes:    []models.Scene{importScene("2", "Two", now)},
 	})
-	if _, err := importFile(db, path, false, false); err != nil {
+	if _, _, err := importFile(db, path, false, false); err != nil {
 		t.Fatal(err)
 	}
 
@@ -125,7 +125,7 @@ func TestImportReplaceIsAuthoritative(t *testing.T) {
 		StudioURL: importURL,
 		Scenes:    []models.Scene{importScene("1", "One", now)},
 	})
-	if _, err := importFile(db, path, true, false); err != nil {
+	if _, _, err := importFile(db, path, true, false); err != nil {
 		t.Fatal(err)
 	}
 
@@ -151,7 +151,7 @@ func TestImportPreservesEnrichment(t *testing.T) {
 		StudioURL: importURL,
 		Scenes:    []models.Scene{bare},
 	})
-	if _, err := importFile(db, path, true, false); err != nil {
+	if _, _, err := importFile(db, path, true, false); err != nil {
 		t.Fatal(err)
 	}
 
@@ -168,7 +168,7 @@ func TestImportDryRunWritesNothing(t *testing.T) {
 		StudioURL: importURL,
 		Scenes:    []models.Scene{importScene("1", "One", now)},
 	})
-	if _, err := importFile(db, path, false, true); err != nil {
+	if _, _, err := importFile(db, path, false, true); err != nil {
 		t.Fatal(err)
 	}
 	if got, _ := db.Load(importURL); len(got) != 0 {
@@ -183,7 +183,7 @@ func TestImportRejectsBadFiles(t *testing.T) {
 	noURL := writeImportStudioFile(t, dir, "nourl.json", models.StudioFile{
 		Scenes: []models.Scene{{ID: "1", SiteID: "imp", Title: "x"}},
 	})
-	if _, err := importFile(db, noURL, false, false); err == nil {
+	if _, _, err := importFile(db, noURL, false, false); err == nil {
 		t.Error("expected an error for a file with no studioUrl")
 	}
 
@@ -192,7 +192,7 @@ func TestImportRejectsBadFiles(t *testing.T) {
 		StudioURL:     importURL,
 		Scenes:        []models.Scene{{ID: "1", SiteID: "imp", Title: "x"}},
 	})
-	if _, err := importFile(db, future, false, false); err == nil {
+	if _, _, err := importFile(db, future, false, false); err == nil {
 		t.Error("expected an error for a newer schema version")
 	}
 
@@ -200,7 +200,7 @@ func TestImportRejectsBadFiles(t *testing.T) {
 	if err := os.WriteFile(bad, []byte("{not json"), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := importFile(db, bad, false, false); err == nil {
+	if _, _, err := importFile(db, bad, false, false); err == nil {
 		t.Error("expected an error for malformed JSON")
 	}
 }
@@ -263,5 +263,113 @@ func TestStudioFromFile(t *testing.T) {
 		[]models.Scene{importScene("1", "One", late)})
 	if !bare.AddedAt.Equal(late) {
 		t.Errorf("AddedAt = %v, want fallback %v", bare.AddedAt, late)
+	}
+}
+
+// TestCollectJSONFilesOrdersByModTime pins the ordering that decides which
+// version of a re-scraped studio survives.
+//
+// Merging is last-write-wins per field, so processing order is data-affecting.
+// Sorting by name made it depend on filenames, and a browser saving a second
+// download as `x (1).json` sorts it *before* `x.json` — so the newer file was
+// applied first and the older one overwrote it.
+func TestCollectJSONFilesOrdersByModTime(t *testing.T) {
+	dir := t.TempDir()
+	older := filepath.Join(dir, "studio (1).json") // sorts FIRST by name
+	newer := filepath.Join(dir, "studio.json")     // sorts second by name
+
+	for _, p := range []string{older, newer} {
+		if err := os.WriteFile(p, []byte("{}"), 0o600); err != nil {
+			t.Fatal(err)
+		}
+	}
+	base := time.Now().Add(-time.Hour)
+	if err := os.Chtimes(older, base, base); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Chtimes(newer, base.Add(time.Hour), base.Add(time.Hour)); err != nil {
+		t.Fatal(err)
+	}
+
+	got, err := collectJSONFiles([]string{dir})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(got) != 2 {
+		t.Fatalf("got %d files, want 2", len(got))
+	}
+	if got[0] != older || got[1] != newer {
+		t.Errorf("order = %v, want oldest first (%s then %s)",
+			[]string{filepath.Base(got[0]), filepath.Base(got[1])},
+			filepath.Base(older), filepath.Base(newer))
+	}
+}
+
+// The newest file's values must survive when two files describe one studio.
+func TestImportNewerFileWinsRegardlessOfName(t *testing.T) {
+	dir := t.TempDir()
+	old := time.Date(2026, 4, 28, 0, 0, 0, 0, time.UTC)
+	recent := time.Date(2026, 5, 7, 0, 0, 0, 0, time.UTC)
+
+	// The alphabetically-first file holds the OLDER data, as it did in practice.
+	oldPath := writeImportStudioFile(t, dir, "studio (1).json", models.StudioFile{
+		StudioURL: importURL,
+		Scenes:    []models.Scene{{ID: "1", SiteID: "imp", Title: "April title", ScrapedAt: old}},
+	})
+	newPath := writeImportStudioFile(t, dir, "studio.json", models.StudioFile{
+		StudioURL: importURL,
+		Scenes:    []models.Scene{{ID: "1", SiteID: "imp", Title: "May title", ScrapedAt: recent}},
+	})
+	if err := os.Chtimes(oldPath, old, old); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Chtimes(newPath, recent, recent); err != nil {
+		t.Fatal(err)
+	}
+
+	db := newImportDB(t)
+	files, err := collectJSONFiles([]string{dir})
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, f := range files {
+		if _, _, err := importFile(db, f, false, false); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	got, _ := db.Load(importURL)
+	if len(got) != 1 {
+		t.Fatalf("got %d scenes, want 1", len(got))
+	}
+	if got[0].Title != "May title" {
+		t.Errorf("title = %q, want the newer file's value", got[0].Title)
+	}
+}
+
+// A dry run must not create the database. It used to skip only the MkdirAll and
+// still open the file, so --dry-run failed outright before a first import —
+// exactly when it is most useful.
+func TestImportDryRunDoesNotCreateDatabase(t *testing.T) {
+	dir := t.TempDir()
+	writeImportStudioFile(t, dir, "studio.json", models.StudioFile{
+		StudioURL: importURL,
+		Scenes:    []models.Scene{{ID: "1", SiteID: "imp", Title: "One", ScrapedAt: time.Now().UTC()}},
+	})
+	dbPath := filepath.Join(dir, "nested", "fss.db")
+
+	// importFile tolerates a nil database: nothing is stored, so nothing merges.
+	n, url, err := importFile(nil, filepath.Join(dir, "studio.json"), false, true)
+	if err != nil {
+		t.Fatalf("dry-run importFile with no database: %v", err)
+	}
+	if n != 1 || url != importURL {
+		t.Errorf("got (%d, %q), want (1, %q)", n, url, importURL)
+	}
+	if _, err := os.Stat(dbPath); !os.IsNotExist(err) {
+		t.Errorf("dry run created %s", dbPath)
+	}
+	if _, err := os.Stat(filepath.Dir(dbPath)); !os.IsNotExist(err) {
+		t.Error("dry run created the database directory")
 	}
 }

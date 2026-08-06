@@ -65,9 +65,11 @@ Loads studio JSON files into the SQLite database. Directories contribute their `
 |------|------|---------|-------------|
 | `--db` | string | _(from config)_ | Target database (`--db` alone uses the default path; `--db=/path` for a custom one) |
 | `--replace` | bool | false | Make each file authoritative: delete stored scenes it does not contain |
-| `--dry-run` | bool | false | Report what would be imported without writing |
+| `--dry-run` | bool | false | Report what would be imported without writing. Creates nothing, including the database itself |
 
 The database schema is a superset of the JSON layout, so nothing is lost. By default the file is *merged* into the database: scenes present in both take the file's values, price history is carried forward, fields the file omits keep their stored values, and scenes only in the database are left alone.
+
+**Files are processed oldest-first by modification time.** Merging is last-write-wins per field, so processing order decides which version of a re-scraped studio survives — and ordering by *name* made that depend on filenames. A second download saved as `studio (1).json` sorts before `studio.json`, so the newer file would have been overwritten by the older one. When two files in one run describe the same studio, both are named in a warning.
 
 ```bash
 fss import --db ./out/                      # every studio file in ./out
