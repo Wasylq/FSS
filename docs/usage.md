@@ -137,6 +137,8 @@ Not supported: https://example.com/unknown
 Request support: https://github.com/Wasylq/FSS/issues/new?template=new_scraper.yml&url=...
 ```
 
+The scheme is optional — `fss check brazzers.com` and `fss check www.brazzers.com/videos` are read as `https://`. The same applies to `fss detect` and `fss scrape`. Pass `http://` explicitly for the handful of sites that are http-only.
+
 ### `fss detect <url>`
 
 Fetches a URL once and checks the response for known platform signals (Aylo `instance_token`, Algolia API, `psmcdn.net`, ModelCentro, etc.). Reports the detected platform and corresponding util package. Useful when deciding whether a new site needs a standalone scraper or belongs to an existing shared package.

@@ -33,7 +33,7 @@ func newScraperIssueURL(siteURL string) string {
 }
 
 func runCheck(cmd *cobra.Command, args []string) error {
-	rawURL := args[0]
+	rawURL := normalizeInputURL(args[0])
 	w := cmd.OutOrStdout()
 
 	s, err := scraper.ForURL(rawURL)

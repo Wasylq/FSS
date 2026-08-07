@@ -32,6 +32,19 @@ func TestCheckSupported(t *testing.T) {
 	}
 }
 
+func TestCheckSupportedWithoutScheme(t *testing.T) {
+	for _, url := range []string{
+		"www.brazzers.com/videos",
+		"brazzers.com",
+		"brazzers.com/",
+	} {
+		out := executeCheck(t, url)
+		if !strings.Contains(out, "Scraper:  brazzers") {
+			t.Errorf("check %q: expected brazzers scraper, got:\n%s", url, out)
+		}
+	}
+}
+
 func TestCheckUnsupported(t *testing.T) {
 	out := executeCheck(t, "https://example.com/not-a-site")
 

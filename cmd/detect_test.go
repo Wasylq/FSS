@@ -1,9 +1,30 @@
 package cmd
 
 import (
+	"bytes"
 	"net/http"
+	"strings"
 	"testing"
+
+	_ "github.com/Wasylq/FSS/internal/scrapers/all"
 )
+
+// A supported URL short-circuits before the fetch, so this stays offline.
+func TestDetect_alreadySupportedWithoutScheme(t *testing.T) {
+	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
+
+	var buf bytes.Buffer
+	rootCmd.SetOut(&buf)
+	rootCmd.SetErr(&buf)
+	rootCmd.SetArgs([]string{"detect", "www.brazzers.com/videos"})
+	if err := rootCmd.Execute(); err != nil {
+		t.Fatalf("detect: %v", err)
+	}
+
+	if !strings.Contains(buf.String(), "Already supported by scraper: brazzers") {
+		t.Errorf("expected early return for a supported URL, got:\n%s", buf.String())
+	}
+}
 
 // hasPkg reports whether the results contain a detection for the given util
 // package, returning the matched detail string for further assertions.

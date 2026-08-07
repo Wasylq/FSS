@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"path/filepath"
@@ -643,6 +644,42 @@ func TestParseFormats_whitespace(t *testing.T) {
 	}
 	if !slices.Equal(got, []string{"json", "csv"}) {
 		t.Errorf("got %v, want [json csv]", got)
+	}
+}
+
+// runScrape fills in a missing scheme before ForURL sees the URL. urlStampScraper
+// matches by exact string, so it only runs if the normalisation happened.
+func TestRunScrape_normalizesSchemelessURL(t *testing.T) {
+	const canonical = "https://example.com/normscrape"
+	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
+	t.Setenv("FSS_NO_NOTICES", "1")
+
+	scraper.Register(&urlStampScraper{
+		id: "normscrape", matchURL: canonical,
+		stampURL: canonical, sceneID: "1", siteID: "normsite",
+	})
+
+	outDir := t.TempDir()
+	t.Cleanup(func() {
+		_ = scrapeCmd.Flags().Set("out-dir", "")
+		_ = scrapeCmd.Flags().Set("delay", "0")
+	})
+
+	var buf bytes.Buffer
+	rootCmd.SetOut(&buf)
+	rootCmd.SetErr(&buf)
+	rootCmd.SetArgs([]string{"scrape", "example.com/normscrape", "--out-dir", outDir, "--delay", "0"})
+	if err := rootCmd.Execute(); err != nil {
+		t.Fatalf("scrape: %v", err)
+	}
+
+	st := store.NewFlat(outDir, []string{"json"})
+	got, err := st.Load(canonical)
+	if err != nil {
+		t.Fatalf("Load: %v", err)
+	}
+	if len(got) != 1 {
+		t.Fatalf("got %d scenes under %s, want 1", len(got), canonical)
 	}
 }
 

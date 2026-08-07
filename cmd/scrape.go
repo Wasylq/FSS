@@ -44,6 +44,12 @@ func init() {
 }
 
 func runScrape(cmd *cobra.Command, args []string) error {
+	// Normalised once here: this URL is matched, fetched, and used as the store key.
+	args = append([]string(nil), args...)
+	for i := range args {
+		args[i] = normalizeInputURL(args[i])
+	}
+
 	// --- resolve flags against config ---
 	full, _ := cmd.Flags().GetBool("full")
 	refresh, _ := cmd.Flags().GetBool("refresh")

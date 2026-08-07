@@ -37,10 +37,7 @@ type detection struct {
 }
 
 func runDetect(cmd *cobra.Command, args []string) error {
-	rawURL := args[0]
-	if !strings.Contains(rawURL, "://") {
-		rawURL = "https://" + rawURL
-	}
+	rawURL := normalizeInputURL(args[0])
 	w := cmd.OutOrStdout()
 
 	// Check if already supported by a registered scraper.
