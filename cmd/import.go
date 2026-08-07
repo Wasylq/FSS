@@ -93,6 +93,9 @@ func runImport(cmd *cobra.Command, args []string) error {
 			skipped++
 			continue
 		}
+		if db != nil {
+			warnStudioURLVariant(db, studioURL)
+		}
 		if prev, dup := seenStudios[studioURL]; dup {
 			fmt.Fprintf(os.Stderr,
 				"warning: %s and %s both contain %s — the later file wins field by field; "+
