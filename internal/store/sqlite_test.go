@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"slices"
 	"strings"
 	"testing"
 	"time"
@@ -2143,5 +2144,47 @@ func TestSQLiteMigration9NoopWhenAlreadyCanonical(t *testing.T) {
 	}
 	if len(after) != len(before) || after[0].Title != before[0].Title || len(after[0].Tags) != 1 {
 		t.Errorf("no-op migration changed data: %+v -> %+v", before, after)
+	}
+}
+
+// orderedNames restores the stored order of a scene's relations. SQLite usually
+// hands rows back already sorted, so the reordering branch only runs when it
+// does not — the case that would otherwise silently scramble performer order.
+func TestOrderedNames(t *testing.T) {
+	tests := []struct {
+		name      string
+		names     string
+		positions string
+		want      []string
+		wantErr   bool
+	}{
+		{name: "already sorted", names: `["a","b","c"]`, positions: `[0,1,2]`, want: []string{"a", "b", "c"}},
+		{name: "reversed", names: `["c","b","a"]`, positions: `[2,1,0]`, want: []string{"a", "b", "c"}},
+		{name: "shuffled", names: `["b","c","a"]`, positions: `[1,2,0]`, want: []string{"a", "b", "c"}},
+		{name: "sparse positions", names: `["b","a"]`, positions: `[70,7]`, want: []string{"a", "b"}},
+		{name: "duplicate positions keep input order", names: `["b","a"]`, positions: `[0,0]`, want: []string{"b", "a"}},
+		{name: "single", names: `["only"]`, positions: `[3]`, want: []string{"only"}},
+		{name: "empty", names: `[]`, positions: `[]`, want: nil},
+		{name: "length mismatch", names: `["a","b"]`, positions: `[0]`, wantErr: true},
+		{name: "malformed names", names: `not json`, positions: `[0]`, wantErr: true},
+		{name: "malformed positions", names: `["a"]`, positions: `not json`, wantErr: true},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := orderedNames(tt.names, tt.positions)
+			if tt.wantErr {
+				if err == nil {
+					t.Fatalf("expected an error, got %v", got)
+				}
+				return
+			}
+			if err != nil {
+				t.Fatalf("orderedNames: %v", err)
+			}
+			if !slices.Equal(got, tt.want) {
+				t.Errorf("got %v, want %v", got, tt.want)
+			}
+		})
 	}
 }
