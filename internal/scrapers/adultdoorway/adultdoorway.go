@@ -24,7 +24,7 @@ var sites = []adultdoorwayutil.SiteConfig{
 			"adultdoorway.com",
 			"adultdoorway.com/tour/categories/{slug}_{page}_d.html",
 		},
-		MatchRe: regexp.MustCompile(`^https?://(?:[a-z0-9-]+\.)?adultdoorway\.com`),
+		MatchRe: regexp.MustCompile(`^https?://(?:[a-z0-9-]+\.)?adultdoorway\.com(?:/|$)`),
 	},
 	{
 		ID:       "amateurthroats",
@@ -34,7 +34,7 @@ var sites = []adultdoorwayutil.SiteConfig{
 			"amateurthroats.com",
 			"amateurthroats.com/tour/categories/{slug}_{page}_d.html",
 		},
-		MatchRe: regexp.MustCompile(`^https?://(?:[a-z0-9-]+\.)?amateurthroats\.com`),
+		MatchRe: regexp.MustCompile(`^https?://(?:[a-z0-9-]+\.)?amateurthroats\.com(?:/|$)`),
 	},
 	{
 		ID:       "analrecruiters",
@@ -44,7 +44,7 @@ var sites = []adultdoorwayutil.SiteConfig{
 			"analrecruiters.com",
 			"analrecruiters.com/tour/categories/{slug}_{page}_d.html",
 		},
-		MatchRe: regexp.MustCompile(`^https?://(?:[a-z0-9-]+\.)?analrecruiters\.com`),
+		MatchRe: regexp.MustCompile(`^https?://(?:[a-z0-9-]+\.)?analrecruiters\.com(?:/|$)`),
 	},
 	{
 		ID:       "bustyamateurboobs",
@@ -54,7 +54,7 @@ var sites = []adultdoorwayutil.SiteConfig{
 			"bustyamateurboobs.com",
 			"bustyamateurboobs.com/tour/categories/{slug}_{page}_d.html",
 		},
-		MatchRe: regexp.MustCompile(`^https?://(?:[a-z0-9-]+\.)?bustyamateurboobs\.com`),
+		MatchRe: regexp.MustCompile(`^https?://(?:[a-z0-9-]+\.)?bustyamateurboobs\.com(?:/|$)`),
 	},
 	{
 		ID:       "clubamberrayne",
@@ -64,7 +64,7 @@ var sites = []adultdoorwayutil.SiteConfig{
 			"clubamberrayne.com",
 			"clubamberrayne.com/tour/categories/{slug}_{page}_d.html",
 		},
-		MatchRe: regexp.MustCompile(`^https?://(?:[a-z0-9-]+\.)?clubamberrayne\.com`),
+		MatchRe: regexp.MustCompile(`^https?://(?:[a-z0-9-]+\.)?clubamberrayne\.com(?:/|$)`),
 	},
 	{
 		ID:       "ebonycumdumps",
@@ -74,7 +74,7 @@ var sites = []adultdoorwayutil.SiteConfig{
 			"ebonycumdumps.com",
 			"ebonycumdumps.com/tour/categories/{slug}_{page}_d.html",
 		},
-		MatchRe: regexp.MustCompile(`^https?://(?:[a-z0-9-]+\.)?ebonycumdumps\.com`),
+		MatchRe: regexp.MustCompile(`^https?://(?:[a-z0-9-]+\.)?ebonycumdumps\.com(?:/|$)`),
 	},
 	{
 		ID:       "facialabuse",
@@ -84,7 +84,7 @@ var sites = []adultdoorwayutil.SiteConfig{
 			"facialabuse.com",
 			"facialabuse.com/tour/categories/{slug}_{page}_d.html",
 		},
-		MatchRe: regexp.MustCompile(`^https?://(?:[a-z0-9-]+\.)?facialabuse\.com`),
+		MatchRe: regexp.MustCompile(`^https?://(?:[a-z0-9-]+\.)?facialabuse\.com(?:/|$)`),
 	},
 	{
 		ID:       "fuckmepov",
@@ -94,7 +94,7 @@ var sites = []adultdoorwayutil.SiteConfig{
 			"fuckmepov.com",
 			"fuckmepov.com/tour/categories/{slug}_{page}_d.html",
 		},
-		MatchRe: regexp.MustCompile(`^https?://(?:[a-z0-9-]+\.)?fuckmepov\.com`),
+		MatchRe: regexp.MustCompile(`^https?://(?:[a-z0-9-]+\.)?fuckmepov\.com(?:/|$)`),
 	},
 	{
 		ID:       "ghettogaggers",
@@ -104,7 +104,7 @@ var sites = []adultdoorwayutil.SiteConfig{
 			"ghettogaggers.com",
 			"ghettogaggers.com/tour/categories/{slug}_{page}_d.html",
 		},
-		MatchRe: regexp.MustCompile(`^https?://(?:[a-z0-9-]+\.)?ghettogaggers\.com`),
+		MatchRe: regexp.MustCompile(`^https?://(?:[a-z0-9-]+\.)?ghettogaggers\.com(?:/|$)`),
 	},
 	{
 		ID:       "hardcoredoorway",
@@ -114,7 +114,7 @@ var sites = []adultdoorwayutil.SiteConfig{
 			"hardcoredoorway.com",
 			"hardcoredoorway.com/tour/categories/{slug}_{page}_d.html",
 		},
-		MatchRe: regexp.MustCompile(`^https?://(?:[a-z0-9-]+\.)?hardcoredoorway\.com`),
+		MatchRe: regexp.MustCompile(`^https?://(?:[a-z0-9-]+\.)?hardcoredoorway\.com(?:/|$)`),
 	},
 	{
 		ID:       "herfirstporn",
@@ -124,7 +124,7 @@ var sites = []adultdoorwayutil.SiteConfig{
 			"herfirstporn.com",
 			"herfirstporn.com/tour/categories/{slug}_{page}_d.html",
 		},
-		MatchRe: regexp.MustCompile(`^https?://(?:[a-z0-9-]+\.)?herfirstporn\.com`),
+		MatchRe: regexp.MustCompile(`^https?://(?:[a-z0-9-]+\.)?herfirstporn\.com(?:/|$)`),
 	},
 	{
 		ID:       "hugerubberdicks",
@@ -134,7 +134,7 @@ var sites = []adultdoorwayutil.SiteConfig{
 			"hugerubberdicks.com",
 			"hugerubberdicks.com/tour/categories/{slug}_{page}_d.html",
 		},
-		MatchRe: regexp.MustCompile(`^https?://(?:[a-z0-9-]+\.)?hugerubberdicks\.com`),
+		MatchRe: regexp.MustCompile(`^https?://(?:[a-z0-9-]+\.)?hugerubberdicks\.com(?:/|$)`),
 	},
 	{
 		ID:       "joethepervert",
@@ -144,7 +144,7 @@ var sites = []adultdoorwayutil.SiteConfig{
 			"joethepervert.com",
 			"joethepervert.com/tour/categories/{slug}_{page}_d.html",
 		},
-		MatchRe: regexp.MustCompile(`^https?://(?:[a-z0-9-]+\.)?joethepervert\.com`),
+		MatchRe: regexp.MustCompile(`^https?://(?:[a-z0-9-]+\.)?joethepervert\.com(?:/|$)`),
 	},
 	{
 		ID:       "latinaabuse",
@@ -154,7 +154,7 @@ var sites = []adultdoorwayutil.SiteConfig{
 			"latinaabuse.com",
 			"latinaabuse.com/tour/categories/{slug}_{page}_d.html",
 		},
-		MatchRe: regexp.MustCompile(`^https?://(?:[a-z0-9-]+\.)?latinaabuse\.com`),
+		MatchRe: regexp.MustCompile(`^https?://(?:[a-z0-9-]+\.)?latinaabuse\.com(?:/|$)`),
 	},
 	{
 		ID:       "monstercockmadness",
@@ -164,7 +164,7 @@ var sites = []adultdoorwayutil.SiteConfig{
 			"monstercockmadness.com",
 			"monstercockmadness.com/tour/categories/{slug}_{page}_d.html",
 		},
-		MatchRe: regexp.MustCompile(`^https?://(?:[a-z0-9-]+\.)?monstercockmadness\.com`),
+		MatchRe: regexp.MustCompile(`^https?://(?:[a-z0-9-]+\.)?monstercockmadness\.com(?:/|$)`),
 	},
 	{
 		ID:       "nastylittlefacials",
@@ -174,7 +174,7 @@ var sites = []adultdoorwayutil.SiteConfig{
 			"nastylittlefacials.com",
 			"nastylittlefacials.com/tour/categories/{slug}_{page}_d.html",
 		},
-		MatchRe: regexp.MustCompile(`^https?://(?:[a-z0-9-]+\.)?nastylittlefacials\.com`),
+		MatchRe: regexp.MustCompile(`^https?://(?:[a-z0-9-]+\.)?nastylittlefacials\.com(?:/|$)`),
 	},
 	{
 		ID:       "pinkkittygirls",
@@ -184,7 +184,7 @@ var sites = []adultdoorwayutil.SiteConfig{
 			"pinkkittygirls.com",
 			"pinkkittygirls.com/tour/categories/{slug}_{page}_d.html",
 		},
-		MatchRe: regexp.MustCompile(`^https?://(?:[a-z0-9-]+\.)?pinkkittygirls\.com`),
+		MatchRe: regexp.MustCompile(`^https?://(?:[a-z0-9-]+\.)?pinkkittygirls\.com(?:/|$)`),
 	},
 	{
 		ID:       "povhotel",
@@ -194,7 +194,7 @@ var sites = []adultdoorwayutil.SiteConfig{
 			"povhotel.com",
 			"povhotel.com/tour/categories/{slug}_{page}_d.html",
 		},
-		MatchRe: regexp.MustCompile(`^https?://(?:[a-z0-9-]+\.)?povhotel\.(?:com|net)`),
+		MatchRe: regexp.MustCompile(`^https?://(?:[a-z0-9-]+\.)?povhotel\.(?:com|net)(?:/|$)`),
 	},
 	{
 		ID:       "sexysuckjobs",
@@ -204,7 +204,7 @@ var sites = []adultdoorwayutil.SiteConfig{
 			"sexysuckjobs.com",
 			"sexysuckjobs.com/tour/categories/{slug}_{page}_d.html",
 		},
-		MatchRe: regexp.MustCompile(`^https?://(?:[a-z0-9-]+\.)?sexysuckjobs\.com`),
+		MatchRe: regexp.MustCompile(`^https?://(?:[a-z0-9-]+\.)?sexysuckjobs\.com(?:/|$)`),
 	},
 	{
 		ID:       "spermsuckers",
@@ -214,7 +214,7 @@ var sites = []adultdoorwayutil.SiteConfig{
 			"spermsuckers.com",
 			"spermsuckers.com/tour/categories/{slug}_{page}_d.html",
 		},
-		MatchRe: regexp.MustCompile(`^https?://(?:[a-z0-9-]+\.)?spermsuckers\.com`),
+		MatchRe: regexp.MustCompile(`^https?://(?:[a-z0-9-]+\.)?spermsuckers\.com(?:/|$)`),
 	},
 	{
 		ID:       "thehandjobsite",
@@ -224,7 +224,7 @@ var sites = []adultdoorwayutil.SiteConfig{
 			"thehandjobsite.com",
 			"thehandjobsite.com/tour/categories/{slug}_{page}_d.html",
 		},
-		MatchRe: regexp.MustCompile(`^https?://(?:[a-z0-9-]+\.)?thehandjobsite\.com`),
+		MatchRe: regexp.MustCompile(`^https?://(?:[a-z0-9-]+\.)?thehandjobsite\.com(?:/|$)`),
 	},
 	{
 		ID:       "thepantyhosesite",
@@ -234,7 +234,7 @@ var sites = []adultdoorwayutil.SiteConfig{
 			"thepantyhosesite.com",
 			"thepantyhosesite.com/tour/categories/{slug}_{page}_d.html",
 		},
-		MatchRe: regexp.MustCompile(`^https?://(?:[a-z0-9-]+\.)?thepantyhosesite\.com`),
+		MatchRe: regexp.MustCompile(`^https?://(?:[a-z0-9-]+\.)?thepantyhosesite\.com(?:/|$)`),
 	},
 }
 

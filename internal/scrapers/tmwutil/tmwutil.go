@@ -58,14 +58,16 @@ func (s *Scraper) Patterns() []string {
 }
 
 func (s *Scraper) MatchesURL(u string) bool {
-	lower := strings.ToLower(u)
-	domain := strings.ToLower(s.cfg.Domain)
-	slug := strings.ToLower(s.cfg.Slug)
-	if strings.Contains(lower, "://"+domain) || strings.Contains(lower, "://www."+domain) {
+	if scraper.HostMatches(u, s.cfg.Domain) {
 		return true
 	}
-	return strings.Contains(lower, "teenmegaworld.net/categories/"+slug) ||
-		strings.Contains(lower, "teenmegaworld.net/sites/"+slug)
+	if !scraper.HostMatches(u, "teenmegaworld.net") {
+		return false
+	}
+	lower := strings.ToLower(u)
+	slug := strings.ToLower(s.cfg.Slug)
+	return strings.Contains(lower, "/categories/"+slug) ||
+		strings.Contains(lower, "/sites/"+slug)
 }
 
 var modelSlugRe = regexp.MustCompile(`/models/([^_/.]+?)(?:\.html)?$`)

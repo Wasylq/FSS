@@ -15,28 +15,28 @@ var sites = []SiteConfig{
 		BaseURL:  "https://www.coozhound.com",
 		SiteName: "CoozHound",
 		Patterns: []string{"https://www.coozhound.com/HOME.html"},
-		MatchRe:  regexp.MustCompile(`^https?://(?:www\.)?coozhound\.com\b`),
+		MatchRe:  regexp.MustCompile(`^https?://(?:www\.)?coozhound\.com(?:/|$)`),
 	},
 	{
 		ID:       "msnympho",
 		BaseURL:  "https://www.msnympho.com",
 		SiteName: "MsNympho",
 		Patterns: []string{"https://www.msnympho.com/HOME.html"},
-		MatchRe:  regexp.MustCompile(`^https?://(?:www\.)?msnympho\.com\b`),
+		MatchRe:  regexp.MustCompile(`^https?://(?:www\.)?msnympho\.com(?:/|$)`),
 	},
 	{
 		ID:       "nastynyamateurs",
 		BaseURL:  "https://www.nastynyamateurs.com",
 		SiteName: "Nasty NY Amateurs",
 		Patterns: []string{"https://nastynyamateurs.com/HOME.html"},
-		MatchRe:  regexp.MustCompile(`^https?://(?:www\.)?nastynyamateurs\.com\b`),
+		MatchRe:  regexp.MustCompile(`^https?://(?:www\.)?nastynyamateurs\.com(?:/|$)`),
 	},
 	{
 		ID:       "urbanamateurs",
 		BaseURL:  "https://www.urbanamateurs.net",
 		SiteName: "Urban Amateurs",
 		Patterns: []string{"https://www.urbanamateurs.net/HOME.html"},
-		MatchRe:  regexp.MustCompile(`^https?://(?:www\.)?urbanamateurs\.net\b`),
+		MatchRe:  regexp.MustCompile(`^https?://(?:www\.)?urbanamateurs\.net(?:/|$)`),
 	},
 }
 

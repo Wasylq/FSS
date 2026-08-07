@@ -36,7 +36,7 @@ func New() *natscmsutil.Scraper {
 		CMSAreaID:   "cd9a5600-5cda-4ed0-b356-f62af1887d96",
 		SkipPathRe:  skipPathRe,
 		Patterns:    []string{"ladyboygold.com"},
-		MatchRe:     regexp.MustCompile(`^https?://(?:www\.)?ladyboygold\.com\b`),
+		MatchRe:     regexp.MustCompile(`^https?://(?:www\.)?ladyboygold\.com(?:/|$)`),
 	})
 }
 

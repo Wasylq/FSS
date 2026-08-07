@@ -16,14 +16,14 @@ var sites = []dungeoncorputil.SiteConfig{
 		Studio:   "SocietySM",
 		Code:     "SSM",
 		Patterns: []string{"societysm.com", "dungeoncorp.com/?page=updates&site=SSM"},
-		MatchRe:  regexp.MustCompile(`^https?://(?:www\.)?(?:societysm\.com|dungeoncorp\.com/\?page=updates&site=SSM)`),
+		MatchRe:  regexp.MustCompile(`^https?://(?:www\.)?(?:societysm\.com(?:/|$)|dungeoncorp\.com/\?page=updates&site=SSM)`),
 	},
 	{
 		ID:       "cumbots",
 		Studio:   "Cumbots",
 		Code:     "CUM",
 		Patterns: []string{"cumbots.com", "dungeoncorp.com/?page=updates&site=CUM"},
-		MatchRe:  regexp.MustCompile(`^https?://(?:www\.)?(?:cumbots\.com|dungeoncorp\.com/\?page=updates&site=CUM)`),
+		MatchRe:  regexp.MustCompile(`^https?://(?:www\.)?(?:cumbots\.com(?:/|$)|dungeoncorp\.com/\?page=updates&site=CUM)`),
 	},
 	{
 		ID:       "fuckingdungeon",
@@ -37,7 +37,7 @@ var sites = []dungeoncorputil.SiteConfig{
 		Studio:   "PerfectSlave",
 		Code:     "PER",
 		Patterns: []string{"perfectslave.com", "dungeoncorp.com/?page=updates&site=PER"},
-		MatchRe:  regexp.MustCompile(`^https?://(?:www\.)?(?:perfectslave\.com|dungeoncorp\.com/\?page=(?:sites|updates)&site=PER)`),
+		MatchRe:  regexp.MustCompile(`^https?://(?:www\.)?(?:perfectslave\.com(?:/|$)|dungeoncorp\.com/\?page=(?:sites|updates)&site=PER)`),
 	},
 	{
 		ID:       "strictrestraint",

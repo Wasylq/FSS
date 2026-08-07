@@ -24,7 +24,7 @@ var sites = []bronetworkutil.SiteConfig{
 		SiteBase: "https://menatplay.com",
 		Slug:     "movies",
 		Patterns: []string{"menatplay.com", "menatplay.com/categories/movies_{N}_d.html", "menatplay.com/updates/{slug}.html"},
-		MatchRe:  regexp.MustCompile(`^https?://(?:www\.)?menatplay\.com`),
+		MatchRe:  regexp.MustCompile(`^https?://(?:www\.)?menatplay\.com(?:/|$)`),
 	},
 	{
 		ID:       "amateurgaypov",
@@ -32,7 +32,7 @@ var sites = []bronetworkutil.SiteConfig{
 		SiteBase: "https://amateurgaypov.com",
 		Slug:     "videos",
 		Patterns: []string{"amateurgaypov.com", "amateurgaypov.com/categories/videos_{N}_d.html"},
-		MatchRe:  regexp.MustCompile(`^https?://(?:www\.)?amateurgaypov\.com`),
+		MatchRe:  regexp.MustCompile(`^https?://(?:www\.)?amateurgaypov\.com(?:/|$)`),
 	},
 	{
 		ID:       "masqulin",
@@ -40,7 +40,7 @@ var sites = []bronetworkutil.SiteConfig{
 		SiteBase: "https://thebronetwork.com",
 		Slug:     "masqulin",
 		Patterns: []string{"masqulin.com", "thebronetwork.com/categories/masqulin_{N}_d.html"},
-		MatchRe:  regexp.MustCompile(`^https?://(?:www\.)?(?:masqulin\.com|thebronetwork\.com/categories/masqulin)`),
+		MatchRe:  regexp.MustCompile(`^https?://(?:www\.)?(?:masqulin\.com(?:/|$)|thebronetwork\.com/categories/masqulin)`),
 	},
 	{
 		ID:       "menofmontreal",
@@ -48,7 +48,7 @@ var sites = []bronetworkutil.SiteConfig{
 		SiteBase: "https://thebronetwork.com",
 		Slug:     "men-of-montreal",
 		Patterns: []string{"menofmontreal.com", "thebronetwork.com/categories/men-of-montreal_{N}_d.html"},
-		MatchRe:  regexp.MustCompile(`^https?://(?:www\.)?(?:menofmontreal\.com|thebronetwork\.com/categories/men-of-montreal)`),
+		MatchRe:  regexp.MustCompile(`^https?://(?:www\.)?(?:menofmontreal\.com(?:/|$)|thebronetwork\.com/categories/men-of-montreal)`),
 	},
 	{
 		ID:       "thebronetwork",
@@ -56,7 +56,7 @@ var sites = []bronetworkutil.SiteConfig{
 		SiteBase: "https://thebronetwork.com",
 		Slug:     "videos",
 		Patterns: []string{"thebronetwork.com", "thebronetwork.com/categories/videos_{N}_d.html"},
-		MatchRe:  regexp.MustCompile(`^https?://(?:www\.)?thebronetwork\.com`),
+		MatchRe:  regexp.MustCompile(`^https?://(?:www\.)?thebronetwork\.com(?:/|$)`),
 	},
 }
 

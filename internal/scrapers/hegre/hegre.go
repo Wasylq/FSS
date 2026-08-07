@@ -70,7 +70,7 @@ func (s *Scraper) Patterns() []string {
 }
 
 var (
-	matchRe = regexp.MustCompile(`^https?://(?:www\.)?hegre\.com`)
+	matchRe = regexp.MustCompile(`^https?://(?:www\.)?hegre\.com(?:/|$)`)
 	filmRe  = regexp.MustCompile(`/films/([a-zA-Z0-9_-]+)`)
 	modelRe = regexp.MustCompile(`/models/([a-zA-Z0-9_-]+)`)
 

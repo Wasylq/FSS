@@ -23,28 +23,28 @@ var sites = []SiteConfig{
 		BaseURL:  "https://www.goddessfootdomination.com",
 		SiteName: "Goddess Foot Domination",
 		Patterns: []string{"https://www.goddessfootdomination.com/"},
-		MatchRe:  regexp.MustCompile(`(?i)^https?://(?:www\.)?goddessfootdomination\.com\b`),
+		MatchRe:  regexp.MustCompile(`(?i)^https?://(?:www\.)?goddessfootdomination\.com(?:/|$)`),
 	},
 	{
 		ID:       "footfetishcardates",
 		BaseURL:  "https://www.footfetishcardates.com",
 		SiteName: "Foot Fetish Car Dates",
 		Patterns: []string{"https://www.footfetishcardates.com/"},
-		MatchRe:  regexp.MustCompile(`(?i)^https?://(?:www\.)?footfetishcardates\.com\b`),
+		MatchRe:  regexp.MustCompile(`(?i)^https?://(?:www\.)?footfetishcardates\.com(?:/|$)`),
 	},
 	{
 		ID:       "footfetishaffiliates",
 		BaseURL:  "https://www.footfetishaffiliates.com",
 		SiteName: "Foot Fetish Affiliates",
 		Patterns: []string{"https://www.footfetishaffiliates.com/", "https://footfetishaffiliates.com/"},
-		MatchRe:  regexp.MustCompile(`(?i)^https?://(?:www\.)?footfetishaffiliates\.com\b`),
+		MatchRe:  regexp.MustCompile(`(?i)^https?://(?:www\.)?footfetishaffiliates\.com(?:/|$)`),
 	},
 	{
 		ID:       "goddessbrianna",
 		BaseURL:  "https://www.goddessbrianna.net",
 		SiteName: "Goddess Brianna",
 		Patterns: []string{"https://www.goddessbrianna.net/"},
-		MatchRe:  regexp.MustCompile(`(?i)^https?://(?:www\.)?goddessbrianna\.net\b`),
+		MatchRe:  regexp.MustCompile(`(?i)^https?://(?:www\.)?goddessbrianna\.net(?:/|$)`),
 	},
 }
 

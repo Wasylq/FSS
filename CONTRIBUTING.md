@@ -32,6 +32,36 @@ func init() {
 
 This is called automatically at startup when the package is imported.
 
+### 2a. Host regexes
+
+`MatchesURL` decides which scraper claims a URL, and `scraper.ForURL` returns the
+**first** match. A regex that anchors the start but not the end of the host is a
+prefix match, so `^https?://(?:www\.)?example\.com` also claims
+`https://example.com.evil.invalid/`. Because most scrapers fetch the studio URL
+verbatim, that look-alike host's content would be scraped and stored under the
+legitimate studio's key.
+
+Terminate the host:
+
+```go
+regexp.MustCompile(`^https?://(?:www\.)?example\.com(?:/|$)`)
+```
+
+- `\b` is **not** a terminator — there is a word boundary between `com` and
+  `.evil`, so the look-alike still matches.
+- A regex that continues into a path (`example\.com/videos`) is already
+  terminated by the `/`; adding another is wrong.
+- In an alternation, each branch that ends at a host needs its own terminator:
+  `(?:a\.com(?:/|$)|b\.com/tour/…)`.
+- Don't match with `strings.Contains(u, "://"+domain)` — it accepts any host
+  that merely contains the domain, and any URL with the domain in its query
+  string. Use `scraper.HostMatches(u, domain)`, which compares parsed hosts and
+  ignores a leading `www.` on either side.
+
+`TestRegistryMatchesURLTerminatesTheHost` builds a look-alike from every
+registered scraper's own advertised host and fails if it matches, so a new
+scraper cannot reintroduce this.
+
 ### 3. Add blank import in main.go
 
 ```go

@@ -45,7 +45,7 @@ func (s *Scraper) Patterns() []string {
 	return []string{"lifeselector.com", "lifeselector.com/games", "21roles.com"}
 }
 
-var matchRe = regexp.MustCompile(`^https?://(?:www\.)?(?:lifeselector\.com|21roles\.com)`)
+var matchRe = regexp.MustCompile(`^https?://(?:www\.)?(?:lifeselector\.com|21roles\.com)(?:/|$)`)
 
 func (s *Scraper) MatchesURL(u string) bool { return matchRe.MatchString(u) }
 

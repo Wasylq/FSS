@@ -3,7 +3,7 @@ package digitaljmediautil
 import "regexp"
 
 func matchRe(host string) *regexp.Regexp {
-	return regexp.MustCompile(`^https?://(?:www\.)?` + regexp.QuoteMeta(host))
+	return regexp.MustCompile(`^https?://(?:www\.)?` + regexp.QuoteMeta(host) + `(?:/|$)`)
 }
 
 // Configs returns the SiteConfig for every Digital J Media / JapanHDV network

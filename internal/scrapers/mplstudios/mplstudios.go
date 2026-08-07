@@ -64,7 +64,7 @@ func (s *Scraper) Patterns() []string {
 }
 
 var (
-	matchRe     = regexp.MustCompile(`^https?://(?:www\.)?mplstudios\.com`)
+	matchRe     = regexp.MustCompile(`^https?://(?:www\.)?mplstudios\.com(?:/|$)`)
 	portfolioRe = regexp.MustCompile(`/portfolio/(\d+)-([^/]+)`)
 )
 

@@ -22,7 +22,7 @@ var sites = []SiteConfig{
 		SiteName:  "ChickPass",
 		CMSAreaID: "2fac6e56-1fe9-4486-8519-c97affafaea7",
 		Patterns:  []string{"chickpass.com/", "chickpassnetwork.com/"},
-		MatchRe:   regexp.MustCompile(`^https?://(?:www\.)?(?:chickpass|chickpassnetwork)\.com\b`),
+		MatchRe:   regexp.MustCompile(`^https?://(?:www\.)?(?:chickpass|chickpassnetwork)\.com(?:/|$)`),
 	},
 	{
 		ID:        "bouncychicks",
@@ -30,7 +30,7 @@ var sites = []SiteConfig{
 		SiteName:  "Bouncy Chicks",
 		CMSAreaID: "6a364df3-82f4-4fa2-be66-88d0d37d3748",
 		Patterns:  []string{"bouncychicks.com/"},
-		MatchRe:   regexp.MustCompile(`^https?://(?:www\.)?bouncychicks\.com\b`),
+		MatchRe:   regexp.MustCompile(`^https?://(?:www\.)?bouncychicks\.com(?:/|$)`),
 	},
 	{
 		ID:        "fuckthegeek",
@@ -38,7 +38,7 @@ var sites = []SiteConfig{
 		SiteName:  "Fuck The Geek",
 		CMSAreaID: "d9533f7e-0a4c-43e7-8f24-892ab52cbb8a",
 		Patterns:  []string{"fuckthegeek.com/"},
-		MatchRe:   regexp.MustCompile(`^https?://(?:www\.)?fuckthegeek\.com\b`),
+		MatchRe:   regexp.MustCompile(`^https?://(?:www\.)?fuckthegeek\.com(?:/|$)`),
 	},
 	{
 		ID:        "minimuff",
@@ -46,7 +46,7 @@ var sites = []SiteConfig{
 		SiteName:  "Minimuffs",
 		CMSAreaID: "99dc9646-54ed-47ea-8a0c-21faced5e12f",
 		Patterns:  []string{"minimuff.com/"},
-		MatchRe:   regexp.MustCompile(`^https?://(?:www\.)?minimuff\.com\b`),
+		MatchRe:   regexp.MustCompile(`^https?://(?:www\.)?minimuff\.com(?:/|$)`),
 	},
 	{
 		ID:        "chickpassteens",
@@ -54,7 +54,7 @@ var sites = []SiteConfig{
 		SiteName:  "ChickPass Teens",
 		CMSAreaID: "9c2cab9b-ef15-4d8d-ae0f-dfc814a27625",
 		Patterns:  []string{"chickpassteens.com/"},
-		MatchRe:   regexp.MustCompile(`^https?://(?:www\.)?chickpassteens\.com\b`),
+		MatchRe:   regexp.MustCompile(`^https?://(?:www\.)?chickpassteens\.com(?:/|$)`),
 	},
 	{
 		ID:        "chickpasslesbians",
@@ -62,7 +62,7 @@ var sites = []SiteConfig{
 		SiteName:  "ChickPass Lesbians",
 		CMSAreaID: "6320bff5-cb14-473b-8a3a-fa774bc33d46",
 		Patterns:  []string{"chickpasslesbians.com/"},
-		MatchRe:   regexp.MustCompile(`^https?://(?:www\.)?chickpasslesbians\.com\b`),
+		MatchRe:   regexp.MustCompile(`^https?://(?:www\.)?chickpasslesbians\.com(?:/|$)`),
 	},
 	{
 		ID:        "chickpassmilfs",
@@ -70,7 +70,7 @@ var sites = []SiteConfig{
 		SiteName:  "ChickPass MILFs",
 		CMSAreaID: "09fdf9e8-5934-465d-86ca-763ac6d2fb3d",
 		Patterns:  []string{"chickpassmilfs.com/"},
-		MatchRe:   regexp.MustCompile(`^https?://(?:www\.)?chickpassmilfs\.com\b`),
+		MatchRe:   regexp.MustCompile(`^https?://(?:www\.)?chickpassmilfs\.com(?:/|$)`),
 	},
 	{
 		ID:        "xxxnj",
@@ -78,7 +78,7 @@ var sites = []SiteConfig{
 		SiteName:  "XXXNJ",
 		CMSAreaID: "807b26ac-0d47-4be8-bbea-f7e6efab14a0",
 		Patterns:  []string{"xxxnj.com/"},
-		MatchRe:   regexp.MustCompile(`^https?://(?:www\.)?xxxnj\.com\b`),
+		MatchRe:   regexp.MustCompile(`^https?://(?:www\.)?xxxnj\.com(?:/|$)`),
 	},
 	{
 		ID:        "fuckingparties",
@@ -86,7 +86,7 @@ var sites = []SiteConfig{
 		SiteName:  "Fucking Parties",
 		CMSAreaID: "df90e5c7-1cf2-435a-9200-0ac5d85c6456",
 		Patterns:  []string{"fuckingparties.com/"},
-		MatchRe:   regexp.MustCompile(`^https?://(?:www\.)?fuckingparties\.com\b`),
+		MatchRe:   regexp.MustCompile(`^https?://(?:www\.)?fuckingparties\.com(?:/|$)`),
 	},
 	{
 		ID:        "stuffintwats",
@@ -94,7 +94,7 @@ var sites = []SiteConfig{
 		SiteName:  "Stuffin' Twats",
 		CMSAreaID: "43a1dbd2-b2ec-466a-8ff7-a97dc974fee8",
 		Patterns:  []string{"stuffintwats.com/"},
-		MatchRe:   regexp.MustCompile(`^https?://(?:www\.)?stuffintwats\.com\b`),
+		MatchRe:   regexp.MustCompile(`^https?://(?:www\.)?stuffintwats\.com(?:/|$)`),
 	},
 }
 

@@ -44,7 +44,7 @@ func (s *Scraper) Patterns() []string {
 	return []string{"femjoy.com", "femjoy.com/videos", "femjoy.com/gallery/{id}"}
 }
 
-var matchRe = regexp.MustCompile(`^https?://(?:www\.)?femjoy\.com`)
+var matchRe = regexp.MustCompile(`^https?://(?:www\.)?femjoy\.com(?:/|$)`)
 
 func (s *Scraper) MatchesURL(u string) bool { return matchRe.MatchString(u) }
 

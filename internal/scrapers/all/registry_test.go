@@ -140,6 +140,45 @@ func TestRegistryMatchesURLIsNotOverBroad(t *testing.T) {
 	}
 }
 
+// advertisedHosts pulls the host out of each display pattern, skipping the ones
+// that carry a placeholder token instead of a literal host.
+func advertisedHosts(pats []string) []string {
+	seen := map[string]bool{}
+	var out []string
+	for _, p := range pats {
+		h := schemeRe.ReplaceAllString(strings.TrimSpace(p), "")
+		if i := strings.IndexByte(h, '/'); i >= 0 {
+			h = h[:i]
+		}
+		if h == "" || strings.ContainsAny(h, "{} \t") || seen[h] {
+			continue
+		}
+		seen[h] = true
+		out = append(out, h)
+	}
+	return out
+}
+
+// A host regex anchored at the start but not terminated is a prefix match, so
+// "https://example.com.evil.invalid/" claims the scraper for example.com. The
+// look-alike is built from each scraper's own host, which is why the stranger
+// list above cannot find this. See CONTRIBUTING.md § "Host regexes".
+func TestRegistryMatchesURLTerminatesTheHost(t *testing.T) {
+	for _, s := range scraper.All() {
+		for _, host := range advertisedHosts(s.Patterns()) {
+			for _, u := range []string{
+				"https://" + host + ".evil.invalid/",
+				"https://" + host + ".evil.invalid/videos",
+			} {
+				if s.MatchesURL(u) {
+					t.Errorf("%s: MatchesURL(%q) is true — the host regex is not terminated; "+
+						"append (?:/|$) so %q cannot be extended", s.ID(), u, host)
+				}
+			}
+		}
+	}
+}
+
 // The converse: a scraper must accept the URLs it advertises. A pattern listed in
 // `fss list-scrapers` that MatchesURL rejects sends the user to "no scraper
 // found for URL" for a site the tool does support.

@@ -45,7 +45,7 @@ func (s *Scraper) Patterns() []string {
 }
 
 func (s *Scraper) MatchesURL(u string) bool {
-	return strings.Contains(u, "youthlust.club")
+	return scraper.HostMatches(u, "youthlust.club")
 }
 
 func (s *Scraper) ListScenes(ctx context.Context, _ string, opts scraper.ListOpts) (<-chan scraper.SceneResult, error) {

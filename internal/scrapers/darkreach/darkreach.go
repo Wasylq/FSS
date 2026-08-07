@@ -30,14 +30,14 @@ var modernSites = []darkreachmodernutil.SiteConfig{
 		SiteBase: "https://www.mybestsexlife.com",
 		Studio:   "My Best Sex Life",
 		Patterns: []string{"mybestsexlife.com", "mybestsexlife.com/categories/movies_{N}_d.html"},
-		MatchRe:  regexp.MustCompile(`^https?://(?:www\.)?mybestsexlife\.com`),
+		MatchRe:  regexp.MustCompile(`^https?://(?:www\.)?mybestsexlife\.com(?:/|$)`),
 	},
 	{
 		ID:       "givingahandjob",
 		SiteBase: "https://givingahandjob.com",
 		Studio:   "Giving A Handjob",
 		Patterns: []string{"givingahandjob.com", "givingahandjob.com/categories/movies_{N}_d.html"},
-		MatchRe:  regexp.MustCompile(`^https?://(?:www\.)?givingahandjob\.com`),
+		MatchRe:  regexp.MustCompile(`^https?://(?:www\.)?givingahandjob\.com(?:/|$)`),
 	},
 	{
 		ID:         "erotiquetvlive",
@@ -45,7 +45,7 @@ var modernSites = []darkreachmodernutil.SiteConfig{
 		Studio:     "ErotiqueTVLive",
 		TourPrefix: "/tour",
 		Patterns:   []string{"erotiquetvlive.com", "erotiquetvlive.com/tour/categories/movies_{N}_d.html"},
-		MatchRe:    regexp.MustCompile(`^https?://(?:www\.)?erotiquetvlive\.com`),
+		MatchRe:    regexp.MustCompile(`^https?://(?:www\.)?erotiquetvlive\.com(?:/|$)`),
 	},
 	{
 		// GirlsKissXXX is the rebranded iKissGirls — the latter's homepage now
@@ -54,7 +54,7 @@ var modernSites = []darkreachmodernutil.SiteConfig{
 		SiteBase: "https://girlskissxxx.com",
 		Studio:   "iKissGirls",
 		Patterns: []string{"girlskissxxx.com", "ikissgirls.com", "girlskissxxx.com/categories/movies_{N}_d.html"},
-		MatchRe:  regexp.MustCompile(`^https?://(?:www\.)?(?:girlskissxxx|ikissgirls)\.com`),
+		MatchRe:  regexp.MustCompile(`^https?://(?:www\.)?(?:girlskissxxx|ikissgirls)\.com(?:/|$)`),
 	},
 }
 
@@ -65,7 +65,7 @@ var updateItemSites = []darkreachupdateitemutil.SiteConfig{
 		SiteBase: "https://spartavideo.com",
 		Studio:   "Sparta Video",
 		Patterns: []string{"spartavideo.com", "spartavideo.com/categories/updates_{N}_d.html"},
-		MatchRe:  regexp.MustCompile(`^https?://(?:www\.)?spartavideo\.com`),
+		MatchRe:  regexp.MustCompile(`^https?://(?:www\.)?spartavideo\.com(?:/|$)`),
 	},
 	{
 		// www.hammerboys.tv returns an 8-byte stub — use the bare domain.
@@ -73,28 +73,28 @@ var updateItemSites = []darkreachupdateitemutil.SiteConfig{
 		SiteBase: "https://hammerboys.tv",
 		Studio:   "HammerBoys.tv",
 		Patterns: []string{"hammerboys.tv", "hammerboys.tv/categories/updates_{N}_d.html"},
-		MatchRe:  regexp.MustCompile(`^https?://(?:www\.)?hammerboys\.tv`),
+		MatchRe:  regexp.MustCompile(`^https?://(?:www\.)?hammerboys\.tv(?:/|$)`),
 	},
 	{
 		ID:       "evolvedfightslez",
 		SiteBase: "https://evolvedfightslez.com",
 		Studio:   "Evolved Fights Lez",
 		Patterns: []string{"evolvedfightslez.com", "evolvedfightslez.com/categories/updates_{N}_d.html"},
-		MatchRe:  regexp.MustCompile(`^https?://(?:www\.)?evolvedfightslez\.com`),
+		MatchRe:  regexp.MustCompile(`^https?://(?:www\.)?evolvedfightslez\.com(?:/|$)`),
 	},
 	{
 		ID:       "watchyoujerk",
 		SiteBase: "http://watchyoujerk.com",
 		Studio:   "Watch You Jerk",
 		Patterns: []string{"watchyoujerk.com", "watchyoujerk.com/categories/updates_{N}_d.html"},
-		MatchRe:  regexp.MustCompile(`^https?://(?:www\.)?watchyoujerk\.com`),
+		MatchRe:  regexp.MustCompile(`^https?://(?:www\.)?watchyoujerk\.com(?:/|$)`),
 	},
 	{
 		ID:       "angelasommers",
 		SiteBase: "https://www.angelasommers.com",
 		Studio:   "Angela Sommers",
 		Patterns: []string{"angelasommers.com", "angelasommers.com/categories/updates_{N}_d.html"},
-		MatchRe:  regexp.MustCompile(`^https?://(?:www\.)?angelasommers\.com`),
+		MatchRe:  regexp.MustCompile(`^https?://(?:www\.)?angelasommers\.com(?:/|$)`),
 	},
 	{
 		ID:         "hungarianhoneys",
@@ -102,7 +102,7 @@ var updateItemSites = []darkreachupdateitemutil.SiteConfig{
 		Studio:     "Hungarian Honeys",
 		TourPrefix: "/tour",
 		Patterns:   []string{"hungarianhoneys.com", "hungarianhoneys.com/tour/categories/updates_{N}_d.html"},
-		MatchRe:    regexp.MustCompile(`^https?://(?:www\.)?hungarianhoneys\.com`),
+		MatchRe:    regexp.MustCompile(`^https?://(?:www\.)?hungarianhoneys\.com(?:/|$)`),
 	},
 	{
 		ID:                "terrorxxx",
@@ -111,7 +111,7 @@ var updateItemSites = []darkreachupdateitemutil.SiteConfig{
 		DetailPathSegment: "/trailers",
 		ListingBase:       "/categories/Movies",
 		Patterns:          []string{"terrorxxx.com", "terrorxxx.com/categories/Movies_{N}_d.html"},
-		MatchRe:           regexp.MustCompile(`^https?://(?:www\.)?terrorxxx\.com`),
+		MatchRe:           regexp.MustCompile(`^https?://(?:www\.)?terrorxxx\.com(?:/|$)`),
 	},
 }
 
@@ -123,28 +123,28 @@ var updatesMarketingSites = []darkreachupdatesutil.SiteConfig{
 		SiteBase: "https://clubkayden.com",
 		Studio:   "Club Kayden",
 		Patterns: []string{"clubkayden.com", "clubkayden.com/updates/page_{N}.html"},
-		MatchRe:  regexp.MustCompile(`^https?://(?:www\.)?clubkayden\.com`),
+		MatchRe:  regexp.MustCompile(`^https?://(?:www\.)?clubkayden\.com(?:/|$)`),
 	},
 	{
 		ID:       "thelisaann",
 		SiteBase: "https://www.thelisaann.com",
 		Studio:   "Lisa Ann",
 		Patterns: []string{"thelisaann.com", "thelisaann.com/updates/page_{N}.html"},
-		MatchRe:  regexp.MustCompile(`^https?://(?:www\.)?thelisaann\.com`),
+		MatchRe:  regexp.MustCompile(`^https?://(?:www\.)?thelisaann\.com(?:/|$)`),
 	},
 	{
 		ID:       "theavaaddams",
 		SiteBase: "https://www.theavaaddams.com",
 		Studio:   "Ava Addams",
 		Patterns: []string{"theavaaddams.com", "theavaaddams.com/updates/page_{N}.html"},
-		MatchRe:  regexp.MustCompile(`^https?://(?:www\.)?theavaaddams\.com`),
+		MatchRe:  regexp.MustCompile(`^https?://(?:www\.)?theavaaddams\.com(?:/|$)`),
 	},
 	{
 		ID:       "kortneykane",
 		SiteBase: "http://kortneykane.com",
 		Studio:   "Kortney Kane",
 		Patterns: []string{"kortneykane.com", "kortneykane.com/updates/page_{N}.html"},
-		MatchRe:  regexp.MustCompile(`^https?://(?:www\.)?kortneykane\.com`),
+		MatchRe:  regexp.MustCompile(`^https?://(?:www\.)?kortneykane\.com(?:/|$)`),
 	},
 }
 
@@ -157,7 +157,7 @@ var classicSites = []adultdoorwayclassicutil.SiteConfig{
 		// TourPrefix="" — babearchives serves listings at the bare path,
 		// unlike blackpayback which uses /tour/.
 		Patterns: []string{"babearchives.com", "babearchives.com/categories/movies/{N}/latest/"},
-		MatchRe:  regexp.MustCompile(`^https?://(?:www\.)?babearchives\.com`),
+		MatchRe:  regexp.MustCompile(`^https?://(?:www\.)?babearchives\.com(?:/|$)`),
 	},
 }
 

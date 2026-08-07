@@ -28,7 +28,7 @@ const (
 // baseURL is a var so tests can point it at an httptest server.
 var baseURL = "https://wifeysworld.com"
 
-var matchRe = regexp.MustCompile(`^https?://(?:www\.)?wifeysworld\.com`)
+var matchRe = regexp.MustCompile(`^https?://(?:www\.)?wifeysworld\.com(?:/|$)`)
 
 type Scraper struct {
 	Client *http.Client

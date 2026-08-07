@@ -21,7 +21,7 @@ func site(id, studio, host, listingPath, scenePrefix string) puffyutil.SiteConfi
 			host + "/" + listingPath + "/",
 			host + "/" + listingPath + "/page-{N}/",
 		},
-		MatchRe: regexp.MustCompile(`^https?://(?:www\.)?` + regexp.QuoteMeta(host)),
+		MatchRe: regexp.MustCompile(`^https?://(?:www\.)?` + regexp.QuoteMeta(host) + `(?:/|$)`),
 	}
 }
 

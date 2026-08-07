@@ -23,7 +23,7 @@ type portalScraper struct {
 
 var _ scraper.StudioScraper = (*portalScraper)(nil)
 
-var portalMatchRe = regexp.MustCompile(`^https?://(?:www\.)?glamose\.com\b`)
+var portalMatchRe = regexp.MustCompile(`^https?://(?:www\.)?glamose\.com(?:/|$)`)
 
 func (s *portalScraper) ID() string               { return "glamose" }
 func (s *portalScraper) Patterns() []string       { return []string{"glamose.com/"} }

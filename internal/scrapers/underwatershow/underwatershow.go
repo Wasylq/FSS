@@ -32,7 +32,7 @@ func newScraper(s site) *underwatershowutil.Scraper {
 		SiteBase: "https://" + s.domain,
 		LoadPath: s.loadPath,
 		Patterns: []string{s.domain},
-		MatchRe:  regexp.MustCompile(fmt.Sprintf(`^https?://(?:www\.)?%s`, escaped)),
+		MatchRe:  regexp.MustCompile(fmt.Sprintf(`^https?://(?:www\.)?%s(?:/|$)`, escaped)),
 	})
 }
 

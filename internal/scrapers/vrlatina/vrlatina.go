@@ -71,7 +71,7 @@ func (s *Scraper) Patterns() []string {
 }
 
 var (
-	matchRe = regexp.MustCompile(`^https?://(?:www\.)?vrlatina\.com`)
+	matchRe = regexp.MustCompile(`^https?://(?:www\.)?vrlatina\.com(?:/|$)`)
 	// singlePageRe matches the modes that render all results at once.
 	singlePageRe = regexp.MustCompile(`/(?:models|pornstars)/[a-z0-9-]+-\d+\.html|/search/[^/]+/?`)
 )

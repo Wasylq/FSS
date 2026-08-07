@@ -33,25 +33,25 @@ var sites = []siteConfig{
 		id:      "mydeepdarksecret",
 		domain:  "mydeepdarksecret.com",
 		studio:  "My Deep Dark Secret",
-		matchRe: regexp.MustCompile(`^https?://(?:www\.)?mydeepdarksecret\.com`),
+		matchRe: regexp.MustCompile(`^https?://(?:www\.)?mydeepdarksecret\.com(?:/|$)`),
 	},
 	{
 		id:      "richardmannsworld",
 		domain:  "richardmannsworld.com",
 		studio:  "Richard Mann's World",
-		matchRe: regexp.MustCompile(`^https?://(?:www\.)?richardmannsworld\.com`),
+		matchRe: regexp.MustCompile(`^https?://(?:www\.)?richardmannsworld\.com(?:/|$)`),
 	},
 	{
 		id:      "bbctitans",
 		domain:  "bbctitans.com",
 		studio:  "BBC Titans",
-		matchRe: regexp.MustCompile(`^https?://(?:www\.)?bbctitans\.com`),
+		matchRe: regexp.MustCompile(`^https?://(?:www\.)?bbctitans\.com(?:/|$)`),
 	},
 	{
 		id:      "richardmannevents",
 		domain:  "richardmannevents.com",
 		studio:  "Richard Mann Events",
-		matchRe: regexp.MustCompile(`^https?://(?:www\.)?richardmannevents\.com`),
+		matchRe: regexp.MustCompile(`^https?://(?:www\.)?richardmannevents\.com(?:/|$)`),
 	},
 }
 

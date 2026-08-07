@@ -20,7 +20,7 @@ var sites = []cherrypimpsutil.SiteConfig{
 			"cherrypimps.com/dvds/dvds.html",
 			"cherrypimps.com/dvds/{slug}.html",
 		},
-		MatchRe: regexp.MustCompile(`^https?://(?:www\.)?cherrypimps\.com`),
+		MatchRe: regexp.MustCompile(`^https?://(?:www\.)?cherrypimps\.com(?:/|$)`),
 	},
 	{
 		ID:       "wildoncam",
@@ -34,7 +34,7 @@ var sites = []cherrypimpsutil.SiteConfig{
 			"wildoncam.com/dvds/dvds.html",
 			"wildoncam.com/dvds/{slug}.html",
 		},
-		MatchRe: regexp.MustCompile(`^https?://(?:www\.)?wildoncam\.com`),
+		MatchRe: regexp.MustCompile(`^https?://(?:www\.)?wildoncam\.com(?:/|$)`),
 	},
 }
 

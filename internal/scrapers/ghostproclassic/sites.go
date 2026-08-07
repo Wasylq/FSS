@@ -14,28 +14,28 @@ var sites = []SiteConfig{
 		SiteBase: "https://analjesse.com",
 		SiteName: "Anal Jesse",
 		Patterns: []string{"analjesse.com/", "analjesse.com/categories/updates_{N}_p.html"},
-		MatchRe:  regexp.MustCompile(`^https?://(?:www\.)?analjesse\.com`),
+		MatchRe:  regexp.MustCompile(`^https?://(?:www\.)?analjesse\.com(?:/|$)`),
 	},
 	{
 		ID:       "creampiethais",
 		SiteBase: "https://creampiethais.com",
 		SiteName: "Creampie Thais",
 		Patterns: []string{"creampiethais.com/", "creampiethais.com/categories/updates_{N}_p.html"},
-		MatchRe:  regexp.MustCompile(`^https?://(?:www\.)?creampiethais\.com`),
+		MatchRe:  regexp.MustCompile(`^https?://(?:www\.)?creampiethais\.com(?:/|$)`),
 	},
 	{
 		ID:       "mongerinasia",
 		SiteBase: "https://mongerinasia.com",
 		SiteName: "Monger in Asia",
 		Patterns: []string{"mongerinasia.com/", "mongerinasia.com/categories/updates_{N}_p.html"},
-		MatchRe:  regexp.MustCompile(`^https?://(?:www\.)?mongerinasia\.com`),
+		MatchRe:  regexp.MustCompile(`^https?://(?:www\.)?mongerinasia\.com(?:/|$)`),
 	},
 	{
 		ID:       "tailynn",
 		SiteBase: "https://tailynn.com",
 		SiteName: "Tailynn",
 		Patterns: []string{"tailynn.com/", "tailynn.com/categories/updates_{N}_p.html"},
-		MatchRe:  regexp.MustCompile(`^https?://(?:www\.)?tailynn\.com`),
+		MatchRe:  regexp.MustCompile(`^https?://(?:www\.)?tailynn\.com(?:/|$)`),
 	},
 }
 

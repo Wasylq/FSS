@@ -51,7 +51,7 @@ var matchRe = regexp.MustCompile(`^https?://(?:www\.)?nookies\.com(?:/|$)`)
 // newCMSRe matches the five Nookies brands that run the richer Laravel/Vite
 // CMS on their own standalone domain (schema.org VideoObject detail pages).
 // The captured group is the brand slug, which is also the SiteID.
-var newCMSRe = regexp.MustCompile(`(?i)^https?://(?:www\.)?(milfaf|gilfaf|breedme|shadyspa|over40handjobs)\.com\b`)
+var newCMSRe = regexp.MustCompile(`(?i)^https?://(?:www\.)?(milfaf|gilfaf|breedme|shadyspa|over40handjobs)\.com(?:/|$)`)
 
 // studioNames maps a new-CMS brand slug to its display name.
 var studioNames = map[string]string{

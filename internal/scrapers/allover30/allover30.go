@@ -36,7 +36,7 @@ func (s *Scraper) Patterns() []string {
 }
 
 var (
-	matchRe      = regexp.MustCompile(`^https?://(?:new\.)?allover30\.com`)
+	matchRe      = regexp.MustCompile(`^https?://(?:new\.)?allover30\.com(?:/|$)`)
 	modelPageRe  = regexp.MustCompile(`/model-pages/[^/]+/\d+`)
 	modelNameRe  = regexp.MustCompile(`(?s)<div class="modelInfo">.*?<h3>([^<]+)</h3>`)
 	movieBlockRe = regexp.MustCompile(`(?s)<div class="modelBox\s+vid">(.*?)</ul>`)

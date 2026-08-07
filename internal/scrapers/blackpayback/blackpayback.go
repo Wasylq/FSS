@@ -21,7 +21,7 @@ var sites = []adultdoorwayclassicutil.SiteConfig{
 			"blackpayback.com/tour/categories/movies/{page}/latest/",
 			"blackpayback.com/tour/categories/{slug}/{page}/latest/",
 		},
-		MatchRe: regexp.MustCompile(`^https?://(?:[a-z0-9-]+\.)?blackpayback\.com`),
+		MatchRe: regexp.MustCompile(`^https?://(?:[a-z0-9-]+\.)?blackpayback\.com(?:/|$)`),
 	},
 }
 

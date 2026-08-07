@@ -35,7 +35,7 @@ func init() {
 			Studio:   s.studio,
 			SiteBase: "https://www." + s.domain,
 			Patterns: []string{s.domain, s.domain + "/tag/{slug}"},
-			MatchRe:  regexp.MustCompile(fmt.Sprintf(`^https?://(?:www\.)?%s`, escaped)),
+			MatchRe:  regexp.MustCompile(fmt.Sprintf(`^https?://(?:www\.)?%s(?:/|$)`, escaped)),
 		}))
 	}
 }

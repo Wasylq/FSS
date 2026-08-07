@@ -39,7 +39,7 @@ func (s *Scraper) Patterns() []string {
 	return []string{"defloration.com", "defloration.com/freetour.php"}
 }
 
-var matchRe = regexp.MustCompile(`^https?://(?:www\.)?defloration\.com`)
+var matchRe = regexp.MustCompile(`^https?://(?:www\.)?defloration\.com(?:/|$)`)
 
 func (s *Scraper) MatchesURL(u string) bool { return matchRe.MatchString(u) }
 

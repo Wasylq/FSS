@@ -70,7 +70,7 @@ func (s *Scraper) Patterns() []string {
 	}
 }
 
-var matchRe = regexp.MustCompile(`^https?://(?:www\.|tour\.)?littlemutt\.com`)
+var matchRe = regexp.MustCompile(`^https?://(?:www\.|tour\.)?littlemutt\.com(?:/|$)`)
 
 func (s *Scraper) MatchesURL(u string) bool { return matchRe.MatchString(u) }
 

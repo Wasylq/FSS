@@ -57,7 +57,7 @@ var sites = []siteConfig{
 		studio:   "Net Video Girls",
 		base:     "https://netvideogirls.com",
 		front:    frontGatsby,
-		match:    regexp.MustCompile(`^https?://(?:www\.)?netvideogirls\.com`),
+		match:    regexp.MustCompile(`^https?://(?:www\.)?netvideogirls\.com(?:/|$)`),
 		patterns: []string{"netvideogirls.com"},
 	},
 	{
@@ -66,7 +66,7 @@ var sites = []siteConfig{
 		base:      "https://castingcouch-hd.com",
 		thumbBase: "https://dist.castingcouch-hd.com/web-images/",
 		front:     frontNext,
-		match:     regexp.MustCompile(`^https?://(?:www\.)?castingcouch-hd\.com`),
+		match:     regexp.MustCompile(`^https?://(?:www\.)?castingcouch-hd\.com(?:/|$)`),
 		patterns:  []string{"castingcouch-hd.com"},
 	},
 	{
@@ -75,7 +75,7 @@ var sites = []siteConfig{
 		base:      "https://netgirl.com",
 		thumbBase: "https://cdn3.netgirl.com/images/web/",
 		front:     frontNext,
-		match:     regexp.MustCompile(`^https?://(?:www\.)?netgirl\.com`),
+		match:     regexp.MustCompile(`^https?://(?:www\.)?netgirl\.com(?:/|$)`),
 		patterns:  []string{"netgirl.com"},
 	},
 }

@@ -23,7 +23,7 @@ const (
 var matchRe = regexp.MustCompile(
 	`^https?://(?:www\.)?(africanbucks|africancasting|africanfucktour|africanlesbians|` +
 		`africansextrip|africangf|analfucktour|blackfucktour|facefucktour|fuckmyjeans|` +
-		`latinacasting|latinafucktour|realafricans|ripherup|sexpacker)\.com`)
+		`latinacasting|latinafucktour|realafricans|ripherup|sexpacker)\.com(?:/|$)`)
 
 var thumbDateRe = regexp.MustCompile(`(\d{4}-\d{2}-\d{2})-`)
 

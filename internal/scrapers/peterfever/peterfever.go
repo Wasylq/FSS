@@ -65,7 +65,7 @@ func (s *Scraper) Patterns() []string {
 }
 
 var (
-	matchRe = regexp.MustCompile(`^https?://(?:www\.)?peterfever\.com`)
+	matchRe = regexp.MustCompile(`^https?://(?:www\.)?peterfever\.com(?:/|$)`)
 	// modelRe matches a model-profile URL, capturing the model slug. The
 	// all-models index (/models/models.html) is excluded by the caller.
 	modelRe = regexp.MustCompile(`/models/([A-Za-z0-9._-]+)\.html`)

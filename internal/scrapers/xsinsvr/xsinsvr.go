@@ -70,7 +70,7 @@ func (s *Scraper) Patterns() []string {
 }
 
 var (
-	matchRe = regexp.MustCompile(`^https?://(?:www\.)?xsinsvr\.com`)
+	matchRe = regexp.MustCompile(`^https?://(?:www\.)?xsinsvr\.com(?:/|$)`)
 	// Model, studio and tag pages list their own results and have no /{N}
 	// pagination of the /videos kind.
 	singlePageRe = regexp.MustCompile(`/(?:model|studio)/[^/]+/?$|/tag/scene/[^/]+/?$`)

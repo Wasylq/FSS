@@ -55,10 +55,7 @@ func (s *Scraper) Patterns() []string {
 }
 
 func (s *Scraper) MatchesURL(u string) bool {
-	lower := strings.ToLower(u)
-	domain := strings.ToLower(s.cfg.Domain)
-	domain = strings.TrimPrefix(domain, "www.")
-	return strings.Contains(lower, "://"+domain) || strings.Contains(lower, "://www."+domain)
+	return scraper.HostMatches(u, s.cfg.Domain)
 }
 
 func (s *Scraper) ListScenes(ctx context.Context, _ string, opts scraper.ListOpts) (<-chan scraper.SceneResult, error) {

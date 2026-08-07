@@ -56,7 +56,7 @@ func (s *Scraper) Patterns() []string {
 	}
 }
 
-var matchRe = regexp.MustCompile(`(?i)^https?://(?:www\.)?jacquieetmicheltv\.net\b`)
+var matchRe = regexp.MustCompile(`(?i)^https?://(?:www\.)?jacquieetmicheltv\.net(?:/|$)`)
 
 func (s *Scraper) MatchesURL(u string) bool { return matchRe.MatchString(u) }
 

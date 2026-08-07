@@ -43,7 +43,7 @@ func (s *Scraper) Patterns() []string {
 }
 
 var (
-	matchRe = regexp.MustCompile(`^https?://(?:www\.)?ad4x\.com`)
+	matchRe = regexp.MustCompile(`^https?://(?:www\.)?ad4x\.com(?:/|$)`)
 	modelRe = regexp.MustCompile(`/(?:en|fr)/models/([\w-]+)`)
 	nextRe  = regexp.MustCompile(`(?s)<script\s+id="__NEXT_DATA__"\s+type="application/json">(.*?)</script>`)
 )

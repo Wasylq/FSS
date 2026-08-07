@@ -49,7 +49,7 @@ func (s *Scraper) MatchesURL(u string) bool {
 	return matchRe.MatchString(u)
 }
 
-var matchRe = regexp.MustCompile(`(?i)^https?://(?:www\.)?fuckermate\.com`)
+var matchRe = regexp.MustCompile(`(?i)^https?://(?:www\.)?fuckermate\.com(?:/|$)`)
 
 func (s *Scraper) ListScenes(ctx context.Context, _ string, opts scraper.ListOpts) (<-chan scraper.SceneResult, error) {
 	out := make(chan scraper.SceneResult)

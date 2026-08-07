@@ -16,7 +16,7 @@ var sites = []hussieutil.SiteConfig{
 		Studio:   "Hussie Pass",
 		SiteBase: "https://hussiepass.com",
 		Patterns: []string{"hussiepass.com", "hussiepass.com/categories/movies/{N}/latest/"},
-		MatchRe:  regexp.MustCompile(`^https?://(?:www\.)?hussiepass\.com`),
+		MatchRe:  regexp.MustCompile(`^https?://(?:www\.)?hussiepass\.com(?:/|$)`),
 	},
 	{
 		ID:         "povpornstars",
@@ -24,21 +24,21 @@ var sites = []hussieutil.SiteConfig{
 		SiteBase:   "https://www.povpornstars.com",
 		TourPrefix: "/tour",
 		Patterns:   []string{"povpornstars.com", "povpornstars.com/tour/categories/movies/{N}/latest/"},
-		MatchRe:    regexp.MustCompile(`^https?://(?:www\.)?povpornstars\.com`),
+		MatchRe:    regexp.MustCompile(`^https?://(?:www\.)?povpornstars\.com(?:/|$)`),
 	},
 	{
 		ID:       "interracialpovs",
 		Studio:   "Interracial POVs",
 		SiteBase: "https://interracialpovs.com",
 		Patterns: []string{"interracialpovs.com", "interracialpovs.com/categories/movies/{N}/latest/"},
-		MatchRe:  regexp.MustCompile(`^https?://(?:www\.)?interracialpovs\.com`),
+		MatchRe:  regexp.MustCompile(`^https?://(?:www\.)?interracialpovs\.com(?:/|$)`),
 	},
 	{
 		ID:       "hotandtatted",
 		Studio:   "Hot and Tatted",
 		SiteBase: "https://hotandtatted.com",
 		Patterns: []string{"hotandtatted.com", "hotandtatted.com/categories/movies/{N}/latest/"},
-		MatchRe:  regexp.MustCompile(`^https?://(?:www\.)?hotandtatted\.com`),
+		MatchRe:  regexp.MustCompile(`^https?://(?:www\.)?hotandtatted\.com(?:/|$)`),
 	},
 }
 

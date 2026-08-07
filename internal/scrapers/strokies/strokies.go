@@ -15,21 +15,21 @@ var sites = []strokiesutil.SiteConfig{
 		Studio:   "Strokies",
 		SiteBase: "https://strokies.com",
 		Patterns: []string{"strokies.com", "strokies.com/page{N}/"},
-		MatchRe:  regexp.MustCompile(`^https?://(?:www\.)?strokies\.com`),
+		MatchRe:  regexp.MustCompile(`^https?://(?:www\.)?strokies\.com(?:/|$)`),
 	},
 	{
 		ID:       "tugcasting",
 		Studio:   "TugCasting",
 		SiteBase: "https://tugcasting.com",
 		Patterns: []string{"tugcasting.com", "tugcasting.com/page{N}/"},
-		MatchRe:  regexp.MustCompile(`^https?://(?:www\.)?tugcasting\.com`),
+		MatchRe:  regexp.MustCompile(`^https?://(?:www\.)?tugcasting\.com(?:/|$)`),
 	},
 	{
 		ID:       "publichandjobs",
 		Studio:   "Public Handjobs",
 		SiteBase: "https://publichandjobs.com",
 		Patterns: []string{"publichandjobs.com", "publichandjobs.com/page{N}/"},
-		MatchRe:  regexp.MustCompile(`^https?://(?:www\.)?publichandjobs\.com`),
+		MatchRe:  regexp.MustCompile(`^https?://(?:www\.)?publichandjobs\.com(?:/|$)`),
 	},
 }
 

@@ -52,13 +52,7 @@ func (s *Scraper) Patterns() []string {
 }
 
 func (s *Scraper) MatchesURL(u string) bool {
-	domains := append([]string{s.cfg.Domain}, s.cfg.AltDomains...)
-	for _, d := range domains {
-		if strings.Contains(u, "://"+d) || strings.Contains(u, "://www."+d) {
-			return true
-		}
-	}
-	return false
+	return scraper.HostMatches(u, append([]string{s.cfg.Domain}, s.cfg.AltDomains...)...)
 }
 
 func (s *Scraper) ListScenes(ctx context.Context, studioURL string, opts scraper.ListOpts) (<-chan scraper.SceneResult, error) {

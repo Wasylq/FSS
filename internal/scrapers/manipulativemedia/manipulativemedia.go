@@ -62,7 +62,7 @@ func NewMyPervyFamily() *Scraper {
 		id:      "mypervyfamily",
 		name:    "My Pervy Family",
 		base:    "https://www.mypervyfamily.com",
-		matchRe: regexp.MustCompile(`^https?://(?:www\.)?mypervyfamily\.com`),
+		matchRe: regexp.MustCompile(`^https?://(?:www\.)?mypervyfamily\.com(?:/|$)`),
 	})
 }
 
@@ -72,7 +72,7 @@ func NewTouchMyWife() *Scraper {
 		id:      "touchmywife",
 		name:    "Touch My Wife",
 		base:    "https://www.touchmywife.com",
-		matchRe: regexp.MustCompile(`^https?://(?:www\.)?touchmywife\.com`),
+		matchRe: regexp.MustCompile(`^https?://(?:www\.)?touchmywife\.com(?:/|$)`),
 	})
 }
 

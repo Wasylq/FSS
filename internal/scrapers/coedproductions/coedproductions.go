@@ -15,21 +15,21 @@ var sites = []coedutil.SiteConfig{
 		Studio:   "Nebraska Coeds",
 		SiteBase: "https://tour.nebraskacoeds.com",
 		Patterns: []string{"nebraskacoeds.com", "tour.nebraskacoeds.com/categories/updates_{N}_d.html"},
-		MatchRe:  regexp.MustCompile(`^https?://(?:www\.|tour\.)?nebraskacoeds\.com`),
+		MatchRe:  regexp.MustCompile(`^https?://(?:www\.|tour\.)?nebraskacoeds\.com(?:/|$)`),
 	},
 	{
 		ID:       "misspussycat",
 		Studio:   "Miss Pussycat",
 		SiteBase: "https://misspussycat.com",
 		Patterns: []string{"misspussycat.com", "misspussycat.com/categories/updates_{N}_d.html"},
-		MatchRe:  regexp.MustCompile(`^https?://(?:www\.)?misspussycat\.com`),
+		MatchRe:  regexp.MustCompile(`^https?://(?:www\.)?misspussycat\.com(?:/|$)`),
 	},
 	{
 		ID:       "afterhoursexposed",
 		Studio:   "After Hours Exposed",
 		SiteBase: "https://afterhoursexposed.com",
 		Patterns: []string{"afterhoursexposed.com", "afterhoursexposed.com/categories/updates_{N}_d.html"},
-		MatchRe:  regexp.MustCompile(`^https?://(?:www\.)?afterhoursexposed\.com`),
+		MatchRe:  regexp.MustCompile(`^https?://(?:www\.)?afterhoursexposed\.com(?:/|$)`),
 	},
 }
 

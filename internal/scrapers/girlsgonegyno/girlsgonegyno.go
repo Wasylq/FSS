@@ -52,13 +52,13 @@ var sites = []SiteConfig{
 		ID:       "girlsgonegyno",
 		SiteBase: "https://www.girlsgonegyno.com",
 		Studio:   "GirlsGoneGyno",
-		MatchRe:  regexp.MustCompile(`^https?://(?:www\.)?girlsgonegyno\.com`),
+		MatchRe:  regexp.MustCompile(`^https?://(?:www\.)?girlsgonegyno\.com(?:/|$)`),
 	},
 	{
 		ID:       "captiveclinic",
 		SiteBase: "https://www.captiveclinic.com",
 		Studio:   "CaptiveClinic",
-		MatchRe:  regexp.MustCompile(`^https?://(?:www\.)?captiveclinic\.com`),
+		MatchRe:  regexp.MustCompile(`^https?://(?:www\.)?captiveclinic\.com(?:/|$)`),
 	},
 }
 

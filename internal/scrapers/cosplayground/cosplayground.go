@@ -24,7 +24,7 @@ func New() *natscmsutil.Scraper {
 		NatsAPIBase: "https://api.cosplayground.com/tour_api.php",
 		CMSAreaID:   "2bc2444e-a053-40a2-bc4b-ca3618521563",
 		Patterns:    []string{"https://cosplayground.com/"},
-		MatchRe:     regexp.MustCompile(`^https?://(?:www\.)?cosplayground\.com\b`),
+		MatchRe:     regexp.MustCompile(`^https?://(?:www\.)?cosplayground\.com(?:/|$)`),
 	})
 }
 

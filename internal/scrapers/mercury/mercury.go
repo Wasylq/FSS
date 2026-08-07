@@ -38,7 +38,7 @@ func New() *Scraper {
 
 func init() { scraper.Register(New()) }
 
-var matchRe = regexp.MustCompile(`^https?://(?:www\.)?(?:mercury\.diary\.to|mercury-2005\.com)\b`)
+var matchRe = regexp.MustCompile(`^https?://(?:www\.)?(?:mercury\.diary\.to|mercury-2005\.com)(?:/|$)`)
 
 func (s *Scraper) ID() string { return "mercury" }
 func (s *Scraper) Patterns() []string {

@@ -48,7 +48,7 @@ func (s *Scraper) Patterns() []string {
 	return []string{"wearehairy.com", "wearehairy.com/categories/Photos"}
 }
 
-var matchRe = regexp.MustCompile(`^https?://(?:www\.)?wearehairy\.com`)
+var matchRe = regexp.MustCompile(`^https?://(?:www\.)?wearehairy\.com(?:/|$)`)
 
 func (s *Scraper) MatchesURL(u string) bool { return matchRe.MatchString(u) }
 

@@ -23,7 +23,7 @@ var sites = []psmutil.SiteConfig{
 			"frenchporn.fr/en/videos",
 			"frenchporn.fr/en/videos/{category}",
 		},
-		MatchRe: regexp.MustCompile(`^https?://(?:www\.)?frenchporn\.fr`),
+		MatchRe: regexp.MustCompile(`^https?://(?:www\.)?frenchporn\.fr(?:/|$)`),
 	},
 	{
 		ID:       "alphamales",
@@ -34,7 +34,7 @@ var sites = []psmutil.SiteConfig{
 			"alphamales.com/en/videos",
 			"alphamales.com/en/videos/{category}",
 		},
-		MatchRe: regexp.MustCompile(`^https?://(?:www\.)?alphamales\.com`),
+		MatchRe: regexp.MustCompile(`^https?://(?:www\.)?alphamales\.com(?:/|$)`),
 	},
 	{
 		ID:       "andolinixxl",
@@ -45,7 +45,7 @@ var sites = []psmutil.SiteConfig{
 			"andolinixxl.com/en/videos",
 			"andolinixxl.com/en/videos/{category}",
 		},
-		MatchRe: regexp.MustCompile(`^https?://(?:www\.)?andolinixxl\.com`),
+		MatchRe: regexp.MustCompile(`^https?://(?:www\.)?andolinixxl\.com(?:/|$)`),
 	},
 	{
 		ID:       "attackboys",
@@ -56,7 +56,7 @@ var sites = []psmutil.SiteConfig{
 			"attackboys.com/en/videos",
 			"attackboys.com/en/videos/{category}",
 		},
-		MatchRe: regexp.MustCompile(`^https?://(?:www\.)?attackboys\.com`),
+		MatchRe: regexp.MustCompile(`^https?://(?:www\.)?attackboys\.com(?:/|$)`),
 	},
 	{
 		ID:       "berryboys",
@@ -67,7 +67,7 @@ var sites = []psmutil.SiteConfig{
 			"berryboys.fr/en/videos",
 			"berryboys.fr/en/videos/{category}",
 		},
-		MatchRe: regexp.MustCompile(`^https?://(?:www\.)?berryboys\.fr`),
+		MatchRe: regexp.MustCompile(`^https?://(?:www\.)?berryboys\.fr(?:/|$)`),
 	},
 	{
 		ID:       "bolatino",
@@ -78,7 +78,7 @@ var sites = []psmutil.SiteConfig{
 			"bolatino.com/en/videos",
 			"bolatino.com/en/videos/{category}",
 		},
-		MatchRe: regexp.MustCompile(`^https?://(?:www\.)?bolatino\.com`),
+		MatchRe: regexp.MustCompile(`^https?://(?:www\.)?bolatino\.com(?:/|$)`),
 	},
 	{
 		ID:       "bravofucker",
@@ -89,7 +89,7 @@ var sites = []psmutil.SiteConfig{
 			"bravofucker.com/en/videos",
 			"bravofucker.com/en/videos/{category}",
 		},
-		MatchRe: regexp.MustCompile(`^https?://(?:www\.)?bravofucker\.com`),
+		MatchRe: regexp.MustCompile(`^https?://(?:www\.)?bravofucker\.com(?:/|$)`),
 	},
 	{
 		ID:       "bretttyler",
@@ -100,7 +100,7 @@ var sites = []psmutil.SiteConfig{
 			"brett-tyler.com/en/videos",
 			"brett-tyler.com/en/videos/{category}",
 		},
-		MatchRe: regexp.MustCompile(`^https?://(?:www\.)?brett-tyler\.com`),
+		MatchRe: regexp.MustCompile(`^https?://(?:www\.)?brett-tyler\.com(?:/|$)`),
 	},
 	{
 		ID:       "bulldogxxx",
@@ -111,7 +111,7 @@ var sites = []psmutil.SiteConfig{
 			"bulldogxxx.com/en/videos",
 			"bulldogxxx.com/en/videos/{category}",
 		},
-		MatchRe: regexp.MustCompile(`^https?://(?:www\.)?bulldogxxx\.com`),
+		MatchRe: regexp.MustCompile(`^https?://(?:www\.)?bulldogxxx\.com(?:/|$)`),
 	},
 	{
 		ID:       "cadinot",
@@ -122,7 +122,7 @@ var sites = []psmutil.SiteConfig{
 			"cadinot.fr/en/videos",
 			"cadinot.fr/en/videos/{category}",
 		},
-		MatchRe: regexp.MustCompile(`^https?://(?:www\.)?cadinot\.fr`),
+		MatchRe: regexp.MustCompile(`^https?://(?:www\.)?cadinot\.fr(?:/|$)`),
 	},
 	{
 		ID:       "cazzofilm",
@@ -133,7 +133,7 @@ var sites = []psmutil.SiteConfig{
 			"cazzofilm.com/en/videos",
 			"cazzofilm.com/en/videos/{category}",
 		},
-		MatchRe: regexp.MustCompile(`^https?://(?:www\.)?cazzofilm\.com`),
+		MatchRe: regexp.MustCompile(`^https?://(?:www\.)?cazzofilm\.com(?:/|$)`),
 	},
 	{
 		ID:       "citebeur",
@@ -144,7 +144,7 @@ var sites = []psmutil.SiteConfig{
 			"citebeur.com/en/videos",
 			"citebeur.com/en/videos/{category}",
 		},
-		MatchRe: regexp.MustCompile(`^https?://(?:www\.)?citebeur\.com`),
+		MatchRe: regexp.MustCompile(`^https?://(?:www\.)?citebeur\.com(?:/|$)`),
 	},
 	{
 		ID:       "clairprod",
@@ -155,7 +155,7 @@ var sites = []psmutil.SiteConfig{
 			"clairprod.com/en/videos",
 			"clairprod.com/en/videos/{category}",
 		},
-		MatchRe: regexp.MustCompile(`^https?://(?:www\.)?clairprod\.com`),
+		MatchRe: regexp.MustCompile(`^https?://(?:www\.)?clairprod\.com(?:/|$)`),
 	},
 	{
 		ID:       "cocksuckerprod",
@@ -166,7 +166,7 @@ var sites = []psmutil.SiteConfig{
 			"cocksuckerprod.com/en/videos",
 			"cocksuckerprod.com/en/videos/{category}",
 		},
-		MatchRe: regexp.MustCompile(`^https?://(?:www\.)?cocksuckerprod\.com`),
+		MatchRe: regexp.MustCompile(`^https?://(?:www\.)?cocksuckerprod\.com(?:/|$)`),
 	},
 	{
 		ID:       "eurocreme",
@@ -177,7 +177,7 @@ var sites = []psmutil.SiteConfig{
 			"eurocreme.com/en/videos",
 			"eurocreme.com/en/videos/{category}",
 		},
-		MatchRe: regexp.MustCompile(`^https?://(?:www\.)?eurocreme\.com`),
+		MatchRe: regexp.MustCompile(`^https?://(?:www\.)?eurocreme\.com(?:/|$)`),
 	},
 	{
 		ID:       "gayfrenchkiss",
@@ -188,7 +188,7 @@ var sites = []psmutil.SiteConfig{
 			"gayfrenchkiss.com",
 			"gayfrenchkiss.fr/en/videos",
 		},
-		MatchRe: regexp.MustCompile(`^https?://(?:www\.)?gayfrenchkiss\.(?:fr|com)`),
+		MatchRe: regexp.MustCompile(`^https?://(?:www\.)?gayfrenchkiss\.(?:fr|com)(?:/|$)`),
 	},
 	{
 		ID:       "hardkinks",
@@ -199,7 +199,7 @@ var sites = []psmutil.SiteConfig{
 			"hardkinks.com/en/videos",
 			"hardkinks.com/en/videos/{category}",
 		},
-		MatchRe: regexp.MustCompile(`^https?://(?:www\.)?hardkinks\.com`),
+		MatchRe: regexp.MustCompile(`^https?://(?:www\.)?hardkinks\.com(?:/|$)`),
 	},
 	{
 		ID:       "harlemsex",
@@ -210,7 +210,7 @@ var sites = []psmutil.SiteConfig{
 			"harlemsex.com/en/videos",
 			"harlemsex.com/en/videos/{category}",
 		},
-		MatchRe: regexp.MustCompile(`^https?://(?:www\.)?harlemsex\.com`),
+		MatchRe: regexp.MustCompile(`^https?://(?:www\.)?harlemsex\.com(?:/|$)`),
 	},
 	{
 		ID:       "mikaayden",
@@ -221,7 +221,7 @@ var sites = []psmutil.SiteConfig{
 			"mika-ayden.com/en/videos",
 			"mika-ayden.com/en/videos/{category}",
 		},
-		MatchRe: regexp.MustCompile(`^https?://(?:www\.)?mika-ayden\.com`),
+		MatchRe: regexp.MustCompile(`^https?://(?:www\.)?mika-ayden\.com(?:/|$)`),
 	},
 	{
 		ID:       "militarygayxxx",
@@ -232,7 +232,7 @@ var sites = []psmutil.SiteConfig{
 			"militarygayxxx.com/en/videos",
 			"militarygayxxx.com/en/videos/{category}",
 		},
-		MatchRe: regexp.MustCompile(`^https?://(?:www\.)?militarygayxxx\.com`),
+		MatchRe: regexp.MustCompile(`^https?://(?:www\.)?militarygayxxx\.com(?:/|$)`),
 	},
 	{
 		ID:       "rawboys",
@@ -243,7 +243,7 @@ var sites = []psmutil.SiteConfig{
 			"rawboys.com/en/videos",
 			"rawboys.com/en/videos/{category}",
 		},
-		MatchRe: regexp.MustCompile(`^https?://(?:www\.)?rawboys\.com`),
+		MatchRe: regexp.MustCompile(`^https?://(?:www\.)?rawboys\.com(?:/|$)`),
 	},
 	{
 		ID:       "rawfuck",
@@ -254,7 +254,7 @@ var sites = []psmutil.SiteConfig{
 			"rawfuck.com/en/videos",
 			"rawfuck.com/en/videos/{category}",
 		},
-		MatchRe: regexp.MustCompile(`^https?://(?:www\.)?rawfuck\.com`),
+		MatchRe: regexp.MustCompile(`^https?://(?:www\.)?rawfuck\.com(?:/|$)`),
 	},
 	{
 		ID:       "universblack",
@@ -265,7 +265,7 @@ var sites = []psmutil.SiteConfig{
 			"universblack.com/en/videos",
 			"universblack.com/en/videos/{category}",
 		},
-		MatchRe: regexp.MustCompile(`^https?://(?:www\.)?universblack\.com`),
+		MatchRe: regexp.MustCompile(`^https?://(?:www\.)?universblack\.com(?:/|$)`),
 	},
 }
 

@@ -62,7 +62,7 @@ var matchRe = regexp.MustCompile(`^https?://(?:www\.)?(?:` +
 	`orgasmatics\.com|pornstarsathome\.com|leonyaprill\.com|` +
 	`eromaxx\.net|messy-wrestling\.com|guysgocrazy\.com|` +
 	`cumonjugs\.com|orgymax\.com|erostreaming\.com` +
-	`)`)
+	`)(?:/|$)`)
 
 var (
 	girlsRe      = regexp.MustCompile(`/girls/(\d+-[\w-]+)`)

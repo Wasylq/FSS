@@ -21,6 +21,6 @@ func init() {
 			"interracialpass.com",
 			"interracialpass.com/t1/categories/movies_{N}_d.html",
 		},
-		MatchRe: regexp.MustCompile(`^https?://(?:www\.)?interracialpass\.com`),
+		MatchRe: regexp.MustCompile(`^https?://(?:www\.)?interracialpass\.com(?:/|$)`),
 	}))
 }

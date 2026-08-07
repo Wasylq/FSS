@@ -142,71 +142,71 @@ type siteFilter struct {
 // the parent last guards against future additions that might).
 var sites = []siteFilter{
 	// Stashdb-tracked sister tours.
-	{matchRe: regexp.MustCompile(`(?i)^https?://tour\.alurajensonxxx\.com\b`), Performer: "Alura Jenson"},
-	{matchRe: regexp.MustCompile(`(?i)^https?://(?:www\.)?amybrookexxx\.com\b`), Performer: "Amy Brooke"},
-	{matchRe: regexp.MustCompile(`(?i)^https?://(?:www\.)?angelinavalentine\.com\b`), Performer: "Angelina Valentine"},
-	{matchRe: regexp.MustCompile(`(?i)^https?://(?:www\.)?avadevine\.com\b`), Performer: "Ava Devine"},
+	{matchRe: regexp.MustCompile(`(?i)^https?://tour\.alurajensonxxx\.com(?:/|$)`), Performer: "Alura Jenson"},
+	{matchRe: regexp.MustCompile(`(?i)^https?://(?:www\.)?amybrookexxx\.com(?:/|$)`), Performer: "Amy Brooke"},
+	{matchRe: regexp.MustCompile(`(?i)^https?://(?:www\.)?angelinavalentine\.com(?:/|$)`), Performer: "Angelina Valentine"},
+	{matchRe: regexp.MustCompile(`(?i)^https?://(?:www\.)?avadevine\.com(?:/|$)`), Performer: "Ava Devine"},
 	{
-		matchRe:       regexp.MustCompile(`(?i)^https?://(?:tour\.|www\.)?clubveronicaavluv\.com\b`),
+		matchRe:       regexp.MustCompile(`(?i)^https?://(?:tour\.|www\.)?clubveronicaavluv\.com(?:/|$)`),
 		Performer:     "Veronica Avluv",
 		PerSiteVideos: "https://tour.clubveronicaavluv.com/videos",
 	},
 	{
-		matchRe:       regexp.MustCompile(`(?i)^https?://tour\.deewilliams\.xxx\b`),
+		matchRe:       regexp.MustCompile(`(?i)^https?://tour\.deewilliams\.xxx(?:/|$)`),
 		Performer:     "Dee Williams",
 		PerSiteVideos: "https://tour.deewilliams.xxx/videos",
 	},
-	{matchRe: regexp.MustCompile(`(?i)^https?://(?:www\.)?nickiblue\.com\b`), Performer: "Nicki Blue"},
+	{matchRe: regexp.MustCompile(`(?i)^https?://(?:www\.)?nickiblue\.com(?:/|$)`), Performer: "Nicki Blue"},
 	// Pornstar Justice and Taboo Stepmom are themed brands rather than
 	// single-pornstar sites — return the whole catalogue.
-	{matchRe: regexp.MustCompile(`(?i)^https?://(?:tour\.|www\.)?pornstarjustice\.com\b`)},
+	{matchRe: regexp.MustCompile(`(?i)^https?://(?:tour\.|www\.)?pornstarjustice\.com(?:/|$)`)},
 	{
-		matchRe:       regexp.MustCompile(`(?i)^https?://(?:tour\.|www\.)?sexyvanessa\.com\b`),
+		matchRe:       regexp.MustCompile(`(?i)^https?://(?:tour\.|www\.)?sexyvanessa\.com(?:/|$)`),
 		Performer:     "Sexy Vanessa",
 		PerSiteVideos: "https://tour.sexyvanessa.com/videos",
 	},
 	{
-		matchRe:       regexp.MustCompile(`(?i)^https?://(?:tour\.|www\.)?mindiminkxxx\.com\b`),
+		matchRe:       regexp.MustCompile(`(?i)^https?://(?:tour\.|www\.)?mindiminkxxx\.com(?:/|$)`),
 		Performer:     "Mindi Mink",
 		PerSiteVideos: "https://tour.mindiminkxxx.com/videos.php",
 	},
 	{
 		// Themed brand (multiple performers) — Performer stays empty so
 		// the parser parses the performer from each card's title.
-		matchRe:       regexp.MustCompile(`(?i)^https?://(?:tour\.|www\.)?taboostepmom\.com\b`),
+		matchRe:       regexp.MustCompile(`(?i)^https?://(?:tour\.|www\.)?taboostepmom\.com(?:/|$)`),
 		PerSiteVideos: "https://tour.taboostepmom.com/scenes",
 		Template:      templateTbsm,
 	},
 	// Network-page sister tours not in stashdb but live.
-	{matchRe: regexp.MustCompile(`(?i)^https?://tour\.kendralustxxx\.com\b`), Performer: "Kendra Lust"},
+	{matchRe: regexp.MustCompile(`(?i)^https?://tour\.kendralustxxx\.com(?:/|$)`), Performer: "Kendra Lust"},
 	{
-		matchRe:       regexp.MustCompile(`(?i)^https?://(?:tour\.|www\.)?joslynjames\.xxx\b`),
+		matchRe:       regexp.MustCompile(`(?i)^https?://(?:tour\.|www\.)?joslynjames\.xxx(?:/|$)`),
 		Performer:     "Joslyn James",
 		PerSiteVideos: "https://tour.joslynjames.xxx/categories/Movies",
 		Template:      templateMoviesCategories,
 	},
-	{matchRe: regexp.MustCompile(`(?i)^https?://(?:www\.)?courtneytaylor\.xxx\b`), Performer: "Courtney Taylor"},
-	{matchRe: regexp.MustCompile(`(?i)^https?://(?:www\.)?alyssalynnxxx\.com\b`), Performer: "Alyssa Lynn"},
-	{matchRe: regexp.MustCompile(`(?i)^https?://(?:www\.)?taraholidayxxx\.com\b`), Performer: "Tara Holiday"},
-	{matchRe: regexp.MustCompile(`(?i)^https?://(?:www\.)?christiestevensxxx\.com\b`), Performer: "Christie Stevens"},
-	{matchRe: regexp.MustCompile(`(?i)^https?://tour\.clubkatiesummers\.com\b`), Performer: "Katie Summers"},
-	{matchRe: regexp.MustCompile(`(?i)^https?://(?:www\.)?katerinakayxxx\.com\b`), Performer: "Katerina Kay"},
+	{matchRe: regexp.MustCompile(`(?i)^https?://(?:www\.)?courtneytaylor\.xxx(?:/|$)`), Performer: "Courtney Taylor"},
+	{matchRe: regexp.MustCompile(`(?i)^https?://(?:www\.)?alyssalynnxxx\.com(?:/|$)`), Performer: "Alyssa Lynn"},
+	{matchRe: regexp.MustCompile(`(?i)^https?://(?:www\.)?taraholidayxxx\.com(?:/|$)`), Performer: "Tara Holiday"},
+	{matchRe: regexp.MustCompile(`(?i)^https?://(?:www\.)?christiestevensxxx\.com(?:/|$)`), Performer: "Christie Stevens"},
+	{matchRe: regexp.MustCompile(`(?i)^https?://tour\.clubkatiesummers\.com(?:/|$)`), Performer: "Katie Summers"},
+	{matchRe: regexp.MustCompile(`(?i)^https?://(?:www\.)?katerinakayxxx\.com(?:/|$)`), Performer: "Katerina Kay"},
 	{
-		matchRe:       regexp.MustCompile(`(?i)^https?://tour\.katefrost\.com\b`),
+		matchRe:       regexp.MustCompile(`(?i)^https?://tour\.katefrost\.com(?:/|$)`),
 		Performer:     "Kate Frost",
 		PerSiteVideos: "https://tour.katefrost.com/videos",
 	},
-	{matchRe: regexp.MustCompile(`(?i)^https?://tour\.clubrachellove\.com\b`), Performer: "Rachel Love"},
-	{matchRe: regexp.MustCompile(`(?i)^https?://(?:www\.)?tegansummers\.com\b`), Performer: "Tegan Summers"},
+	{matchRe: regexp.MustCompile(`(?i)^https?://tour\.clubrachellove\.com(?:/|$)`), Performer: "Rachel Love"},
+	{matchRe: regexp.MustCompile(`(?i)^https?://(?:www\.)?tegansummers\.com(?:/|$)`), Performer: "Tegan Summers"},
 	{
-		matchRe:       regexp.MustCompile(`(?i)^https?://tour\.brookewyldexxx\.com\b`),
+		matchRe:       regexp.MustCompile(`(?i)^https?://tour\.brookewyldexxx\.com(?:/|$)`),
 		Performer:     "Brooke Wylde",
 		PerSiteVideos: "https://tour.brookewyldexxx.com/videos",
 	},
-	{matchRe: regexp.MustCompile(`(?i)^https?://tour\.heatherstarletxxx\.com\b`), Performer: "Heather Starlet"},
-	{matchRe: regexp.MustCompile(`(?i)^https?://(?:www\.)?gigiriveraxxx\.com\b`), Performer: "Gigi Rivera"},
+	{matchRe: regexp.MustCompile(`(?i)^https?://tour\.heatherstarletxxx\.com(?:/|$)`), Performer: "Heather Starlet"},
+	{matchRe: regexp.MustCompile(`(?i)^https?://(?:www\.)?gigiriveraxxx\.com(?:/|$)`), Performer: "Gigi Rivera"},
 	// Parent — must be last so sister-site matches win.
-	{matchRe: regexp.MustCompile(`(?i)^https?://(?:www\.)?pornstarplatinum\.com\b`)},
+	{matchRe: regexp.MustCompile(`(?i)^https?://(?:www\.)?pornstarplatinum\.com(?:/|$)`)},
 }
 
 // resolveFilter returns the performer name to filter by for the passed

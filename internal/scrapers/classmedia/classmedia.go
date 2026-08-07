@@ -68,7 +68,7 @@ func NewSubspaceland() *Scraper {
 		studio:  "Subspaceland",
 		base:    "https://www.subspaceland.com",
 		tpl:     tplSubspaceland,
-		matchRe: regexp.MustCompile(`^https?://(?:www\.)?subspaceland\.com`),
+		matchRe: regexp.MustCompile(`^https?://(?:www\.)?subspaceland\.com(?:/|$)`),
 		patterns: []string{
 			"subspaceland.com",
 			"subspaceland.com/video/{model}/{slug}",
@@ -83,7 +83,7 @@ func NewOldje() *Scraper {
 		studio:  "Oldje",
 		base:    "https://www.oldje.com",
 		tpl:     tplOldje,
-		matchRe: regexp.MustCompile(`^https?://(?:www\.)?oldje\.com`),
+		matchRe: regexp.MustCompile(`^https?://(?:www\.)?oldje\.com(?:/|$)`),
 		patterns: []string{
 			"oldje.com",
 			"oldje.com/gallery/{n}",
@@ -98,7 +98,7 @@ func NewOldje3some() *Scraper {
 		studio:  "Oldje-3some",
 		base:    "https://www.oldje-3some.com",
 		tpl:     tplOldje3some,
-		matchRe: regexp.MustCompile(`^https?://(?:www\.)?oldje-3some\.com`),
+		matchRe: regexp.MustCompile(`^https?://(?:www\.)?oldje-3some\.com(?:/|$)`),
 		patterns: []string{
 			"oldje-3some.com",
 			"oldje-3some.com/videos/{n}",

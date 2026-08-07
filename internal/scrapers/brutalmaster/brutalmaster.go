@@ -23,7 +23,7 @@ func config() fotoroutil.SiteConfig {
 		// 40s to respond, so the util's 30s default times out on every run.
 		Timeout:  2 * time.Minute,
 		Patterns: []string{"brutalmaster.com", "brutalmaster.com/tag/{slug}"},
-		MatchRe:  regexp.MustCompile(`^https?://(?:www\.)?brutalmaster\.com`),
+		MatchRe:  regexp.MustCompile(`^https?://(?:www\.)?brutalmaster\.com(?:/|$)`),
 	}
 }
 

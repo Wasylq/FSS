@@ -17,6 +17,6 @@ func init() {
 		SiteBase:   "https://www.humiliationpov.com/blog",
 		TagsAsTags: true,
 		Patterns:   []string{"humiliationpov.com", "humiliationpov.com/blog/tag/{slug}"},
-		MatchRe:    regexp.MustCompile(`^https?://(?:www\.)?humiliationpov\.com`),
+		MatchRe:    regexp.MustCompile(`^https?://(?:www\.)?humiliationpov\.com(?:/|$)`),
 	}))
 }
