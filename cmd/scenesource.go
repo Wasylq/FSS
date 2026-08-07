@@ -33,17 +33,27 @@ func addSceneSourceFlags(cmd *cobra.Command) {
 		"only use scenes featuring these performers (repeatable: any match)")
 }
 
-// resolveDBPath returns the database path for a command.
+// resolveDBPath returns the database path for a command. An empty result means
+// no database — the flat JSON store.
 //
-// `--db=/path` wins. A bare `--db` means "the database I configured": pflag
-// gives the valueless flag the sentinel "default", and resolving that straight
-// to the XDG location would open a different — probably empty — database than
-// the one the operator put in `db:`. The XDG default applies only when nothing
-// is configured.
+//	(absent)      the config's `db:` decides
+//	--db=""       no database, explicitly — overrides the config
+//	--db          the database named in `db:`, or the default location
+//	--db=/path    exactly that file
 //
-// An empty result means no database at all.
+// Passing `--db=""` is distinguished from not passing `--db` at all, mirroring
+// the same distinction in the config (see config.DBSetting). Without it there is
+// no way to say "not this time" on the command line once `db:` is set, which is
+// the one thing a separate `--store` selector would have been needed for.
+//
+// A bare `--db` means "the database I configured": pflag gives the valueless
+// flag the sentinel "default", and resolving that straight to the XDG location
+// would open a different — probably empty — database than the one in `db:`.
 func resolveDBPath(cmd *cobra.Command) string {
 	flag, _ := cmd.Flags().GetString("db")
+	if cmd.Flags().Changed("db") && flag == "" {
+		return "" // explicit opt-out
+	}
 	configured, _ := cfg.DBSetting()
 	if (flag == "" || flag == "default") && configured != "" {
 		flag = configured

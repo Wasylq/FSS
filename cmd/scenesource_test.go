@@ -317,3 +317,24 @@ func TestResolveDBPathBareFlagUsesConfiguredPath(t *testing.T) {
 		}
 	})
 }
+
+// An explicitly empty --db must override a configured database. Without this
+// there is no command-line way to say "JSON this time" once `db:` is set, which
+// is the only gap a separate `--store` selector would have filled.
+func TestResolveDBPathExplicitEmptyOverridesConfig(t *testing.T) {
+	withCfg(t, &config.Config{DB: config.DBRef("/configured/fss.db")})
+
+	t.Run("--db= overrides to no database", func(t *testing.T) {
+		c := newImportTestCmd(t)
+		setFlag(t, c, "db", "")
+		if got := resolveDBPath(c); got != "" {
+			t.Errorf("resolveDBPath = %q, want empty (flat store)", got)
+		}
+	})
+
+	t.Run("not passing --db leaves the config in charge", func(t *testing.T) {
+		if got := resolveDBPath(newImportTestCmd(t)); got != "/configured/fss.db" {
+			t.Errorf("resolveDBPath = %q, want the configured path", got)
+		}
+	})
+}

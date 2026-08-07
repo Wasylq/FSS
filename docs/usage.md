@@ -36,7 +36,7 @@ For choosing a store, inspecting a database, and moving between the two, see [st
 | `--no-preserve` | bool | false | Let a re-scrape blank fields it no longer returns. By default a fresh scene inherits any field it left empty from the stored one, so a broken parser cannot wipe metadata — see [metadata.md](metadata.md) |
 | `--output`, `-o` | string | `json` | Export format(s): `json`, `csv`, or `json,csv` |
 | `--out-dir` | string | `.` | Output directory |
-| `--db` | string | _(disabled)_ | Enable SQLite store (`--db` alone uses `~/.local/share/fss/fss.db`; `--db=/path` uses a custom path — note the `=`, a space-separated value is not parsed) |
+| `--db` | string | _(from config)_ | Store selector. `--db` alone uses the database named in `db:`, or `~/.local/share/fss/fss.db`; `--db=/path` uses a specific file; `--db=""` forces the flat JSON store even when `db:` is set. Note the `=` — a space-separated value is not parsed |
 | `--delay` | int | `500` | Milliseconds to sleep between page requests (default from config; `--delay 0` disables) |
 | `--site-delay` | []string | _(none)_ | Per-scraper delay overrides as `name=ms` pairs, e.g. `--site-delay manyvids=0,pornhub=2000` |
 | `--name` | string | _(none)_ | Human-readable label for this studio (stored when `--db` is set) |

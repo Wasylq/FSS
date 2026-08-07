@@ -195,31 +195,24 @@ tables, which is why it has not been done for a ~20% gain on one query.
 Nothing technical blocks it now: both consumers read either source, and the
 database is competitive on the numbers above. What is left is the rollout.
 
-The natural instinct is to flip `--db` to `--no-db`. Recommended: **don't.**
+Two shapes were considered and rejected. `--no-db` is a double negative that
+strands every script already passing `--db`. A separate `--store files|sqlite`
+selector was the replacement plan until it turned out to be redundant: `--output`
+is a different axis (which *files* to produce, not where data *lives*), and the
+one thing `--store` was needed for — saying "JSON this time" on the command line
+when `db:` is set — `--db` already covers.
 
-- `--no-db` is a double negative, and it reads as "disable the database" when
-  what you mean is "use the other store."
-- It strands the existing spelling. Everyone's scripts and cron jobs pass
-  `--db` or set `db:` in config today.
-- It couples the *default* to a *flag rename*. Those are separate decisions and
-  should ship separately.
+So there is no new flag. `--db` carries every case, because "not passed" and
+"passed as empty" are distinguished:
 
-Preferred shape:
+| | Result |
+|---|---|
+| *(no `--db`)* | the config's `db:` decides |
+| `--db=""` | no database, explicitly — overrides the config |
+| `--db` | the database named in `db:`, or the default location |
+| `--db=/path` | exactly that file |
 
-```bash
-fss scrape <url>                       # uses whatever the config default is
-fss scrape --store files <url>         # keep JSON files
-fss scrape --db=/custom/path.db <url>  # unchanged, still works
-```
-
-- Add `--store files|sqlite` as the canonical selector. The value is `files`
-  rather than `flat` (Go type-name jargon) or `json` (which collides with
-  `--output json,csv`, a different concept — and the flat store writes JSON
-  regardless of `--output`, since that is its backing format).
-- Keep `--db[=PATH]` exactly as it is — it stays sugar for
-  `--store sqlite` plus a path. **Nothing anyone has written breaks.**
-- Flip the *config default* (`db:`) in a release that says so loudly, with a
-  note pointing at `fss import` for moving existing JSON in.
+The flip is then a one-line change to the config default, plus a release note.
 
 Changing a default silently reorganises where people's data lives. The migration
 path has to exist and be documented before the default moves, which is what
