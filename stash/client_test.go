@@ -8,6 +8,7 @@ import (
 	"errors"
 	"net/http"
 	"net/http/httptest"
+	"reflect"
 	"strings"
 	"testing"
 )
@@ -493,5 +494,130 @@ func TestFindScenesReportsMissingFilterTargets(t *testing.T) {
 	_, _, err = c.FindScenes(context.Background(), FindScenesFilter{StudioName: "Nothing"}, 1, 10)
 	if !errors.Is(err, ErrStudioNotFound) {
 		t.Errorf("studio: got %v, want ErrStudioNotFound", err)
+	}
+}
+
+// captureSceneFilter answers a findScenes call with an empty result and hands
+// back the scene_filter the client built for it.
+func captureSceneFilter(t *testing.T) (*Client, *map[string]any) {
+	t.Helper()
+	var got map[string]any
+	c, _ := newTestClient(t, func(w http.ResponseWriter, r *http.Request) {
+		var req graphqlRequest
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			t.Errorf("decoding request: %v", err)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		switch {
+		case strings.Contains(req.Query, "findPerformers"):
+			_, _ = w.Write([]byte(`{"data":{"findPerformers":{"performers":[{"id":"7","name":"Alice"}]}}}`))
+		case strings.Contains(req.Query, "findStudios"):
+			_, _ = w.Write([]byte(`{"data":{"findStudios":{"studios":[{"id":"9","name":"Brazzers"}]}}}`))
+		case strings.Contains(req.Query, "findScenes"):
+			if sf, ok := req.Variables["scene_filter"].(map[string]any); ok {
+				got = sf
+			} else {
+				got = nil
+			}
+			_, _ = w.Write([]byte(`{"data":{"findScenes":{"count":0,"scenes":[]}}}`))
+		default:
+			t.Errorf("unmatched query: %s", req.Query)
+		}
+	})
+	return c, &got
+}
+
+func intPtr(v int) *int { return &v }
+
+// The scene_filter is assembled field by field and never asserted on elsewhere —
+// TestFindScenes only exercises the empty filter.
+func TestFindScenesBuildsSceneFilter(t *testing.T) {
+	tests := []struct {
+		name   string
+		filter FindScenesFilter
+		want   string // JSON; "" means no scene_filter should be sent at all
+	}{
+		{
+			name:   "no filter sends none",
+			filter: FindScenesFilter{},
+			want:   "",
+		},
+		{
+			name:   "unmatched scenes",
+			filter: FindScenesFilter{StashIDCount: intPtr(0)},
+			want:   `{"stash_id_endpoint":{"modifier":"IS_NULL"}}`,
+		},
+		{
+			name:   "matched scenes",
+			filter: FindScenesFilter{StashIDCount: intPtr(1)},
+			want:   `{"stash_id_endpoint":{"modifier":"NOT_NULL"}}`,
+		},
+		{
+			name:   "path",
+			filter: FindScenesFilter{PathFilter: "/media/vids"},
+			want:   `{"path":{"value":"/media/vids","modifier":"INCLUDES"}}`,
+		},
+		{
+			name:   "performer resolves to an id",
+			filter: FindScenesFilter{PerformerName: "Alice"},
+			want:   `{"performers":{"value":["7"],"modifier":"INCLUDES_ALL"}}`,
+		},
+		{
+			name:   "studio resolves to an id",
+			filter: FindScenesFilter{StudioName: "Brazzers"},
+			want:   `{"studios":{"value":["9"],"modifier":"INCLUDES_ALL","depth":0}}`,
+		},
+		{
+			name:   "combined filters are ANDed",
+			filter: FindScenesFilter{StashIDCount: intPtr(0), PerformerName: "Alice", PathFilter: "/x"},
+			want: `{"stash_id_endpoint":{"modifier":"IS_NULL"},
+			        "performers":{"value":["7"],"modifier":"INCLUDES_ALL"},
+			        "path":{"value":"/x","modifier":"INCLUDES"}}`,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			c, got := captureSceneFilter(t)
+			if _, _, err := c.FindScenes(context.Background(), tt.filter, 1, 25); err != nil {
+				t.Fatalf("FindScenes: %v", err)
+			}
+			if tt.want == "" {
+				if *got != nil {
+					t.Fatalf("sent scene_filter %v, want none", *got)
+				}
+				return
+			}
+			var want map[string]any
+			if err := json.Unmarshal([]byte(tt.want), &want); err != nil {
+				t.Fatalf("bad want JSON: %v", err)
+			}
+			if !reflect.DeepEqual(*got, want) {
+				t.Errorf("scene_filter =\n  %v\nwant\n  %v", *got, want)
+			}
+		})
+	}
+}
+
+// Paging and sort order are part of the request contract too.
+func TestFindScenesSendsFindFilter(t *testing.T) {
+	var got map[string]any
+	c, _ := newTestClient(t, func(w http.ResponseWriter, r *http.Request) {
+		var req graphqlRequest
+		_ = json.NewDecoder(r.Body).Decode(&req)
+		got, _ = req.Variables["filter"].(map[string]any)
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{"data":{"findScenes":{"count":0,"scenes":[]}}}`))
+	})
+
+	if _, _, err := c.FindScenes(context.Background(), FindScenesFilter{}, 3, 50); err != nil {
+		t.Fatal(err)
+	}
+
+	var want map[string]any
+	_ = json.Unmarshal([]byte(`{"page":3,"per_page":50,"sort":"path","direction":"ASC"}`), &want)
+	if !reflect.DeepEqual(got, want) {
+		t.Errorf("filter = %v, want %v", got, want)
 	}
 }
