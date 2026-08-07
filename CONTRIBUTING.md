@@ -464,7 +464,7 @@ These pins live inside `run:` shell strings (not `go.mod`) so Dependabot can't b
 | `govulncheck` | `v1.3.0` | `.github/workflows/ci.yml` (vulncheck job) |
 | `nfpm` | `v2.46.3` | `.github/workflows/release.yml` (build job) |
 
-Bump by editing the `@vX.Y.Z` suffix in each `go install` line. Check the upstream changelog for breaking format changes — `gotestsum` in particular feeds into the `test-output.txt` parser in the coverage summary step.
+Bump by editing the `@vX.Y.Z` suffix in each `go install` line. Check the upstream changelog for breaking format changes — `gotestsum` in particular produces the `junit.xml` uploaded to Codecov. (The coverage summary reads `coverage.out` directly, so it is unaffected by `gotestsum`'s output format.)
 
 ### CI security checks
 
