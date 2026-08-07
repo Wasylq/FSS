@@ -309,3 +309,41 @@ func formatTimePtr(t *time.Time) string {
 	}
 	return t.Format(time.RFC3339)
 }
+
+// CanonicalStudioURL reduces a studio URL to the form used as its storage
+// identity. Two URLs that address the same catalogue map to the same string:
+//
+//	http://Example.com/studio/  ->  https://example.com/studio
+//	https://example.com/studio  ->  https://example.com/studio
+//
+// It normalises the scheme to https, lowercases the host, drops a default port,
+// removes any fragment, and strips a trailing slash from the path. The path's
+// case, the query string and everything else are left alone — paths are
+// case-sensitive on most servers, and a query can genuinely select a different
+// catalogue.
+//
+// **This is identity, not an address.** `studio_url` is a primary-key component
+// *and* what scrapers are asked to fetch; those are different jobs. Callers must
+// keep passing the operator's original URL to the scraper — some sites are
+// http-only, so fetching the canonical form would request a page that does not
+// exist. Only the stored key is canonical.
+//
+// A URL that cannot be parsed is returned unchanged rather than mangled.
+func CanonicalStudioURL(rawURL string) string {
+	u, err := url.Parse(strings.TrimSpace(rawURL))
+	if err != nil || u.Host == "" {
+		return rawURL
+	}
+	u.Scheme = "https"
+	u.Host = strings.ToLower(u.Host)
+	u.Host = strings.TrimSuffix(u.Host, ":443")
+	u.Host = strings.TrimSuffix(u.Host, ":80")
+	u.Fragment = ""
+	u.RawFragment = ""
+	if u.Path != "/" {
+		u.Path = strings.TrimSuffix(u.Path, "/")
+	} else {
+		u.Path = ""
+	}
+	return u.String()
+}

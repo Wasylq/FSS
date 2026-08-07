@@ -551,3 +551,102 @@ func betweenMarkers(s, start, end string) string {
 	}
 	return rest[:j]
 }
+
+// TestContract_StudioURLVariantsAreOneStudio pins the canonicalisation both
+// stores apply to the storage key. `http://x`, `https://x` and `https://x/`
+// address one catalogue, and used to become three that never merged.
+//
+// Only the key is canonical — the URL handed to a scraper is never rewritten,
+// because some sites are http-only.
+func TestContract_StudioURLVariantsAreOneStudio(t *testing.T) {
+	for _, sf := range storeFactories(t) {
+		t.Run(sf.name, func(t *testing.T) {
+			s := sf.new(t)
+			now := time.Now().UTC().Truncate(time.Second)
+
+			variants := []string{
+				"http://www.variant-test.com",
+				"https://www.variant-test.com",
+				"https://www.variant-test.com/",
+				"https://WWW.Variant-Test.com/",
+			}
+
+			// Save under the first spelling.
+			if err := s.Save(variants[0], []models.Scene{{
+				ID: "1", SiteID: "v", StudioURL: variants[0],
+				Title: "One", Tags: []string{"t"}, ScrapedAt: now,
+			}}); err != nil {
+				t.Fatalf("Save: %v", err)
+			}
+
+			// Every other spelling finds it.
+			for _, u := range variants[1:] {
+				got, err := s.Load(u)
+				if err != nil {
+					t.Fatalf("Load(%q): %v", u, err)
+				}
+				if len(got) != 1 || got[0].Title != "One" {
+					t.Errorf("Load(%q) = %v, want the stored scene", u, got)
+				}
+			}
+
+			// Saving under another spelling updates the same studio rather than
+			// creating a second one.
+			if err := s.Save(variants[2], []models.Scene{{
+				ID: "1", SiteID: "v", StudioURL: variants[2],
+				Title: "Updated", Tags: []string{"t"}, ScrapedAt: now.Add(time.Hour),
+			}}); err != nil {
+				t.Fatalf("Save under a variant: %v", err)
+			}
+			got, err := s.Load(variants[0])
+			if err != nil {
+				t.Fatal(err)
+			}
+			if len(got) != 1 || got[0].Title != "Updated" {
+				t.Errorf("got %v, want one updated scene", got)
+			}
+		})
+	}
+}
+
+// UpsertStudio must key on the canonical URL like every other entry point.
+// Missing it wrote a studios row under a spelling its scenes were not stored
+// under, leaving an orphan that `fss export` then emitted as an empty file.
+func TestContract_UpsertStudioCanonicalisesURL(t *testing.T) {
+	for _, sf := range storeFactories(t) {
+		t.Run(sf.name, func(t *testing.T) {
+			s := sf.new(t)
+			now := time.Now().UTC().Truncate(time.Second)
+			raw := "http://www.upsert-test.com/"
+			canonical := "https://www.upsert-test.com"
+
+			if err := s.Save(raw, []models.Scene{
+				{ID: "1", SiteID: "u", StudioURL: raw, Title: "One", ScrapedAt: now},
+			}); err != nil {
+				t.Fatal(err)
+			}
+			if err := s.UpsertStudio(models.Studio{URL: raw, SiteID: "u", AddedAt: now}); err != nil {
+				t.Fatal(err)
+			}
+
+			studios, err := s.ListStudios()
+			if err != nil {
+				t.Fatal(err)
+			}
+			if len(studios) == 0 {
+				return // the flat store tracks none
+			}
+			if len(studios) != 1 || studios[0].URL != canonical {
+				t.Fatalf("studios = %+v, want a single row at %q", studios, canonical)
+			}
+			// And it is not an orphan: its scenes are under the same key.
+			scenes, err := s.Load(studios[0].URL)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if len(scenes) != 1 {
+				t.Errorf("studio row has %d scenes, want 1 — it is orphaned", len(scenes))
+			}
+		})
+	}
+}

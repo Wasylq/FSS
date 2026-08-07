@@ -382,6 +382,13 @@ studioID, _ := client.EnsureStudio(ctx, "Bettie Bondage")
 
 ## Output Files (`output`)
 
+`CanonicalStudioURL` reduces a studio URL to its storage identity — https scheme,
+lowercase host, no default port, fragment or trailing slash — so that
+`http://x.com`, `https://x.com` and `https://x.com/` are one studio. It is
+identity only: the URL passed to a scraper must stay as the operator typed it,
+because http-only sites exist.
+
+
 The `output` package writes FSS-format JSON and CSV files, and provides URL-to-filename slugification.
 
 ```go

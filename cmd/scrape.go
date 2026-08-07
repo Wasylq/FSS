@@ -163,8 +163,6 @@ func scrapeOne(ctx context.Context, st store.Store, studioURL, name, dbPath, out
 	}
 	defer func() { _ = unlock.Close() }()
 
-	warnStudioURLVariant(st, studioURL)
-
 	delay := resolveSiteDelay(sc.ID(), defaultDelay, siteDelays)
 	scraper.Debugf(1, "scraper: %s, delay: %v, workers: %d", sc.ID(), delay, workers)
 

@@ -86,6 +86,7 @@ func (f *Flat) csvPath(studioURL string) string {
 // Cross-process locking is unchanged: a different process still blocks, which is
 // the point of the lock.
 func (f *Flat) Lock(studioURL string) (io.Closer, error) {
+	studioURL = canonicalKey(studioURL)
 	if err := os.MkdirAll(f.dir, 0o755); err != nil {
 		return nil, fmt.Errorf("creating output dir for lock: %w", err)
 	}
@@ -107,6 +108,7 @@ func (f *Flat) Lock(studioURL string) (io.Closer, error) {
 }
 
 func (f *Flat) Load(studioURL string) ([]models.Scene, error) {
+	studioURL = canonicalKey(studioURL)
 	sf, err := f.loadStudioFile(studioURL)
 	if err != nil || sf == nil {
 		return nil, err
@@ -126,13 +128,23 @@ func (f *Flat) loadStudioFile(studioURL string) (*models.StudioFile, error) {
 		// Migrate a pre-hash (legacy) file to the new hashed name, if one
 		// exists and belongs to this studio, so existing incremental state
 		// (price history, soft-deletes) survives the Slugify change.
-		if migrated, mErr := f.migrateLegacy(studioURL, path); mErr != nil {
+		migrated, mErr := f.migrateLegacy(studioURL, path)
+		if mErr != nil {
 			return nil, mErr
-		} else if migrated {
-			data, err = os.ReadFile(path)
-		} else {
+		}
+		if !migrated {
+			// The studio may be stored under a non-canonical spelling of its
+			// URL, whose slug is a different hash entirely. Slugify cannot be
+			// reversed, so the only way to find it is to look at what each file
+			// says it holds.
+			if migrated, mErr = f.migrateURLVariant(studioURL, path); mErr != nil {
+				return nil, mErr
+			}
+		}
+		if !migrated {
 			return nil, nil
 		}
+		data, err = os.ReadFile(path)
 	}
 	if err != nil {
 		return nil, fmt.Errorf("reading store: %w", err)
@@ -149,7 +161,9 @@ func (f *Flat) loadStudioFile(studioURL string) (*models.StudioFile, error) {
 			path, sf.SchemaVersion, models.StoreSchemaVersion,
 		)
 	}
-	if sf.StudioURL != "" && sf.StudioURL != studioURL {
+	// studioURL is already canonical here; compare like with like, or a file
+	// written under a variant spelling of the same URL looks like a collision.
+	if sf.StudioURL != "" && canonicalKey(sf.StudioURL) != studioURL {
 		return nil, fmt.Errorf(
 			"slug collision: %s stores data for %q but %q was requested — rename or move one of the studio files",
 			path, sf.StudioURL, studioURL,
@@ -178,7 +192,7 @@ func (f *Flat) migrateLegacy(studioURL, newPath string) (bool, error) {
 	if err := json.Unmarshal(data, &sf); err != nil {
 		return false, fmt.Errorf("parsing legacy store: %w", err)
 	}
-	if sf.StudioURL != "" && sf.StudioURL != studioURL {
+	if sf.StudioURL != "" && canonicalKey(sf.StudioURL) != studioURL {
 		return false, nil
 	}
 	if err := os.Rename(legacy, newPath); err != nil {
@@ -187,7 +201,60 @@ func (f *Flat) migrateLegacy(studioURL, newPath string) (bool, error) {
 	return true, nil
 }
 
+// migrateURLVariant renames a studio file stored under a non-canonical spelling
+// of its URL onto the canonical slug, so `http://x.com`, `https://x.com` and
+// `https://x.com/` resolve to one file instead of three.
+//
+// Slugify hashes the raw URL and is not reversible, so the variant cannot be
+// computed — every studio file in the directory is read and asked which studio
+// it holds. That only happens when the canonical file is absent, which is once
+// per studio at most.
+//
+// When several variants exist the newest by ScrapedAt wins and the others are
+// left in place rather than deleted; merging their scenes is `fss import`'s job,
+// and silently discarding a file would be worse than leaving it.
+func (f *Flat) migrateURLVariant(studioURL, newPath string) (bool, error) {
+	entries, err := os.ReadDir(f.dir)
+	if err != nil {
+		return false, nil // no directory yet: nothing to migrate
+	}
+
+	var bestPath string
+	var bestAt time.Time
+	for _, e := range entries {
+		if e.IsDir() || filepath.Ext(e.Name()) != ".json" {
+			continue
+		}
+		candidate := filepath.Join(f.dir, e.Name())
+		if candidate == newPath {
+			continue
+		}
+		data, rErr := os.ReadFile(candidate)
+		if rErr != nil {
+			continue
+		}
+		var sf models.StudioFile
+		if json.Unmarshal(data, &sf) != nil || sf.StudioURL == "" {
+			continue
+		}
+		if canonicalKey(sf.StudioURL) != studioURL {
+			continue
+		}
+		if bestPath == "" || sf.ScrapedAt.After(bestAt) {
+			bestPath, bestAt = candidate, sf.ScrapedAt
+		}
+	}
+	if bestPath == "" {
+		return false, nil
+	}
+	if err := os.Rename(bestPath, newPath); err != nil {
+		return false, fmt.Errorf("migrating studio file %s: %w", bestPath, err)
+	}
+	return true, nil
+}
+
 func (f *Flat) Save(studioURL string, scenes []models.Scene) error {
+	studioURL = canonicalKey(studioURL)
 	if err := validateScenes(scenes); err != nil {
 		return err
 	}
@@ -199,7 +266,7 @@ func (f *Flat) Save(studioURL string, scenes []models.Scene) error {
 	if err != nil {
 		return err
 	}
-	scenes = withFirstSeen(scenes, prev)
+	scenes = withFirstSeen(withCanonicalStudioURL(scenes, studioURL), prev)
 
 	sf := models.StudioFile{
 		SchemaVersion: models.StoreSchemaVersion,
@@ -246,6 +313,7 @@ func withFirstSeen(scenes []models.Scene, prev *models.StudioFile) []models.Scen
 }
 
 func (f *Flat) MarkDeleted(studioURL, siteID string, ids []string) error {
+	studioURL = canonicalKey(studioURL)
 	unlock, err := f.Lock(studioURL)
 	if err != nil {
 		return fmt.Errorf("locking studio for MarkDeleted: %w", err)

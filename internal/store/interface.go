@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/Wasylq/FSS/models"
+	"github.com/Wasylq/FSS/output"
 )
 
 // validateScenes rejects scenes that would be unaddressable downstream:
@@ -51,6 +52,31 @@ func firstSeenFor(fresh models.Scene, prev *models.Scene) time.Time {
 		return fresh.ScrapedAt
 	}
 	return time.Now().UTC()
+}
+
+// canonicalKey is the identity a studio is stored under. Callers pass whatever
+// URL the operator typed; the store keys on the canonical form so that
+// `http://x.com`, `https://x.com` and `https://x.com/` are one studio rather
+// than three.
+//
+// Only the *key* is canonicalised. The URL handed to a scraper is never
+// rewritten — see output.CanonicalStudioURL.
+func canonicalKey(studioURL string) string {
+	return output.CanonicalStudioURL(studioURL)
+}
+
+// withCanonicalStudioURL returns a copy of scenes whose StudioURL matches the
+// key they are being stored under. Save canonicalises its parameter, and the
+// scene rows carry their own copy of the URL — the child tables key on it — so
+// the two must agree or Load finds nothing. Copying avoids mutating the
+// caller's slice.
+func withCanonicalStudioURL(scenes []models.Scene, studioURL string) []models.Scene {
+	out := make([]models.Scene, len(scenes))
+	copy(out, scenes)
+	for i := range out {
+		out[i].StudioURL = studioURL
+	}
+	return out
 }
 
 // Store is the persistence layer. The default implementation uses flat JSON/CSV files.

@@ -796,3 +796,82 @@ func TestFlatLockIsPerStudio(t *testing.T) {
 		t.Errorf("two studios locked but %d entries tracked", n)
 	}
 }
+
+// TestFlatMigratesURLVariant covers the flat-store half of URL canonicalisation:
+// a studio saved under one spelling must be found under any other. Slugify
+// hashes the raw URL, so the variant's filename cannot be computed — the
+// directory has to be searched by what each file says it holds.
+func TestFlatMigratesURLVariant(t *testing.T) {
+	f := newTestFlat(t)
+	now := time.Now().UTC().Truncate(time.Second)
+
+	// Write the studio under a non-canonical spelling, bypassing Save's
+	// canonicalisation so the directory ends up in the pre-migration shape.
+	variant := "http://www.example.com/"
+	if err := os.MkdirAll(f.dir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	sf := models.StudioFile{
+		SchemaVersion: models.StoreSchemaVersion,
+		StudioURL:     variant,
+		ScrapedAt:     now,
+		SceneCount:    1,
+		Scenes: []models.Scene{{
+			ID: "1", SiteID: "x", StudioURL: variant, Title: "One", ScrapedAt: now,
+		}},
+	}
+	data, err := json.Marshal(sf)
+	if err != nil {
+		t.Fatal(err)
+	}
+	variantPath := filepath.Join(f.dir, Slugify(variant)+".json")
+	if err := os.WriteFile(variantPath, data, 0o600); err != nil {
+		t.Fatal(err)
+	}
+
+	// Any spelling now finds it.
+	for _, ask := range []string{
+		"https://www.example.com",
+		"http://www.example.com",
+		"https://WWW.Example.com/",
+	} {
+		got, err := f.Load(ask)
+		if err != nil {
+			t.Fatalf("Load(%q): %v", ask, err)
+		}
+		if len(got) != 1 || got[0].Title != "One" {
+			t.Fatalf("Load(%q) = %v, want the stored scene", ask, got)
+		}
+	}
+
+	// The file was renamed onto the canonical slug, not copied.
+	canonical := filepath.Join(f.dir, Slugify("https://www.example.com")+".json")
+	if _, err := os.Stat(canonical); err != nil {
+		t.Errorf("canonical file missing: %v", err)
+	}
+	if _, err := os.Stat(variantPath); !os.IsNotExist(err) {
+		t.Error("variant file still present — it should have been renamed")
+	}
+}
+
+// Saving under any spelling writes one file, not one per spelling.
+func TestFlatSaveCanonicalisesKey(t *testing.T) {
+	f := newTestFlat(t)
+	now := time.Now().UTC().Truncate(time.Second)
+	scene := func(url string) []models.Scene {
+		return []models.Scene{{ID: "1", SiteID: "x", StudioURL: url, Title: "One", ScrapedAt: now}}
+	}
+	for _, url := range []string{
+		"http://www.example.com",
+		"https://www.example.com/",
+		"https://WWW.Example.com",
+	} {
+		if err := f.Save(url, scene(url)); err != nil {
+			t.Fatalf("Save(%q): %v", url, err)
+		}
+	}
+	matches, _ := filepath.Glob(filepath.Join(f.dir, "*.json"))
+	if len(matches) != 1 {
+		t.Errorf("got %d studio files, want 1: %v", len(matches), matches)
+	}
+}

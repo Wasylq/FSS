@@ -55,6 +55,7 @@ func NewSQLite(path string) (*SQLite, error) {
 func (s *SQLite) Close() error { return s.db.Close() }
 
 func (s *SQLite) Lock(studioURL string) (io.Closer, error) {
+	studioURL = canonicalKey(studioURL)
 	if err := os.MkdirAll(s.lockDir, 0o700); err != nil {
 		return nil, fmt.Errorf("creating lock dir: %w", err)
 	}
@@ -339,6 +340,11 @@ func (s *SQLite) migrate() error {
 			return fmt.Errorf("migration 8: %w", err)
 		}
 	}
+	if version < 9 {
+		if err := s.applyMigration9(); err != nil {
+			return fmt.Errorf("migration 9: %w", err)
+		}
+	}
 	return nil
 }
 
@@ -443,8 +449,10 @@ func (s *SQLite) applyMigration(ddl string, version int) error {
 	}
 	defer func() { _ = tx.Rollback() }()
 
-	if _, err := tx.Exec(ddl); err != nil {
-		return err
+	if ddl != "" {
+		if _, err := tx.Exec(ddl); err != nil {
+			return err
+		}
 	}
 	if _, err := tx.Exec(`DELETE FROM schema_version`); err != nil {
 		return err
@@ -578,6 +586,7 @@ func (s *SQLite) applyMigration1() error {
 // ---- Store interface ----
 
 func (s *SQLite) Load(studioURL string) ([]models.Scene, error) {
+	studioURL = canonicalKey(studioURL)
 	// Every column below carrying a DEFAULT is still nullable — a DEFAULT only
 	// applies when the column is omitted on insert, not when NULL is written
 	// explicitly. A single NULL would otherwise fail the row scan and take the
@@ -656,9 +665,11 @@ func (s *SQLite) Load(studioURL string) ([]models.Scene, error) {
 // expects everything not present to disappear. Incremental and
 // `--refresh` modes pass the merged set so nothing is dropped.
 func (s *SQLite) Save(studioURL string, scenes []models.Scene) error {
+	studioURL = canonicalKey(studioURL)
 	if err := validateScenes(scenes); err != nil {
 		return err
 	}
+	scenes = withCanonicalStudioURL(scenes, studioURL)
 
 	tx, err := s.db.Begin()
 	if err != nil {
@@ -771,6 +782,7 @@ type storedScene struct {
 }
 
 func (s *SQLite) MarkDeleted(studioURL, siteID string, ids []string) error {
+	studioURL = canonicalKey(studioURL)
 	now := timeStr(time.Now().UTC())
 	tx, err := s.db.Begin()
 	if err != nil {
@@ -797,6 +809,9 @@ func (s *SQLite) MarkDeleted(studioURL, siteID string, ids []string) error {
 }
 
 func (s *SQLite) UpsertStudio(studio models.Studio) error {
+	// Key on the canonical URL like every other entry point, or a studio row
+	// lands under a spelling its scenes are not stored under and is orphaned.
+	studio.URL = canonicalKey(studio.URL)
 	_, err := s.db.Exec(`
 		INSERT INTO studios (url, site_id, name, added_at, last_scraped_at)
 		VALUES (?, ?, ?, ?, ?)
@@ -838,6 +853,7 @@ func (s *SQLite) ListStudios() ([]models.Studio, error) {
 }
 
 func (s *SQLite) Export(format, path, studioURL string) error {
+	studioURL = canonicalKey(studioURL)
 	scenes, err := s.Load(studioURL)
 	if err != nil {
 		return err

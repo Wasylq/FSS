@@ -2014,3 +2014,134 @@ func TestSQLiteDocumentedSchemaVersion(t *testing.T) {
 		t.Errorf("docs/usage.md does not state %q — bump it when adding a migration", want)
 	}
 }
+
+// TestSQLiteMigration9MergesURLVariants covers the case migration 9 exists for:
+// one catalogue stored under several spellings of its URL. Canonicalising the
+// key makes them collide on the primary key, so the migration must merge rather
+// than fail — keeping the freshest row and carrying child rows across.
+func TestSQLiteMigration9MergesURLVariants(t *testing.T) {
+	s := newTestDB(t)
+	older := time.Date(2026, 4, 1, 0, 0, 0, 0, time.UTC)
+	newer := time.Date(2026, 5, 1, 0, 0, 0, 0, time.UTC)
+
+	// Two spellings of one site. Scene "shared" exists in both; each has one
+	// scene the other lacks.
+	httpURL := "http://www.example.com"
+	httpsURL := "https://www.example.com/"
+
+	mk := func(id, title, studioURL string, when time.Time, tags []string) models.Scene {
+		return models.Scene{
+			ID: id, SiteID: "x", StudioURL: studioURL,
+			Title: title, URL: "https://www.example.com/" + id,
+			Tags: tags, ScrapedAt: when,
+		}
+	}
+	if err := s.Save(httpURL, []models.Scene{
+		mk("shared", "old title", httpURL, older, []string{"old-tag"}),
+		mk("only-http", "Only HTTP", httpURL, older, nil),
+	}); err != nil {
+		t.Fatal(err)
+	}
+	// Write the https variant directly, bypassing the canonicalising Save so the
+	// database ends up in the pre-migration shape.
+	if _, err := s.db.Exec(`INSERT INTO scenes (id, site_id, studio_url, title, url, scraped_at, first_seen_at, content_hash)
+		VALUES ('shared','x',?,'new title','u',?,?,''), ('only-https','x',?,'Only HTTPS','u',?,?,'')`,
+		httpsURL, timeStr(newer), timeStr(newer), httpsURL, timeStr(newer), timeStr(newer)); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := s.db.Exec(`INSERT INTO studios (url, site_id, name, added_at, last_scraped_at)
+		VALUES (?,?,?,?,?), (?,?,?,?,?)`,
+		httpURL, "x", "Example", timeStr(older), timeStr(older),
+		httpsURL, "x", "Example", timeStr(newer), timeStr(newer)); err != nil {
+		t.Fatal(err)
+	}
+	// Rewind so migration 9 runs again over this hand-made state.
+	if _, err := s.db.Exec(`DELETE FROM schema_version`); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := s.db.Exec(`INSERT INTO schema_version (version) VALUES (8)`); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := s.applyMigration9(); err != nil {
+		t.Fatalf("applyMigration9: %v", err)
+	}
+
+	canonical := "https://www.example.com"
+	got, err := s.Load(canonical)
+	if err != nil {
+		t.Fatal(err)
+	}
+	byID := map[string]models.Scene{}
+	for _, sc := range got {
+		byID[sc.ID] = sc
+	}
+	if len(got) != 3 {
+		t.Fatalf("got %d scenes, want 3 (both variants merged): %v", len(got), byID)
+	}
+	// The colliding scene keeps the newer row.
+	if byID["shared"].Title != "new title" {
+		t.Errorf("shared title = %q, want the newer row's value", byID["shared"].Title)
+	}
+	// Scenes unique to each variant survive.
+	if byID["only-http"].Title == "" || byID["only-https"].Title == "" {
+		t.Errorf("a variant-only scene was dropped: %v", byID)
+	}
+	// Child rows followed their parent.
+	if len(byID["only-http"].Tags) != 0 && len(byID["shared"].Tags) == 0 {
+		t.Error("relations were not carried across")
+	}
+	// Every remaining row is under the canonical URL only.
+	var stray int
+	if err := s.db.QueryRow(
+		`SELECT COUNT(*) FROM scenes WHERE studio_url <> ?`, canonical).Scan(&stray); err != nil {
+		t.Fatal(err)
+	}
+	if stray != 0 {
+		t.Errorf("%d scene rows left under a non-canonical URL", stray)
+	}
+	// The studios table merged to one row.
+	studios, err := s.ListStudios()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(studios) != 1 || studios[0].URL != canonical {
+		t.Errorf("studios = %+v, want a single canonical row", studios)
+	}
+	// And no orphaned child rows remain.
+	for _, table := range []string{"scene_performers", "scene_tags", "scene_categories", "price_history"} {
+		var orphans int
+		q := `SELECT COUNT(*) FROM ` + table + ` j WHERE NOT EXISTS (
+			SELECT 1 FROM scenes s WHERE s.id = j.scene_id AND s.site_id = j.site_id
+			  AND s.studio_url = j.studio_url)`
+		if err := s.db.QueryRow(q).Scan(&orphans); err != nil {
+			t.Fatal(err)
+		}
+		if orphans != 0 {
+			t.Errorf("%s has %d orphaned rows", table, orphans)
+		}
+	}
+}
+
+// A database whose URLs are all already canonical must pass through untouched.
+func TestSQLiteMigration9NoopWhenAlreadyCanonical(t *testing.T) {
+	s := newTestDB(t)
+	now := time.Now().UTC().Truncate(time.Second)
+	url := "https://www.example.com/studio"
+	if err := s.Save(url, []models.Scene{
+		{ID: "1", SiteID: "x", StudioURL: url, Title: "One", Tags: []string{"t"}, ScrapedAt: now},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	before, _ := s.Load(url)
+	if err := s.applyMigration9(); err != nil {
+		t.Fatalf("applyMigration9: %v", err)
+	}
+	after, err := s.Load(url)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(after) != len(before) || after[0].Title != before[0].Title || len(after[0].Tags) != 1 {
+		t.Errorf("no-op migration changed data: %+v -> %+v", before, after)
+	}
+}
