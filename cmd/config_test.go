@@ -3,6 +3,7 @@ package cmd
 import (
 	"bytes"
 	"log"
+	"os"
 	"strings"
 	"testing"
 
@@ -33,6 +34,35 @@ func initConfig(t *testing.T) string {
 		t.Fatalf("config init: %v", err)
 	}
 	return buf.String()
+}
+
+// A second `config init` must not overwrite the config the operator has since
+// edited — the default template would silently replace their API keys.
+func TestConfigInitRefusesToOverwrite(t *testing.T) {
+	isolateXDG(t)
+	initConfig(t)
+
+	path := config.DefaultPath()
+	edited := "workers: 9\ndb: \"/tmp/mine.db\"\n"
+	if err := os.WriteFile(path, []byte(edited), 0o600); err != nil {
+		t.Fatal(err)
+	}
+
+	err := runConfigInit(&cobra.Command{}, nil)
+	if err == nil {
+		t.Fatal("second config init succeeded, want an error")
+	}
+	if !strings.Contains(err.Error(), "already exists") {
+		t.Errorf("error = %v, want it to say the config already exists", err)
+	}
+
+	after, readErr := os.ReadFile(path)
+	if readErr != nil {
+		t.Fatal(readErr)
+	}
+	if string(after) != edited {
+		t.Errorf("config was overwritten:\n%s", after)
+	}
 }
 
 // The file `fss config init` writes is what every new user starts from, so it
