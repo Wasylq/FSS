@@ -434,6 +434,8 @@ func collectScenes(ctx context.Context, sc scraper.StudioScraper, studioURL stri
 	start := time.Now()
 	var scenes []models.Scene
 	errCount := 0
+	missing := 0 // errors that cost us scenes — see scraper.FailureKind
+	byKind := map[scraper.FailureKind]int{}
 	total := 0
 	stoppedEarly := false
 	for result := range ch {
@@ -446,6 +448,11 @@ func collectScenes(ctx context.Context, sc scraper.StudioScraper, studioURL stri
 			continue
 		case scraper.KindError:
 			errCount++
+			kind := scraper.Classify(result.Err)
+			byKind[kind]++
+			if kind.MissingData() {
+				missing++
+			}
 			fmt.Fprintf(os.Stderr, "\rwarning: %v\n", result.Err)
 			continue
 		case scraper.KindScene:
@@ -463,7 +470,7 @@ func collectScenes(ctx context.Context, sc scraper.StudioScraper, studioURL stri
 		fmt.Println("  stopped early at known ID — remaining scenes already stored")
 	}
 	if errCount > 0 {
-		fmt.Fprintf(os.Stderr, "  %d fetch error(s) — see warnings above\n", errCount)
+		fmt.Fprintf(os.Stderr, "  %d fetch error(s) [%s] — see warnings above\n", errCount, summarizeFailures(byKind))
 	}
 	if ctx.Err() != nil {
 		fmt.Printf("Interrupted — saving %d partial results...\n", len(scenes))
@@ -471,8 +478,31 @@ func collectScenes(ctx context.Context, sc scraper.StudioScraper, studioURL stri
 	if errCount > 0 && len(scenes) == 0 {
 		return nil, true, fmt.Errorf("scrape failed with %d error(s) and 0 scenes", errCount)
 	}
-	incomplete := errCount > 0 || ctx.Err() != nil
+	// Only failures that cost us scenes make a traversal incomplete. A run
+	// whose sole errors were absent resources (an optional sub-listing the
+	// site does not have) saw everything there was to see, and used to be
+	// demoted to non-authoritative for no reason.
+	incomplete := missing > 0 || ctx.Err() != nil
 	return scenes, incomplete, nil
+}
+
+// summarizeFailures renders the per-kind error breakdown in a stable order, so
+// "3 fetch error(s) [2 transport, 1 parse]" says at a glance whether to retry or
+// to go and fix a parser.
+func summarizeFailures(byKind map[scraper.FailureKind]int) string {
+	order := []scraper.FailureKind{
+		scraper.FailureTransport,
+		scraper.FailureParse,
+		scraper.FailureAbsent,
+		scraper.FailureUnknown,
+	}
+	parts := make([]string, 0, len(order))
+	for _, k := range order {
+		if n := byKind[k]; n > 0 {
+			parts = append(parts, fmt.Sprintf("%d %s", n, k))
+		}
+	}
+	return strings.Join(parts, ", ")
 }
 
 // carryOver folds a stored scene into the freshly-scraped one that replaces it:

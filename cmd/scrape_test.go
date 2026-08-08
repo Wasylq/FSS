@@ -3,6 +3,7 @@ package cmd
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"path/filepath"
 	"slices"
@@ -461,6 +462,117 @@ func (f *mixedScraper) ListScenes(_ context.Context, _ string, _ scraper.ListOpt
 	}
 	close(ch)
 	return ch, nil
+}
+
+// kindedScraper emits pre-built errors verbatim, so a test can control how each
+// failure classifies rather than relying on plain fmt.Errorf values.
+type kindedScraper struct {
+	id     string
+	scenes []models.Scene
+	errs   []error
+}
+
+func (f *kindedScraper) ID() string             { return f.id }
+func (f *kindedScraper) Patterns() []string     { return nil }
+func (f *kindedScraper) MatchesURL(string) bool { return true }
+
+func (f *kindedScraper) ListScenes(_ context.Context, _ string, _ scraper.ListOpts) (<-chan scraper.SceneResult, error) {
+	ch := make(chan scraper.SceneResult, len(f.scenes)+len(f.errs))
+	for _, e := range f.errs {
+		ch <- scraper.Error(e)
+	}
+	for _, s := range f.scenes {
+		ch <- scraper.Scene(s)
+	}
+	close(ch)
+	return ch, nil
+}
+
+// An optional sub-listing a site does not have costs no scenes, so a run whose
+// only failures were absences saw everything there was to see. Counting those as
+// incomplete demoted the run to non-destructive for no reason — the bug this
+// classification exists to fix.
+func TestCollectScenes_absentErrorsKeepTraversalComplete(t *testing.T) {
+	sc := &kindedScraper{
+		id:     "kinded",
+		scenes: []models.Scene{{ID: "1", SiteID: "kinded", Title: "Scene 1"}},
+		errs: []error{
+			scraper.AbsentError("https://example.com/tags", errors.New("HTTP 404")),
+			scraper.AbsentError("https://example.com/dvds", errors.New("HTTP 410")),
+		},
+	}
+	scenes, incomplete, err := collectScenes(context.Background(), sc, "https://example.com", scraper.ListOpts{})
+	if err != nil {
+		t.Fatalf("collectScenes: %v", err)
+	}
+	if len(scenes) != 1 {
+		t.Errorf("got %d scenes, want 1", len(scenes))
+	}
+	if incomplete {
+		t.Error("incomplete=true, want false — absent resources cost no scenes")
+	}
+}
+
+// The other half of the same decision: a page that arrived but could not be read
+// did cost us scenes, whatever the status code said.
+func TestCollectScenes_lossyErrorsMakeTraversalIncomplete(t *testing.T) {
+	for _, c := range []struct {
+		name string
+		err  error
+	}{
+		{"parse", scraper.ParseError("https://example.com/p/2", errors.New("no video block"))},
+		{"transport", scraper.TransportError("https://example.com/p/2", errors.New("connection reset"))},
+		{"unclassified", errors.New("boom")},
+	} {
+		t.Run(c.name, func(t *testing.T) {
+			sc := &kindedScraper{
+				id:     "kinded",
+				scenes: []models.Scene{{ID: "1", SiteID: "kinded", Title: "Scene 1"}},
+				errs:   []error{c.err},
+			}
+			_, incomplete, err := collectScenes(context.Background(), sc, "https://example.com", scraper.ListOpts{})
+			if err != nil {
+				t.Fatalf("collectScenes: %v", err)
+			}
+			if !incomplete {
+				t.Errorf("incomplete=false for a %s failure, want true", c.name)
+			}
+		})
+	}
+}
+
+// A mix must not let the absences mask the losses.
+func TestCollectScenes_mixedKindsCountLossesOnly(t *testing.T) {
+	sc := &kindedScraper{
+		id:     "kinded",
+		scenes: []models.Scene{{ID: "1", SiteID: "kinded", Title: "Scene 1"}},
+		errs: []error{
+			scraper.AbsentError("https://example.com/tags", errors.New("HTTP 404")),
+			scraper.ParseError("https://example.com/p/2", errors.New("no video block")),
+		},
+	}
+	_, incomplete, err := collectScenes(context.Background(), sc, "https://example.com", scraper.ListOpts{})
+	if err != nil {
+		t.Fatalf("collectScenes: %v", err)
+	}
+	if !incomplete {
+		t.Error("incomplete=false, want true — one parse failure lost scenes")
+	}
+}
+
+func TestSummarizeFailures(t *testing.T) {
+	got := summarizeFailures(map[scraper.FailureKind]int{
+		scraper.FailureAbsent:    1,
+		scraper.FailureTransport: 2,
+		scraper.FailureParse:     3,
+	})
+	// Fixed order regardless of map iteration, most-actionable first.
+	if want := "2 transport, 3 parse, 1 absent"; got != want {
+		t.Errorf("summarizeFailures() = %q, want %q", got, want)
+	}
+	if got := summarizeFailures(map[scraper.FailureKind]int{}); got != "" {
+		t.Errorf("summarizeFailures(empty) = %q, want empty", got)
+	}
 }
 
 func TestCollectScenes_errorsWithSomeScenes(t *testing.T) {
