@@ -1,0 +1,60 @@
+name: CodeQL
+
+# The one class of analysis nothing else here covers. `vulncheck` finds known
+# CVEs in dependencies and Trivy finds them in the image; neither looks at this
+# repository's own code. CodeQL does taint tracking, which is the relevant shape
+# for a program that parses attacker-influenced HTML and JSON from ~290 sites
+# and turns it into SQL, file paths and XML.
+#
+# Temper expectations: CodeQL's Go query pack is considerably weaker than its
+# JavaScript or Java ones, and golangci-lint (staticcheck, errcheck, bodyclose,
+# errorlint) already catches much of what it would flag. It is free for public
+# repositories and runs unattended, which is the argument for it.
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+  schedule:
+    # Weekly, so a newly-published query finds old code without a push.
+    # Deliberately not on the hour — GitHub sheds load at popular cron times.
+    - cron: '27 4 * * 1'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: codeql-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  analyze:
+    name: Analyze Go
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      # security-events: write is what lets results reach the Security tab;
+      # without it the run succeeds and reports nowhere.
+      security-events: write
+      contents: read
+      actions: read
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Set up Go
+        # Ahead of init, so autobuild uses the version in go.mod rather than
+        # whatever the runner image ships.
+        uses: actions/setup-go@v7
+        with:
+          go-version-file: go.mod
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v4
+        with:
+          languages: go
+          build-mode: autobuild
+
+      - name: Perform CodeQL analysis
+        uses: github/codeql-action/analyze@v4
+        with:
+          category: '/language:go'

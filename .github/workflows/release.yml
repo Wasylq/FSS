@@ -111,6 +111,15 @@ jobs:
     environment:
       name: manual-smoke-gate
       url: ${{ github.server_url }}/${{ github.repository }}/blob/master/CONTRIBUTING.md#cutting-a-release
+    permissions:
+      # contents: write to publish the release; the rest are for
+      # actions/attest-build-provenance over the downloadable artifacts.
+      # Declaring them at the job level narrows the top-level grant — this job
+      # has no reason to hold `packages: write`.
+      contents: write
+      discussions: write
+      id-token: write
+      attestations: write
     steps:
       - uses: actions/checkout@v7
         with:
@@ -139,6 +148,18 @@ jobs:
           cat SHA256SUMS
           # Self-check: every line must verify cleanly before we hand it to users.
           sha256sum --check --strict SHA256SUMS
+
+      - name: Attest build provenance for the release artifacts
+        # SHA256SUMS proves a download was not corrupted in transit, but it is
+        # generated in this same job — anyone able to influence the build can
+        # regenerate it, so it says nothing about *origin*. This binds every
+        # artifact to the workflow run and commit that produced it, which is the
+        # part a checksum cannot cover. The docker job already did this for the
+        # image; the tarballs are what most people actually download.
+        #   gh attestation verify <file> --owner <owner>
+        uses: actions/attest-build-provenance@v4.1.1
+        with:
+          subject-path: 'dist/*'
 
       - name: Generate changelog
         id: changelog
@@ -262,6 +283,18 @@ jobs:
             ```
 
             A mismatch — or `FAILED` from `sha256sum --check` — means the file is corrupted or tampered with; do not run it.
+
+            ### Verifying where a binary came from
+
+            `SHA256SUMS` tells you a download arrived intact. It does not tell you who built it — it is produced by the same workflow as the binaries. Every artifact here also carries a [SLSA v1 build attestation](https://slsa.dev/) binding it to the workflow run and commit that produced it.
+
+            Requires the [`gh` CLI](https://cli.github.com/) v2.49+:
+
+            ```sh
+            gh attestation verify fss-${{ github.ref_name }}-linux-amd64.tar.gz --owner Wasylq
+            ```
+
+            A successful check names the workflow and the commit SHA it was built from. Anything else — including "no attestations found" — means the file did not come from this release pipeline.
 
             ### Verifying the Docker image
 

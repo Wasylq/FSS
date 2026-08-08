@@ -1,0 +1,37 @@
+name: Dependency review
+
+# Flags a pull request that introduces a dependency with a known advisory, or
+# one whose licence does not fit, before it is merged rather than after
+# Dependabot notices it on master.
+#
+# This does nothing today: the maintainer pushes straight to master, and the
+# action only runs on pull_request. That is deliberate — it is here so the
+# first outside contribution is reviewed properly on arrival, not so a workflow
+# can be written in a hurry once one shows up.
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  review:
+    name: Review dependency changes
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      # Required by comment-summary-in-pr; without it the action cannot post
+      # and the step fails for a reason unrelated to the dependencies.
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Dependency review
+        uses: actions/dependency-review-action@v5
+        with:
+          # Block on high and above. Anything lower is noise on a PR that is
+          # usually adding one scraper, and Dependabot picks the rest up on its
+          # weekly gomod pass.
+          fail-on-severity: high
+          comment-summary-in-pr: on-failure

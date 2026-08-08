@@ -126,6 +126,41 @@ jobs:
             }' coverage.out | sort
           } >> $GITHUB_STEP_SUMMARY
 
+  platform:
+    name: Test (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    # The main `test` job runs on Linux only, but release binaries ship for
+    # windows/amd64 and darwin — and `cross-build` merely *compiles* those, so
+    # until this job existed no Windows or macOS code path was ever executed.
+    # That is not hypothetical here: `internal/store/flock_windows.go` makes the
+    # process lock a no-op on Windows, `output.atomicWriteFile` relies on
+    # rename-over-existing semantics that differ there, and the 250-byte
+    # Slugify cap is reasoned from the POSIX 255-byte *filename* limit rather
+    # than Windows's limit on the whole path.
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, macos-latest]
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Set up Go
+        uses: actions/setup-go@v7
+        with:
+          go-version-file: go.mod
+
+      - name: Build
+        run: go build ./...
+
+      # No -race here, deliberately. Data races are OS-independent and the
+      # Linux `test` job already covers them under the race detector; what this
+      # job is for is filesystem, path and locking behaviour. Dropping -race
+      # also avoids depending on a C toolchain being present on the Windows
+      # image, which would make the job fail for a reason unrelated to the bug
+      # class it exists to catch.
+      - name: Test
+        run: go test -count=1 ./...
+
   offline:
     name: Offline test isolation
     runs-on: ubuntu-latest
