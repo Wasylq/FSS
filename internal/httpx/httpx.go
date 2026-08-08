@@ -242,6 +242,22 @@ type StatusError struct {
 
 func (e *StatusError) Error() string { return fmt.Sprintf("HTTP %d", e.StatusCode) }
 
+// FailureKind classifies the status for the traversal-completeness decision in
+// the cmd layer (see scraper.Classify).
+//
+// 404 and 410 are the only statuses that mean "this is legitimately not here" —
+// an optional sub-listing a site does not have costs us no scenes and must not
+// make a --full run look incomplete. Everything else Do refuses to retry (403,
+// 401, 400 …) is a page that did not arrive, so it counts as missing data.
+func (e *StatusError) FailureKind() scraper.FailureKind {
+	switch e.StatusCode {
+	case http.StatusNotFound, http.StatusGone:
+		return scraper.FailureAbsent
+	default:
+		return scraper.FailureTransport
+	}
+}
+
 // Do performs the request with exponential backoff: it retries network errors,
 // 429, and 5xx up to MaxAttempts times, sleeping (attempt * 2s) between tries.
 // Non-retryable 4xx responses fail fast with a *StatusError — the caller does

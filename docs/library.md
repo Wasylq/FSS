@@ -188,6 +188,34 @@ for r := range ch {
 
 The channel is always closed when the scraper finishes (or is cancelled via context).
 
+### Classifying errors
+
+A `KindError` result is non-fatal, but not every one of them means data went missing.
+`scraper.Classify` sorts them into a `FailureKind`:
+
+| Kind | Meaning | Cost |
+|------|---------|------|
+| `FailureTransport` | the page never arrived — network, timeout, 5xx, 429, 403 | scenes missing |
+| `FailureParse` | the page arrived but could not be read | scenes missing |
+| `FailureAbsent` | the resource is legitimately gone (404/410) or the listing is empty | nothing missing |
+| `FailureUnknown` | unclassified | assume scenes missing |
+
+```go
+case scraper.KindError:
+    if scraper.Classify(r.Err).MissingData() {
+        incomplete = true // this traversal is not the site's full state
+    }
+```
+
+`MissingData()` is true for everything except `FailureAbsent`, so an unclassified error stays
+conservative. This matters for callers doing an authoritative write: a traversal that lost a
+page must not be treated as the complete scene set, while an optional sub-listing that 404s
+should not block one.
+
+Scrapers annotate their own errors with `scraper.ParseError(url, err)`,
+`TransportError`, or `AbsentError`; the returned `*ScrapeError` unwraps to the cause, so
+`errors.Is`/`errors.As` still work. Errors from `httpx` classify themselves by status.
+
 ## The Scene Model
 
 `models.Scene` has everything a scraper can extract. Fields vary by site — only `ID`, `SiteID`, `Title`, `URL`, and `ScrapedAt` are guaranteed.
