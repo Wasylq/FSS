@@ -650,3 +650,92 @@ func TestContract_UpsertStudioCanonicalisesURL(t *testing.T) {
 		})
 	}
 }
+
+// Save keys every scene on the URL it was called with, not the one the scraper
+// stamped on the scene. A scraper that derives a canonical or CDN URL per scene
+// would otherwise write rows Load can never reach.
+func TestContract_SaveStampsTheStudioURLItWasCalledWith(t *testing.T) {
+	for _, sf := range storeFactories(t) {
+		t.Run(sf.name, func(t *testing.T) {
+			s := sf.new(t)
+			now := time.Now().UTC().Truncate(time.Second)
+
+			const requested = "https://requested.example.com/studio"
+			scenes := []models.Scene{{
+				ID: "1", SiteID: "x", Title: "Stamped",
+				StudioURL: "https://cdn.elsewhere.example.com/other",
+				Tags:      []string{"t"}, Performers: []string{"p"},
+				ScrapedAt: now,
+			}}
+
+			if err := s.Save(requested, scenes); err != nil {
+				t.Fatalf("Save: %v", err)
+			}
+
+			got, err := s.Load(requested)
+			if err != nil {
+				t.Fatalf("Load: %v", err)
+			}
+			if len(got) != 1 {
+				t.Fatalf("got %d scenes, want 1", len(got))
+			}
+			if got[0].StudioURL != requested {
+				t.Errorf("StudioURL = %q, want %q", got[0].StudioURL, requested)
+			}
+			// The relations key off the scene's own StudioURL copy, so a missed
+			// stamp shows up as silently empty tags rather than a load failure.
+			if len(got[0].Tags) != 1 || len(got[0].Performers) != 1 {
+				t.Errorf("relations lost: tags=%v performers=%v", got[0].Tags, got[0].Performers)
+			}
+		})
+	}
+}
+
+// (id, site_id) is only unique within a studio. Two studios legitimately carry
+// the same pair when a network republishes a scene, and neither may overwrite
+// or delete the other.
+func TestContract_SameSceneKeyInTwoStudios(t *testing.T) {
+	for _, sf := range storeFactories(t) {
+		t.Run(sf.name, func(t *testing.T) {
+			s := sf.new(t)
+			now := time.Now().UTC().Truncate(time.Second)
+
+			urlA := "https://studio-one.example.com"
+			urlB := "https://studio-two.example.com"
+			mk := func(u, title string) []models.Scene {
+				return []models.Scene{{
+					ID: "shared-1", SiteID: "net", StudioURL: u,
+					Title: title, Tags: []string{title}, ScrapedAt: now,
+				}}
+			}
+
+			if err := s.Save(urlA, mk(urlA, "A")); err != nil {
+				t.Fatalf("Save A: %v", err)
+			}
+			if err := s.Save(urlB, mk(urlB, "B")); err != nil {
+				t.Fatalf("Save B: %v", err)
+			}
+
+			gotA, _ := s.Load(urlA)
+			gotB, _ := s.Load(urlB)
+			if len(gotA) != 1 || gotA[0].Title != "A" {
+				t.Errorf("studio A = %v, want one scene titled A", gotA)
+			}
+			if len(gotB) != 1 || gotB[0].Title != "B" {
+				t.Errorf("studio B = %v, want one scene titled B", gotB)
+			}
+			if len(gotA) == 1 && len(gotA[0].Tags) != 1 {
+				t.Errorf("studio A tags = %v, want one", gotA[0].Tags)
+			}
+
+			// Deleting the pair from one studio must leave the other intact.
+			if err := s.MarkDeleted(urlA, "net", []string{"shared-1"}); err != nil {
+				t.Fatalf("MarkDeleted: %v", err)
+			}
+			gotB, _ = s.Load(urlB)
+			if len(gotB) != 1 || gotB[0].DeletedAt != nil {
+				t.Errorf("studio B was affected by a delete in studio A: %v", gotB)
+			}
+		})
+	}
+}
