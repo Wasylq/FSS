@@ -68,6 +68,28 @@ smoke: ## Run integration smoke tests against live sites + Stash. Manual only â€
 	rm -f /tmp/fss-smoke.log; \
 	exit $$rc
 
+.PHONY: cover
+cover: ## Unit-test coverage, matching what CI reports.
+	$(GO) test -count=1 -coverpkg=./... -coverprofile=coverage.out -covermode=atomic $(PKGS)
+	@$(MAKE) -s compact-coverage PROFILE=coverage.out
+	@$(GO) tool cover -func=coverage.out | tail -1
+
+.PHONY: smoke-cover
+smoke-cover: ## Coverage including integration tests. Manual only â€” same live-HTTP caveat as smoke.
+	@echo "==> Unit + integration coverage (live HTTP, not for CI)"
+	@echo "==> Cloudflare blocks datacentre IPs, so run this from a normal connection."
+	$(GO) test -tags=integration -timeout=$(SMOKE_TIMEOUT) -coverpkg=./... \
+		-coverprofile=coverage.smoke.out -covermode=atomic $(PKGS) || true
+	@$(MAKE) -s compact-coverage PROFILE=coverage.smoke.out
+	@echo ""
+	@$(GO) tool cover -func=coverage.smoke.out | tail -1
+	@echo "==> Compare with 'make cover' to see what the integration tests add."
+
+.PHONY: compact-coverage
+compact-coverage: ## Internal: collapse -coverpkg duplicate blocks in $(PROFILE).
+	@awk 'NR==1 { print; next } { n[$$1] = $$2; c[$$1] += $$3 } END { for (k in n) print k, n[k], c[k] }' \
+		$(PROFILE) > $(PROFILE).merged && mv $(PROFILE).merged $(PROFILE)
+
 .PHONY: smoke-one
 smoke-one: ## Run smoke for one scraper. Usage: make smoke-one SCRAPER=manyvids
 	@if [ -z "$(SCRAPER)" ]; then echo "usage: make smoke-one SCRAPER=<name>"; exit 1; fi
@@ -92,7 +114,7 @@ tidy: ## go mod tidy.
 
 .PHONY: clean
 clean: ## Remove built binary and test artifacts.
-	rm -f fss fss.exe coverage.out test-output.txt
+	rm -f fss fss.exe coverage.out coverage.smoke.out test-output.txt
 
 .PHONY: docker
 docker: ## Build the docker image as fss:dev with version metadata from git.
