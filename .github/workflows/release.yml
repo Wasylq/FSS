@@ -152,12 +152,43 @@ jobs:
           echo "$CHANGELOG" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
 
+      - name: Read tag annotation
+        id: tagnote
+        # An annotated tag's message becomes a callout at the top of the release
+        # page, for saying things the commit list cannot ("maintenance only, no
+        # new scrapers"). Tag with `git tag -a v1.2.3 -m "..."`; a lightweight
+        # tag just omits the callout.
+        run: |
+          TAG="${GITHUB_REF_NAME}"
+          note=""
+          # A lightweight tag points straight at the commit, and %(contents:*)
+          # would then return that commit's message — not a release note.
+          if [ "$(git cat-file -t "$TAG" 2>/dev/null)" = "tag" ]; then
+            subject=$(git for-each-ref "refs/tags/$TAG" --format='%(contents:subject)')
+            # contents:subject + contents:body rather than plain contents:
+            # contents includes the PGP block on a signed tag.
+            body=$(git for-each-ref "refs/tags/$TAG" --format='%(contents:body)')
+            if [ -n "$subject" ]; then
+              note="> **${subject}**"
+              if [ -n "$(printf '%s' "$body" | tr -d '[:space:]')" ]; then
+                note="${note}"$'\n'">"$'\n'"$(printf '%s\n' "$body" | sed 's/^/> /' | sed 's/[[:space:]]*$//')"
+              fi
+            fi
+          fi
+          {
+            echo "note<<TAGNOTE_EOF"
+            echo "$note"
+            echo "TAGNOTE_EOF"
+          } >> "$GITHUB_OUTPUT"
+
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v3
         with:
           files: dist/*
           generate_release_notes: true
           body: |
+            ${{ steps.tagnote.outputs.note }}
+
             ## Changes
 
             ${{ steps.changelog.outputs.changelog }}
