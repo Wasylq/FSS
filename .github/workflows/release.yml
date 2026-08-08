@@ -12,6 +12,7 @@ concurrency:
 permissions:
   contents: write
   packages: write # for the docker job that pushes to ghcr after release
+  discussions: write # each release opens a linked thread in Announcements
 
 jobs:
   build:
@@ -186,6 +187,16 @@ jobs:
         with:
           files: dist/*
           generate_release_notes: true
+          # Opens a Discussion linked to the release, seeded with the release
+          # body, so users have somewhere to reply that is not an issue.
+          #
+          # The category must already exist — a name that matches nothing fails
+          # the API call, and it does so *after* the binaries are built and the
+          # smoke gate is approved. Do not rename it on GitHub without changing
+          # it here. A release whose discussion already exists cannot have it
+          # changed either, so re-running this job on an existing tag will fail
+          # here; cut a new patch tag instead.
+          discussion_category_name: Announcements
           body: |
             ${{ steps.tagnote.outputs.note }}
 

@@ -467,6 +467,18 @@ The first line becomes the bold heading and the rest the body. A lightweight tag
 the commit it points at is not a release note. Signed tags (`git tag -s`) are
 fine; the signature block is stripped.
 
+Every release also opens a linked **Discussion** in the *Announcements* category,
+seeded with the release body, so users have somewhere to reply that is not an
+issue. Two consequences worth knowing:
+
+- The category is named in `release.yml`. Renaming or deleting *Announcements* on
+  GitHub breaks the release job — and it breaks it late, after the binaries are
+  built and the smoke gate is approved.
+- A release's discussion cannot be changed once created, so re-running the
+  `release` job for a tag that already published will fail at that step. Cut a new
+  patch tag rather than re-running it. (This does not affect the `aur` and
+  `docker` jobs, which are still safe to re-run on their own.)
+
 The same message is shown by `fss version` when it reports an available update,
 so it reaches users who never open the release page. It is read back out of the
 release body's leading blockquote rather than from the tag object, which keeps
