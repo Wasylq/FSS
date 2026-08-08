@@ -242,20 +242,18 @@ type StatusError struct {
 
 func (e *StatusError) Error() string { return fmt.Sprintf("HTTP %d", e.StatusCode) }
 
-// FailureKind classifies the status for the traversal-completeness decision in
-// the cmd layer (see scraper.Classify).
+// FailureKind reports that the page did not arrive, whatever the status was.
 //
-// 404 and 410 are the only statuses that mean "this is legitimately not here" —
-// an optional sub-listing a site does not have costs us no scenes and must not
-// make a --full run look incomplete. Everything else Do refuses to retry (403,
-// 401, 400 …) is a page that did not arrive, so it counts as missing data.
+// Deliberately including 404 and 410. It is tempting to call those "absent" and
+// let them off the traversal-completeness hook, but a status code does not say
+// whether the missing resource mattered: a 404 on an optional sub-listing the
+// scraper was merely probing costs nothing, while a 404 on the detail page of a
+// scene the listing already returned means a known scene went uncollected — and
+// under `--full` the authoritative Save would then delete it. Only the call site
+// knows which it is, so httpx always reports missing data and a scraper that
+// knows better opts out explicitly with scraper.AbsentError.
 func (e *StatusError) FailureKind() scraper.FailureKind {
-	switch e.StatusCode {
-	case http.StatusNotFound, http.StatusGone:
-		return scraper.FailureAbsent
-	default:
-		return scraper.FailureTransport
-	}
+	return scraper.FailureTransport
 }
 
 // Do performs the request with exponential backoff: it retries network errors,

@@ -197,7 +197,7 @@ A `KindError` result is non-fatal, but not every one of them means data went mis
 |------|---------|------|
 | `FailureTransport` | the page never arrived — network, timeout, 5xx, 429, 403 | scenes missing |
 | `FailureParse` | the page arrived but could not be read | scenes missing |
-| `FailureAbsent` | the resource is legitimately gone (404/410) or the listing is empty | nothing missing |
+| `FailureAbsent` | an optional resource the scraper was probing isn't there | nothing missing |
 | `FailureUnknown` | unclassified | assume scenes missing |
 
 ```go
@@ -214,7 +214,13 @@ should not block one.
 
 Scrapers annotate their own errors with `scraper.ParseError(url, err)`,
 `TransportError`, or `AbsentError`; the returned `*ScrapeError` unwraps to the cause, so
-`errors.Is`/`errors.As` still work. Errors from `httpx` classify themselves by status.
+`errors.Is`/`errors.As` still work.
+
+`FailureAbsent` is **opt-in only**. Errors from `httpx` always report missing data, 404
+included: a status code cannot say whether the missing resource mattered. A 404 on an
+optional sub-listing costs nothing, while a 404 on the detail page of a scene the listing
+already returned means a known scene went uncollected. Only the call site knows which,
+so downgrade it deliberately with `AbsentError` and never by status alone.
 
 ## The Scene Model
 

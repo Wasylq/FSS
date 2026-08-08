@@ -11,6 +11,8 @@ import (
 	"sync/atomic"
 	"testing"
 	"time"
+
+	"github.com/Wasylq/FSS/scraper"
 )
 
 func noopSleep(_ context.Context, _ time.Duration) error { return nil }
@@ -522,5 +524,19 @@ func TestNewLegacyTLSClient(t *testing.T) {
 	}
 	if def.TLSClientConfig != nil {
 		t.Error("the default client must not inherit the widened cipher list")
+	}
+}
+
+// A status code cannot say whether the missing resource mattered — a 404 on an
+// optional probe costs nothing, a 404 on a listed scene's detail page loses a
+// scene the authoritative Save would then delete. httpx always reports missing
+// data; only a scraper that knows the fetch was optional downgrades it with
+// scraper.AbsentError.
+func TestStatusError_alwaysReportsMissingData(t *testing.T) {
+	for _, code := range []int{400, 401, 403, 404, 410, 418, 500, 503} {
+		err := &StatusError{StatusCode: code}
+		if got := scraper.Classify(err); !got.MissingData() {
+			t.Errorf("HTTP %d classified as %v, which does not count as missing data", code, got)
+		}
 	}
 }
