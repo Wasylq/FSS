@@ -135,10 +135,10 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 				ScrapedAt:   now,
 			})
 		}
-		return scraper.PageResult{
-			Scenes: scenes,
-			Total:  len(items),
-		}, nil
+		// No catalogue total is exposed anywhere in the listing markup, and
+		// reporting the page size as the total made the progress line claim the
+		// scrape was finished after page one.
+		return scraper.PageResult{Scenes: scenes}, nil
 	})
 }
 

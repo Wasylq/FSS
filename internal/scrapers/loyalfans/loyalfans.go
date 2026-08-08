@@ -88,7 +88,6 @@ func (s *Scraper) run(ctx context.Context, studioURL, slug string, opts scraper.
 	}
 
 	var pageToken string
-	firstPage := true
 
 	// The cursor API can hand back a video already returned on an earlier page —
 	// a saved catalogue showed 187 of 493 videos emitted twice, differing only
@@ -104,12 +103,6 @@ func (s *Scraper) run(ctx context.Context, studioURL, slug string, opts scraper.
 		if err != nil {
 			send(ctx, out, scraper.Error(err))
 			return
-		}
-
-		if firstPage && len(results) > 0 {
-			scraper.Debugf(1, "loyalfans: %d total scenes", 0)
-			send(ctx, out, scraper.Progress(0))
-			firstPage = false
 		}
 
 		for _, v := range results {
