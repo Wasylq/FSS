@@ -6,10 +6,24 @@ import "regexp"
 // ogContentFirstRe matches the same tag with attributes reversed —
 // `<meta content="Y" property="og:X">`. Real sites use both orderings;
 // running both and merging covers each.
+// RE2 has no backreferences, so each quoting style is its own alternative and
+// the value arrives in whichever group matched. `[^>]*?` lets unrelated
+// attributes sit between the two without escaping the tag.
 var (
-	ogPropFirstRe    = regexp.MustCompile(`(?i)<meta\s+property="(og:[^"]+)"\s+content="([^"]*)"`)
-	ogContentFirstRe = regexp.MustCompile(`(?i)<meta\s+content="([^"]*)"\s+property="(og:[^"]+)"`)
+	ogPropFirstRe    = regexp.MustCompile(`(?i)<meta\s+property=(?:"(og:[^"]+)"|'(og:[^']+)')\s+[^>]*?content=(?:"([^"]*)"|'([^']*)')`)
+	ogContentFirstRe = regexp.MustCompile(`(?i)<meta\s+content=(?:"([^"]*)"|'([^']*)')\s+[^>]*?property=(?:"(og:[^"]+)"|'(og:[^']+)')`)
 )
+
+// firstNonEmpty returns the first non-empty submatch, for the quote-style
+// alternatives above.
+func firstNonEmpty(groups ...[]byte) string {
+	for _, g := range groups {
+		if len(g) > 0 {
+			return string(g)
+		}
+	}
+	return ""
+}
 
 // OpenGraph extracts every `<meta property="og:*" content="…">` pair
 // from `body` into a map keyed by the full property name (e.g.
@@ -33,11 +47,10 @@ var (
 func OpenGraph(body []byte) map[string]string {
 	out := make(map[string]string)
 	for _, m := range ogPropFirstRe.FindAllSubmatch(body, -1) {
-		out[string(m[1])] = string(m[2])
+		out[firstNonEmpty(m[1], m[2])] = firstNonEmpty(m[3], m[4])
 	}
 	for _, m := range ogContentFirstRe.FindAllSubmatch(body, -1) {
-		// property is the second capture in this form.
-		out[string(m[2])] = string(m[1])
+		out[firstNonEmpty(m[3], m[4])] = firstNonEmpty(m[1], m[2])
 	}
 	return out
 }

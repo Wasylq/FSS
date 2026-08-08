@@ -80,3 +80,49 @@ func TestOpenGraph_ignoresNonOgMeta(t *testing.T) {
 		t.Errorf("og[og:title] = %q", og["og:title"])
 	}
 }
+
+func TestOpenGraph_singleQuotes(t *testing.T) {
+	got := OpenGraph([]byte(`<meta property='og:title' content='Single Quoted'>`))
+	if got["og:title"] != "Single Quoted" {
+		t.Errorf("og:title = %q", got["og:title"])
+	}
+}
+
+func TestOpenGraph_singleQuotesReverseOrder(t *testing.T) {
+	got := OpenGraph([]byte(`<meta content='Reversed' property='og:description'>`))
+	if got["og:description"] != "Reversed" {
+		t.Errorf("og:description = %q", got["og:description"])
+	}
+}
+
+func TestOpenGraph_mixedQuoting(t *testing.T) {
+	got := OpenGraph([]byte(`<meta property="og:image" content='https://example.com/a.jpg'>`))
+	if got["og:image"] != "https://example.com/a.jpg" {
+		t.Errorf("og:image = %q", got["og:image"])
+	}
+}
+
+func TestOpenGraph_interveningAttributes(t *testing.T) {
+	got := OpenGraph([]byte(`<meta property="og:title" data-rh="true" content="With Extras">`))
+	if got["og:title"] != "With Extras" {
+		t.Errorf("og:title = %q", got["og:title"])
+	}
+}
+
+// The tolerance must not let a match run past the end of one tag into the next.
+func TestOpenGraph_doesNotSpanTags(t *testing.T) {
+	got := OpenGraph([]byte(`<meta property="og:title"><meta content="not-the-title" property="og:site_name">`))
+	if v, ok := got["og:title"]; ok && v == "not-the-title" {
+		t.Errorf("matched across a tag boundary: og:title = %q", v)
+	}
+	if got["og:site_name"] != "not-the-title" {
+		t.Errorf("og:site_name = %q", got["og:site_name"])
+	}
+}
+
+func TestOpenGraph_emptyContent(t *testing.T) {
+	got := OpenGraph([]byte(`<meta property="og:title" content="">`))
+	if v, ok := got["og:title"]; !ok || v != "" {
+		t.Errorf("og:title = %q, ok=%v; want present and empty", v, ok)
+	}
+}

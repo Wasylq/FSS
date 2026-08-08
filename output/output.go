@@ -129,6 +129,9 @@ func slugBase(rawURL string) string {
 	return sanitize(u.Hostname() + u.Path)
 }
 
+// MinSweepAge is the shortest age SweepStaleTempFiles will honour.
+const MinSweepAge = 10 * time.Minute
+
 // SweepStaleTempFiles removes leftover `.fss-tmp-*` files in dir whose
 // last-modified time is older than maxAge. These are orphans from a
 // previous `atomicWriteFile` whose process died (SIGKILL, OOM, power
@@ -138,11 +141,18 @@ func slugBase(rawURL string) string {
 // remove files clearly stale enough that no in-flight write could own
 // them.
 //
+// maxAge is clamped up to MinSweepAge: the guard is the only thing keeping
+// this from deleting a temp file a live writer still owns, so a caller passing
+// a shorter age (or zero) gets the floor rather than the race.
+//
 // Returns the number of files removed. Errors stat'ing or removing a
 // single file are not propagated; this is a best-effort cleanup and a
 // failed remove just means a tiny disk leak, not a correctness issue.
 // Missing directories are not an error — Flat-store first run.
 func SweepStaleTempFiles(dir string, maxAge time.Duration) int {
+	if maxAge < MinSweepAge {
+		maxAge = MinSweepAge
+	}
 	entries, err := os.ReadDir(dir)
 	if err != nil {
 		return 0

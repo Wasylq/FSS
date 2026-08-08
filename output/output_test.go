@@ -457,3 +457,36 @@ func TestAtomicWriteFileCleanupOnWriteError(t *testing.T) {
 		t.Errorf("target file should not exist after write error")
 	}
 }
+
+// The age guard is the only thing separating cleanup from deleting a temp file
+// an in-flight write still owns, so a caller cannot opt out of it.
+func TestSweepStaleTempFilesClampsMaxAge(t *testing.T) {
+	dir := t.TempDir()
+	now := time.Now()
+
+	write := func(name string, age time.Duration) string {
+		path := filepath.Join(dir, name)
+		if err := os.WriteFile(path, []byte("x"), 0o600); err != nil {
+			t.Fatal(err)
+		}
+		mt := now.Add(-age)
+		if err := os.Chtimes(path, mt, mt); err != nil {
+			t.Fatal(err)
+		}
+		return path
+	}
+
+	inFlight := write(".fss-tmp-inflight", 2*time.Minute)
+	stale := write(".fss-tmp-stale", time.Hour)
+
+	// Zero would mean "everything is stale" without the floor.
+	if removed := SweepStaleTempFiles(dir, 0); removed != 1 {
+		t.Errorf("removed = %d, want 1", removed)
+	}
+	if _, err := os.Stat(inFlight); err != nil {
+		t.Errorf("a 2-minute-old temp file was swept: %v", err)
+	}
+	if _, err := os.Stat(stale); !os.IsNotExist(err) {
+		t.Errorf("the hour-old temp file survived: %v", err)
+	}
+}
