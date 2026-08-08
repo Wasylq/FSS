@@ -68,6 +68,41 @@ func FetchSitemap(ctx context.Context, client *http.Client, sitemapURL string, h
 	return us.URLs, nil
 }
 
+type sitemapindex struct {
+	Sitemaps []SitemapURL `xml:"sitemap"`
+}
+
+// FetchSitemapIndex returns the <loc> of every sitemap listed in a sitemap
+// index, so a site that adds a sitemap file is picked up without a code change.
+// Callers filter the result to the sitemaps they want.
+func FetchSitemapIndex(ctx context.Context, client *http.Client, indexURL string, headers map[string]string) ([]string, error) {
+	resp, err := httpx.Do(ctx, client, httpx.Request{
+		URL:     indexURL,
+		Headers: headers,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("fetching sitemap index %s: %w", indexURL, err)
+	}
+	defer func() { _ = resp.Body.Close() }()
+
+	body, err := httpx.ReadBody(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("reading sitemap index: %w", err)
+	}
+
+	var idx sitemapindex
+	if err := xml.Unmarshal(body, &idx); err != nil {
+		return nil, fmt.Errorf("parsing sitemap index XML: %w", err)
+	}
+	locs := make([]string, 0, len(idx.Sitemaps))
+	for _, sm := range idx.Sitemaps {
+		if loc := strings.TrimSpace(sm.Loc); loc != "" {
+			locs = append(locs, loc)
+		}
+	}
+	return locs, nil
+}
+
 // FetchAllSitemaps fetches multiple sitemaps and returns the combined URL list.
 func FetchAllSitemaps(ctx context.Context, client *http.Client, urls []string, headers map[string]string) ([]SitemapURL, error) {
 	var all []SitemapURL

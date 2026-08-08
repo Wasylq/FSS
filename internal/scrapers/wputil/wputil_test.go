@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"slices"
 	"testing"
 	"time"
 
@@ -252,5 +253,37 @@ func TestFetchPage(t *testing.T) {
 	}
 	if string(body) != "<html>hello</html>" {
 		t.Errorf("body = %q", body)
+	}
+}
+
+func TestFetchSitemapIndex(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		_, _ = fmt.Fprint(w, `<?xml version="1.0"?>
+<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <sitemap><loc>https://example.com/post-sitemap.xml</loc><lastmod>2024-01-01</lastmod></sitemap>
+  <sitemap><loc>  https://example.com/page-sitemap.xml  </loc></sitemap>
+  <sitemap><loc></loc></sitemap>
+</sitemapindex>`)
+	}))
+	defer srv.Close()
+
+	got, err := FetchSitemapIndex(context.Background(), srv.Client(), srv.URL, nil)
+	if err != nil {
+		t.Fatalf("FetchSitemapIndex: %v", err)
+	}
+	want := []string{"https://example.com/post-sitemap.xml", "https://example.com/page-sitemap.xml"}
+	if !slices.Equal(got, want) {
+		t.Errorf("got %v, want %v (blank locs dropped, whitespace trimmed)", got, want)
+	}
+}
+
+func TestFetchSitemapIndexBadXML(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		_, _ = fmt.Fprint(w, `<sitemapindex><sitemap>`)
+	}))
+	defer srv.Close()
+
+	if _, err := FetchSitemapIndex(context.Background(), srv.Client(), srv.URL, nil); err == nil {
+		t.Error("expected an error on malformed XML")
 	}
 }

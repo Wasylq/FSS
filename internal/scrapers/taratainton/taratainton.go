@@ -55,13 +55,39 @@ func (s *Scraper) ListScenes(ctx context.Context, studioURL string, opts scraper
 	go func() {
 		defer close(out)
 		wputil.RunWorkerPool(ctx, s.client, s.headers,
-			[]string{
-				s.siteBase + "/post-sitemap.xml",
-				s.siteBase + "/post-sitemap2.xml",
-			},
-			studioURL, opts, parsePage, out)
+			s.postSitemaps(ctx), studioURL, opts, parsePage, out)
 	}()
 	return out, nil
+}
+
+// postSitemaps resolves the post sitemaps from the site's sitemap index, so a
+// third file appearing does not silently truncate the catalogue. Falls back to
+// the two known files if the index cannot be read — losing the index is not a
+// reason to scrape nothing.
+func (s *Scraper) postSitemaps(ctx context.Context) []string {
+	fallback := []string{
+		s.siteBase + "/post-sitemap.xml",
+		s.siteBase + "/post-sitemap2.xml",
+	}
+
+	locs, err := wputil.FetchSitemapIndex(ctx, s.client, s.siteBase+"/sitemap_index.xml", s.headers)
+	if err != nil {
+		scraper.Debugf(1, "taratainton: sitemap index unavailable (%v), using %d known sitemaps", err, len(fallback))
+		return fallback
+	}
+
+	var posts []string
+	for _, loc := range locs {
+		if strings.Contains(loc, "post-sitemap") {
+			posts = append(posts, loc)
+		}
+	}
+	if len(posts) == 0 {
+		scraper.Debugf(1, "taratainton: sitemap index listed no post sitemaps, using %d known", len(fallback))
+		return fallback
+	}
+	scraper.Debugf(1, "taratainton: %d post sitemaps from the index", len(posts))
+	return posts
 }
 
 // ---- site-specific parsing ----

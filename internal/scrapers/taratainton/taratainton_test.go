@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"slices"
 	"strings"
 	"testing"
 	"time"
@@ -325,4 +326,69 @@ func TestListScenesKnownIDs(t *testing.T) {
 
 func fixedTime() time.Time {
 	return time.Date(2026, 4, 23, 12, 0, 0, 0, time.UTC)
+}
+
+func TestPostSitemapsFromIndex(t *testing.T) {
+	var asked string
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		asked = r.URL.Path
+		_, _ = fmt.Fprint(w, `<?xml version="1.0"?>
+<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <sitemap><loc>https://www.taratainton.com/post-sitemap.xml</loc></sitemap>
+  <sitemap><loc>https://www.taratainton.com/post-sitemap2.xml</loc></sitemap>
+  <sitemap><loc>https://www.taratainton.com/post-sitemap3.xml</loc></sitemap>
+  <sitemap><loc>https://www.taratainton.com/page-sitemap.xml</loc></sitemap>
+</sitemapindex>`)
+	}))
+	defer srv.Close()
+
+	s := New()
+	s.client = srv.Client()
+	s.siteBase = srv.URL
+
+	got := s.postSitemaps(context.Background())
+	want := []string{
+		"https://www.taratainton.com/post-sitemap.xml",
+		"https://www.taratainton.com/post-sitemap2.xml",
+		"https://www.taratainton.com/post-sitemap3.xml",
+	}
+	if !slices.Equal(got, want) {
+		t.Errorf("got %v, want %v (page-sitemap must be excluded)", got, want)
+	}
+	if asked != "/sitemap_index.xml" {
+		t.Errorf("fetched %q, want /sitemap_index.xml", asked)
+	}
+}
+
+// Losing the index must not mean scraping nothing.
+func TestPostSitemapsFallsBackWhenIndexFails(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		http.Error(w, "gone", http.StatusNotFound)
+	}))
+	defer srv.Close()
+
+	s := New()
+	s.client = srv.Client()
+	s.siteBase = srv.URL
+
+	got := s.postSitemaps(context.Background())
+	want := []string{srv.URL + "/post-sitemap.xml", srv.URL + "/post-sitemap2.xml"}
+	if !slices.Equal(got, want) {
+		t.Errorf("got %v, want the two known sitemaps %v", got, want)
+	}
+}
+
+func TestPostSitemapsFallsBackWhenIndexHasNoPosts(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		_, _ = fmt.Fprint(w, `<?xml version="1.0"?><sitemapindex><sitemap><loc>https://x/page-sitemap.xml</loc></sitemap></sitemapindex>`)
+	}))
+	defer srv.Close()
+
+	s := New()
+	s.client = srv.Client()
+	s.siteBase = srv.URL
+
+	if got := s.postSitemaps(context.Background()); len(got) != 2 {
+		t.Errorf("got %v, want the two known sitemaps", got)
+	}
 }
