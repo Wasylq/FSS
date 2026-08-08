@@ -177,6 +177,23 @@ Prints the config file path for the current platform.
 
 Prints the build version, commit hash, and build date. Checks for newer releases on GitHub.
 
+When a newer release is available and its tag carried an annotation, that message is shown
+with the notice — it is where a release says what its commit list cannot:
+
+```
+fss v1.28.1 (a1b2c3d, 2026-07-30)
+Update available: v1.28.1 → v1.29.0
+
+  maintenance only, no new scrapers
+
+  Existing scrapers are unaffected; no config or store changes.
+
+https://github.com/Wasylq/FSS/releases/latest
+```
+
+Releases cut from a lightweight tag simply have no such message and print the notice alone.
+The annotation is not repeated once you are running that release.
+
 The update check is best-effort and never fails the command: a network error prints
 `Could not check for updates: …`, and a response that carries no release tag prints
 `Could not determine the latest release.` rather than advertising an update with nothing

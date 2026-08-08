@@ -467,6 +467,14 @@ The first line becomes the bold heading and the rest the body. A lightweight tag
 the commit it points at is not a release note. Signed tags (`git tag -s`) are
 fine; the signature block is stripped.
 
+The same message is shown by `fss version` when it reports an available update,
+so it reaches users who never open the release page. It is read back out of the
+release body's leading blockquote rather than from the tag object, which keeps
+the update check to a single request — see `releaseNote` in `cmd/version.go`. If
+you ever change how the callout is rendered above, check that parser: its failure
+mode is to show no annotation at all rather than to show it wrongly, so a
+mismatch is silent.
+
 Then go to the **Actions → Release** run on GitHub, click *Review deployments*, tick `manual-smoke-gate`, and approve. Once the `release` job finishes, two parallel jobs run automatically: `aur` publishes to the AUR (with one retry on transient SSH failure), and `docker` builds and pushes the image to `ghcr.io`. Both sit behind the single approval gate — if either fails you can re-run *just that job* from the Actions UI without re-cutting the GitHub Release.
 
 ### What the release produces
