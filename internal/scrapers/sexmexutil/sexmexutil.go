@@ -143,8 +143,8 @@ func (s *Scraper) fetchPage(ctx context.Context, rawURL string) ([]byte, error) 
 // ---- parsing ----
 
 var (
-	cardRe    = regexp.MustCompile(`(?s)<div[^>]*data-setid="(\d+)"[^>]*>.*?</a></div>`)
-	pageNumRe = regexp.MustCompile(`_(\d+)_d\.html`)
+	cardStartRe = regexp.MustCompile(`<div[^>]*data-setid="(\d+)"[^>]*>`)
+	pageNumRe   = regexp.MustCompile(`_(\d+)_d\.html`)
 )
 
 func extractMaxPage(body []byte) int {
@@ -170,19 +170,27 @@ type card struct {
 }
 
 var (
-	titleLinkRe = regexp.MustCompile(`(?s)<h5[^>]*class="scene-title[^"]*"[^>]*>.*?<a[^>]*title="([^"]*)"[^>]*href="([^"]*)"`)
+	// Heading level varies across the network's templates (h3 today, h5 before).
+	titleLinkRe = regexp.MustCompile(`(?s)<h[1-6][^>]*class="scene-title[^"]*"[^>]*>.*?<a[^>]*title="([^"]*)"[^>]*href="([^"]*)"`)
 	thumbRe     = regexp.MustCompile(`<img[^>]*src="(https://[^"]*sexmex-cdn\.com/tour/content/[^"]+)"`)
 	descRe      = regexp.MustCompile(`(?s)<p class="scene-descr[^"]*"[^>]*>(.*?)</p>`)
 	performerRe = regexp.MustCompile(`<a[^>]*href="[^"]*/tour/models/[^"]*"[^>]*>([^<]+)</a>`)
 	dateRe      = regexp.MustCompile(`(?s)<p class="scene-date[^"]*"[^>]*>\s*(\d{2}/\d{2}/\d{4})\s*</p>`)
 )
 
+// parseCards slices the page between card openings rather than matching a
+// closing tag: the card's trailing markup has changed shape more than once and
+// a missed terminator yields 0 cards with no error.
 func parseCards(body []byte) []card {
-	matches := cardRe.FindAllSubmatch(body, -1)
-	cards := make([]card, 0, len(matches))
-	for _, m := range matches {
-		c := parseCard(m[0], string(m[1]))
-		cards = append(cards, c)
+	locs := cardStartRe.FindAllSubmatchIndex(body, -1)
+	cards := make([]card, 0, len(locs))
+	for i, loc := range locs {
+		end := len(body)
+		if i+1 < len(locs) {
+			end = locs[i+1][0]
+		}
+		id := string(body[loc[2]:loc[3]])
+		cards = append(cards, parseCard(body[loc[0]:end], id))
 	}
 	return cards
 }
