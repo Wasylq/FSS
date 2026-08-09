@@ -47,7 +47,7 @@ func newTestServer(t *testing.T) *httptest.Server {
 	srv = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/html")
 		switch r.URL.Path {
-		case "/categories/Movies_1_d.html", "/categories/Movies_2_d.html":
+		case "/updates/page_1.html", "/updates/page_2.html":
 			// Page 2 repeats page 1's cards to exercise the dup-page stop.
 			_, _ = fmt.Fprint(w, listingHTML(srv.URL))
 		case "/trailers/Brand-Jun-19-2026.html", "/trailers/Brand-Jun-12-2026.html":

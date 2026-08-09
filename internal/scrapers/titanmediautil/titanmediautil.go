@@ -1,9 +1,12 @@
 // Package titanmediautil scrapes the Titan Media "gloryhole" network
 // (Gloryhole Swallow, CumClinic, Cumpsters, SpyTug). All four run the same
-// Elevated X tour: a Movies_{N}_d.html listing of date-keyed trailer pages.
-// The listing yields the scene id, date and thumbnail; the detail page adds
-// runtime, description, tags and the @handle performers. There is no real
+// Elevated X tour: an updates/page_{N}.html listing of date-keyed trailer
+// pages. The listing yields the scene id, date and thumbnail; the detail page
+// adds runtime, description, tags and the @handle performers. There is no real
 // scene title — the title IS the publish date.
+//
+// The old categories/Movies_{N}_d.html listing now 500s on all four sites;
+// updates/page_{N}.html serves the same card markup.
 package titanmediautil
 
 import (
@@ -68,7 +71,7 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 	now := time.Now().UTC()
 	seen := make(map[string]bool)
 	scraper.Paginate(ctx, opts, s.cfg.ID, out, func(ctx context.Context, page int) (scraper.PageResult, error) {
-		pageURL := fmt.Sprintf("%s/categories/Movies_%d_d.html", s.cfg.SiteBase, page)
+		pageURL := fmt.Sprintf("%s/updates/page_%d.html", s.cfg.SiteBase, page)
 		items, err := s.fetchListing(ctx, pageURL)
 		if err != nil {
 			return scraper.PageResult{}, err
