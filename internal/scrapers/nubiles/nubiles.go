@@ -506,10 +506,20 @@ func (s *Scraper) fetchDetail(ctx context.Context, studioURL string, entry listE
 	return scene, nil
 }
 
+// Nubiles' WAF 302s deep pages that send Sec-Fetch-Site: none (a browser only
+// sends that for a typed URL, not a followed link) and serves a JS challenge
+// instead, which parses to 0 scenes with no error. Local override rather than
+// changing httpx.BrowserHeaders for all ~290 scrapers.
+func browserHeaders() map[string]string {
+	h := httpx.BrowserHeaders(httpx.UserAgentFirefox)
+	h["Sec-Fetch-Site"] = "same-origin"
+	return h
+}
+
 func (s *Scraper) fetchHTML(ctx context.Context, rawURL string) ([]byte, error) {
 	resp, err := httpx.Do(ctx, s.client, httpx.Request{
 		URL:     rawURL,
-		Headers: httpx.BrowserHeaders(httpx.UserAgentFirefox),
+		Headers: browserHeaders(),
 	})
 	if err != nil {
 		return nil, err
