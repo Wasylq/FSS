@@ -555,10 +555,19 @@ job exists to find.
 
 ### CodeQL and dependency review
 
-- **`codeql.yml`** — taint analysis of *this repository's own code*, weekly and on
-  every push/PR. `govulncheck` and Trivy both look at dependencies; neither reads
-  our code. Findings land in the Security tab. CodeQL's Go pack is weaker than its
+- **CodeQL** — taint analysis of *this repository's own code*, weekly and on every
+  push/PR. `govulncheck` and Trivy both look at dependencies; neither reads our
+  code. Findings land in the Security tab. CodeQL's Go pack is weaker than its
   JS/Java packs, so treat a quiet run as weak evidence rather than proof.
+
+  It runs from GitHub's **default setup**, configured in Settings → Code security,
+  not from a workflow in this repository. There is deliberately no `codeql.yml`:
+  GitHub rejects the SARIF upload from an advanced workflow while default setup is
+  enabled (`CodeQL analyses from advanced configurations cannot be processed when
+  the default setup is enabled`), and default setup already covers Go with the same
+  query suite plus `actions`, `python` and `ruby`. Adding a workflow means turning
+  default setup off first — worth it only for something it cannot express, such as
+  the `security-extended` suite, custom queries or path filters.
 - **`dependency-review.yml`** — blocks a PR that adds a dependency with a
   high-or-worse advisory. It only fires on `pull_request`, so it does nothing while
   the maintainer pushes straight to master; it is in place so the first outside

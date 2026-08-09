@@ -64,7 +64,13 @@ func TestSitesMdInSync(t *testing.T) {
 		t.Fatalf("reading docs/sites.md: %v", err)
 	}
 
-	if !bytes.Equal(got, want) {
+	// Fold CRLF before comparing. .gitattributes pins eol=lf so a fresh
+	// checkout matches byte for byte, but a clone made before that keeps its
+	// CRLF working tree until it is re-checked-out — and there the comparison
+	// would fail for the line endings alone and "fix" docs that are already
+	// correct. Only the comparison is normalized; the file this writes when it
+	// really is stale is still LF.
+	if !bytes.Equal(bytes.ReplaceAll(got, []byte("\r\n"), []byte("\n")), want) {
 		if err := os.WriteFile(sitesPath, want, 0o644); err != nil {
 			t.Fatalf("auto-updating docs/sites.md: %v", err)
 		}

@@ -1,0 +1,14 @@
+# Check every text file out with LF on every platform. Without this, git on
+# Windows defaults to core.autocrlf=true and rewrites LF to CRLF on checkout —
+# which is invisible to a Linux-only CI but breaks any test that compares a
+# generated string against a file on disk. TestSitesMdInSync did exactly that:
+# it regenerates docs/sites.md (LF) and byte-compares, so on the windows-latest
+# runner it saw a CRLF file, declared the docs out of sync, and rewrote them.
+* text=auto eol=lf
+
+# Fixtures are byte-exact captures of what a site actually served, and the
+# parsers are graded against them. japanhdv's listing.html and detail.html
+# genuinely contain CRLF because the site sends it, so line-ending conversion
+# in either direction changes what the test is testing. -text takes these out
+# of the rule above entirely: git stores and restores them verbatim.
+**/testdata/** -text
