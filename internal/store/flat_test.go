@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"runtime"
 	"strings"
 	"testing"
 	"time"
@@ -548,6 +549,17 @@ func TestFlatSaveReadOnlyDir(t *testing.T) {
 	// container images and under `docker run` without --user.
 	if os.Geteuid() == 0 {
 		t.Skip("running as root: permission bits are not enforced, so this cannot fail")
+	}
+	// Windows has no POSIX mode bits. os.MkdirAll's perm argument is dropped
+	// for directories — the read-only attribute Go can set applies to files,
+	// and even on a directory it does not stop entries being created inside.
+	// So the 0555 below yields a fully writable directory and Save succeeds.
+	// The behaviour under test (Save surfaces the filesystem's refusal rather
+	// than reporting success) is not Windows-specific; only this way of
+	// provoking a refusal is, which is why the test skips instead of asserting
+	// something weaker everywhere.
+	if runtime.GOOS == "windows" {
+		t.Skip("windows: directory permission bits are not enforced, so this cannot fail")
 	}
 
 	dir := filepath.Join(t.TempDir(), "readonly")
