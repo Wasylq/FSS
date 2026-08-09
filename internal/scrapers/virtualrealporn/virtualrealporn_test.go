@@ -237,3 +237,71 @@ func hasTag(tags []string, t string) bool {
 	}
 	return false
 }
+
+// TestExtractMovieToleratesFieldShapes is the regression for the silent-empty
+// outage: the live VideoObject block changed "genre" from a comma-separated
+// string to an array, encoding/json failed the whole struct, extractMovie
+// returned false, and all five sites scraped 0 scenes while reporting 0
+// errors. Each case below is a shape the CMS has actually served.
+func TestExtractMovieToleratesFieldShapes(t *testing.T) {
+	page := func(ld string) []byte {
+		return []byte(`<html><head><script type="application/ld+json">` + ld + `</script></head></html>`)
+	}
+
+	cases := []struct {
+		name           string
+		ld             string
+		wantTags       []string
+		wantPerformers []string
+	}{
+		{
+			name:           "genre as array, actor singular (current)",
+			ld:             `{"@type":"VideoObject","name":"A","genre":["Blowjob","Brunette"],"actor":[{"@type":"Person","name":"Lena Coxx"}]}`,
+			wantTags:       []string{"Blowjob", "Brunette"},
+			wantPerformers: []string{"Lena Coxx"},
+		},
+		{
+			name:           "keywords string with genre deny-list (legacy Movie)",
+			ld:             `{"@type":"Movie","name":"A","keywords":"russian, blonde, vr porn","genre":"vr porn, virtual reality","actors":[{"name":"Nancy Ace"}]}`,
+			wantTags:       []string{"russian", "blonde"},
+			wantPerformers: []string{"Nancy Ace"},
+		},
+		{
+			name:     "genre as a single bare string",
+			ld:       `{"@type":"VideoObject","name":"A","genre":"Blowjob, Brunette"}`,
+			wantTags: []string{"Blowjob", "Brunette"},
+		},
+		{
+			name:     "genre as an array of objects",
+			ld:       `{"@type":"VideoObject","name":"A","genre":[{"name":"Blowjob"},{"name":"Brunette"}]}`,
+			wantTags: []string{"Blowjob", "Brunette"},
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			movie, ok := extractMovie(page(tc.ld))
+			if !ok {
+				t.Fatalf("extractMovie returned false — the whole scene would be dropped silently")
+			}
+			tags := sceneTags(movie.Keywords, movie.Genre)
+			if len(tags) != len(tc.wantTags) {
+				t.Fatalf("tags = %v, want %v", tags, tc.wantTags)
+			}
+			for i, want := range tc.wantTags {
+				if tags[i] != want {
+					t.Errorf("tags[%d] = %q, want %q", i, tags[i], want)
+				}
+			}
+			performers := actorNames(movie.Actors, movie.Actor)
+			if len(performers) != len(tc.wantPerformers) {
+				t.Fatalf("performers = %v, want %v", performers, tc.wantPerformers)
+			}
+			for i, want := range tc.wantPerformers {
+				if performers[i] != want {
+					t.Errorf("performers[%d] = %q, want %q", i, performers[i], want)
+				}
+			}
+		})
+	}
+}

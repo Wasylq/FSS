@@ -292,12 +292,50 @@ func (s *Scraper) fetchDetails(ctx context.Context, urls []string, opts scraper.
 	return scenes
 }
 
+// ldStrings decodes a JSON-LD property that may be a string, a
+// comma-separated string, an array of strings, or an array of {name} objects.
+// Never errors: `genre` changing from string to array used to fail the whole
+// ldMovie, silently dropping every scene on all five sites.
+type ldStrings []string
+
+func (l *ldStrings) UnmarshalJSON(b []byte) error {
+	var single string
+	if err := json.Unmarshal(b, &single); err == nil {
+		for _, part := range strings.Split(single, ",") {
+			if v := strings.TrimSpace(part); v != "" {
+				*l = append(*l, v)
+			}
+		}
+		return nil
+	}
+
+	var items []json.RawMessage
+	if err := json.Unmarshal(b, &items); err != nil {
+		return nil
+	}
+	for _, it := range items {
+		var s string
+		if err := json.Unmarshal(it, &s); err == nil {
+			if v := strings.TrimSpace(s); v != "" {
+				*l = append(*l, v)
+			}
+			continue
+		}
+		var obj struct {
+			Name string `json:"name"`
+		}
+		if err := json.Unmarshal(it, &obj); err == nil {
+			if v := strings.TrimSpace(obj.Name); v != "" {
+				*l = append(*l, v)
+			}
+		}
+	}
+	return nil
+}
+
 // ldMovie is the subset of the schema.org Movie/VideoObject JSON-LD block on a
-// detail page. UploadDate is what the post-2026-migration VideoObject block
-// carries; DatePublished, Keywords, Genre and Actors are kept for the older
-// Movie-shaped block in case any page still serves it, but the current
-// platform's VideoObject omits all four — performers and tags are scraped
-// from the page's own markup instead (see pornstarNameRe/tagsRe below).
+// detail page. Both block shapes are read: the old Movie one spells the cast
+// "actors" and tags "keywords", the current VideoObject one "actor"/"genre".
 type ldMovie struct {
 	Type          string          `json:"@type"`
 	Name          string          `json:"name"`
@@ -307,11 +345,10 @@ type ldMovie struct {
 	Duration      string          `json:"duration"`
 	DatePublished string          `json:"datePublished"`
 	UploadDate    string          `json:"uploadDate"`
-	Keywords      string          `json:"keywords"`
-	Genre         string          `json:"genre"`
-	Actors        []struct {
-		Name string `json:"name"`
-	} `json:"actors"`
+	Keywords      ldStrings       `json:"keywords"`
+	Genre         ldStrings       `json:"genre"`
+	Actors        ldStrings       `json:"actors"`
+	Actor         ldStrings       `json:"actor"`
 }
 
 var (
@@ -331,7 +368,7 @@ func (s *Scraper) toScene(body []byte, rawURL, id string, now time.Time) (models
 		return models.Scene{}, false
 	}
 
-	performers := actorNames(movie.Actors)
+	performers := actorNames(movie.Actors, movie.Actor)
 	if len(performers) == 0 {
 		performers = extractPornstarNames(body)
 	}
@@ -461,37 +498,46 @@ func titleFromSlug(slug string) string {
 	return strings.TrimSpace(strings.Join(parts, " "))
 }
 
-func actorNames(actors []struct {
-	Name string `json:"name"`
-}) []string {
-	if len(actors) == 0 {
-		return nil
-	}
+func actorNames(actors ...ldStrings) []string {
+	seen := make(map[string]bool)
 	var out []string
-	for _, a := range actors {
-		if n := cleanText(a.Name); n != "" {
+	for _, list := range actors {
+		for _, a := range list {
+			n := cleanText(a)
+			if n == "" || seen[strings.ToLower(n)] {
+				continue
+			}
+			seen[strings.ToLower(n)] = true
 			out = append(out, n)
 		}
 	}
 	return out
 }
 
-// sceneTags splits the JSON-LD keywords (comma-separated), dropping the generic
-// "genre" prefix that every scene shares (vr porn, virtual reality, resolutions).
-func sceneTags(keywords, genre string) []string {
-	generic := make(map[string]bool)
-	for _, g := range strings.Split(genre, ",") {
+// sceneTags: on the old block "keywords" held the tags and "genre" the generic
+// set to drop; the current block has no keywords and puts the real tags in
+// genre. So genre is a deny-list only when keywords is present.
+func sceneTags(keywords, genre ldStrings) []string {
+	if len(keywords) == 0 {
+		return dedupeTags(genre, nil)
+	}
+	generic := make(map[string]bool, len(genre))
+	for _, g := range genre {
 		generic[strings.ToLower(strings.TrimSpace(g))] = true
 	}
+	return dedupeTags(keywords, generic)
+}
+
+func dedupeTags(tags ldStrings, skip map[string]bool) []string {
 	seen := make(map[string]bool)
 	var out []string
-	for _, k := range strings.Split(keywords, ",") {
+	for _, k := range tags {
 		tag := cleanText(k)
 		if tag == "" {
 			continue
 		}
 		key := strings.ToLower(tag)
-		if generic[key] || seen[key] {
+		if skip[key] || seen[key] {
 			continue
 		}
 		seen[key] = true
