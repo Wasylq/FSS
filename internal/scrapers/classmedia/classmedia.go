@@ -11,13 +11,14 @@
 //     /sets/{id}/{slug}.webp; the set id and de-slugged title are all that is
 //     publicly available (the real scene detail lives behind /join). The newest
 //     handful of sets ship obfuscated slugs, so their titles are gibberish.
-//   - Oldje-3some — listing-only. /videos/{n} pages link to /videos/set/{slug}
-//     with a /view/photoCoverBig/{id} cover. Slugs are obfuscated site-wide, so
-//     titles are derived from the slug and are not human-meaningful.
+//   - Oldje-3some — listing-only. /gallery/{n} embeds the whole catalogue as a
+//     window.sslSearchItems JSON array (title, actors, duration, cover, URL),
+//     so one fetch yields every scene.
 package classmedia
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"html"
 	"net/http"
@@ -352,45 +353,92 @@ func (s *Scraper) runOldje(ctx context.Context, studioURL string, opts scraper.L
 	})
 }
 
-// ---- Oldje-3some (/videos/{n} listing, listing-only) ----
+// ---- Oldje-3some (/gallery/{n} listing, listing-only) ----
 
-var oldje3someCardRe = regexp.MustCompile(`/videos/set/([a-z0-9]+)"[^>]*>\s*<img src="/view/photoCoverBig/(\d+)"`)
+var sslSearchItemsRe = regexp.MustCompile(`(?s)window\.sslSearchItems\s*=\s*(\[.*?\]);`)
+
+var oldje3someSetIDRe = regexp.MustCompile(`/sets/(\d+)/`)
+
+type sslSearchItem struct {
+	Title    string `json:"title"`
+	Actors   string `json:"actors"`
+	Duration string `json:"duration"`
+	Thumb    string `json:"thumb"`
+	URL      string `json:"url"`
+}
 
 func (s *Scraper) runOldje3some(ctx context.Context, studioURL string, opts scraper.ListOpts, out chan<- scraper.SceneResult) {
 	defer close(out)
 
+	body, err := s.get(ctx, s.cfg.base+"/gallery/1")
+	if err != nil {
+		select {
+		case out <- scraper.Error(err):
+		case <-ctx.Done():
+		}
+		return
+	}
+
+	m := sslSearchItemsRe.FindSubmatch(body)
+	if m == nil {
+		select {
+		case out <- scraper.Error(scraper.ParseError(s.cfg.base+"/gallery/1", fmt.Errorf("sslSearchItems block not found"))):
+		case <-ctx.Done():
+		}
+		return
+	}
+	var items []sslSearchItem
+	if err := json.Unmarshal(m[1], &items); err != nil {
+		select {
+		case out <- scraper.Error(scraper.ParseError(s.cfg.base+"/gallery/1", err)):
+		case <-ctx.Done():
+		}
+		return
+	}
+
 	now := time.Now().UTC()
+	scenes := make([]models.Scene, 0, len(items))
 	seen := make(map[string]bool)
-	scraper.Paginate(ctx, opts, s.cfg.id, out, func(ctx context.Context, page int) (scraper.PageResult, error) {
-		pageURL := s.cfg.base + "/videos"
+	for _, it := range items {
+		idm := oldje3someSetIDRe.FindStringSubmatch(it.Thumb)
+		if idm == nil || seen[idm[1]] {
+			continue
+		}
+		seen[idm[1]] = true
+		scenes = append(scenes, models.Scene{
+			ID:         idm[1],
+			SiteID:     s.cfg.id,
+			StudioURL:  studioURL,
+			Title:      strings.TrimSpace(html.UnescapeString(it.Title)),
+			URL:        s.cfg.base + it.URL,
+			Thumbnail:  s.cfg.base + it.Thumb,
+			Studio:     s.cfg.studio,
+			Performers: oldje3somePerformers(it.Actors, s.cfg.studio),
+			Duration:   parseutil.ParseDurationColon(it.Duration),
+			ScrapedAt:  now,
+		})
+	}
+
+	scraper.Paginate(ctx, opts, s.cfg.id, out, func(_ context.Context, page int) (scraper.PageResult, error) {
 		if page > 1 {
-			pageURL = fmt.Sprintf("%s/videos/%d", s.cfg.base, page)
+			return scraper.PageResult{Done: true}, nil
 		}
-		body, err := s.get(ctx, pageURL)
-		if err != nil {
-			return scraper.PageResult{}, err
-		}
-		matches := oldje3someCardRe.FindAllStringSubmatch(string(body), -1)
-		scenes := make([]models.Scene, 0, len(matches))
-		for _, m := range matches {
-			slug, id := m[1], m[2]
-			if seen[id] {
-				continue
-			}
-			seen[id] = true
-			scenes = append(scenes, models.Scene{
-				ID:        id,
-				SiteID:    s.cfg.id,
-				StudioURL: studioURL,
-				Title:     deslug(slug),
-				URL:       s.cfg.base + "/videos/set/" + slug,
-				Thumbnail: s.cfg.base + "/view/photoCoverBig/" + id,
-				Studio:    s.cfg.studio,
-				ScrapedAt: now,
-			})
-		}
-		return scraper.PageResult{Scenes: scenes}, nil
+		return scraper.PageResult{Scenes: scenes, Total: len(scenes), Done: true}, nil
 	})
+}
+
+// oldje3somePerformers splits the comma-separated actors field, dropping the
+// studio name the site uses when it lists no real cast.
+func oldje3somePerformers(actors, studio string) []string {
+	var out []string
+	for _, a := range strings.Split(actors, ",") {
+		name := strings.TrimSpace(html.UnescapeString(a))
+		if name == "" || strings.EqualFold(name, studio) {
+			continue
+		}
+		out = append(out, name)
+	}
+	return out
 }
 
 // ---- helpers ----

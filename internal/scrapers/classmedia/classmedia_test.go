@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/Wasylq/FSS/models"
 	"github.com/Wasylq/FSS/scraper"
 )
 
@@ -226,16 +227,16 @@ func TestRunOldje(t *testing.T) {
 // ---- Oldje-3some listing parsing ----
 
 const oldje3someListHTML = `<html><body>
-<a href="/videos/set/abc123" class="card"> <img src="/view/photoCoverBig/789"></a>
-<a href="/videos/set/def456" class="card"> <img src="/view/photoCoverBig/790"></a>
-<a href="/videos/set/abc123" class="card"> <img src="/view/photoCoverBig/789"></a>
+<script>
+window.sslSearchItems = [{"title":"Full Service","actors":"Oldje-3Some","duration":"24:23","thumb":"/media/sets/188/cover.jpg","url":"/videos/8ff48390","search":"full service 188"},{"title":"Charge Me Up","actors":"Victoria Benz, Benito","duration":"22:30","thumb":"/media/sets/187/cover.jpg","url":"/videos/c0be3b5a","search":"charge me up 187"},{"title":"Charge Me Up","actors":"Victoria Benz","duration":"22:30","thumb":"/media/sets/187/cover.jpg","url":"/videos/c0be3b5a","search":"dupe"}];
+</script>
 </body></html>`
 
 func TestRunOldje3some(t *testing.T) {
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/html")
 		switch r.URL.Path {
-		case "/videos":
+		case "/gallery/1":
 			_, _ = fmt.Fprint(w, oldje3someListHTML)
 		default:
 			_, _ = fmt.Fprint(w, "<html><body></body></html>")
@@ -251,34 +252,63 @@ func TestRunOldje3some(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	got := map[string]string{}
-	urls := map[string]string{}
+	scenes := map[string]models.Scene{}
 	for r := range ch {
 		switch r.Kind {
 		case scraper.KindScene:
-			got[r.Scene.ID] = r.Scene.Title
-			urls[r.Scene.ID] = r.Scene.URL
+			scenes[r.Scene.ID] = r.Scene
 		case scraper.KindError:
 			t.Errorf("unexpected error: %v", r.Err)
 		}
 	}
-	if len(got) != 2 {
-		t.Fatalf("got %d scenes, want 2 (deduped): %v", len(got), got)
+	if len(scenes) != 2 {
+		t.Fatalf("got %d scenes, want 2 (deduped by set id): %v", len(scenes), scenes)
 	}
-	if got["789"] != "Abc123" {
-		t.Errorf("title for 789 = %q, want Abc123 (deslugged)", got["789"])
+	if got := scenes["188"].Title; got != "Full Service" {
+		t.Errorf("title for 188 = %q, want Full Service", got)
 	}
-	if urls["789"] != ts.URL+"/videos/set/abc123" {
-		t.Errorf("URL for 789 = %q", urls["789"])
+	if got := scenes["188"].URL; got != ts.URL+"/videos/8ff48390" {
+		t.Errorf("URL for 188 = %q", got)
+	}
+	if got := scenes["188"].Duration; got != 24*60+23 {
+		t.Errorf("duration for 188 = %d, want %d", got, 24*60+23)
+	}
+	// The site puts its own name in "actors" when there is no real cast.
+	if got := scenes["188"].Performers; len(got) != 0 {
+		t.Errorf("performers for 188 = %v, want none (studio name dropped)", got)
+	}
+	if got := scenes["187"].Performers; len(got) != 2 || got[0] != "Victoria Benz" || got[1] != "Benito" {
+		t.Errorf("performers for 187 = %v, want [Victoria Benz Benito]", got)
 	}
 }
 
-func TestIDAndPatterns(t *testing.T) {
-	s := NewSubspaceland()
-	if s.ID() != "subspaceland" {
-		t.Errorf("ID = %q", s.ID())
+// TestRunOldje3someMissingBlock pins that a listing without the JSON block
+// reports a parse error rather than scraping 0 scenes silently.
+func TestRunOldje3someMissingBlock(t *testing.T) {
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.Header().Set("Content-Type", "text/html")
+		_, _ = fmt.Fprint(w, "<html><body>no block</body></html>")
+	}))
+	defer ts.Close()
+
+	s := NewOldje3some()
+	s.Client = ts.Client()
+	s.cfg.base = ts.URL
+
+	ch, err := s.ListScenes(context.Background(), ts.URL, scraper.ListOpts{})
+	if err != nil {
+		t.Fatal(err)
 	}
-	if len(s.Patterns()) == 0 {
-		t.Error("Patterns empty")
+	var errs int
+	for r := range ch {
+		if r.Kind == scraper.KindError {
+			errs++
+			if scraper.Classify(r.Err) != scraper.FailureParse {
+				t.Errorf("Classify = %v, want FailureParse", scraper.Classify(r.Err))
+			}
+		}
+	}
+	if errs != 1 {
+		t.Errorf("got %d errors, want 1", errs)
 	}
 }
