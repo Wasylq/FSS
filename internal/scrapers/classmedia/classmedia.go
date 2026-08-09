@@ -102,7 +102,7 @@ func NewOldje3some() *Scraper {
 		matchRe: regexp.MustCompile(`^https?://(?:www\.)?oldje-3some\.com(?:/|$)`),
 		patterns: []string{
 			"oldje-3some.com",
-			"oldje-3some.com/videos/{n}",
+			"oldje-3some.com/gallery/{n}",
 		},
 	})
 }
