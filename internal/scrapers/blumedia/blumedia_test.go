@@ -95,6 +95,51 @@ func TestParseListingEmpty(t *testing.T) {
 	}
 }
 
+// TestParseListingEpisodeCard covers CollegeBoyPhysicals' newer listing
+// template, which links player.php?vid={token} instead of /play/{token}/{slug}
+// and carries the title in the img alt. Before it was handled, episodes.php
+// parsed to zero items and the site scraped 0 scenes while reporting 0 errors.
+func TestParseListingEpisodeCard(t *testing.T) {
+	const page = `<div class="episodes-grid">
+<div class="episode-card"><div class="episode-thumb"><a href="player.php?vid=MTI4NA=="><img src="https://small1.blumedia.com/thumbs/cbp/0/1/2/1284-video.jpg" alt="Straight Boy Sperm Donation"></a><span class="episode-members">Members</span></div><div class="episode-info"><div class="episode-title">Straight Boy Sperm Donation</div></div></div>
+<div class="episode-card"><div class="episode-thumb"><a href="player.php?vid=MTI4Mw=="><img src="https://small1.blumedia.com/thumbs/cbp/0/1/2/1283-video.jpg" alt="A Rubdown Gone Wrong"></a></div><div class="episode-info"><div class="episode-title">A Rubdown Gone Wrong</div></div></div>
+</div>`
+
+	items := parseListing([]byte(page))
+	if len(items) != 2 {
+		t.Fatalf("got %d items, want 2", len(items))
+	}
+	if items[0].id != "1284" {
+		t.Errorf("id = %q, want 1284 (base64-decoded)", items[0].id)
+	}
+	if items[0].title != "Straight Boy Sperm Donation" {
+		t.Errorf("title = %q", items[0].title)
+	}
+	if items[0].thumbnail == "" {
+		t.Error("thumbnail is empty")
+	}
+	// No slug on this template, so the URL must be the player link the site
+	// actually publishes rather than a synthesised /play/ path.
+	if got := items[0].playURL(); got != "/player.php?vid=MTI4NA==" {
+		t.Errorf("playURL = %q, want /player.php?vid=MTI4NA==", got)
+	}
+}
+
+// TestParseListingBothTemplates pins that a page carrying both link shapes for
+// the same scene yields one item, not a duplicate.
+func TestParseListingBothTemplates(t *testing.T) {
+	const page = `<a href="/play/MTI4NA==/straight-boy-sperm-donation"><img src="a.jpg" alt="Straight Boy Sperm Donation"></a>
+<div class="episode-card"><div class="episode-thumb"><a href="player.php?vid=MTI4NA=="><img src="b.jpg" alt="Straight Boy Sperm Donation"></a></div><div class="episode-info"><div class="episode-title">Straight Boy Sperm Donation</div></div></div>`
+
+	items := parseListing([]byte(page))
+	if len(items) != 1 {
+		t.Fatalf("got %d items, want 1 (same scene via both templates)", len(items))
+	}
+	if got := items[0].playURL(); got != "/play/MTI4NA==/straight-boy-sperm-donation" {
+		t.Errorf("playURL = %q, want the canonical /play/ form to win", got)
+	}
+}
+
 func TestParseDetailBSB(t *testing.T) {
 	d := parseDetail(loadFixture(t, "bsb_detail.html"))
 	if d.title != "Andy Takes Two Cocks Double Penetrated By Bruce And Ricky" {

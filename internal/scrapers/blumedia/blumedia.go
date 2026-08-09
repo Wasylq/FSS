@@ -117,8 +117,14 @@ var (
 	// /play/ link on the listing page.
 	cardImgRe = regexp.MustCompile(`(?s)<img[^>]+src=["']([^"']+)["'][^>]*\balt=["']([^"']*)["']`)
 
-	// pageNumRe finds pagination page numbers for a total estimate.
-	pageNumRe = regexp.MustCompile(`episodes\.php\?(?:s=\d+&)?page=(\d+)`)
+	// episodeCardRe reads the newer "episode-card" template (CollegeBoyPhysicals'
+	// episodes.php), which links player.php?vid={token} and no /play/ href.
+	// Its detail page carries no per-scene data, so the card is the only source.
+	episodeCardRe = regexp.MustCompile(`(?s)<div class="episode-card">.*?<a [^>]*href=["'][^"']*player\.php\?vid=([A-Za-z0-9=._-]+)["'][^>]*>(.*?)</a>.*?(?:<div class="episode-title">(.*?)</div>)?</div>`)
+
+	// pageNumRe finds pagination page numbers for a total estimate. The
+	// episode-card template drops s= and html-escapes the &, so match both.
+	pageNumRe = regexp.MustCompile(`episodes\.php\?(?:s=\d+&(?:amp;)?)?page=(\d+)`)
 
 	// Detail-page title selectors, tried in order.
 	detailH1Re    = regexp.MustCompile(`(?s)<h1[^>]*>(.*?)</h1>`)
@@ -197,6 +203,30 @@ func parseListing(body []byte) []listItem {
 				it.title = t
 			}
 		}
+	}
+
+	// Second pass for the episode-card template. Cards already seen via a
+	// /play/ link are skipped, so a page carrying both shapes yields one item
+	// per scene rather than a duplicate.
+	for _, m := range episodeCardRe.FindAllSubmatch(body, -1) {
+		token := string(m[1])
+		id := decodeID(token)
+		if id == "" {
+			continue
+		}
+		if _, ok := byID[id]; ok {
+			continue
+		}
+		it := listItem{id: id, token: token}
+		if mImg := cardImgRe.FindSubmatch(m[2]); mImg != nil {
+			it.thumbnail = string(mImg[1])
+			it.title = cleanText(string(mImg[2]))
+		}
+		if it.title == "" {
+			it.title = cleanHTML(string(m[3]))
+		}
+		items = append(items, it)
+		byID[id] = len(items) - 1
 	}
 
 	for i := range items {
@@ -413,7 +443,12 @@ func (s *Scraper) fetchDetails(ctx context.Context, items []listItem, opts scrap
 	return scenes
 }
 
+// playURL is the scene's public URL. The episode-card template has no slug, so
+// it uses the player link the site publishes rather than synthesising one.
 func (it listItem) playURL() string {
+	if it.slug == "" {
+		return "/player.php?vid=" + it.token
+	}
 	return "/play/" + it.token + "/" + it.slug
 }
 
