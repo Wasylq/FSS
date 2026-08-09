@@ -21,6 +21,7 @@ import (
 	"context"
 	"encoding/json"
 	"encoding/xml"
+	"errors"
 	"fmt"
 	"html"
 	"net/http"
@@ -160,8 +161,13 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 						return
 					}
 				}
-				scene, ok := s.toScene(ctx, studioURL, pageURL, now)
-				if !ok {
+				scene, err := s.toScene(ctx, studioURL, pageURL, now)
+				if err != nil {
+					select {
+					case out <- scraper.Error(err):
+					case <-ctx.Done():
+						return
+					}
 					continue
 				}
 				select {
@@ -188,6 +194,10 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 
 // ---- detail ----
 
+// errNoVideoObject covers both a redesign and the Anubis challenge page the
+// site now serves in place of every HTML page.
+var errNoVideoObject = errors.New("no VideoObject JSON-LD on the page")
+
 var (
 	ldRe = regexp.MustCompile(`(?s)<script type="application/ld\+json"[^>]*>(.*?)</script>`)
 	// The scene's stable id is the stream UUID on the listing/detail markup.
@@ -208,16 +218,16 @@ type videoObject struct {
 	Actors      []person `json:"actor"`
 }
 
-func (s *Scraper) toScene(ctx context.Context, studioURL, pageURL string, now time.Time) (models.Scene, bool) {
+func (s *Scraper) toScene(ctx context.Context, studioURL, pageURL string, now time.Time) (models.Scene, error) {
 	body, err := s.fetchPage(ctx, pageURL)
 	if err != nil {
-		return models.Scene{}, false
+		return models.Scene{}, err
 	}
 	detail := string(body)
 
 	vo := parseVideoObject(detail)
 	if vo == nil {
-		return models.Scene{}, false
+		return models.Scene{}, scraper.ParseError(pageURL, errNoVideoObject)
 	}
 
 	scene := models.Scene{
@@ -244,7 +254,7 @@ func (s *Scraper) toScene(ctx context.Context, studioURL, pageURL string, now ti
 		}
 	}
 
-	return scene, true
+	return scene, nil
 }
 
 // sceneID prefers the stream UUID, which is stable across renames; the URL

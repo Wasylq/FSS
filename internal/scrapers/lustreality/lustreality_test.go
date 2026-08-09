@@ -124,9 +124,9 @@ func TestToScene(t *testing.T) {
 	s, srv := newDetailServer(t, readFixture(t, "detail.html"))
 	now := time.Now().UTC()
 
-	sc, ok := s.toScene(context.Background(), "https://www.lustreality.com", srv.URL+"/en/nothing-to-dress", now)
-	if !ok {
-		t.Fatal("toScene returned not-ok")
+	sc, err := s.toScene(context.Background(), "https://www.lustreality.com", srv.URL+"/en/nothing-to-dress", now)
+	if err != nil {
+		t.Fatalf("toScene: %v", err)
 	}
 
 	// The stream UUID is preferred over the slug: it survives renames.
@@ -180,13 +180,18 @@ func TestParseVideoObjectSelectsByType(t *testing.T) {
 	}
 }
 
-// A page with no VideoObject is not a scene and must be dropped rather than
-// emitted with empty fields.
-func TestToSceneDropsPageWithoutVideoObject(t *testing.T) {
+// A page with no VideoObject is not a scene. It must report a parse failure
+// rather than being dropped silently — that is what an anti-bot interstitial
+// looks like, and a silent drop makes it indistinguishable from an empty site.
+func TestToSceneReportsPageWithoutVideoObject(t *testing.T) {
 	s, srv := newDetailServer(t, []byte(`<html><head><script type="application/ld+json">{"@type":"Organization"}</script></head></html>`))
 
-	if _, ok := s.toScene(context.Background(), "x", srv.URL+"/en/whatever", time.Now()); ok {
-		t.Error("a page with no VideoObject should be dropped")
+	_, err := s.toScene(context.Background(), "x", srv.URL+"/en/whatever", time.Now())
+	if err == nil {
+		t.Fatal("a page with no VideoObject should report an error")
+	}
+	if got := scraper.Classify(err); got != scraper.FailureParse {
+		t.Errorf("Classify = %v, want FailureParse", got)
 	}
 }
 
