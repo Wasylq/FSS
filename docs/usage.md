@@ -32,7 +32,7 @@ For choosing a store, inspecting a database, and moving between the two, see [st
 | `--workers`, `-w` | int | 3 | Max parallel metadata fetchers |
 | `--full` | bool | false | Full traversal (no early-stop); preserves price history; drops scenes no longer on the site |
 | `--refresh` | bool | false | Re-fetch metadata for all known scenes; soft-delete missing ones |
-| `--force` | bool | false | Allow a `--full`/`--refresh` that returns 0 scenes to wipe a previously-populated studio (otherwise the destructive save is refused) |
+| `--force` | bool | false | Allow a destructive `--full`/`--refresh` against a populated studio without being asked — covers both the 0-scene case and a coverage collapse (see [Broken-scraper detection](#broken-scraper-detection)) |
 | `--no-preserve` | bool | false | Let a re-scrape blank fields it no longer returns. By default a fresh scene inherits any field it left empty from the stored one, so a broken parser cannot wipe metadata — see [metadata.md](metadata.md) |
 | `--output`, `-o` | string | `json` | Export format(s): `json`, `csv`, or `json,csv` |
 | `--out-dir` | string | `.` | Output directory |
@@ -420,6 +420,46 @@ Full traversal (every page, every scene) but preserves history:
 - **Soft-delete** — any scene that was in the store but is no longer returned by the site has its `deletedAt` timestamp set. It is never removed from the store.
 
 Use periodically (e.g. weekly) to catch deletions and accumulate accurate price history.
+
+### Broken-scraper detection
+
+Sites change. A scraper can keep running, report no errors and still return a
+fraction of what it used to — a site drops its pagination, or a redesign leaves
+only one of two card templates matching. That looks like a clean success to
+every other check, and under `--full`/`--refresh` the authoritative `Save` will
+happily delete everything the scrape no longer reaches.
+
+So every scrape compares what it re-collected against what the store already
+holds. When a **completed** traversal re-sees **less than 50%** of the stored
+scenes, `fss` says so:
+
+```
+[warn] auntjudys: this scrape re-saw 9 of 412 stored scenes (2%) — the site or the scraper may have changed
+       this is an authoritative save: 403 stored scene(s) would be dropped
+       proceed anyway? [y/N]
+```
+
+- **`--full` / `--refresh`** — prompts before saving. Answering anything but
+  `y`/`yes` skips the save and leaves the store untouched. With no terminal
+  attached (cron, CI, a pipe) it does not hang: it skips the save and tells you
+  to pass `--force`.
+- **`--force`** — proceeds without asking, for when you know the catalogue
+  really did shrink.
+- **Incremental (the default)** — reports the same numbers but always
+  continues, because incremental merges and cannot lose scenes.
+
+The check deliberately stays quiet in three cases, each of which explains a
+small result on its own:
+
+| Case | Why it is exempt |
+|---|---|
+| Fewer than 10 stored scenes | One or two scenes swing the ratio past any threshold |
+| Incomplete traversal | Fetch errors already force non-destructive merge semantics |
+| `KnownIDs` early-stop fired | A partial fresh set is the *point* of incremental mode |
+
+A 0-scene `--full`/`--refresh` is handled separately and more strictly — it is
+refused outright rather than prompted, since nothing distinguishes it from a
+totally broken parser.
 
 ---
 

@@ -1,8 +1,10 @@
 package cmd
 
 import (
+	"bufio"
 	"context"
 	"fmt"
+	"io"
 	"os"
 	"os/signal"
 	"path/filepath"
@@ -32,7 +34,7 @@ func init() {
 	scrapeCmd.Flags().IntP("workers", "w", 0, "max parallel fetchers (0 = use config/default)")
 	scrapeCmd.Flags().Bool("full", false, "ignore existing data, scrape everything from scratch")
 	scrapeCmd.Flags().Bool("refresh", false, "re-fetch metadata for all known scenes, soft-delete missing")
-	scrapeCmd.Flags().Bool("force", false, "allow a 0-scene --full/--refresh to wipe a previously-populated studio")
+	scrapeCmd.Flags().Bool("force", false, "allow a 0-scene or collapsed-coverage --full/--refresh to overwrite a populated studio")
 	scrapeCmd.Flags().Bool("no-preserve", false, "let a re-scrape blank fields it no longer returns (default: keep the stored value)")
 	scrapeCmd.Flags().StringP("output", "o", "", "export formats: json, csv, or json,csv (default from config)")
 	scrapeCmd.Flags().String("out-dir", "", "output directory (default from config)")
@@ -173,16 +175,17 @@ func scrapeOne(ctx context.Context, st store.Store, studioURL, name, dbPath, out
 	scraper.Debugf(1, "scraper: %s, delay: %v, workers: %d", sc.ID(), delay, workers)
 
 	var scenes []models.Scene
+	var cov coverage
 	switch {
 	case full:
 		fmt.Printf("Full scrape: %s\n", studioURL)
-		scenes, err = scrapeAll(ctx, sc, st, studioURL, workers, delay, preserve)
+		scenes, cov, err = scrapeAll(ctx, sc, st, studioURL, workers, delay, preserve)
 	case refresh:
 		fmt.Printf("Refresh scrape: %s\n", studioURL)
-		scenes, err = scrapeRefresh(ctx, sc, st, studioURL, workers, delay, preserve)
+		scenes, cov, err = scrapeRefresh(ctx, sc, st, studioURL, workers, delay, preserve)
 	default:
 		fmt.Printf("Incremental scrape: %s\n", studioURL)
-		scenes, err = scrapeIncremental(ctx, sc, st, studioURL, workers, delay, preserve)
+		scenes, cov, err = scrapeIncremental(ctx, sc, st, studioURL, workers, delay, preserve)
 	}
 	if err != nil {
 		return err
@@ -204,6 +207,14 @@ func scrapeOne(ctx context.Context, st store.Store, studioURL, name, dbPath, out
 				len(existing), studioURL)
 			return nil
 		}
+	}
+
+	// A scraper can break without failing: the site drops its pagination, or a
+	// redesign leaves one card template matching. The 0-scene guard above only
+	// catches the total loss. Everything short of that reaches here looking
+	// like a clean run, so check it against what is already stored.
+	if len(scenes) > 0 && cov.collapsed() && !proceedAfterCollapse(cov, studioURL, sc.ID(), full || refresh, force) {
+		return nil
 	}
 
 	// Normalise StudioURL to the URL being saved. Some scrapers stamp a
@@ -260,19 +271,72 @@ type sceneKey struct{ id, siteID string }
 
 func keyOf(s models.Scene) sceneKey { return sceneKey{id: s.ID, siteID: s.SiteID} }
 
-func scrapeAll(ctx context.Context, sc scraper.StudioScraper, st store.Store, studioURL string, workers int, delay time.Duration, preserve bool) ([]models.Scene, error) {
+// traversal reports how a scrape ended, beyond the scenes it produced.
+type traversal struct {
+	incomplete   bool // fetch errors cost scenes, or the run was cancelled
+	stoppedEarly bool // the KnownIDs early-stop fired
+}
+
+// coverage measures a scrape against what the store already holds. A scraper
+// that still works but no longer reaches most of the catalogue — a site that
+// drops its pagination, or a parser that only matches one of two card
+// templates — looks like a clean success to every other check here.
+type coverage struct {
+	stored int // distinct scenes already in the store
+	seen   int // stored scenes this scrape re-collected
+	traversal
+}
+
+const (
+	// coverageCollapseRatio is the share of the stored catalogue a completed
+	// traversal must re-see. Below it, a site change is likelier than the
+	// catalogue genuinely shrinking that far.
+	coverageCollapseRatio = 0.5
+	// minStoredForCoverageCheck keeps the ratio off small studios, where one
+	// or two scenes swing it past any threshold.
+	minStoredForCoverageCheck = 10
+)
+
+func coverageOf(existing map[sceneKey]models.Scene, seen map[sceneKey]bool, tr traversal) coverage {
+	cov := coverage{stored: len(existing), traversal: tr}
+	for k := range existing {
+		if seen[k] {
+			cov.seen++
+		}
+	}
+	return cov
+}
+
+// collapsed reports a coverage drop worth interrupting for. An incomplete
+// traversal or an early stop both explain a small fresh set on their own and
+// have their own handling, so neither counts.
+func (c coverage) collapsed() bool {
+	if c.stored < minStoredForCoverageCheck || c.incomplete || c.stoppedEarly {
+		return false
+	}
+	return float64(c.seen)/float64(c.stored) < coverageCollapseRatio
+}
+
+func (c coverage) percent() int {
+	if c.stored == 0 {
+		return 0
+	}
+	return int(float64(c.seen) / float64(c.stored) * 100)
+}
+
+func scrapeAll(ctx context.Context, sc scraper.StudioScraper, st store.Store, studioURL string, workers int, delay time.Duration, preserve bool) ([]models.Scene, coverage, error) {
 	existing, err := st.Load(studioURL)
 	if err != nil {
-		return nil, fmt.Errorf("loading existing scenes: %w", err)
+		return nil, coverage{}, fmt.Errorf("loading existing scenes: %w", err)
 	}
 	existingByKey := make(map[sceneKey]models.Scene, len(existing))
 	for _, s := range existing {
 		existingByKey[keyOf(s)] = s
 	}
 
-	fresh, incomplete, err := collectScenes(ctx, sc, studioURL, scraper.ListOpts{Workers: workers, Delay: delay})
+	fresh, tr, err := collectScenes(ctx, sc, studioURL, scraper.ListOpts{Workers: workers, Delay: delay})
 	if err != nil {
-		return nil, err
+		return nil, coverage{}, err
 	}
 
 	result := make([]models.Scene, 0, len(fresh))
@@ -292,7 +356,7 @@ func scrapeAll(ctx context.Context, sc scraper.StudioScraper, st store.Store, st
 	// A1: an incomplete traversal (fetch errors / interrupted) must not let the
 	// authoritative Save hard-delete scenes that simply weren't reached. Fall
 	// back to merge semantics — carry forward existing scenes not re-collected.
-	if incomplete {
+	if tr.incomplete {
 		carried := 0
 		for _, s := range existing {
 			if !seen[keyOf(s)] {
@@ -302,7 +366,7 @@ func scrapeAll(ctx context.Context, sc scraper.StudioScraper, st store.Store, st
 		}
 		fmt.Fprintf(os.Stderr, "warning: traversal incomplete — preserving %d existing scene(s) and skipping destructive --full delete\n", carried)
 	}
-	return result, nil
+	return result, coverageOf(existingByKey, seen, tr), nil
 }
 
 // scrapeIncremental loads existing scene IDs, passes them to the scraper as a
@@ -311,10 +375,10 @@ func scrapeAll(ctx context.Context, sc scraper.StudioScraper, st store.Store, st
 // Scrapers that cannot use early-stop (e.g. recommended-sorted sites) may emit
 // known scenes in correct site order. In that case fresh takes priority and
 // price history is carried forward so no history is lost.
-func scrapeIncremental(ctx context.Context, sc scraper.StudioScraper, st store.Store, studioURL string, workers int, delay time.Duration, preserve bool) ([]models.Scene, error) {
+func scrapeIncremental(ctx context.Context, sc scraper.StudioScraper, st store.Store, studioURL string, workers int, delay time.Duration, preserve bool) ([]models.Scene, coverage, error) {
 	existing, err := st.Load(studioURL)
 	if err != nil {
-		return nil, fmt.Errorf("loading existing scenes: %w", err)
+		return nil, coverage{}, fmt.Errorf("loading existing scenes: %w", err)
 	}
 
 	knownIDs := make(map[string]bool, len(existing))
@@ -326,9 +390,9 @@ func scrapeIncremental(ctx context.Context, sc scraper.StudioScraper, st store.S
 
 	// Incremental already merges fresh with existing, so a partial traversal is
 	// inherently non-destructive — the incomplete flag needs no special handling.
-	fresh, _, err := collectScenes(ctx, sc, studioURL, scraper.ListOpts{Workers: workers, KnownIDs: knownIDs, Delay: delay})
+	fresh, tr, err := collectScenes(ctx, sc, studioURL, scraper.ListOpts{Workers: workers, KnownIDs: knownIDs, Delay: delay})
 	if err != nil {
-		return nil, err
+		return nil, coverage{}, err
 	}
 
 	// Merge: emit fresh scenes first (preserving scraper order); carry price
@@ -358,15 +422,15 @@ func scrapeIncremental(ctx context.Context, sc scraper.StudioScraper, st store.S
 	}
 
 	fmt.Printf("  %d new, %d existing → %d total\n", newCount, len(existing), len(result))
-	return result, nil
+	return result, coverageOf(existingByKey, freshKeys, tr), nil
 }
 
 // scrapeRefresh re-fetches all scenes and soft-deletes any that have disappeared.
 // Price history from prior scrapes is carried forward onto each re-fetched scene.
-func scrapeRefresh(ctx context.Context, sc scraper.StudioScraper, st store.Store, studioURL string, workers int, delay time.Duration, preserve bool) ([]models.Scene, error) {
+func scrapeRefresh(ctx context.Context, sc scraper.StudioScraper, st store.Store, studioURL string, workers int, delay time.Duration, preserve bool) ([]models.Scene, coverage, error) {
 	existing, err := st.Load(studioURL)
 	if err != nil {
-		return nil, fmt.Errorf("loading existing scenes: %w", err)
+		return nil, coverage{}, fmt.Errorf("loading existing scenes: %w", err)
 	}
 	existingByKey := make(map[sceneKey]models.Scene, len(existing))
 	for _, s := range existing {
@@ -374,9 +438,9 @@ func scrapeRefresh(ctx context.Context, sc scraper.StudioScraper, st store.Store
 	}
 
 	// Full traversal — no KnownIDs
-	fresh, incomplete, err := collectScenes(ctx, sc, studioURL, scraper.ListOpts{Workers: workers, Delay: delay})
+	fresh, tr, err := collectScenes(ctx, sc, studioURL, scraper.ListOpts{Workers: workers, Delay: delay})
 	if err != nil {
-		return nil, err
+		return nil, coverage{}, err
 	}
 
 	// Build result: fresh scenes with accumulated price history.
@@ -404,13 +468,13 @@ func scrapeRefresh(ctx context.Context, sc scraper.StudioScraper, st store.Store
 		if scrapedKeys[keyOf(s)] {
 			continue
 		}
-		if !incomplete && s.DeletedAt == nil {
+		if !tr.incomplete && s.DeletedAt == nil {
 			s.DeletedAt = &now
 			newlyDeleted++
 		}
 		result = append(result, s)
 	}
-	if incomplete {
+	if tr.incomplete {
 		fmt.Fprintln(os.Stderr, "warning: traversal incomplete — skipping --refresh soft-delete of unreached scenes")
 	}
 
@@ -418,7 +482,7 @@ func scrapeRefresh(ctx context.Context, sc scraper.StudioScraper, st store.Store
 		fmt.Printf("  %d scenes no longer found, marked deleted\n", newlyDeleted)
 	}
 	fmt.Printf("  %d scraped, %d total\n", len(fresh), len(result))
-	return result, nil
+	return result, coverageOf(existingByKey, scrapedKeys, tr), nil
 }
 
 // collectScenes drains the scraper channel, printing a live count and warnings.
@@ -426,10 +490,10 @@ func scrapeRefresh(ctx context.Context, sc scraper.StudioScraper, st store.Store
 // fetch error or a cancelled context — so authoritative-Save callers (--full /
 // --refresh) can fall back to non-destructive merge semantics instead of
 // treating a partial run as the studio's full state.
-func collectScenes(ctx context.Context, sc scraper.StudioScraper, studioURL string, opts scraper.ListOpts) ([]models.Scene, bool, error) {
+func collectScenes(ctx context.Context, sc scraper.StudioScraper, studioURL string, opts scraper.ListOpts) ([]models.Scene, traversal, error) {
 	ch, err := sc.ListScenes(ctx, studioURL, opts)
 	if err != nil {
-		return nil, true, fmt.Errorf("starting scrape: %w", err)
+		return nil, traversal{incomplete: true}, fmt.Errorf("starting scrape: %w", err)
 	}
 	start := time.Now()
 	var scenes []models.Scene
@@ -476,14 +540,13 @@ func collectScenes(ctx context.Context, sc scraper.StudioScraper, studioURL stri
 		fmt.Printf("Interrupted — saving %d partial results...\n", len(scenes))
 	}
 	if errCount > 0 && len(scenes) == 0 {
-		return nil, true, fmt.Errorf("scrape failed with %d error(s) and 0 scenes", errCount)
+		return nil, traversal{incomplete: true}, fmt.Errorf("scrape failed with %d error(s) and 0 scenes", errCount)
 	}
 	// Only failures that cost us scenes make a traversal incomplete. A run
 	// whose sole errors were absent resources (an optional sub-listing the
 	// site does not have) saw everything there was to see, and used to be
 	// demoted to non-authoritative for no reason.
-	incomplete := missing > 0 || ctx.Err() != nil
-	return scenes, incomplete, nil
+	return scenes, traversal{incomplete: missing > 0 || ctx.Err() != nil, stoppedEarly: stoppedEarly}, nil
 }
 
 // summarizeFailures renders the per-kind error breakdown in a stable order, so
@@ -669,4 +732,52 @@ func resolveSiteDelay(siteID string, defaultDelay time.Duration, perSite map[str
 		return time.Duration(ms) * time.Millisecond
 	}
 	return defaultDelay
+}
+
+// stdinIsTerminal and promptIn are indirected so tests can drive the prompt.
+var (
+	stdinIsTerminal = func() bool {
+		fi, err := os.Stdin.Stat()
+		return err == nil && fi.Mode()&os.ModeCharDevice != 0
+	}
+	promptIn io.Reader = os.Stdin
+)
+
+// proceedAfterCollapse reports whether to go ahead with the save after a
+// coverage collapse. Incremental merges, so it only reports; --full/--refresh
+// hand the stored scenes to an authoritative Save and ask first.
+func proceedAfterCollapse(cov coverage, studioURL, siteID string, destructive, force bool) bool {
+	fmt.Fprintf(os.Stderr,
+		"\n[warn] %s: this scrape re-saw %d of %d stored scenes (%d%%) — the site or the scraper may have changed\n",
+		siteID, cov.seen, cov.stored, cov.percent())
+
+	if !destructive {
+		fmt.Fprintf(os.Stderr, "       incremental keeps the other %d, so nothing is lost; check %s if this is unexpected\n",
+			cov.stored-cov.seen, studioURL)
+		return true
+	}
+
+	fmt.Fprintf(os.Stderr, "       this is an authoritative save: %d stored scene(s) would be dropped\n", cov.stored-cov.seen)
+	if force {
+		fmt.Fprintln(os.Stderr, "       --force given, proceeding")
+		return true
+	}
+	if !stdinIsTerminal() {
+		fmt.Fprintln(os.Stderr, "       not a terminal — skipping the save (pass --force to allow it unattended)")
+		return false
+	}
+
+	fmt.Fprint(os.Stderr, "       proceed anyway? [y/N] ")
+	line, err := bufio.NewReader(promptIn).ReadString('\n')
+	if err != nil && line == "" {
+		fmt.Fprintln(os.Stderr, "       no answer — skipping the save")
+		return false
+	}
+	switch strings.ToLower(strings.TrimSpace(line)) {
+	case "y", "yes":
+		return true
+	default:
+		fmt.Fprintln(os.Stderr, "       skipping the save")
+		return false
+	}
 }

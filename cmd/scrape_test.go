@@ -360,7 +360,7 @@ func TestScrapeAll_preservesPriceHistory(t *testing.T) {
 				id:      "fakesite",
 				batches: [][]models.Scene{{build(t1, 4.99)}},
 			}
-			scenes, err := scrapeAll(context.Background(), sc, st, studioURL, 1, 0, true)
+			scenes, _, err := scrapeAll(context.Background(), sc, st, studioURL, 1, 0, true)
 			if err != nil {
 				t.Fatalf("scrapeAll: %v", err)
 			}
@@ -420,7 +420,7 @@ func TestScrapeAll_dropsMissingScenes(t *testing.T) {
 		id:      "fakesite",
 		batches: [][]models.Scene{{build("2")}},
 	}
-	scenes, err := scrapeAll(context.Background(), sc, st, studioURL, 1, 0, true)
+	scenes, _, err := scrapeAll(context.Background(), sc, st, studioURL, 1, 0, true)
 	if err != nil {
 		t.Fatalf("scrapeAll: %v", err)
 	}
@@ -490,7 +490,7 @@ func (f *kindedScraper) ListScenes(_ context.Context, _ string, _ scraper.ListOp
 
 // An optional sub-listing a site does not have costs no scenes, so a run whose
 // only failures were absences saw everything there was to see. Counting those as
-// incomplete demoted the run to non-destructive for no reason — the bug this
+// tr.incomplete demoted the run to non-destructive for no reason — the bug this
 // classification exists to fix.
 func TestCollectScenes_absentErrorsKeepTraversalComplete(t *testing.T) {
 	sc := &kindedScraper{
@@ -501,14 +501,14 @@ func TestCollectScenes_absentErrorsKeepTraversalComplete(t *testing.T) {
 			scraper.AbsentError("https://example.com/dvds", errors.New("HTTP 410")),
 		},
 	}
-	scenes, incomplete, err := collectScenes(context.Background(), sc, "https://example.com", scraper.ListOpts{})
+	scenes, tr, err := collectScenes(context.Background(), sc, "https://example.com", scraper.ListOpts{})
 	if err != nil {
 		t.Fatalf("collectScenes: %v", err)
 	}
 	if len(scenes) != 1 {
 		t.Errorf("got %d scenes, want 1", len(scenes))
 	}
-	if incomplete {
+	if tr.incomplete {
 		t.Error("incomplete=true, want false — absent resources cost no scenes")
 	}
 }
@@ -530,11 +530,11 @@ func TestCollectScenes_lossyErrorsMakeTraversalIncomplete(t *testing.T) {
 				scenes: []models.Scene{{ID: "1", SiteID: "kinded", Title: "Scene 1"}},
 				errs:   []error{c.err},
 			}
-			_, incomplete, err := collectScenes(context.Background(), sc, "https://example.com", scraper.ListOpts{})
+			_, tr, err := collectScenes(context.Background(), sc, "https://example.com", scraper.ListOpts{})
 			if err != nil {
 				t.Fatalf("collectScenes: %v", err)
 			}
-			if !incomplete {
+			if !tr.incomplete {
 				t.Errorf("incomplete=false for a %s failure, want true", c.name)
 			}
 		})
@@ -551,11 +551,11 @@ func TestCollectScenes_mixedKindsCountLossesOnly(t *testing.T) {
 			scraper.ParseError("https://example.com/p/2", errors.New("no video block")),
 		},
 	}
-	_, incomplete, err := collectScenes(context.Background(), sc, "https://example.com", scraper.ListOpts{})
+	_, tr, err := collectScenes(context.Background(), sc, "https://example.com", scraper.ListOpts{})
 	if err != nil {
 		t.Fatalf("collectScenes: %v", err)
 	}
-	if !incomplete {
+	if !tr.incomplete {
 		t.Error("incomplete=false, want true — one parse failure lost scenes")
 	}
 }
@@ -583,14 +583,14 @@ func TestCollectScenes_errorsWithSomeScenes(t *testing.T) {
 		},
 		errors: 2,
 	}
-	scenes, incomplete, err := collectScenes(context.Background(), sc, "https://example.com", scraper.ListOpts{})
+	scenes, tr, err := collectScenes(context.Background(), sc, "https://example.com", scraper.ListOpts{})
 	if err != nil {
 		t.Fatalf("expected no error when some scenes succeed, got: %v", err)
 	}
 	if len(scenes) != 1 {
 		t.Errorf("got %d scenes, want 1", len(scenes))
 	}
-	if !incomplete {
+	if !tr.incomplete {
 		t.Error("expected incomplete=true when fetch errors occurred")
 	}
 }
@@ -611,14 +611,14 @@ func TestCollectScenes_allErrorsNoScenes(t *testing.T) {
 
 func TestCollectScenes_noErrorsNoScenes(t *testing.T) {
 	sc := &mixedScraper{id: "mix"}
-	scenes, incomplete, err := collectScenes(context.Background(), sc, "https://example.com", scraper.ListOpts{})
+	scenes, tr, err := collectScenes(context.Background(), sc, "https://example.com", scraper.ListOpts{})
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 	if len(scenes) != 0 {
 		t.Errorf("got %d scenes, want 0", len(scenes))
 	}
-	if incomplete {
+	if tr.incomplete {
 		t.Error("expected incomplete=false for a clean empty traversal")
 	}
 }
@@ -648,7 +648,7 @@ func TestScrapeRefresh_softDeleteAndRevive(t *testing.T) {
 		id:      "fakesite",
 		batches: [][]models.Scene{{build("1"), build("3")}},
 	}
-	result, err := scrapeRefresh(context.Background(), sc, st, studioURL, 1, 0, true)
+	result, _, err := scrapeRefresh(context.Background(), sc, st, studioURL, 1, 0, true)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -673,7 +673,7 @@ func TestScrapeRefresh_softDeleteAndRevive(t *testing.T) {
 		id:      "fakesite",
 		batches: [][]models.Scene{{build("1"), build("2"), build("3")}},
 	}
-	result2, err := scrapeRefresh(context.Background(), sc2, st, studioURL, 1, 0, true)
+	result2, _, err := scrapeRefresh(context.Background(), sc2, st, studioURL, 1, 0, true)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -870,7 +870,7 @@ func TestScrapeAll_multiSiteKeyAndDedup(t *testing.T) {
 	}
 
 	st := store.NewFlat(t.TempDir(), []string{"json"})
-	scenes, err := scrapeAll(context.Background(), sc, st, studioURL, 1, 0, true)
+	scenes, _, err := scrapeAll(context.Background(), sc, st, studioURL, 1, 0, true)
 	if err != nil {
 		t.Fatalf("scrapeAll: %v", err)
 	}
@@ -890,7 +890,7 @@ func TestScrapeAll_multiSiteKeyAndDedup(t *testing.T) {
 }
 
 // TestScrapeAll_incompletePreservesExisting is the A1 regression: when --full's
-// traversal is incomplete (a fetch error), scenes not re-collected must be
+// traversal is tr.incomplete (a fetch error), scenes not re-collected must be
 // merged forward rather than hard-deleted by the authoritative Save.
 func TestScrapeAll_incompletePreservesExisting(t *testing.T) {
 	const studioURL = "https://example.com/a1"
@@ -906,14 +906,14 @@ func TestScrapeAll_incompletePreservesExisting(t *testing.T) {
 		t.Fatalf("seed: %v", err)
 	}
 
-	// A run that re-collects only scene 1 but reports a fetch error (incomplete).
+	// A run that re-collects only scene 1 but reports a fetch error (tr.incomplete).
 	sc := &mixedScraper{id: "a1", scenes: []models.Scene{mk("1")}, errors: 1}
-	scenes, err := scrapeAll(context.Background(), sc, st, studioURL, 1, 0, true)
+	scenes, _, err := scrapeAll(context.Background(), sc, st, studioURL, 1, 0, true)
 	if err != nil {
 		t.Fatalf("scrapeAll: %v", err)
 	}
 	if len(scenes) != 3 {
-		t.Fatalf("got %d scenes, want 3 (existing preserved on incomplete run)", len(scenes))
+		t.Fatalf("got %d scenes, want 3 (existing preserved on tr.incomplete run)", len(scenes))
 	}
 	if err := st.Save(studioURL, scenes); err != nil {
 		t.Fatalf("save: %v", err)
@@ -923,7 +923,7 @@ func TestScrapeAll_incompletePreservesExisting(t *testing.T) {
 		t.Fatalf("load: %v", err)
 	}
 	if len(got) != 3 {
-		t.Errorf("after incomplete --full, %d scenes survive, want 3", len(got))
+		t.Errorf("after tr.incomplete --full, %d scenes survive, want 3", len(got))
 	}
 }
 
@@ -941,7 +941,7 @@ func TestScrapeAll_completeDropsMissing(t *testing.T) {
 		t.Fatalf("seed: %v", err)
 	}
 	sc := &fakeScraper{id: "a1c", batches: [][]models.Scene{{mk("1")}}} // clean, only scene 1
-	scenes, err := scrapeAll(context.Background(), sc, st, studioURL, 1, 0, true)
+	scenes, _, err := scrapeAll(context.Background(), sc, st, studioURL, 1, 0, true)
 	if err != nil {
 		t.Fatalf("scrapeAll: %v", err)
 	}
@@ -951,7 +951,7 @@ func TestScrapeAll_completeDropsMissing(t *testing.T) {
 }
 
 // TestScrapeRefresh_incompleteSkipsSoftDelete is the A1 regression for
-// --refresh: an incomplete traversal must NOT soft-delete scenes that simply
+// --refresh: an tr.incomplete traversal must NOT soft-delete scenes that simply
 // weren't reached this run.
 func TestScrapeRefresh_incompleteSkipsSoftDelete(t *testing.T) {
 	const studioURL = "https://example.com/a1-refresh"
@@ -965,15 +965,15 @@ func TestScrapeRefresh_incompleteSkipsSoftDelete(t *testing.T) {
 		t.Fatalf("seed: %v", err)
 	}
 
-	// Re-collect only scene 1, with an error (incomplete).
+	// Re-collect only scene 1, with an error (tr.incomplete).
 	sc := &mixedScraper{id: "a1r", scenes: []models.Scene{mk("1")}, errors: 1}
-	scenes, err := scrapeRefresh(context.Background(), sc, st, studioURL, 1, 0, true)
+	scenes, _, err := scrapeRefresh(context.Background(), sc, st, studioURL, 1, 0, true)
 	if err != nil {
 		t.Fatalf("scrapeRefresh: %v", err)
 	}
 	for _, s := range scenes {
 		if s.DeletedAt != nil {
-			t.Errorf("scene %s soft-deleted on incomplete refresh", s.ID)
+			t.Errorf("scene %s soft-deleted on tr.incomplete refresh", s.ID)
 		}
 	}
 }
@@ -1064,7 +1064,7 @@ func TestScrapeRefresh_preservesEnrichment(t *testing.T) {
 			t.Fatal(err)
 		}
 		sc := &fakeScraper{id: "fakesite", batches: [][]models.Scene{{stripped}}}
-		result, err := scrapeRefresh(context.Background(), sc, st, studioURL, 1, 0, preserve)
+		result, _, err := scrapeRefresh(context.Background(), sc, st, studioURL, 1, 0, preserve)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -1104,4 +1104,147 @@ func TestScrapeRefresh_preservesEnrichment(t *testing.T) {
 			t.Errorf("--no-preserve should let the blank scrape win, got %+v", got)
 		}
 	})
+}
+
+// ---- coverage-collapse guard ----
+
+func TestCoverageCollapsed(t *testing.T) {
+	cases := []struct {
+		name string
+		cov  coverage
+		want bool
+	}{
+		{"aunt judy's: 9 of 412", coverage{stored: 412, seen: 9}, true},
+		{"exactly at the threshold is fine", coverage{stored: 100, seen: 50}, false},
+		{"one below the threshold trips", coverage{stored: 100, seen: 49}, true},
+		{"full coverage", coverage{stored: 100, seen: 100}, false},
+		{"small studio is exempt", coverage{stored: 9, seen: 0}, false},
+		{"empty store", coverage{stored: 0, seen: 0}, false},
+		{
+			"incomplete traversal has its own handling",
+			coverage{stored: 400, seen: 4, traversal: traversal{incomplete: true}},
+			false,
+		},
+		{
+			"early stop explains a small fresh set",
+			coverage{stored: 400, seen: 4, traversal: traversal{stoppedEarly: true}},
+			false,
+		},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			if got := c.cov.collapsed(); got != c.want {
+				t.Errorf("collapsed() = %v, want %v (%d/%d)", got, c.want, c.cov.seen, c.cov.stored)
+			}
+		})
+	}
+}
+
+func withPrompt(t *testing.T, terminal bool, answer string) {
+	t.Helper()
+	origTerm, origIn := stdinIsTerminal, promptIn
+	stdinIsTerminal = func() bool { return terminal }
+	promptIn = strings.NewReader(answer)
+	t.Cleanup(func() { stdinIsTerminal, promptIn = origTerm, origIn })
+}
+
+func TestProceedAfterCollapse(t *testing.T) {
+	collapsed := coverage{stored: 400, seen: 9}
+
+	cases := []struct {
+		name        string
+		destructive bool
+		force       bool
+		terminal    bool
+		answer      string
+		want        bool
+	}{
+		{"incremental only reports", false, false, false, "", true},
+		{"--force proceeds unattended", true, true, false, "", true},
+		{"non-interactive refuses", true, false, false, "", false},
+		{"declined at the prompt", true, false, true, "n\n", false},
+		{"empty answer defaults to no", true, false, true, "\n", false},
+		{"eof defaults to no", true, false, true, "", false},
+		{"accepted at the prompt", true, false, true, "y\n", true},
+		{"accepted, spelled out", true, false, true, "YES\n", true},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			withPrompt(t, c.terminal, c.answer)
+			got := proceedAfterCollapse(collapsed, "https://example.com", "example", c.destructive, c.force)
+			if got != c.want {
+				t.Errorf("proceedAfterCollapse = %v, want %v", got, c.want)
+			}
+		})
+	}
+}
+
+// fakePartial emits a fixed slice — a scraper that still works but now reaches
+// only part of the catalogue.
+type fakePartial struct {
+	id     string
+	url    string
+	scenes []models.Scene
+}
+
+func (f *fakePartial) ID() string               { return f.id }
+func (f *fakePartial) Patterns() []string       { return nil }
+func (f *fakePartial) MatchesURL(s string) bool { return s == f.url }
+func (f *fakePartial) ListScenes(_ context.Context, _ string, _ scraper.ListOpts) (<-chan scraper.SceneResult, error) {
+	ch := make(chan scraper.SceneResult, len(f.scenes))
+	for _, sc := range f.scenes {
+		ch <- scraper.Scene(sc)
+	}
+	close(ch)
+	return ch, nil
+}
+
+// TestScrapeOneCollapseSkipsDestructiveSave is the end-to-end case: a studio
+// with a populated store, re-scraped by a scraper that now returns a fraction
+// of it, must not have the remainder deleted without an answer.
+func TestScrapeOneCollapseSkipsDestructiveSave(t *testing.T) {
+	const studioURL = "https://example.com/collapse-guard"
+	dir := t.TempDir()
+	st := store.NewFlat(dir, []string{"json"})
+
+	stored := make([]models.Scene, 0, 40)
+	for i := 0; i < 40; i++ {
+		stored = append(stored, models.Scene{
+			ID: fmt.Sprintf("%d", i), SiteID: "collapse", StudioURL: studioURL,
+			Title: fmt.Sprintf("Scene %d", i), ScrapedAt: time.Now().UTC().Truncate(time.Second),
+		})
+	}
+	if err := st.Save(studioURL, stored); err != nil {
+		t.Fatal(err)
+	}
+
+	scraper.Register(&fakePartial{id: "collapseguard", url: studioURL, scenes: stored[:2]})
+
+	// Declined at the prompt: the store must be untouched.
+	withPrompt(t, true, "n\n")
+	if err := scrapeOne(context.Background(), st, studioURL, "", "", dir, []string{"json"},
+		true, false, false, true, 1, 0, nil); err != nil {
+		t.Fatalf("scrapeOne: %v", err)
+	}
+	after, err := st.Load(studioURL)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(after) != 40 {
+		t.Errorf("store holds %d scenes, want all 40 — a declined save must not delete", len(after))
+	}
+
+	// Confirmed: the authoritative save goes through as it always did.
+	withPrompt(t, true, "y\n")
+	if err := scrapeOne(context.Background(), st, studioURL, "", "", dir, []string{"json"},
+		true, false, false, true, 1, 0, nil); err != nil {
+		t.Fatalf("scrapeOne (confirmed): %v", err)
+	}
+	after, err = st.Load(studioURL)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(after) != 2 {
+		t.Errorf("store holds %d scenes, want 2 after a confirmed authoritative save", len(after))
+	}
 }
