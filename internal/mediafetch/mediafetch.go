@@ -4,6 +4,7 @@ package mediafetch
 
 import (
 	"context"
+	"encoding/base64"
 	"fmt"
 	"net"
 	"net/http"
@@ -54,6 +55,22 @@ func Fetch(ctx context.Context, client *http.Client, rawURL string, allowPrivate
 		ct = http.DetectContentType(data)
 	}
 	return Asset{Data: data, ContentType: ct}, nil
+}
+
+// DataURI fetches an image and encodes it as a data URI, the form Stash's
+// cover_image field takes.
+//
+// A URL carrying an already-passed signed expiry is rejected without a request:
+// scraped CDN thumbnails are often dead within hours of the scrape.
+func DataURI(ctx context.Context, client *http.Client, rawURL string, allowPrivate bool) (string, error) {
+	if Expired(rawURL, time.Now()) {
+		return "", fmt.Errorf("URL signature expired — re-scrape the studio for a fresh URL")
+	}
+	asset, err := Fetch(ctx, client, rawURL, allowPrivate)
+	if err != nil {
+		return "", err
+	}
+	return "data:" + asset.ContentType + ";base64," + base64.StdEncoding.EncodeToString(asset.Data), nil
 }
 
 // ValidateURL enforces the SSRF defense: http(s) only, and unless allowPrivate

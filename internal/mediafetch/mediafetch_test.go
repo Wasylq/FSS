@@ -1,10 +1,13 @@
 package mediafetch
 
 import (
+	"bytes"
 	"context"
+	"encoding/base64"
 	"net/http"
 	"net/http/httptest"
 	"strconv"
+	"strings"
 	"testing"
 	"time"
 )
@@ -185,3 +188,74 @@ func TestFetchGoneFailsFast(t *testing.T) {
 }
 
 func itoa(n int64) string { return strconv.FormatInt(n, 10) }
+
+func TestDataURIEncodesAsset(t *testing.T) {
+	payload := []byte("\x89PNG\r\n\x1a\nfake-png-bytes")
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.Header().Set("Content-Type", "image/png")
+		_, _ = w.Write(payload)
+	}))
+	defer ts.Close()
+
+	got, err := DataURI(context.Background(), ts.Client(), ts.URL+"/cover.png", true)
+	if err != nil {
+		t.Fatalf("DataURI: %v", err)
+	}
+	const prefix = "data:image/png;base64,"
+	if !strings.HasPrefix(got, prefix) {
+		t.Fatalf("missing data URI prefix: %s", got)
+	}
+	decoded, err := base64.StdEncoding.DecodeString(strings.TrimPrefix(got, prefix))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !bytes.Equal(decoded, payload) {
+		t.Error("decoded payload does not match what was served")
+	}
+}
+
+func TestDataURIDetectsContentTypeWhenMissing(t *testing.T) {
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.Header()["Content-Type"] = nil
+		_, _ = w.Write([]byte("\x89PNG\r\n\x1a\n"))
+	}))
+	defer ts.Close()
+
+	got, err := DataURI(context.Background(), ts.Client(), ts.URL, true)
+	if err != nil {
+		t.Fatalf("DataURI: %v", err)
+	}
+	if !strings.HasPrefix(got, "data:image/png;base64,") {
+		t.Errorf("content type was not detected: %s", got)
+	}
+}
+
+func TestDataURIRejectsLoopbackByDefault(t *testing.T) {
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		_, _ = w.Write([]byte("img"))
+	}))
+	defer ts.Close()
+
+	_, err := DataURI(context.Background(), ts.Client(), ts.URL+"/cover.jpg", false)
+	if err == nil || !strings.Contains(err.Error(), "private/loopback") {
+		t.Fatalf("want a private/loopback rejection, got: %v", err)
+	}
+}
+
+// An expired signature is rejected before any request is made.
+func TestDataURISkipsExpiredURL(t *testing.T) {
+	var hits int
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		hits++
+		_, _ = w.Write([]byte("img"))
+	}))
+	defer ts.Close()
+
+	url := ts.URL + "/cover.jpg?expires=1000000000"
+	if _, err := DataURI(context.Background(), ts.Client(), url, true); err == nil {
+		t.Fatal("want an error for an expired URL")
+	}
+	if hits != 0 {
+		t.Errorf("made %d requests, want 0", hits)
+	}
+}
