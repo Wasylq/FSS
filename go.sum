@@ -1,5 +1,5 @@
-github.com/Anastylosis/stash-go v0.3.0 h1:B4yfx+Bs6E7cAS/OJ7weEXzKkzm4ZNkiQ/EOPX/VTIE=
-github.com/Anastylosis/stash-go v0.3.0/go.mod h1:tRUVKaZav6YB9IakMH34N9/F7Dzks1KW80d4d793k64=
+github.com/Anastylosis/stash-go v0.4.0 h1:YFBVwwOvIj8cQIyyt08+VdP9H3hvzCNHgG3mplvV0CM=
+github.com/Anastylosis/stash-go v0.4.0/go.mod h1:tRUVKaZav6YB9IakMH34N9/F7Dzks1KW80d4d793k64=
 github.com/adrg/xdg v0.5.3 h1:xRnxJXne7+oWDatRhR1JLnvuccuIeCoBu2rtuLqQB78=
 github.com/adrg/xdg v0.5.3/go.mod h1:nlTsY+NNiCBGCK2tpm09vRqfVzrc2fLmXGpBLF0zlTQ=
 github.com/cpuguy83/go-md2man/v2 v2.0.6/go.mod h1:oOW0eioCTA6cOiMLiUPZOpcVxMig6NIQQ7OS05n1F4g=
