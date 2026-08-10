@@ -6,8 +6,12 @@ import (
 	"net/url"
 	"os"
 	"sync"
+	"time"
 
+	stash "github.com/Anastylosis/stash-go"
 	"github.com/spf13/cobra"
+
+	"github.com/Anastylosis/FSS/internal/httpx"
 )
 
 var stashCmd = &cobra.Command{
@@ -20,6 +24,19 @@ func init() {
 
 	stashCmd.PersistentFlags().String("url", "", "Stash server URL (default from config)")
 	stashCmd.PersistentFlags().String("api-key", "", "Stash API key (env: FSS_STASH_API_KEY)")
+}
+
+// stashRequestTimeout bounds one GraphQL request. Retries get the full budget
+// each, since it is per attempt.
+const stashRequestTimeout = 30 * time.Second
+
+// newStashClient builds the client every stash subcommand uses, on fss's
+// pooled, retrying transport rather than the library's plain default.
+func newStashClient(cmd *cobra.Command) *stash.Client {
+	return stash.NewClient(stashURL(cmd),
+		stash.WithAPIKey(stashAPIKey(cmd)),
+		stash.WithHTTPClient(httpx.NewRetryClient(stashRequestTimeout)),
+	)
 }
 
 func stashURL(cmd *cobra.Command) string {

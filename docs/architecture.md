@@ -229,11 +229,11 @@ No validation or dynamic reload. The Stash API key can also come from `FSS_STASH
 
 ## Stash Integration
 
-**Files:** `stash/client.go`, `match/match.go`, `match/merge.go`
+**Files:** `cmd/stash.go`, `match/match.go`, `match/merge.go`
 
 Three-layer design:
 
-1. **Client** (`client.go`): thin GraphQL wrapper over Stash's API. Methods for `FindScenes`, `UpdateScene`, `EnsureTag`, `EnsurePerformer`, `EnsureStudio`. Uses `httpx.Do()` for HTTP.
+1. **Client**: [stash-go](https://github.com/Anastylosis/stash-go), the shared GraphQL client, with `FindScenes`, `UpdateScene`, `EnsureTag`, `EnsurePerformer`, `EnsureStudio`. `cmd/stash.go`'s `newStashClient` supplies fss's pooled, retrying HTTP client (`httpx.NewRetryClient`) so Stash calls retry like every other request fss makes. Cover images are fss's own: `internal/mediafetch` validates and encodes them, the client just carries the data URI.
 
 2. **Matcher** (`match.go`): builds a `SceneIndex` from previously-scraped scenes — loaded from JSON files *or* the SQLite store via the shared `loadFSSScenes` in `cmd/scenesource.go` — indexed by normalized title. Matches Stash filenames against the index with two passes (primary + sanitized/noise-stripped). Returns confidence levels: Exact, Substring, Ambiguous, None. Duration filtering rejects false positives.
 

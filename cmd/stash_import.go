@@ -16,9 +16,16 @@ import (
 
 	"github.com/spf13/cobra"
 
+	stash "github.com/Anastylosis/stash-go"
+
+	"github.com/Anastylosis/FSS/internal/httpx"
+	"github.com/Anastylosis/FSS/internal/mediafetch"
 	"github.com/Anastylosis/FSS/match"
-	"github.com/Anastylosis/FSS/stash"
 )
+
+// coverHTTPClient fetches cover images. Plain and pooled: mediafetch drives
+// its own retries.
+var coverHTTPClient = httpx.NewClient(30 * time.Second)
 
 var stashImportCmd = &cobra.Command{
 	Use:   "import",
@@ -166,19 +173,19 @@ func changelogDir(cmd *cobra.Command) string {
 	return "."
 }
 
-func queryStashScenes(ctx context.Context, client *stash.Client, o importOpts) ([]stash.StashScene, error) {
-	zero := 0
-	filter := stash.FindScenesFilter{
+func queryStashScenes(ctx context.Context, client *stash.Client, o importOpts) ([]stash.Scene, error) {
+	filter := stash.SceneFilter{
 		PerformerName: o.performer,
 		StudioName:    o.studio,
-		PathFilter:    o.pathFilter,
+		PathContains:  o.pathFilter,
 	}
 	if !o.includeStashbox {
-		filter.StashIDCount = &zero
+		unmatched := false
+		filter.HasStashID = &unmatched
 	}
 
 	fmt.Print("Querying Stash scenes...")
-	var scenes []stash.StashScene
+	var scenes []stash.Scene
 	var err error
 	if o.top > 0 {
 		scenes, _, err = client.FindScenes(ctx, filter, 1, o.top)
@@ -200,7 +207,7 @@ func queryStashScenes(ctx context.Context, client *stash.Client, o importOpts) (
 	return scenes, nil
 }
 
-func diffScene(ss stash.StashScene, merged match.MergedScene, o importOpts) (map[string]changelogFieldDiff, []string, []string) {
+func diffScene(ss stash.Scene, merged match.MergedScene, o importOpts) (map[string]changelogFieldDiff, []string, []string) {
 	allTags := merged.Tags
 	allTags = append(allTags, merged.Categories...)
 	allTags = append(allTags, o.tagName)
@@ -224,11 +231,11 @@ func diffScene(ss stash.StashScene, merged match.MergedScene, o importOpts) (map
 	return changes, allTags, mergedURLs
 }
 
-func applyScene(ctx context.Context, client *stash.Client, ss stash.StashScene, merged match.MergedScene,
+func applyScene(ctx context.Context, client *stash.Client, ss stash.Scene, merged match.MergedScene,
 	allTags []string, mergedURLs []string, importTagID string, o importOpts,
 ) ([]importFailure, error) {
 	filename := filepath.Base(ss.Files[0].Path)
-	input := stash.SceneUpdateInput{ID: ss.ID}
+	input := stash.SceneUpdate{ID: ss.ID}
 	var sceneFailures []importFailure
 	hasStashbox := len(ss.StashIDs) > 0
 
@@ -298,7 +305,7 @@ func applyScene(ctx context.Context, client *stash.Client, ss stash.StashScene, 
 		input.Organized = &o.organized
 	}
 	if fieldAllowed(o.allowedFields, "cover") && o.setCover && merged.Thumbnail != "" {
-		coverData, coverErr := client.DownloadCoverImage(ctx, merged.Thumbnail, o.coverAllowPrivate)
+		coverData, coverErr := mediafetch.DataURI(ctx, coverHTTPClient, merged.Thumbnail, o.coverAllowPrivate)
 		if coverErr != nil {
 			sceneFailures = append(sceneFailures, importFailure{
 				SceneID: ss.ID, Filename: filename, Op: "cover", Name: merged.Thumbnail, Err: coverErr,
@@ -318,7 +325,7 @@ func runStashImport(cmd *cobra.Command, _ []string) error {
 	ctx, stop := signal.NotifyContext(cmd.Context(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
-	client := stash.NewClient(stashURL(cmd), stashAPIKey(cmd))
+	client := newStashClient(cmd)
 	if err := client.Ping(ctx); err != nil {
 		return fmt.Errorf("connecting to stash: %w", err)
 	}
@@ -542,7 +549,7 @@ func (l *entityLookup) checkTag(name string) {
 	if _, seen := l.tags[name]; seen {
 		return
 	}
-	_, found, err := l.client.FindTagByName(l.ctx, name)
+	_, found, err := l.client.FindTag(l.ctx, name)
 	if err == nil && !found {
 		_, found, err = l.client.FindTagByAlias(l.ctx, name)
 	}
@@ -558,7 +565,7 @@ func (l *entityLookup) checkPerformer(name string) {
 	if _, seen := l.performers[name]; seen {
 		return
 	}
-	_, found, err := l.client.FindPerformerByName(l.ctx, name)
+	_, found, err := l.client.FindPerformer(l.ctx, name)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "warning: looking up performer %q: %v\n", name, err)
 		l.performers[name] = true
@@ -571,7 +578,7 @@ func (l *entityLookup) checkStudio(name string) {
 	if _, seen := l.studios[name]; seen {
 		return
 	}
-	_, found, err := l.client.FindStudioByName(l.ctx, name)
+	_, found, err := l.client.FindStudio(l.ctx, name)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "warning: looking up studio %q: %v\n", name, err)
 		l.studios[name] = true
@@ -647,7 +654,7 @@ func printFailureSummary(failures []importFailure) {
 	}
 }
 
-func buildChanges(ss stash.StashScene, merged match.MergedScene, mergedURLs []string, newTags []string, setCover, organized bool) map[string]changelogFieldDiff {
+func buildChanges(ss stash.Scene, merged match.MergedScene, mergedURLs []string, newTags []string, setCover, organized bool) map[string]changelogFieldDiff {
 	changes := map[string]changelogFieldDiff{}
 
 	// Emit an "organized" change only when --organized is set and the scene
@@ -819,7 +826,7 @@ func appendChangelog(dir string, entries []changelogEntry) error {
 	return os.WriteFile(path, out, 0o600)
 }
 
-func extractTagIDs(tags []stash.StashTag) []string {
+func extractTagIDs(tags []stash.Tag) []string {
 	ids := make([]string, len(tags))
 	for i, t := range tags {
 		ids[i] = t.ID
@@ -827,7 +834,7 @@ func extractTagIDs(tags []stash.StashTag) []string {
 	return ids
 }
 
-func extractPerfIDs(perfs []stash.StashPerf) []string {
+func extractPerfIDs(perfs []stash.Performer) []string {
 	ids := make([]string, len(perfs))
 	for i, p := range perfs {
 		ids[i] = p.ID

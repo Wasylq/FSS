@@ -11,7 +11,7 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/Anastylosis/FSS/stash"
+	stash "github.com/Anastylosis/stash-go"
 )
 
 var stashUnmatchedCmd = &cobra.Command{
@@ -33,7 +33,7 @@ func runStashUnmatched(cmd *cobra.Command, _ []string) error {
 	ctx, stop := signal.NotifyContext(cmd.Context(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
-	client := stash.NewClient(stashURL(cmd), stashAPIKey(cmd))
+	client := newStashClient(cmd)
 	if err := client.Ping(ctx); err != nil {
 		return fmt.Errorf("connecting to stash: %w", err)
 	}
@@ -45,16 +45,16 @@ func runStashUnmatched(cmd *cobra.Command, _ []string) error {
 
 	top, _ := cmd.Flags().GetInt("top")
 
-	zero := 0
-	filter := stash.FindScenesFilter{
-		StashIDCount:  &zero,
+	unmatched := false
+	filter := stash.SceneFilter{
+		HasStashID:    &unmatched,
 		PerformerName: performer,
 		StudioName:    studio,
-		PathFilter:    pathFilter,
+		PathContains:  pathFilter,
 	}
 
 	fmt.Print("Querying unmatched scenes...")
-	var scenes []stash.StashScene
+	var scenes []stash.Scene
 	var total int
 	var err error
 	if top > 0 {

@@ -10,7 +10,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Anastylosis/FSS/stash"
+	stash "github.com/Anastylosis/stash-go"
 )
 
 func TestParseRevertFields(t *testing.T) {
@@ -134,7 +134,7 @@ func TestComputeRevert_titleAndDate(t *testing.T) {
 			"date":  {From: "2025-01-15", To: "2024-06-01"},
 		},
 	}
-	current := stash.StashScene{ID: "42", Title: "Imported", Date: "2024-06-01"}
+	current := stash.Scene{ID: "42", Title: "Imported", Date: "2024-06-01"}
 
 	in, plan, skipped := computeRevert(entry, current, nil)
 
@@ -160,7 +160,7 @@ func TestComputeRevert_urlsRemovesAdded(t *testing.T) {
 		},
 	}
 	// Stash has the imported URLs plus a manually-added one.
-	current := stash.StashScene{
+	current := stash.Scene{
 		ID:   "42",
 		URLs: []string{"https://manyvids.com/foo", "https://c4s.com/bar", "https://user-added.example/x"},
 	}
@@ -184,7 +184,7 @@ func TestComputeRevert_tagsAndPerfsAreNamesNotIDs(t *testing.T) {
 			"performers": {Added: []string{"Alice"}},
 		},
 	}
-	current := stash.StashScene{ID: "42"}
+	current := stash.Scene{ID: "42"}
 
 	in, plan, _ := computeRevert(entry, current, nil)
 
@@ -212,7 +212,7 @@ func TestComputeRevert_skipsDetailsAndCover(t *testing.T) {
 			"cover":   {To: "https://cdn.example/cover.jpg"},
 		},
 	}
-	current := stash.StashScene{ID: "42"}
+	current := stash.Scene{ID: "42"}
 
 	in, _, skipped := computeRevert(entry, current, nil)
 
@@ -237,7 +237,7 @@ func TestComputeRevert_fieldsFilterRespected(t *testing.T) {
 			"urls":  {Added: []string{"https://x"}},
 		},
 	}
-	current := stash.StashScene{ID: "42", Title: "Imported", URLs: []string{"https://x"}}
+	current := stash.Scene{ID: "42", Title: "Imported", URLs: []string{"https://x"}}
 
 	// Only allow tags.
 	allowed := map[string]bool{"tags": true}
@@ -268,7 +268,7 @@ func TestComputeRevert_emptyAddedIsNoop(t *testing.T) {
 			"performers": {},
 		},
 	}
-	in, plan, _ := computeRevert(entry, stash.StashScene{ID: "42"}, nil)
+	in, plan, _ := computeRevert(entry, stash.Scene{ID: "42"}, nil)
 
 	if in.scene.URLs != nil || in.removeTagNames != nil || in.removePerfNames != nil {
 		t.Errorf("empty Added lists should be no-op: %+v", in)
@@ -376,9 +376,9 @@ func TestSubtractIDsPreservesOrder(t *testing.T) {
 }
 
 func TestCurrentTagAndPerfIDs(t *testing.T) {
-	ss := stash.StashScene{
-		Tags:       []stash.StashTag{{ID: "t1"}, {ID: "t2"}},
-		Performers: []stash.StashPerf{{ID: "p1"}},
+	ss := stash.Scene{
+		Tags:       []stash.Tag{{ID: "t1"}, {ID: "t2"}},
+		Performers: []stash.Performer{{ID: "p1"}},
 	}
 	if got := currentTagIDs(ss); len(got) != 2 || got[0] != "t1" || got[1] != "t2" {
 		t.Errorf("currentTagIDs = %v", got)
@@ -386,7 +386,7 @@ func TestCurrentTagAndPerfIDs(t *testing.T) {
 	if got := currentPerfIDs(ss); len(got) != 1 || got[0] != "p1" {
 		t.Errorf("currentPerfIDs = %v", got)
 	}
-	empty := stash.StashScene{}
+	empty := stash.Scene{}
 	if got := currentTagIDs(empty); len(got) != 0 {
 		t.Errorf("currentTagIDs(empty) = %v", got)
 	}

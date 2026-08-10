@@ -46,8 +46,8 @@ linters:
         - name: error-strings
         - name: errorf
         - name: exported
-          # Stuttering renames (stash.StashScene -> stash.Scene) would be
-          # breaking changes to public packages other modules import.
+          # A stuttering rename in a package other modules import is a breaking
+          # change, so the check stays off rather than inviting one.
           arguments:
             - disableStutteringCheck
         - name: increment-decrement
@@ -70,8 +70,8 @@ linters:
       # internal/ is unimportable by definition, and the ~290 scrapers there
       # implement the same four-method StudioScraper interface — documenting
       # each identically would be ~2,100 findings of pure churn. The nine
-      # public packages (scraper, models, match, output, parseutil, stash,
-      # nfo, identify, scrapers/all) stay gated: see docs/library.md.
+      # public packages (scraper, models, match, output, parseutil, nfo,
+      # identify, scrapers/all) stay gated: see docs/library.md.
       - path: internal/
         linters:
           - revive

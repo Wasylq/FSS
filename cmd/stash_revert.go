@@ -15,7 +15,7 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/Anastylosis/FSS/stash"
+	stash "github.com/Anastylosis/stash-go"
 )
 
 var stashRevertCmd = &cobra.Command{
@@ -74,7 +74,7 @@ func runStashRevert(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("changelog at %s is empty", filepath.Join(dir, "fss-stashbox-changelog.json"))
 	}
 
-	client := stash.NewClient(stashURL(cmd), stashAPIKey(cmd))
+	client := newStashClient(cmd)
 	if err := client.Ping(ctx); err != nil {
 		return fmt.Errorf("connecting to stash: %w", err)
 	}
@@ -93,7 +93,7 @@ func runStashRevert(cmd *cobra.Command, args []string) error {
 		}
 		ordered := revertOrder(matches, all)
 
-		current, found, err := client.FindSceneByID(ctx, sceneID)
+		current, found, err := client.FindScene(ctx, sceneID)
 		if err != nil {
 			return fmt.Errorf("fetching scene %s: %w", sceneID, err)
 		}
@@ -152,7 +152,7 @@ func runStashRevert(cmd *cobra.Command, args []string) error {
 			anyApplied++
 
 			// Refresh the in-memory current state for subsequent --all entries.
-			refreshed, _, err := client.FindSceneByID(ctx, sceneID)
+			refreshed, _, err := client.FindScene(ctx, sceneID)
 			if err == nil && refreshed != nil {
 				current = refreshed
 			}
@@ -249,7 +249,7 @@ func entriesForScene(entries []changelogEntry, sceneID string) []changelogEntry 
 // revertInput packages the scene update plus the name-keyed deletion lists
 // that need ID resolution before the update can be issued.
 type revertInput struct {
-	scene           stash.SceneUpdateInput
+	scene           stash.SceneUpdate
 	removeTagNames  []string
 	removePerfNames []string
 }
@@ -257,8 +257,8 @@ type revertInput struct {
 // computeRevert builds the scene update for a single changelog entry.
 // Returns the input, a human-readable plan (one line per field), and a list
 // of skipped fields (with reason) that the caller should print as warnings.
-func computeRevert(entry changelogEntry, current stash.StashScene, allowed map[string]bool) (revertInput, []string, []string) {
-	in := revertInput{scene: stash.SceneUpdateInput{ID: current.ID}}
+func computeRevert(entry changelogEntry, current stash.Scene, allowed map[string]bool) (revertInput, []string, []string) {
+	in := revertInput{scene: stash.SceneUpdate{ID: current.ID}}
 	var plan, skipped []string
 
 	allow := func(field string) bool {
@@ -372,7 +372,7 @@ func subtractIDs(from, remove []string) []string {
 	return subtractStrings(from, remove)
 }
 
-func currentTagIDs(s stash.StashScene) []string {
+func currentTagIDs(s stash.Scene) []string {
 	ids := make([]string, len(s.Tags))
 	for i, t := range s.Tags {
 		ids[i] = t.ID
@@ -380,7 +380,7 @@ func currentTagIDs(s stash.StashScene) []string {
 	return ids
 }
 
-func currentPerfIDs(s stash.StashScene) []string {
+func currentPerfIDs(s stash.Scene) []string {
 	ids := make([]string, len(s.Performers))
 	for i, p := range s.Performers {
 		ids[i] = p.ID
@@ -393,7 +393,7 @@ func currentPerfIDs(s stash.StashScene) []string {
 func resolveExistingTagIDs(ctx context.Context, client *stash.Client, names []string) ([]string, error) {
 	var ids []string
 	for _, n := range names {
-		id, found, err := client.FindTagByName(ctx, n)
+		id, found, err := client.FindTag(ctx, n)
 		if err != nil {
 			return nil, err
 		}
@@ -407,7 +407,7 @@ func resolveExistingTagIDs(ctx context.Context, client *stash.Client, names []st
 func resolveExistingPerfIDs(ctx context.Context, client *stash.Client, names []string) ([]string, error) {
 	var ids []string
 	for _, n := range names {
-		id, found, err := client.FindPerformerByName(ctx, n)
+		id, found, err := client.FindPerformer(ctx, n)
 		if err != nil {
 			return nil, err
 		}

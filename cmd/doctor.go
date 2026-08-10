@@ -14,7 +14,6 @@ import (
 	"github.com/Anastylosis/FSS/internal/httpx"
 	"github.com/Anastylosis/FSS/internal/store"
 	"github.com/Anastylosis/FSS/scraper"
-	"github.com/Anastylosis/FSS/stash"
 )
 
 var doctorCmd = &cobra.Command{
@@ -109,7 +108,7 @@ func runDoctor(cmd *cobra.Command, _ []string) error {
 		}
 		ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 		defer cancel()
-		c := stash.NewClient(u, stashAPIKey(cmd))
+		c := newStashClient(cmd)
 		if err := c.Ping(ctx); err != nil {
 			return u + " — not reachable", false
 		}

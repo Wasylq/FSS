@@ -1,7 +1,12 @@
 package cmd
 
 import (
+	"context"
+	"io"
 	"net"
+	"net/http"
+	"net/http/httptest"
+	"sync/atomic"
 	"testing"
 
 	"github.com/spf13/cobra"
@@ -111,4 +116,31 @@ func TestStashURLPrefersFlagOverConfig(t *testing.T) {
 func TestWarnIfRemoteStashIgnoresEmpty(t *testing.T) {
 	warnIfRemoteStash("")
 	warnIfRemoteStash("::::not a url")
+}
+
+// The Stash client is built on fss's retrying transport, not the library's
+// plain default. A 502 from a restarting Stash mid-import must not abort a run
+// that would have succeeded on the next attempt.
+func TestNewStashClientRetries(t *testing.T) {
+	var attempts atomic.Int32
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		if attempts.Add(1) == 1 {
+			w.WriteHeader(http.StatusBadGateway)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = io.WriteString(w, `{"data":{"systemStatus":{"status":"OK"}}}`)
+	}))
+	defer srv.Close()
+
+	orig := cfg
+	t.Cleanup(func() { cfg = orig })
+	cfg = &config.Config{Stash: config.StashConfig{URL: srv.URL}}
+
+	if err := newStashClient(newStashTestCmd()).Ping(context.Background()); err != nil {
+		t.Fatalf("Ping: %v", err)
+	}
+	if got := attempts.Load(); got != 2 {
+		t.Errorf("server saw %d requests, want 2 — the 502 was not retried", got)
+	}
 }

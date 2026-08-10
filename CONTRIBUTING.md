@@ -349,7 +349,7 @@ These are **never run in CI** (Cloudflare blocks shared GitHub-runner IP ranges,
 
 #### Stash integration tests
 
-The Stash integration tests (`stash/integration_test.go`) verify that the GraphQL client works against your real Stash instance. They are **read-only** — no tags, performers, studios, or scenes are created or modified.
+The Stash integration tests (`cmd/stash_integration_test.go`) verify fss's Stash layer — client construction, the flag-to-filter mapping, and the lookups `import` and `revert` make — against your real Stash instance. They are **read-only**: nothing is created, updated or deleted. The GraphQL client itself is tested in [stash-go](https://github.com/Anastylosis/stash-go), which has its own read-only live suite.
 
 ```bash
 # Default: connects to http://localhost:9999, no auth

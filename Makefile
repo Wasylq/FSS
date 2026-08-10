@@ -97,7 +97,7 @@ smoke-one: ## Run smoke for one scraper. Usage: make smoke-one SCRAPER=manyvids
 
 .PHONY: smoke-stash
 smoke-stash: ## Run Stash integration tests. Set FSS_STASH_URL / FSS_STASH_API_KEY if needed.
-	$(GO) test -tags=integration -timeout=$(SMOKE_TIMEOUT) -v ./stash/...
+	$(GO) test -tags=integration -timeout=$(SMOKE_TIMEOUT) -run TestLive -v ./cmd/...
 
 .PHONY: vet
 vet: ## go vet on all packages (including integration-tagged).

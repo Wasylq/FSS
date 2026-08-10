@@ -20,7 +20,6 @@
 //   - [github.com/Anastylosis/FSS/match] — filename→title matching and cross-site merging
 //   - [github.com/Anastylosis/FSS/output] — WriteJSON, WriteCSV, Slugify
 //   - [github.com/Anastylosis/FSS/parseutil] — video duration parsing (MM:SS, ISO 8601)
-//   - [github.com/Anastylosis/FSS/stash] — GraphQL client for Stash
 //   - [github.com/Anastylosis/FSS/nfo] — Kodi-style NFO XML generation
 //   - [github.com/Anastylosis/FSS/identify] — video directory scan + match + NFO write
 //

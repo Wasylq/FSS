@@ -23,7 +23,6 @@ path declared in `go.mod`, so the old path resolves only for tags up to `v1.28.1
 | `match` | `github.com/Anastylosis/FSS/match` | Filename→title matching, cross-site merging, JSON loading |
 | `output` | `github.com/Anastylosis/FSS/output` | `WriteJSON`, `WriteCSV`, `Slugify` — write FSS output files |
 | `parseutil` | `github.com/Anastylosis/FSS/parseutil` | `ParseDurationColon`, `ParseDurationISO`, `StripOrdinalSuffix`, `OpenGraph`, `TryParseDate`, `ExtractVideoObject`, `ExtractVideoObjects` — shared parsing helpers |
-| `stash` | `github.com/Anastylosis/FSS/stash` | GraphQL client for Stash |
 | `nfo` | `github.com/Anastylosis/FSS/nfo` | Kodi-style NFO XML generation |
 | `identify` | `github.com/Anastylosis/FSS/identify` | Video directory scan + match + NFO write |
 
@@ -387,37 +386,31 @@ and a failed poster download drops it too rather than falling back to the URL.
 
 **Key types:** `Result`, `Options`, `Stats`.
 
-## Stash Client (`stash`)
+## Stash Client
 
-The `stash` package provides a GraphQL client for interacting with a [Stash](https://stashapp.cc/) instance.
+Talking to Stash is [stash-go](https://github.com/Anastylosis/stash-go), a
+separate module — fss used to carry its own copy, and the client is useful to
+anything that talks to a Stash server, not just to fss.
 
 ```go
-import "github.com/Anastylosis/FSS/stash"
+import stash "github.com/Anastylosis/stash-go"
 
-client := stash.NewClient("http://localhost:9999", "optional-api-key")
+client := stash.NewClient("http://localhost:9999", stash.WithAPIKey(key))
 
-// Ping to verify connectivity.
-err := client.Ping(ctx)
-
-// Query scenes.
-scenes, total, err := client.FindScenes(ctx, stash.FindScenesFilter{
+scenes, total, err := client.FindScenes(ctx, stash.SceneFilter{
     PerformerName: "Bettie Bondage",
 }, 1, 25)
-
-// Update a scene.
-title := "New Title"
-err = client.UpdateScene(ctx, stash.SceneUpdateInput{
-    ID:    "42",
-    Title: &title,
-})
-
-// Ensure entities exist (create if missing).
-tagID, _ := client.EnsureTag(ctx, "fss_import")
-perfID, _ := client.EnsurePerformer(ctx, "Bettie Bondage")
-studioID, _ := client.EnsureStudio(ctx, "Bettie Bondage")
 ```
 
-**Key types:** `Client`, `StashScene`, `FindScenesFilter`, `SceneUpdateInput`.
+See that repository's docs for the full API. Two things are fss's rather than
+the library's:
+
+- `cmd/stash.go`'s `newStashClient` passes `httpx.NewRetryClient`, so Stash
+  requests retry and pool connections like everything else fss does. The
+  library's own default is a plain client with no retry.
+- Cover images are fetched by `internal/mediafetch`, which validates the URL
+  against SSRF, caps the size and rejects an already-expired signed link. The
+  library takes the finished data URI and does not fetch anything itself.
 
 ## Output Files (`output`)
 

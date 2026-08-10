@@ -18,7 +18,7 @@ import (
 	"time"
 
 	"github.com/Anastylosis/FSS/match"
-	"github.com/Anastylosis/FSS/stash"
+	stash "github.com/Anastylosis/stash-go"
 )
 
 func TestAppendChangelog_freshStart(t *testing.T) {
@@ -435,7 +435,7 @@ func TestDiffStrings_noneNew(t *testing.T) {
 }
 
 func TestExtractTagIDs(t *testing.T) {
-	tags := []stash.StashTag{{ID: "10", Name: "POV"}, {ID: "20", Name: "MILF"}}
+	tags := []stash.Tag{{ID: "10", Name: "POV"}, {ID: "20", Name: "MILF"}}
 	got := extractTagIDs(tags)
 	want := []string{"10", "20"}
 	if !reflect.DeepEqual(got, want) {
@@ -444,7 +444,7 @@ func TestExtractTagIDs(t *testing.T) {
 }
 
 func TestExtractPerfIDs(t *testing.T) {
-	perfs := []stash.StashPerf{{ID: "1", Name: "Alice"}, {ID: "2", Name: "Bob"}}
+	perfs := []stash.Performer{{ID: "1", Name: "Alice"}, {ID: "2", Name: "Bob"}}
 	got := extractPerfIDs(perfs)
 	want := []string{"1", "2"}
 	if !reflect.DeepEqual(got, want) {
@@ -541,7 +541,7 @@ func TestFieldAllowed_absentField(t *testing.T) {
 }
 
 func TestBuildChanges_titleChange(t *testing.T) {
-	ss := stash.StashScene{ID: "1", Title: "Old Title"}
+	ss := stash.Scene{ID: "1", Title: "Old Title"}
 	merged := match.MergedScene{Title: "New Title"}
 	changes := buildChanges(ss, merged, nil, nil, false, false)
 	diff, ok := changes["title"]
@@ -554,7 +554,7 @@ func TestBuildChanges_titleChange(t *testing.T) {
 }
 
 func TestBuildChanges_noChanges(t *testing.T) {
-	ss := stash.StashScene{ID: "1", Title: "Same", Details: "Desc", Date: "2026-01-01"}
+	ss := stash.Scene{ID: "1", Title: "Same", Details: "Desc", Date: "2026-01-01"}
 	merged := match.MergedScene{
 		Title:       "Same",
 		Description: "Desc",
@@ -567,7 +567,7 @@ func TestBuildChanges_noChanges(t *testing.T) {
 }
 
 func TestBuildChanges_coverEnabled(t *testing.T) {
-	ss := stash.StashScene{ID: "1"}
+	ss := stash.Scene{ID: "1"}
 	merged := match.MergedScene{Thumbnail: "https://example.com/thumb.jpg"}
 	changes := buildChanges(ss, merged, nil, nil, true, false)
 	diff, ok := changes["cover"]
@@ -580,7 +580,7 @@ func TestBuildChanges_coverEnabled(t *testing.T) {
 }
 
 func TestBuildChanges_organizedEmitsChange(t *testing.T) {
-	ss := stash.StashScene{ID: "1", Title: "Same", Organized: false}
+	ss := stash.Scene{ID: "1", Title: "Same", Organized: false}
 	merged := match.MergedScene{Title: "Same"}
 
 	// Without --organized, no change is emitted.
@@ -600,7 +600,7 @@ func TestBuildChanges_organizedEmitsChange(t *testing.T) {
 }
 
 func TestBuildChanges_organizedAlreadySetNoChange(t *testing.T) {
-	ss := stash.StashScene{ID: "1", Title: "Same", Organized: true}
+	ss := stash.Scene{ID: "1", Title: "Same", Organized: true}
 	merged := match.MergedScene{Title: "Same"}
 	if changes := buildChanges(ss, merged, nil, nil, false, true); len(changes) != 0 {
 		t.Errorf("already-organized scene should emit nothing, got %v", changes)
@@ -608,9 +608,9 @@ func TestBuildChanges_organizedAlreadySetNoChange(t *testing.T) {
 }
 
 func TestBuildChanges_addedTags(t *testing.T) {
-	ss := stash.StashScene{
+	ss := stash.Scene{
 		ID:   "1",
-		Tags: []stash.StashTag{{ID: "10", Name: "POV"}},
+		Tags: []stash.Tag{{ID: "10", Name: "POV"}},
 	}
 	merged := match.MergedScene{}
 	changes := buildChanges(ss, merged, nil, []string{"POV", "MILF", "Threesome"}, false, false)
@@ -640,7 +640,7 @@ func hasTag(tags []string, want string) bool {
 }
 
 func TestDiffScene_assemblesTagsFromMergedSceneAndImportTag(t *testing.T) {
-	ss := stash.StashScene{ID: "1"}
+	ss := stash.Scene{ID: "1"}
 	merged := match.MergedScene{
 		Title:      "T",
 		Tags:       []string{"tag-a"},
@@ -665,7 +665,7 @@ func TestDiffScene_assemblesTagsFromMergedSceneAndImportTag(t *testing.T) {
 // it to a scene without StashIDs would mislabel it, and `stash revert` keys off
 // that tag.
 func TestDiffScene_stashboxTagOnlyWhenSceneHasStashIDs(t *testing.T) {
-	ss := stash.StashScene{ID: "1", StashIDs: []stash.StashID{{StashID: "abc"}}}
+	ss := stash.Scene{ID: "1", StashIDs: []stash.StashID{{ID: "abc"}}}
 	merged := match.MergedScene{Title: "T"}
 	o := importOpts{tagName: "FSS", stashboxTag: "FSS: StashDB"}
 
@@ -676,7 +676,7 @@ func TestDiffScene_stashboxTagOnlyWhenSceneHasStashIDs(t *testing.T) {
 }
 
 func TestDiffScene_resolutionTagsGatedOnFlag(t *testing.T) {
-	ss := stash.StashScene{ID: "1"}
+	ss := stash.Scene{ID: "1"}
 	merged := match.MergedScene{Title: "T", Width: 3840}
 
 	_, off, _ := diffScene(ss, merged, importOpts{tagName: "FSS"})
@@ -691,7 +691,7 @@ func TestDiffScene_resolutionTagsGatedOnFlag(t *testing.T) {
 }
 
 func TestDiffScene_mergesURLsWithExisting(t *testing.T) {
-	ss := stash.StashScene{ID: "1", URLs: []string{"https://a.example/1"}}
+	ss := stash.Scene{ID: "1", URLs: []string{"https://a.example/1"}}
 	merged := match.MergedScene{Title: "T", URLs: []string{"https://b.example/2", "https://a.example/1"}}
 
 	_, _, urls := diffScene(ss, merged, importOpts{tagName: "FSS"})
@@ -706,7 +706,7 @@ func TestDiffScene_mergesURLsWithExisting(t *testing.T) {
 // --fields is the guard a user reaches for when they only want some metadata
 // touched. If the filter leaks, --apply writes fields they explicitly excluded.
 func TestDiffScene_fieldFilterDropsDisallowedChanges(t *testing.T) {
-	ss := stash.StashScene{ID: "1", Title: "Old", Details: "OldDetails"}
+	ss := stash.Scene{ID: "1", Title: "Old", Details: "OldDetails"}
 	merged := match.MergedScene{Title: "New", Description: "NewDetails"}
 
 	all, _, _ := diffScene(ss, merged, importOpts{tagName: "FSS"})
@@ -730,7 +730,7 @@ func TestDiffScene_fieldFilterDropsDisallowedChanges(t *testing.T) {
 // A nil allowedFields means "no --fields given", which must allow everything
 // rather than nothing.
 func TestDiffScene_nilFieldFilterAllowsAll(t *testing.T) {
-	ss := stash.StashScene{ID: "1", Title: "Old"}
+	ss := stash.Scene{ID: "1", Title: "Old"}
 	merged := match.MergedScene{Title: "New"}
 	got, _, _ := diffScene(ss, merged, importOpts{tagName: "FSS", allowedFields: nil})
 	if _, ok := got["title"]; !ok {
@@ -775,16 +775,16 @@ func newFakeStash(t *testing.T) *fakeStash {
 		case strings.Contains(q, "findTags"):
 			op = "findTags"
 			resp = `{"findTags":{"tags":[]}}`
-			if id, ok := f.existingTags[fmt.Sprint(req.Variables["name"])]; ok {
-				resp = fmt.Sprintf(`{"findTags":{"tags":[{"id":%q,"name":%q}]}}`, id, req.Variables["name"])
+			if id, ok := f.existingTags[lookupValue(req.Variables)]; ok {
+				resp = fmt.Sprintf(`{"findTags":{"tags":[{"id":%q,"name":%q}]}}`, id, lookupValue(req.Variables))
 			}
 		case strings.Contains(q, "tagCreate"):
 			op, resp = "tagCreate", `{"tagCreate":{"id":"t1"}}`
 		case strings.Contains(q, "findPerformers"):
 			op = "findPerformers"
 			resp = `{"findPerformers":{"performers":[]}}`
-			if id, ok := f.existingPerf[fmt.Sprint(req.Variables["name"])]; ok {
-				resp = fmt.Sprintf(`{"findPerformers":{"performers":[{"id":%q,"name":%q}]}}`, id, req.Variables["name"])
+			if id, ok := f.existingPerf[lookupValue(req.Variables)]; ok {
+				resp = fmt.Sprintf(`{"findPerformers":{"performers":[{"id":%q,"name":%q}]}}`, id, lookupValue(req.Variables))
 			}
 		case strings.Contains(q, "performerCreate"):
 			op, resp = "performerCreate", `{"performerCreate":{"id":"p1"}}`
@@ -810,7 +810,13 @@ func newFakeStash(t *testing.T) *fakeStash {
 	return f
 }
 
-func (f *fakeStash) client() *stash.Client { return stash.NewClient(f.srv.URL, "") }
+func (f *fakeStash) client() *stash.Client { return stash.NewClient(f.srv.URL) }
+
+// lookupValue reads the variable stash-go binds every name and alias lookup to.
+func lookupValue(vars map[string]any) string {
+	s, _ := vars["v"].(string)
+	return s
+}
 
 func (f *fakeStash) sawOp(name string) bool {
 	f.mu.Lock()
@@ -828,7 +834,7 @@ func (f *fakeStash) sawOp(name string) bool {
 // library the user asked not to modify.
 func TestApplyScene_fieldFilterSuppressesWrites(t *testing.T) {
 	f := newFakeStash(t)
-	ss := stash.StashScene{ID: "1", Files: []stash.StashFile{{Path: "/v/a.mp4"}}}
+	ss := stash.Scene{ID: "1", Files: []stash.File{{Path: "/v/a.mp4"}}}
 	merged := match.MergedScene{Title: "T", Performers: []string{"P"}, Studio: "S"}
 	o := importOpts{apply: true, allowedFields: map[string]bool{"title": true}}
 
@@ -853,7 +859,7 @@ func TestApplyScene_fieldFilterSuppressesWrites(t *testing.T) {
 // With no --fields, tags/performers/studio are all resolved and written.
 func TestApplyScene_writesAllFieldsByDefault(t *testing.T) {
 	f := newFakeStash(t)
-	ss := stash.StashScene{ID: "1", Files: []stash.StashFile{{Path: "/v/a.mp4"}}}
+	ss := stash.Scene{ID: "1", Files: []stash.File{{Path: "/v/a.mp4"}}}
 	merged := match.MergedScene{Title: "T", Performers: []string{"P"}, Studio: "S"}
 
 	if _, err := applyScene(context.Background(), f.client(), ss, merged,
@@ -870,13 +876,13 @@ func TestApplyScene_writesAllFieldsByDefault(t *testing.T) {
 // A scene with StashIDs gets the stashbox tag; `stash revert` keys off it, so
 // applying it to the wrong scenes makes a revert overreach.
 func TestApplyScene_stashboxTagOnlyForScenesWithStashIDs(t *testing.T) {
-	ss := stash.StashScene{ID: "1", Files: []stash.StashFile{{Path: "/v/a.mp4"}}}
+	ss := stash.Scene{ID: "1", Files: []stash.File{{Path: "/v/a.mp4"}}}
 	merged := match.MergedScene{Title: "T"}
 	o := importOpts{apply: true, stashboxTag: "FSS: StashDB"}
 
 	withIDs := newFakeStash(t)
 	ssWith := ss
-	ssWith.StashIDs = []stash.StashID{{StashID: "abc"}}
+	ssWith.StashIDs = []stash.StashID{{ID: "abc"}}
 	if _, err := applyScene(context.Background(), withIDs.client(), ssWith, merged, nil, nil, "imp1", o); err != nil {
 		t.Fatalf("applyScene: %v", err)
 	}
@@ -913,18 +919,14 @@ func lookupServer(t *testing.T, exists map[string]bool, aliases map[string]bool,
 			Variables map[string]any `json:"variables"`
 		}
 		_ = json.NewDecoder(r.Body).Decode(&req)
-		name, _ := req.Variables["name"].(string)
-		alias, _ := req.Variables["alias"].(string)
-		key := name
-		if key == "" {
-			key = alias
-		}
-		if failOn != "" && key == failOn {
+		value := lookupValue(req.Variables)
+		byAlias := strings.Contains(req.Query, "aliases:")
+		if failOn != "" && value == failOn {
 			http.Error(w, "boom", http.StatusInternalServerError)
 			return
 		}
 		w.Header().Set("Content-Type", "application/json")
-		hit := (name != "" && exists[name]) || (alias != "" && aliases[alias])
+		hit := (byAlias && aliases[value]) || (!byAlias && exists[value])
 		body := `{"tags":[]}`
 		switch {
 		case strings.Contains(req.Query, "findTags"):
@@ -949,7 +951,7 @@ func lookupServer(t *testing.T, exists map[string]bool, aliases map[string]bool,
 		_, _ = fmt.Fprintf(w, `{"data":%s}`, body)
 	}))
 	t.Cleanup(ts.Close)
-	return stash.NewClient(ts.URL, "")
+	return stash.NewClient(ts.URL)
 }
 
 func TestEntityLookupTagByNameAndAlias(t *testing.T) {
@@ -998,7 +1000,7 @@ func TestEntityLookupCachesByName(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	l := newEntityLookup(context.Background(), stash.NewClient(ts.URL, ""))
+	l := newEntityLookup(context.Background(), stash.NewClient(ts.URL))
 	l.checkTag("Same")
 	l.checkTag("Same")
 	l.checkTag("Same")
