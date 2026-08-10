@@ -5,8 +5,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/Wasylq/FSS/internal/config"
-	"github.com/Wasylq/FSS/models"
+	"github.com/Anastylosis/FSS/internal/config"
+	"github.com/Anastylosis/FSS/models"
 )
 
 func filterScene(id, studioURL, studio string, performers ...string) models.Scene {

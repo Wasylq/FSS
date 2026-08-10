@@ -6,8 +6,8 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/Wasylq/FSS/internal/scrapers/fpnutil"
-	"github.com/Wasylq/FSS/scraper"
+	"github.com/Anastylosis/FSS/internal/scrapers/fpnutil"
+	"github.com/Anastylosis/FSS/scraper"
 )
 
 var sites = []fpnutil.SiteConfig{

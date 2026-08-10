@@ -1,8 +1,8 @@
 package metart
 
 import (
-	"github.com/Wasylq/FSS/internal/scrapers/metartutil"
-	"github.com/Wasylq/FSS/scraper"
+	"github.com/Anastylosis/FSS/internal/scrapers/metartutil"
+	"github.com/Anastylosis/FSS/scraper"
 )
 
 var sites = []metartutil.SiteConfig{

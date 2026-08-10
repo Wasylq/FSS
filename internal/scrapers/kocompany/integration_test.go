@@ -5,7 +5,7 @@ package kocompany
 import (
 	"testing"
 
-	"github.com/Wasylq/FSS/internal/scrapers/testutil"
+	"github.com/Anastylosis/FSS/internal/scrapers/testutil"
 )
 
 // One live smoke per filter form: label (KO BEAST) and maker (KO EAST).

@@ -5,7 +5,7 @@ package waap
 import (
 	"testing"
 
-	"github.com/Wasylq/FSS/internal/scrapers/testutil"
+	"github.com/Anastylosis/FSS/internal/scrapers/testutil"
 )
 
 const liveURL = "https://www.waap.co.jp/work/search.php?serch=5&onrls=new&limit=45&pg=1"

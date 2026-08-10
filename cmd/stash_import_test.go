@@ -17,8 +17,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Wasylq/FSS/match"
-	"github.com/Wasylq/FSS/stash"
+	"github.com/Anastylosis/FSS/match"
+	"github.com/Anastylosis/FSS/stash"
 )
 
 func TestAppendChangelog_freshStart(t *testing.T) {

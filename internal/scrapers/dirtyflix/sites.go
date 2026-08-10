@@ -3,7 +3,7 @@ package dirtyflix
 import (
 	"regexp"
 
-	"github.com/Wasylq/FSS/scraper"
+	"github.com/Anastylosis/FSS/scraper"
 )
 
 // sites enumerates every Dirty Flix network site covered by one of the

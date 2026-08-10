@@ -5,7 +5,7 @@ package eighteenvideoz
 import (
 	"testing"
 
-	"github.com/Wasylq/FSS/internal/scrapers/testutil"
+	"github.com/Anastylosis/FSS/internal/scrapers/testutil"
 )
 
 // One live smoke per card-variant the network uses.

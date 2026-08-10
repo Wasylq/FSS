@@ -16,11 +16,11 @@ package darkreach
 import (
 	"regexp"
 
-	"github.com/Wasylq/FSS/internal/scrapers/adultdoorwayclassicutil"
-	"github.com/Wasylq/FSS/internal/scrapers/darkreachmodernutil"
-	"github.com/Wasylq/FSS/internal/scrapers/darkreachupdateitemutil"
-	"github.com/Wasylq/FSS/internal/scrapers/darkreachupdatesutil"
-	"github.com/Wasylq/FSS/scraper"
+	"github.com/Anastylosis/FSS/internal/scrapers/adultdoorwayclassicutil"
+	"github.com/Anastylosis/FSS/internal/scrapers/darkreachmodernutil"
+	"github.com/Anastylosis/FSS/internal/scrapers/darkreachupdateitemutil"
+	"github.com/Anastylosis/FSS/internal/scrapers/darkreachupdatesutil"
+	"github.com/Anastylosis/FSS/scraper"
 )
 
 // Modern Bootstrap-grid template (item-update item-video).

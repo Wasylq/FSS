@@ -5,7 +5,7 @@ package ifeelmyself
 import (
 	"testing"
 
-	"github.com/Wasylq/FSS/internal/scrapers/testutil"
+	"github.com/Anastylosis/FSS/internal/scrapers/testutil"
 )
 
 // 14 > pageSize 12, so the main listing crosses a page boundary. The search and

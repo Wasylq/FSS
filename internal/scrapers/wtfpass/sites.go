@@ -3,7 +3,7 @@ package wtfpass
 import (
 	"regexp"
 
-	"github.com/Wasylq/FSS/scraper"
+	"github.com/Anastylosis/FSS/scraper"
 )
 
 // sites enumerates every WTFPass network site. The parent wtfpass.com

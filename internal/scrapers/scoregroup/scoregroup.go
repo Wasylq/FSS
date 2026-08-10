@@ -5,8 +5,8 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/Wasylq/FSS/internal/scrapers/scoregrouputil"
-	"github.com/Wasylq/FSS/scraper"
+	"github.com/Anastylosis/FSS/internal/scrapers/scoregrouputil"
+	"github.com/Anastylosis/FSS/scraper"
 )
 
 var sites = []scoregrouputil.SiteConfig{

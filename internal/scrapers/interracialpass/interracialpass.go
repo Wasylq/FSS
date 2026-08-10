@@ -7,8 +7,8 @@ package interracialpass
 import (
 	"regexp"
 
-	"github.com/Wasylq/FSS/internal/scrapers/darkreachmodernutil"
-	"github.com/Wasylq/FSS/scraper"
+	"github.com/Anastylosis/FSS/internal/scrapers/darkreachmodernutil"
+	"github.com/Anastylosis/FSS/scraper"
 )
 
 func init() {

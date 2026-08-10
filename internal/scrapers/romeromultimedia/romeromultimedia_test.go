@@ -11,7 +11,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Wasylq/FSS/scraper"
+	"github.com/Anastylosis/FSS/scraper"
 )
 
 // Trimmed `/wp-json/wp/v2/posts?_embed` payload modelled on a real

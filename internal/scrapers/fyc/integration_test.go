@@ -5,8 +5,8 @@ package fyc
 import (
 	"testing"
 
-	"github.com/Wasylq/FSS/internal/scrapers/fycutil"
-	"github.com/Wasylq/FSS/internal/scrapers/testutil"
+	"github.com/Anastylosis/FSS/internal/scrapers/fycutil"
+	"github.com/Anastylosis/FSS/internal/scrapers/testutil"
 )
 
 func TestLivePassionHD(t *testing.T) {

@@ -5,7 +5,7 @@ package sexunderwater
 import (
 	"testing"
 
-	"github.com/Wasylq/FSS/internal/scrapers/testutil"
+	"github.com/Anastylosis/FSS/internal/scrapers/testutil"
 )
 
 // 12 > pageSize 10, so this crosses from page 1 to page 2. Chosen because the

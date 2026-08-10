@@ -10,8 +10,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Wasylq/FSS/internal/httpx"
-	"github.com/Wasylq/FSS/internal/scrapers/testutil"
+	"github.com/Anastylosis/FSS/internal/httpx"
+	"github.com/Anastylosis/FSS/internal/scrapers/testutil"
 )
 
 func newTestScraper(cfg siteConfig) *Scraper {

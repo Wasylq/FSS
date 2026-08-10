@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Wasylq/FSS/match"
+	"github.com/Anastylosis/FSS/match"
 )
 
 func TestFromMergedScene(t *testing.T) {

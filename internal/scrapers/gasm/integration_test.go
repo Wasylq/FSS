@@ -5,7 +5,7 @@ package gasm
 import (
 	"testing"
 
-	"github.com/Wasylq/FSS/internal/scrapers/testutil"
+	"github.com/Anastylosis/FSS/internal/scrapers/testutil"
 )
 
 // gasm has two URL modes and 13 patterns: the gasm.com studio-profile path, and

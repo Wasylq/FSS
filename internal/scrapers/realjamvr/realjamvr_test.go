@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Wasylq/FSS/scraper"
+	"github.com/Anastylosis/FSS/scraper"
 )
 
 // sitemap1 references realjamvr.com URLs so parseSitemap can be tested directly;

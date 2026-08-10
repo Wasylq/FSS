@@ -1,10 +1,10 @@
 # FSS — FullStudioScraper
 
-[![CI](https://github.com/Wasylq/FSS/actions/workflows/ci.yml/badge.svg)](https://github.com/Wasylq/FSS/actions/workflows/ci.yml)
-[![codecov](https://codecov.io/gh/Wasylq/FSS/graph/badge.svg)](https://codecov.io/gh/Wasylq/FSS)
-[![Go Reference](https://pkg.go.dev/badge/github.com/Wasylq/FSS.svg)](https://pkg.go.dev/github.com/Wasylq/FSS)
-[![Release](https://img.shields.io/github/v/release/Wasylq/FSS)](https://github.com/Wasylq/FSS/releases/latest)
-[![License](https://img.shields.io/github/license/Wasylq/FSS)](LICENSE)
+[![CI](https://github.com/Anastylosis/FSS/actions/workflows/ci.yml/badge.svg)](https://github.com/Anastylosis/FSS/actions/workflows/ci.yml)
+[![codecov](https://codecov.io/gh/Anastylosis/FSS/graph/badge.svg)](https://codecov.io/gh/Anastylosis/FSS)
+[![Go Reference](https://pkg.go.dev/badge/github.com/Anastylosis/FSS.svg)](https://pkg.go.dev/github.com/Anastylosis/FSS)
+[![Release](https://img.shields.io/github/v/release/Anastylosis/FSS)](https://github.com/Anastylosis/FSS/releases/latest)
+[![License](https://img.shields.io/github/license/Anastylosis/FSS)](LICENSE)
 
 Scrapes all scenes and metadata from a studio URL. Designed to be easily extended to new sites. Can push scraped metadata into a local [Stash](https://stashapp.cc/) instance.
 
@@ -53,7 +53,7 @@ Pick one — pre-built binary is easiest, system packages for auto-updates, Dock
 
 ### Option 1 — pre-built binary (recommended)
 
-Download the archive for your platform from the [latest release](https://github.com/Wasylq/FSS/releases/latest), extract, and put the binary on your `PATH`. All binaries are static (no runtime dependencies).
+Download the archive for your platform from the [latest release](https://github.com/Anastylosis/FSS/releases/latest), extract, and put the binary on your `PATH`. All binaries are static (no runtime dependencies).
 
 Asset naming: `fss-<version>-<os>-<arch>.tar.gz` (or `.zip` for Windows). Available platforms: `linux/amd64`, `linux/arm64`, `darwin/amd64`, `darwin/arm64`, `windows/amd64`.
 
@@ -61,10 +61,10 @@ Asset naming: `fss-<version>-<os>-<arch>.tar.gz` (or `.zip` for Windows). Availa
 
 ```bash
 # Resolves to the latest tag (e.g. v1.11.0) by following the GitHub redirect.
-VERSION=$(curl -sIL -o /dev/null -w '%{url_effective}' https://github.com/Wasylq/FSS/releases/latest | sed 's|.*/||')
+VERSION=$(curl -sIL -o /dev/null -w '%{url_effective}' https://github.com/Anastylosis/FSS/releases/latest | sed 's|.*/||')
 ARCH=amd64    # or arm64 for Raspberry Pi 4/5, ARM cloud instances, etc.
 
-curl -LO https://github.com/Wasylq/FSS/releases/download/${VERSION}/fss-${VERSION}-linux-${ARCH}.tar.gz
+curl -LO https://github.com/Anastylosis/FSS/releases/download/${VERSION}/fss-${VERSION}-linux-${ARCH}.tar.gz
 tar xzf fss-${VERSION}-linux-${ARCH}.tar.gz
 sudo install -m 0755 fss /usr/local/bin/fss
 fss version
@@ -75,10 +75,10 @@ If you don't have sudo, drop `fss` into `~/.local/bin/` (already on your `PATH` 
 #### macOS
 
 ```bash
-VERSION=$(curl -sIL -o /dev/null -w '%{url_effective}' https://github.com/Wasylq/FSS/releases/latest | sed 's|.*/||')
+VERSION=$(curl -sIL -o /dev/null -w '%{url_effective}' https://github.com/Anastylosis/FSS/releases/latest | sed 's|.*/||')
 ARCH=arm64    # Apple Silicon (M1+); use amd64 for Intel Macs
 
-curl -LO https://github.com/Wasylq/FSS/releases/download/${VERSION}/fss-${VERSION}-darwin-${ARCH}.tar.gz
+curl -LO https://github.com/Anastylosis/FSS/releases/download/${VERSION}/fss-${VERSION}-darwin-${ARCH}.tar.gz
 tar xzf fss-${VERSION}-darwin-${ARCH}.tar.gz
 sudo install -m 0755 fss /usr/local/bin/fss
 
@@ -92,9 +92,9 @@ fss version
 #### Windows (PowerShell)
 
 ```powershell
-$Version = (Invoke-RestMethod -Uri "https://api.github.com/repos/Wasylq/FSS/releases/latest").tag_name
+$Version = (Invoke-RestMethod -Uri "https://api.github.com/repos/Anastylosis/FSS/releases/latest").tag_name
 
-Invoke-WebRequest -Uri "https://github.com/Wasylq/FSS/releases/download/$Version/fss-$Version-windows-amd64.zip" -OutFile fss.zip
+Invoke-WebRequest -Uri "https://github.com/Anastylosis/FSS/releases/download/$Version/fss-$Version-windows-amd64.zip" -OutFile fss.zip
 Expand-Archive -Path fss.zip -DestinationPath .
 
 # Move into a folder that's on your PATH, e.g.:
@@ -109,19 +109,19 @@ fss version
 
 ### Option 2 — system package (.deb / .rpm / AUR)
 
-Each release also publishes `.deb` and `.rpm` packages. Download them from the [latest release](https://github.com/Wasylq/FSS/releases/latest).
+Each release also publishes `.deb` and `.rpm` packages. Download them from the [latest release](https://github.com/Anastylosis/FSS/releases/latest).
 
 ```bash
-TAG=$(curl -sIL -o /dev/null -w '%{url_effective}' https://github.com/Wasylq/FSS/releases/latest | sed 's|.*/||')
+TAG=$(curl -sIL -o /dev/null -w '%{url_effective}' https://github.com/Anastylosis/FSS/releases/latest | sed 's|.*/||')
 VERSION=${TAG#v}    # asset filenames drop the leading "v"
 ARCH=amd64          # or arm64
 
 # Debian / Ubuntu
-curl -LO "https://github.com/Wasylq/FSS/releases/download/${TAG}/fss_${VERSION}_${ARCH}.deb"
+curl -LO "https://github.com/Anastylosis/FSS/releases/download/${TAG}/fss_${VERSION}_${ARCH}.deb"
 sudo dpkg -i "fss_${VERSION}_${ARCH}.deb"
 
 # Fedora / RHEL
-curl -LO "https://github.com/Wasylq/FSS/releases/download/${TAG}/fss-${VERSION}-1.x86_64.rpm"
+curl -LO "https://github.com/Anastylosis/FSS/releases/download/${TAG}/fss-${VERSION}-1.x86_64.rpm"
 sudo rpm -i "fss-${VERSION}-1.x86_64.rpm"
 ```
 
@@ -134,8 +134,8 @@ yay -S fss
 ### Option 3 — Docker (multi-arch image on GHCR)
 
 ```bash
-docker pull ghcr.io/wasylq/fss:latest
-docker run --rm ghcr.io/wasylq/fss:latest list-scrapers
+docker pull ghcr.io/anastylosis/fss:latest
+docker run --rm ghcr.io/anastylosis/fss:latest list-scrapers
 ```
 
 See [docs/docker.md](docs/docker.md) for volume conventions, the bind-mount UID gotcha, and a `docker compose` example with Stash.
@@ -145,7 +145,7 @@ See [docs/docker.md](docs/docker.md) for volume conventions, the bind-mount UID 
 Requires Go 1.26+ (matches the `go` directive in `go.mod`).
 
 ```bash
-git clone https://github.com/Wasylq/FSS
+git clone https://github.com/Anastylosis/FSS
 cd FSS
 go build -o fss .
 ./fss version
@@ -154,7 +154,7 @@ go build -o fss .
 Or via `go install` (binary lands in `$GOBIN`, typically `~/go/bin/`):
 
 ```bash
-go install github.com/Wasylq/FSS@latest
+go install github.com/Anastylosis/FSS@latest
 ```
 
 ## Quick start
@@ -236,12 +236,12 @@ See [`config.example.yaml`](config.example.yaml) for all available options with 
 ```bash
 # Linux
 mkdir -p ~/.config/fss
-curl -fsSL https://raw.githubusercontent.com/Wasylq/FSS/master/config.example.yaml \
+curl -fsSL https://raw.githubusercontent.com/Anastylosis/FSS/master/config.example.yaml \
   -o ~/.config/fss/config.yaml
 
 # macOS
 mkdir -p ~/Library/Application\ Support/fss
-curl -fsSL https://raw.githubusercontent.com/Wasylq/FSS/master/config.example.yaml \
+curl -fsSL https://raw.githubusercontent.com/Anastylosis/FSS/master/config.example.yaml \
   -o ~/Library/Application\ Support/fss/config.yaml
 ```
 

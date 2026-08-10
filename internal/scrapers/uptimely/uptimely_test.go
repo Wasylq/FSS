@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/Wasylq/FSS/internal/scrapers/uptimelyutil"
+	"github.com/Anastylosis/FSS/internal/scrapers/uptimelyutil"
 )
 
 func TestSiteCount(t *testing.T) {

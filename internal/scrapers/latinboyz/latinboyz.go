@@ -6,8 +6,8 @@ package latinboyz
 import (
 	"regexp"
 
-	"github.com/Wasylq/FSS/internal/scrapers/fotoroutil"
-	"github.com/Wasylq/FSS/scraper"
+	"github.com/Anastylosis/FSS/internal/scrapers/fotoroutil"
+	"github.com/Anastylosis/FSS/scraper"
 )
 
 func init() {

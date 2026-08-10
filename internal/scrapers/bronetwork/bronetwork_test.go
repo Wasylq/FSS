@@ -3,8 +3,8 @@ package bronetwork
 import (
 	"testing"
 
-	"github.com/Wasylq/FSS/internal/scrapers/testutil"
-	"github.com/Wasylq/FSS/scraper"
+	"github.com/Anastylosis/FSS/internal/scrapers/testutil"
+	"github.com/Anastylosis/FSS/scraper"
 )
 
 // bronetwork is a network-style table: three rows share the network's SiteBase

@@ -5,7 +5,7 @@ package next11
 import (
 	"testing"
 
-	"github.com/Wasylq/FSS/internal/scrapers/testutil"
+	"github.com/Anastylosis/FSS/internal/scrapers/testutil"
 )
 
 // Limit is deliberately above the 100-item page size so the scrape crosses a

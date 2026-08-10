@@ -6,8 +6,8 @@ import (
 	"encoding/xml"
 	"time"
 
-	"github.com/Wasylq/FSS/internal/mediafetch"
-	"github.com/Wasylq/FSS/match"
+	"github.com/Anastylosis/FSS/internal/mediafetch"
+	"github.com/Anastylosis/FSS/match"
 )
 
 // Movie is a Kodi-style NFO structure for a single video.

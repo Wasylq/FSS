@@ -5,8 +5,8 @@ package julesjordan
 import (
 	"testing"
 
-	"github.com/Wasylq/FSS/internal/scrapers/julesjordanutil"
-	"github.com/Wasylq/FSS/internal/scrapers/testutil"
+	"github.com/Anastylosis/FSS/internal/scrapers/julesjordanutil"
+	"github.com/Anastylosis/FSS/internal/scrapers/testutil"
 )
 
 func TestLiveScrapeAll(t *testing.T) {

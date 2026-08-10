@@ -7,8 +7,8 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/Wasylq/FSS/parseutil"
-	"github.com/Wasylq/FSS/scraper"
+	"github.com/Anastylosis/FSS/parseutil"
+	"github.com/Anastylosis/FSS/scraper"
 )
 
 const fixtureListing = `<html><body>

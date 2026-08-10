@@ -3,9 +3,9 @@ package glamose
 import (
 	"time"
 
-	"github.com/Wasylq/FSS/internal/httpx"
-	"github.com/Wasylq/FSS/internal/scrapers/utgutil"
-	"github.com/Wasylq/FSS/scraper"
+	"github.com/Anastylosis/FSS/internal/httpx"
+	"github.com/Anastylosis/FSS/internal/scrapers/utgutil"
+	"github.com/Anastylosis/FSS/scraper"
 )
 
 var sites = []utgutil.SiteConfig{

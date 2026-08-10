@@ -8,9 +8,9 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/Wasylq/FSS/internal/httpx"
-	"github.com/Wasylq/FSS/internal/scrapers/ayloutil"
-	"github.com/Wasylq/FSS/scraper"
+	"github.com/Anastylosis/FSS/internal/httpx"
+	"github.com/Anastylosis/FSS/internal/scrapers/ayloutil"
+	"github.com/Anastylosis/FSS/scraper"
 )
 
 var config = ayloutil.SiteConfig{

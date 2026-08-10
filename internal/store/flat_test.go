@@ -11,8 +11,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Wasylq/FSS/models"
-	"github.com/Wasylq/FSS/output"
+	"github.com/Anastylosis/FSS/models"
+	"github.com/Anastylosis/FSS/output"
 )
 
 var slugHashSuffixRe = regexp.MustCompile(`^[0-9a-f]{8}$`)

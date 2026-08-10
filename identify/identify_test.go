@@ -9,8 +9,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/Wasylq/FSS/match"
-	"github.com/Wasylq/FSS/models"
+	"github.com/Anastylosis/FSS/match"
+	"github.com/Anastylosis/FSS/models"
 )
 
 func scene(id, siteID, title string) models.Scene {

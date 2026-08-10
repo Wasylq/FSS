@@ -1,8 +1,8 @@
 package wownetwork
 
 import (
-	"github.com/Wasylq/FSS/internal/scrapers/wownetworkutil"
-	"github.com/Wasylq/FSS/scraper"
+	"github.com/Anastylosis/FSS/internal/scrapers/wownetworkutil"
+	"github.com/Anastylosis/FSS/scraper"
 )
 
 var sites = []wownetworkutil.SiteConfig{

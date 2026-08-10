@@ -8,8 +8,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/Wasylq/FSS/internal/scrapers/sexmexutil"
-	"github.com/Wasylq/FSS/internal/scrapers/testutil"
+	"github.com/Anastylosis/FSS/internal/scrapers/sexmexutil"
+	"github.com/Anastylosis/FSS/internal/scrapers/testutil"
 )
 
 func newTestScraper(cfg siteConfig) *sexmexutil.Scraper {

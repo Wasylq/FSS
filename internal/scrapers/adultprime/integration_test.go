@@ -5,8 +5,8 @@ package adultprime
 import (
 	"testing"
 
-	"github.com/Wasylq/FSS/internal/scrapers/adultprimeutil"
-	"github.com/Wasylq/FSS/internal/scrapers/testutil"
+	"github.com/Anastylosis/FSS/internal/scrapers/adultprimeutil"
+	"github.com/Anastylosis/FSS/internal/scrapers/testutil"
 )
 
 func TestLiveScrapeAll(t *testing.T) {

@@ -7,7 +7,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/Wasylq/FSS/scraper"
+	"github.com/Anastylosis/FSS/scraper"
 )
 
 func newTestScraper(t *testing.T) (*Scraper, *httptest.Server) {

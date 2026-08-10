@@ -7,8 +7,8 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/Wasylq/FSS/internal/scrapers/realitystudioutil"
-	"github.com/Wasylq/FSS/scraper"
+	"github.com/Anastylosis/FSS/internal/scrapers/realitystudioutil"
+	"github.com/Anastylosis/FSS/scraper"
 )
 
 type site struct {

@@ -8,7 +8,7 @@ import (
 	"sort"
 	"time"
 
-	"github.com/Wasylq/FSS/models"
+	"github.com/Anastylosis/FSS/models"
 )
 
 // sceneContentHash fingerprints everything Save would write for a scene, so an

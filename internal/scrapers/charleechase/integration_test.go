@@ -5,7 +5,7 @@ package charleechase
 import (
 	"testing"
 
-	"github.com/Wasylq/FSS/internal/scrapers/testutil"
+	"github.com/Anastylosis/FSS/internal/scrapers/testutil"
 )
 
 const liveStudioURL = "https://charleechaselive.com/sd3.php?show=recent_video_updates"

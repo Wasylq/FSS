@@ -5,7 +5,7 @@ package hegre
 import (
 	"testing"
 
-	"github.com/Wasylq/FSS/internal/scrapers/testutil"
+	"github.com/Anastylosis/FSS/internal/scrapers/testutil"
 )
 
 func TestLiveHegre(t *testing.T) {

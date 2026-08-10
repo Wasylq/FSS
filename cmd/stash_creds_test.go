@@ -6,7 +6,7 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/Wasylq/FSS/internal/config"
+	"github.com/Anastylosis/FSS/internal/config"
 )
 
 // isLocalOrPrivate gates the "your API key is about to be sent off-host" warning.

@@ -13,7 +13,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Wasylq/FSS/scraper"
+	"github.com/Anastylosis/FSS/scraper"
 )
 
 const testStudioURL = "https://www.clips4sale.com/studio/27897/bettie-bondage"

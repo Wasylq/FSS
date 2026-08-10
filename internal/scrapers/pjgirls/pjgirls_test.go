@@ -8,8 +8,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/Wasylq/FSS/models"
-	"github.com/Wasylq/FSS/scraper"
+	"github.com/Anastylosis/FSS/models"
+	"github.com/Anastylosis/FSS/scraper"
 )
 
 const fixtureSitemap = `<?xml version="1.0" encoding="UTF-8"?>

@@ -3,7 +3,7 @@ package romeromultimedia
 import (
 	"regexp"
 
-	"github.com/Wasylq/FSS/scraper"
+	"github.com/Anastylosis/FSS/scraper"
 )
 
 // sites enumerates every Romero Multimedia sister site we can reach via WP

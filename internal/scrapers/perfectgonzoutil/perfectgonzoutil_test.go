@@ -8,8 +8,8 @@ import (
 	"regexp"
 	"testing"
 
-	"github.com/Wasylq/FSS/models"
-	"github.com/Wasylq/FSS/scraper"
+	"github.com/Anastylosis/FSS/models"
+	"github.com/Anastylosis/FSS/scraper"
 )
 
 // listingHTML mirrors the real Perfect Gonzo /movies card markup (two cards).

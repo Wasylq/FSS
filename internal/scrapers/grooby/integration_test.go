@@ -5,8 +5,8 @@ package grooby
 import (
 	"testing"
 
-	"github.com/Wasylq/FSS/internal/scrapers/groobyutil"
-	"github.com/Wasylq/FSS/internal/scrapers/testutil"
+	"github.com/Anastylosis/FSS/internal/scrapers/groobyutil"
+	"github.com/Anastylosis/FSS/internal/scrapers/testutil"
 )
 
 func TestLiveGroobyGirls(t *testing.T) {

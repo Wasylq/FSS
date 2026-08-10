@@ -5,7 +5,7 @@ package wifeysworld
 import (
 	"testing"
 
-	"github.com/Wasylq/FSS/internal/scrapers/testutil"
+	"github.com/Anastylosis/FSS/internal/scrapers/testutil"
 )
 
 const liveStudioURL = "https://wifeysworld.com/v3/tour/categories/updates_1_d.html"

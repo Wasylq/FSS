@@ -5,7 +5,7 @@ package porngutter
 import (
 	"testing"
 
-	"github.com/Wasylq/FSS/internal/scrapers/testutil"
+	"github.com/Anastylosis/FSS/internal/scrapers/testutil"
 )
 
 // TestLivePornGutter scrapes the global /updates/ catalogue via the parent

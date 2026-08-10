@@ -9,7 +9,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Wasylq/FSS/scraper"
+	"github.com/Anastylosis/FSS/scraper"
 )
 
 func cardHTML(trailer, title, modelHref, model, date, thumb string) string {

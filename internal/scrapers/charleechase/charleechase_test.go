@@ -9,8 +9,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Wasylq/FSS/parseutil"
-	"github.com/Wasylq/FSS/scraper"
+	"github.com/Anastylosis/FSS/parseutil"
+	"github.com/Anastylosis/FSS/scraper"
 )
 
 const listingFixture = `<html><body>

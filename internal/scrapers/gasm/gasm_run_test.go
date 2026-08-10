@@ -10,8 +10,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Wasylq/FSS/models"
-	"github.com/Wasylq/FSS/scraper"
+	"github.com/Anastylosis/FSS/models"
+	"github.com/Anastylosis/FSS/scraper"
 )
 
 // These tests drive run() end-to-end against an httptest server. They mutate

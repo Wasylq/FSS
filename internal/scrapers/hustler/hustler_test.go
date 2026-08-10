@@ -9,7 +9,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Wasylq/FSS/scraper"
+	"github.com/Anastylosis/FSS/scraper"
 )
 
 // videosJSON returns a fixture for the /wp-json/wp/v2/videos endpoint with a

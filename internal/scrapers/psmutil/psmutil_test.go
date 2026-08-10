@@ -9,7 +9,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/Wasylq/FSS/scraper"
+	"github.com/Anastylosis/FSS/scraper"
 )
 
 // Fixture derived from real citebeur.com /en/videos JSON-LD. Two

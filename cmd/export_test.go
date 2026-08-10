@@ -10,9 +10,9 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/Wasylq/FSS/internal/store"
-	"github.com/Wasylq/FSS/models"
-	"github.com/Wasylq/FSS/output"
+	"github.com/Anastylosis/FSS/internal/store"
+	"github.com/Anastylosis/FSS/models"
+	"github.com/Anastylosis/FSS/output"
 )
 
 // exportCmdFor builds a standalone command carrying the same flags as the real

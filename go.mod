@@ -1,4 +1,4 @@
-module github.com/Wasylq/FSS
+module github.com/Anastylosis/FSS
 
 go 1.26.5
 

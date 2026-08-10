@@ -5,8 +5,8 @@ package hussiepass
 import (
 	"testing"
 
-	"github.com/Wasylq/FSS/internal/scrapers/hussieutil"
-	"github.com/Wasylq/FSS/internal/scrapers/testutil"
+	"github.com/Anastylosis/FSS/internal/scrapers/hussieutil"
+	"github.com/Anastylosis/FSS/internal/scrapers/testutil"
 )
 
 func TestLiveHussiePass(t *testing.T) {

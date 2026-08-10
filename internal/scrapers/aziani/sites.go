@@ -3,7 +3,7 @@ package aziani
 import (
 	"regexp"
 
-	"github.com/Wasylq/FSS/scraper"
+	"github.com/Anastylosis/FSS/scraper"
 )
 
 // sites is the table of Aziani network sites. cms_area_id UUIDs are pulled

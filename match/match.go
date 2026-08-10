@@ -16,7 +16,7 @@ import (
 	"golang.org/x/text/transform"
 	"golang.org/x/text/unicode/norm"
 
-	"github.com/Wasylq/FSS/models"
+	"github.com/Anastylosis/FSS/models"
 )
 
 // SceneIndex is a precomputed index of scene titles for fast filename matching.

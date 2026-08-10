@@ -14,7 +14,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/Wasylq/FSS/models"
+	"github.com/Anastylosis/FSS/models"
 )
 
 // WriteJSON writes a StudioFile as indented JSON, using atomic file replacement

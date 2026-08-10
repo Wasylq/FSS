@@ -5,7 +5,7 @@ package iwantclips
 import (
 	"testing"
 
-	"github.com/Wasylq/FSS/internal/scrapers/testutil"
+	"github.com/Anastylosis/FSS/internal/scrapers/testutil"
 )
 
 // liveStudioURL — Diane Andrews store (stable, long-running).

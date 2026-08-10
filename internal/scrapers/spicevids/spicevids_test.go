@@ -6,8 +6,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Wasylq/FSS/internal/scrapers/ayloutil"
-	"github.com/Wasylq/FSS/scraper"
+	"github.com/Anastylosis/FSS/internal/scrapers/ayloutil"
+	"github.com/Anastylosis/FSS/scraper"
 )
 
 func TestScraperInterface(t *testing.T) {

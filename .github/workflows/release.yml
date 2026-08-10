@@ -256,12 +256,12 @@ jobs:
 
             Or build from source:
             ```sh
-            go install github.com/Wasylq/FSS@${{ github.ref_name }}
+            go install github.com/Anastylosis/FSS@${{ github.ref_name }}
             ```
 
             Or pull the Docker image:
             ```sh
-            docker pull ghcr.io/wasylq/fss:${{ github.ref_name }}
+            docker pull ghcr.io/anastylosis/fss:${{ github.ref_name }}
             ```
 
             ## Verifying your download
@@ -291,7 +291,7 @@ jobs:
             Requires the [`gh` CLI](https://cli.github.com/) v2.49+:
 
             ```sh
-            gh attestation verify fss-${{ github.ref_name }}-linux-amd64.tar.gz --owner Wasylq
+            gh attestation verify fss-${{ github.ref_name }}-linux-amd64.tar.gz --owner Anastylosis
             ```
 
             A successful check names the workflow and the commit SHA it was built from. Anything else — including "no attestations found" — means the file did not come from this release pipeline.
@@ -304,11 +304,11 @@ jobs:
 
             ```sh
             # Look up the image digest you want to verify
-            docker pull ghcr.io/wasylq/fss:${{ github.ref_name }}
-            digest=$(docker buildx imagetools inspect ghcr.io/wasylq/fss:${{ github.ref_name }} --format '{{json .Manifest}}' | jq -r '.digest')
+            docker pull ghcr.io/anastylosis/fss:${{ github.ref_name }}
+            digest=$(docker buildx imagetools inspect ghcr.io/anastylosis/fss:${{ github.ref_name }} --format '{{json .Manifest}}' | jq -r '.digest')
 
             # Verify provenance against the GitHub workflow that built it
-            gh attestation verify oci://ghcr.io/wasylq/fss@$digest --owner Wasylq
+            gh attestation verify oci://ghcr.io/anastylosis/fss@$digest --owner Anastylosis
             ```
 
             A successful run prints the build workflow's identity (commit SHA, repo, runner). Failure means the image wasn't built by this repo's release pipeline.
@@ -458,7 +458,7 @@ jobs:
 
       - name: Lowercase image repo for Trivy
         # OCI references must be all-lowercase. ${{ github.repository }} can
-        # contain uppercase (e.g. "Wasylq/FSS"), and GitHub expressions have
+        # contain uppercase (e.g. "Anastylosis/FSS"), and GitHub expressions have
         # no case-conversion function — so we bounce through bash to produce
         # a lowercase ref that Trivy can parse. Same fix as docker.yml.
         run: echo "IMAGE_REPO_LC=ghcr.io/${REPO,,}" >> "$GITHUB_ENV"

@@ -5,8 +5,8 @@ package puffy
 import (
 	"regexp"
 
-	"github.com/Wasylq/FSS/internal/scrapers/puffyutil"
-	"github.com/Wasylq/FSS/scraper"
+	"github.com/Anastylosis/FSS/internal/scrapers/puffyutil"
+	"github.com/Anastylosis/FSS/scraper"
 )
 
 func site(id, studio, host, listingPath, scenePrefix string) puffyutil.SiteConfig {

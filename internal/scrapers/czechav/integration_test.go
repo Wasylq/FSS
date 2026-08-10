@@ -5,8 +5,8 @@ package czechav
 import (
 	"testing"
 
-	"github.com/Wasylq/FSS/internal/scrapers/czechavutil"
-	"github.com/Wasylq/FSS/internal/scrapers/testutil"
+	"github.com/Anastylosis/FSS/internal/scrapers/czechavutil"
+	"github.com/Anastylosis/FSS/internal/scrapers/testutil"
 )
 
 func TestLiveCzechCasting(t *testing.T) {

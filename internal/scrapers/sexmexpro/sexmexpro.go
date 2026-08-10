@@ -5,8 +5,8 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/Wasylq/FSS/internal/scrapers/sexmexutil"
-	"github.com/Wasylq/FSS/scraper"
+	"github.com/Anastylosis/FSS/internal/scrapers/sexmexutil"
+	"github.com/Anastylosis/FSS/scraper"
 )
 
 type siteConfig struct {

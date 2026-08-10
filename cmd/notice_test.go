@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/Wasylq/FSS/internal/config"
+	"github.com/Anastylosis/FSS/internal/config"
 )
 
 // resetNotice clears the once-per-process guard so each case starts fresh.

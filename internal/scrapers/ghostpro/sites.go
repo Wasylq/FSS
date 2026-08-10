@@ -3,7 +3,7 @@ package ghostpro
 import (
 	"regexp"
 
-	"github.com/Wasylq/FSS/scraper"
+	"github.com/Anastylosis/FSS/scraper"
 )
 
 // sites lists every Ghost Pro Productions sister site running the Next.js

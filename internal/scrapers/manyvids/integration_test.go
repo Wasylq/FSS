@@ -5,7 +5,7 @@ package manyvids
 import (
 	"testing"
 
-	"github.com/Wasylq/FSS/internal/scrapers/testutil"
+	"github.com/Anastylosis/FSS/internal/scrapers/testutil"
 )
 
 // liveStudioURL — Bettie Bondage profile (long-running, large catalog).

@@ -9,8 +9,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Wasylq/FSS/models"
-	"github.com/Wasylq/FSS/scraper"
+	"github.com/Anastylosis/FSS/models"
+	"github.com/Anastylosis/FSS/scraper"
 )
 
 // Fixtures shaped to the WP REST payloads fotoroutil consumes.

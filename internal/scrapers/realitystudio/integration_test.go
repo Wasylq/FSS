@@ -8,8 +8,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/Wasylq/FSS/internal/scrapers/realitystudioutil"
-	"github.com/Wasylq/FSS/internal/scrapers/testutil"
+	"github.com/Anastylosis/FSS/internal/scrapers/realitystudioutil"
+	"github.com/Anastylosis/FSS/internal/scrapers/testutil"
 )
 
 func newTestScraper(s site) *realitystudioutil.Scraper {

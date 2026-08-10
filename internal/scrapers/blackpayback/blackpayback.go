@@ -6,8 +6,8 @@ package blackpayback
 import (
 	"regexp"
 
-	"github.com/Wasylq/FSS/internal/scrapers/adultdoorwayclassicutil"
-	"github.com/Wasylq/FSS/scraper"
+	"github.com/Anastylosis/FSS/internal/scrapers/adultdoorwayclassicutil"
+	"github.com/Anastylosis/FSS/scraper"
 )
 
 var sites = []adultdoorwayclassicutil.SiteConfig{

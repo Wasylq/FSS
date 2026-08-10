@@ -21,8 +21,8 @@ package sexysaffron
 import (
 	"regexp"
 
-	"github.com/Wasylq/FSS/internal/scrapers/veutil"
-	"github.com/Wasylq/FSS/scraper"
+	"github.com/Anastylosis/FSS/internal/scrapers/veutil"
+	"github.com/Anastylosis/FSS/scraper"
 )
 
 // videosCategoryID is the "videos" category, parent of clips/free/shows.

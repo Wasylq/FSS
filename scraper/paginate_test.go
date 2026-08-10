@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Wasylq/FSS/models"
+	"github.com/Anastylosis/FSS/models"
 )
 
 func collectResults(ch <-chan SceneResult) []SceneResult {

@@ -5,7 +5,7 @@ package maturenl
 import (
 	"testing"
 
-	"github.com/Wasylq/FSS/internal/scrapers/testutil"
+	"github.com/Anastylosis/FSS/internal/scrapers/testutil"
 )
 
 func TestLiveScrapeUpdates(t *testing.T) {

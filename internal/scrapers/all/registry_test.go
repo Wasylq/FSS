@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/Wasylq/FSS/scraper"
+	"github.com/Anastylosis/FSS/scraper"
 )
 
 // testutil.CheckSiteTable pins a config table's contents, but it has to be wired

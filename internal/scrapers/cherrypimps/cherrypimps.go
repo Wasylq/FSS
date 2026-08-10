@@ -3,8 +3,8 @@ package cherrypimps
 import (
 	"regexp"
 
-	"github.com/Wasylq/FSS/internal/scrapers/cherrypimpsutil"
-	"github.com/Wasylq/FSS/scraper"
+	"github.com/Anastylosis/FSS/internal/scrapers/cherrypimpsutil"
+	"github.com/Anastylosis/FSS/scraper"
 )
 
 var sites = []cherrypimpsutil.SiteConfig{

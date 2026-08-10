@@ -1,8 +1,8 @@
 package missax
 
 import (
-	"github.com/Wasylq/FSS/internal/scrapers/missaxutil"
-	"github.com/Wasylq/FSS/scraper"
+	"github.com/Anastylosis/FSS/internal/scrapers/missaxutil"
+	"github.com/Anastylosis/FSS/scraper"
 )
 
 var sites = []missaxutil.SiteConfig{

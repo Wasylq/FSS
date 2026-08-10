@@ -3,7 +3,7 @@ package carnalplus
 import (
 	"regexp"
 
-	"github.com/Wasylq/FSS/scraper"
+	"github.com/Anastylosis/FSS/scraper"
 )
 
 // sites enumerates every Carnal+ network site we cover.

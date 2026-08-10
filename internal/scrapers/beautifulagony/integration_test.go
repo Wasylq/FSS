@@ -5,7 +5,7 @@ package beautifulagony
 import (
 	"testing"
 
-	"github.com/Wasylq/FSS/internal/scrapers/testutil"
+	"github.com/Anastylosis/FSS/internal/scrapers/testutil"
 )
 
 // 22 > pageSize 20, so this crosses a page boundary.

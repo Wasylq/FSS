@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Wasylq/FSS/scraper"
+	"github.com/Anastylosis/FSS/scraper"
 )
 
 func RunLiveTest(t *testing.T, s scraper.StudioScraper, studioURL string, limit int) {

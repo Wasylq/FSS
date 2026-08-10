@@ -9,7 +9,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Wasylq/FSS/scraper"
+	"github.com/Anastylosis/FSS/scraper"
 )
 
 // block mirrors the real recent-movies AJAX markup: an outer

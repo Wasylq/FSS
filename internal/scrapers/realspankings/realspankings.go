@@ -1,8 +1,8 @@
 package realspankings
 
 import (
-	"github.com/Wasylq/FSS/internal/scrapers/realspankingsutil"
-	"github.com/Wasylq/FSS/scraper"
+	"github.com/Anastylosis/FSS/internal/scrapers/realspankingsutil"
+	"github.com/Anastylosis/FSS/scraper"
 )
 
 var sites = []realspankingsutil.SiteConfig{

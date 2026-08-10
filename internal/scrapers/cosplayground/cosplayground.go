@@ -11,8 +11,8 @@ package cosplayground
 import (
 	"regexp"
 
-	"github.com/Wasylq/FSS/internal/scrapers/natscmsutil"
-	"github.com/Wasylq/FSS/scraper"
+	"github.com/Anastylosis/FSS/internal/scrapers/natscmsutil"
+	"github.com/Anastylosis/FSS/scraper"
 )
 
 func New() *natscmsutil.Scraper {

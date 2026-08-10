@@ -5,7 +5,7 @@ package clips4sale
 import (
 	"testing"
 
-	"github.com/Wasylq/FSS/internal/scrapers/testutil"
+	"github.com/Anastylosis/FSS/internal/scrapers/testutil"
 )
 
 // liveStudioURL — pick a real, stable C4S studio.

@@ -1,8 +1,8 @@
 package tmw
 
 import (
-	"github.com/Wasylq/FSS/internal/scrapers/tmwutil"
-	"github.com/Wasylq/FSS/scraper"
+	"github.com/Anastylosis/FSS/internal/scrapers/tmwutil"
+	"github.com/Anastylosis/FSS/scraper"
 )
 
 var sites = []tmwutil.SiteConfig{

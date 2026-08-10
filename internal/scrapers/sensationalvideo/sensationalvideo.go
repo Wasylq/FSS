@@ -1,8 +1,8 @@
 package sensationalvideo
 
 import (
-	"github.com/Wasylq/FSS/internal/scrapers/masutil"
-	"github.com/Wasylq/FSS/scraper"
+	"github.com/Anastylosis/FSS/internal/scrapers/masutil"
+	"github.com/Anastylosis/FSS/scraper"
 )
 
 var sites = []masutil.SiteConfig{

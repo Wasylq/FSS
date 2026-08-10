@@ -1,6 +1,6 @@
 package glamosetour
 
-import "github.com/Wasylq/FSS/scraper"
+import "github.com/Anastylosis/FSS/scraper"
 
 // Glamose network tour sites using the refstat.php template.
 // Each shows ~20-24 recent entries without historical pagination.

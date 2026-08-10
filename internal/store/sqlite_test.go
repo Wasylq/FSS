@@ -13,7 +13,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Wasylq/FSS/models"
+	"github.com/Anastylosis/FSS/models"
 	_ "modernc.org/sqlite"
 )
 

@@ -11,8 +11,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Wasylq/FSS/models"
-	"github.com/Wasylq/FSS/scraper"
+	"github.com/Anastylosis/FSS/models"
+	"github.com/Anastylosis/FSS/scraper"
 )
 
 // goodScene is the shape sceneProblems must accept without complaint. Each

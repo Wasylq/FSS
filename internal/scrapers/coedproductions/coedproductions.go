@@ -5,8 +5,8 @@ package coedproductions
 import (
 	"regexp"
 
-	"github.com/Wasylq/FSS/internal/scrapers/coedutil"
-	"github.com/Wasylq/FSS/scraper"
+	"github.com/Anastylosis/FSS/internal/scrapers/coedutil"
+	"github.com/Anastylosis/FSS/scraper"
 )
 
 var sites = []coedutil.SiteConfig{

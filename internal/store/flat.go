@@ -9,8 +9,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/Wasylq/FSS/models"
-	"github.com/Wasylq/FSS/output"
+	"github.com/Anastylosis/FSS/models"
+	"github.com/Anastylosis/FSS/output"
 )
 
 // Flat is the default store backed by a per-studio JSON file on disk.

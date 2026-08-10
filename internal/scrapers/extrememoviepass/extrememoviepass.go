@@ -12,8 +12,8 @@ package extrememoviepass
 import (
 	"regexp"
 
-	"github.com/Wasylq/FSS/internal/scrapers/extrememoviepassutil"
-	"github.com/Wasylq/FSS/scraper"
+	"github.com/Anastylosis/FSS/internal/scrapers/extrememoviepassutil"
+	"github.com/Anastylosis/FSS/scraper"
 )
 
 var sites = []extrememoviepassutil.SiteConfig{

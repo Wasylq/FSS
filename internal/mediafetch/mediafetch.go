@@ -12,7 +12,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/Wasylq/FSS/internal/httpx"
+	"github.com/Anastylosis/FSS/internal/httpx"
 )
 
 // MaxBytes caps how much of a response is read, so a hostile or misconfigured

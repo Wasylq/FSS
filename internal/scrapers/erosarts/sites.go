@@ -3,7 +3,7 @@ package erosarts
 import (
 	"regexp"
 
-	"github.com/Wasylq/FSS/scraper"
+	"github.com/Anastylosis/FSS/scraper"
 )
 
 var sites = []SiteConfig{

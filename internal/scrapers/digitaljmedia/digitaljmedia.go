@@ -5,8 +5,8 @@
 package digitaljmedia
 
 import (
-	"github.com/Wasylq/FSS/internal/scrapers/digitaljmediautil"
-	"github.com/Wasylq/FSS/scraper"
+	"github.com/Anastylosis/FSS/internal/scrapers/digitaljmediautil"
+	"github.com/Anastylosis/FSS/scraper"
 )
 
 func init() {

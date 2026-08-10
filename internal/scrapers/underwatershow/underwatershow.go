@@ -8,8 +8,8 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/Wasylq/FSS/internal/scrapers/underwatershowutil"
-	"github.com/Wasylq/FSS/scraper"
+	"github.com/Anastylosis/FSS/internal/scrapers/underwatershowutil"
+	"github.com/Anastylosis/FSS/scraper"
 )
 
 type site struct {

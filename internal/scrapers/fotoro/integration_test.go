@@ -8,8 +8,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/Wasylq/FSS/internal/scrapers/fotoroutil"
-	"github.com/Wasylq/FSS/internal/scrapers/testutil"
+	"github.com/Anastylosis/FSS/internal/scrapers/fotoroutil"
+	"github.com/Anastylosis/FSS/internal/scrapers/testutil"
 )
 
 func newTestScraper(s site) *fotoroutil.Scraper {

@@ -8,8 +8,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/Wasylq/FSS/internal/scrapers/testutil"
-	"github.com/Wasylq/FSS/internal/scrapers/uptimelyutil"
+	"github.com/Anastylosis/FSS/internal/scrapers/testutil"
+	"github.com/Anastylosis/FSS/internal/scrapers/uptimelyutil"
 )
 
 func findSite(id string) siteConfig {

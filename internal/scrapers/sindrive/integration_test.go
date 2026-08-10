@@ -5,7 +5,7 @@ package sindrive
 import (
 	"testing"
 
-	"github.com/Wasylq/FSS/internal/scrapers/testutil"
+	"github.com/Anastylosis/FSS/internal/scrapers/testutil"
 )
 
 // TestLiveSinDrive scrapes the main "videos/all" listing on sindrive.com.

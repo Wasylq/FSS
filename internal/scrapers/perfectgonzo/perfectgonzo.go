@@ -5,8 +5,8 @@ package perfectgonzo
 import (
 	"regexp"
 
-	"github.com/Wasylq/FSS/internal/scrapers/perfectgonzoutil"
-	"github.com/Wasylq/FSS/scraper"
+	"github.com/Anastylosis/FSS/internal/scrapers/perfectgonzoutil"
+	"github.com/Anastylosis/FSS/scraper"
 )
 
 func site(id, host, studio string) perfectgonzoutil.SiteConfig {

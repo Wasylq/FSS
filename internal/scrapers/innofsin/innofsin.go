@@ -13,9 +13,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/Wasylq/FSS/internal/httpx"
-	"github.com/Wasylq/FSS/models"
-	"github.com/Wasylq/FSS/scraper"
+	"github.com/Anastylosis/FSS/internal/httpx"
+	"github.com/Anastylosis/FSS/models"
+	"github.com/Anastylosis/FSS/scraper"
 )
 
 // postsPerPage is the WP REST page size. WP caps per_page at 100.

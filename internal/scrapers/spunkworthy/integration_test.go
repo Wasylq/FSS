@@ -5,7 +5,7 @@ package spunkworthy
 import (
 	"testing"
 
-	"github.com/Wasylq/FSS/internal/scrapers/testutil"
+	"github.com/Anastylosis/FSS/internal/scrapers/testutil"
 )
 
 func TestLiveSpunkWorthy(t *testing.T) {

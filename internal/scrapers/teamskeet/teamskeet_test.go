@@ -3,7 +3,7 @@ package teamskeet
 import (
 	"testing"
 
-	"github.com/Wasylq/FSS/scraper"
+	"github.com/Anastylosis/FSS/scraper"
 )
 
 func TestSiteCount(t *testing.T) {

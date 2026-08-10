@@ -5,8 +5,8 @@ package wownetwork
 import (
 	"testing"
 
-	"github.com/Wasylq/FSS/internal/scrapers/testutil"
-	"github.com/Wasylq/FSS/internal/scrapers/wownetworkutil"
+	"github.com/Anastylosis/FSS/internal/scrapers/testutil"
+	"github.com/Anastylosis/FSS/internal/scrapers/wownetworkutil"
 )
 
 func TestLiveWowGirls(t *testing.T) {

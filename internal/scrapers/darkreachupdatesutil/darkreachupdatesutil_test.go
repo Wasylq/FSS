@@ -9,7 +9,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/Wasylq/FSS/scraper"
+	"github.com/Anastylosis/FSS/scraper"
 )
 
 const listingHTML = `<html><body>

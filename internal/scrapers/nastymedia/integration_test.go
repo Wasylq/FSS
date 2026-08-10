@@ -5,7 +5,7 @@ package nastymedia
 import (
 	"testing"
 
-	"github.com/Wasylq/FSS/internal/scrapers/testutil"
+	"github.com/Anastylosis/FSS/internal/scrapers/testutil"
 )
 
 // All 4 sites share one HOME.html WWB layout, so two live smokes (the

@@ -5,7 +5,7 @@ package nubiles
 import (
 	"testing"
 
-	"github.com/Wasylq/FSS/internal/scrapers/testutil"
+	"github.com/Anastylosis/FSS/internal/scrapers/testutil"
 )
 
 // nubiles advertises 51 patterns: three URL modes on nubiles-porn.com plus ~48

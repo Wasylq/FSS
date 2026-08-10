@@ -6,8 +6,8 @@ package bronetwork
 import (
 	"regexp"
 
-	"github.com/Wasylq/FSS/internal/scrapers/bronetworkutil"
-	"github.com/Wasylq/FSS/scraper"
+	"github.com/Anastylosis/FSS/internal/scrapers/bronetworkutil"
+	"github.com/Anastylosis/FSS/scraper"
 )
 
 // Ordering is load-bearing. masqulin and menofmontreal live at

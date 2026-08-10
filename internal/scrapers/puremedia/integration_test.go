@@ -5,8 +5,8 @@ package puremedia
 import (
 	"testing"
 
-	"github.com/Wasylq/FSS/internal/scrapers/puremediautil"
-	"github.com/Wasylq/FSS/internal/scrapers/testutil"
+	"github.com/Anastylosis/FSS/internal/scrapers/puremediautil"
+	"github.com/Anastylosis/FSS/internal/scrapers/testutil"
 )
 
 func TestLivePureTS(t *testing.T) {

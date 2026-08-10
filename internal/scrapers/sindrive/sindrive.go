@@ -57,9 +57,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/Wasylq/FSS/internal/httpx"
-	"github.com/Wasylq/FSS/models"
-	"github.com/Wasylq/FSS/scraper"
+	"github.com/Anastylosis/FSS/internal/httpx"
+	"github.com/Anastylosis/FSS/models"
+	"github.com/Anastylosis/FSS/scraper"
 )
 
 const (

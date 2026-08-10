@@ -5,8 +5,8 @@ package digitaljmedia
 import (
 	"testing"
 
-	"github.com/Wasylq/FSS/internal/scrapers/digitaljmediautil"
-	"github.com/Wasylq/FSS/internal/scrapers/testutil"
+	"github.com/Anastylosis/FSS/internal/scrapers/digitaljmediautil"
+	"github.com/Anastylosis/FSS/internal/scrapers/testutil"
 )
 
 // scraperFor returns a live scraper for the given network site id.

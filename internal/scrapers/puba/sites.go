@@ -3,7 +3,7 @@ package puba
 import (
 	"regexp"
 
-	"github.com/Wasylq/FSS/scraper"
+	"github.com/Anastylosis/FSS/scraper"
 )
 
 // sites lists every Puba scraper. Each per-pornstar entry maps to the

@@ -3,7 +3,7 @@ package eighteenvideoz
 import (
 	"regexp"
 
-	"github.com/Wasylq/FSS/scraper"
+	"github.com/Anastylosis/FSS/scraper"
 )
 
 // sites enumerates every Wow-Tube sister site we can reach with one of

@@ -5,7 +5,7 @@ package wtfpass
 import (
 	"testing"
 
-	"github.com/Wasylq/FSS/internal/scrapers/testutil"
+	"github.com/Anastylosis/FSS/internal/scrapers/testutil"
 )
 
 // One live smoke for the parent (covers the whole network in one pass via

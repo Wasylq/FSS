@@ -244,7 +244,7 @@ type Store interface {
 ### Phase 1 — Scaffold ✓
 - [x] `README.md` — initial skeleton: project description, install, config file location/format, pointer to MANUAL.md
 - [x] `MANUAL.md` — scaffold: config file keys/defaults, all CLI flags, data model field table (stubs okay)
-- [x] `go mod init github.com/Wasylq/FSS`
+- [x] `go mod init github.com/Anastylosis/FSS`
 - [x] Install deps: `cobra`, `gopkg.in/yaml.v3`, `github.com/adrg/xdg`
 - [x] `internal/config/config.go` → Config struct + `Load()` (XDG path, YAML parse, defaults)
 - [x] `main.go` → entry point
@@ -361,7 +361,7 @@ type Store interface {
 
 - [x] **ManyVids API shape** — confirmed: `api.manyvids.com/store/videos/{id}` + `api.manyvids.com/store/video/{id}`, no auth
 - [x] **`per_page` / `limit` param** — not honored; page size fixed at 9. 700 scenes = 78 list requests
-- [x] **Module path** — `github.com/Wasylq/FSS`
+- [x] **Module path** — `github.com/Anastylosis/FSS`
 - [x] **Config format** — YAML via `gopkg.in/yaml.v3`, path via `adrg/xdg`
 - [x] **Multi-pattern scrapers** — `Patterns() []string` added to interface
 - [x] **Scene struct** — fat struct with all fields; Price/Preview/Series/Resolution all included

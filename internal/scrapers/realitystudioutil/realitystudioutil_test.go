@@ -10,8 +10,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Wasylq/FSS/models"
-	"github.com/Wasylq/FSS/scraper"
+	"github.com/Anastylosis/FSS/models"
+	"github.com/Anastylosis/FSS/scraper"
 )
 
 // clipsJS mirrors the real /js/clips.js shape: a static ClipDatabase JS array.

@@ -8,8 +8,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/Wasylq/FSS/parseutil"
-	"github.com/Wasylq/FSS/scraper"
+	"github.com/Anastylosis/FSS/parseutil"
+	"github.com/Anastylosis/FSS/scraper"
 )
 
 var testCfg = SiteConfig{SiteID: "testsite", Domain: "example.com", Studio: "Test Studio"}

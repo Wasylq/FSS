@@ -5,8 +5,8 @@ package extrememoviepass
 import (
 	"testing"
 
-	"github.com/Wasylq/FSS/internal/scrapers/extrememoviepassutil"
-	"github.com/Wasylq/FSS/internal/scrapers/testutil"
+	"github.com/Anastylosis/FSS/internal/scrapers/extrememoviepassutil"
+	"github.com/Anastylosis/FSS/internal/scrapers/testutil"
 )
 
 // Sample sites that probed well during platform discovery — full + small

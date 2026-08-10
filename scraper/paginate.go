@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/Wasylq/FSS/models"
+	"github.com/Anastylosis/FSS/models"
 )
 
 // pageKey builds a stable signature from a page's ordered scene IDs, used to

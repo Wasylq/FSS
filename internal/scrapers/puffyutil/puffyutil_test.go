@@ -8,7 +8,7 @@ import (
 	"regexp"
 	"testing"
 
-	"github.com/Wasylq/FSS/scraper"
+	"github.com/Anastylosis/FSS/scraper"
 )
 
 // listingHTML serves two scene cards in two different dialects: a Family-A

@@ -5,7 +5,7 @@ package africanbucks
 import (
 	"testing"
 
-	"github.com/Wasylq/FSS/internal/scrapers/testutil"
+	"github.com/Anastylosis/FSS/internal/scrapers/testutil"
 )
 
 // africanbucks advertises 15 sibling domains, all served by one API whose base

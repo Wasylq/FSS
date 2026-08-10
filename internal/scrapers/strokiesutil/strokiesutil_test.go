@@ -8,7 +8,7 @@ import (
 	"regexp"
 	"testing"
 
-	"github.com/Wasylq/FSS/scraper"
+	"github.com/Anastylosis/FSS/scraper"
 )
 
 // listingHTML serves three v-thumb cards. The second page repeats them to

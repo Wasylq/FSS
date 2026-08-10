@@ -5,7 +5,7 @@ package girlsoutwest
 import (
 	"testing"
 
-	"github.com/Wasylq/FSS/internal/scrapers/testutil"
+	"github.com/Anastylosis/FSS/internal/scrapers/testutil"
 )
 
 // 18 > pageSize 16, so the main listing crosses a page boundary.

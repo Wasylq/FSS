@@ -3,7 +3,7 @@ package ghostproclassic
 import (
 	"regexp"
 
-	"github.com/Wasylq/FSS/scraper"
+	"github.com/Anastylosis/FSS/scraper"
 )
 
 // sites lists the four Ghost Pro Productions sister sites running the

@@ -8,7 +8,7 @@ import (
 	"regexp"
 	"testing"
 
-	"github.com/Wasylq/FSS/scraper"
+	"github.com/Anastylosis/FSS/scraper"
 )
 
 // listingHTML mixes the trailer theme (h5 + availdate) and the gallery theme

@@ -8,7 +8,7 @@ import (
 	"regexp"
 	"testing"
 
-	"github.com/Wasylq/FSS/scraper"
+	"github.com/Anastylosis/FSS/scraper"
 )
 
 // ---- VariantNATS fixture (funsizeboys-style) ----

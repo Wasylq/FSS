@@ -12,7 +12,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/Wasylq/FSS/scraper"
+	"github.com/Anastylosis/FSS/scraper"
 )
 
 // TestReadmeScraperCount keeps the "**N sites**" claim in README.md in sync

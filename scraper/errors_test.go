@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/Wasylq/FSS/scraper"
+	"github.com/Anastylosis/FSS/scraper"
 )
 
 // kindedStub stands in for httpx.StatusError, which cannot be used here: httpx

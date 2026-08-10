@@ -3,7 +3,7 @@ package feetondemand
 import (
 	"regexp"
 
-	"github.com/Wasylq/FSS/scraper"
+	"github.com/Anastylosis/FSS/scraper"
 )
 
 // sites lists the 5 Feet on Demand sister tours that expose a

@@ -5,7 +5,7 @@ package kristenbjorn
 import (
 	"testing"
 
-	"github.com/Wasylq/FSS/internal/scrapers/testutil"
+	"github.com/Anastylosis/FSS/internal/scrapers/testutil"
 )
 
 func TestLiveKristenBjorn(t *testing.T) {

@@ -11,7 +11,7 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/Wasylq/FSS/scraper"
+	"github.com/Anastylosis/FSS/scraper"
 )
 
 var checkCmd = &cobra.Command{
@@ -29,7 +29,7 @@ func newScraperIssueURL(siteURL string) string {
 	q := url.Values{}
 	q.Set("template", "new_scraper.yml")
 	q.Set("url", siteURL)
-	return "https://github.com/Wasylq/FSS/issues/new?" + q.Encode()
+	return "https://github.com/Anastylosis/FSS/issues/new?" + q.Encode()
 }
 
 func runCheck(cmd *cobra.Command, args []string) error {

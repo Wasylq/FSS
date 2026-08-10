@@ -3,7 +3,7 @@ package coedproductions
 import (
 	"testing"
 
-	"github.com/Wasylq/FSS/internal/scrapers/testutil"
+	"github.com/Anastylosis/FSS/internal/scrapers/testutil"
 )
 
 // Config-only wrapper: parsing tests live in the *util it delegates to. What is

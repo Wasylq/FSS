@@ -5,7 +5,7 @@ package crystaleizou
 import (
 	"testing"
 
-	"github.com/Wasylq/FSS/internal/scrapers/testutil"
+	"github.com/Anastylosis/FSS/internal/scrapers/testutil"
 )
 
 const liveStudioURL = "https://www.crystal-eizou.jp/"

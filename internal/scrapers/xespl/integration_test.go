@@ -5,7 +5,7 @@ package xespl
 import (
 	"testing"
 
-	"github.com/Wasylq/FSS/internal/scrapers/testutil"
+	"github.com/Anastylosis/FSS/internal/scrapers/testutil"
 )
 
 const liveCatalogURL = "https://xes.pl/katalog_filmow,1.html"

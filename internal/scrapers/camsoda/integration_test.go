@@ -5,7 +5,7 @@ package camsoda
 import (
 	"testing"
 
-	"github.com/Wasylq/FSS/internal/scrapers/testutil"
+	"github.com/Anastylosis/FSS/internal/scrapers/testutil"
 )
 
 func TestLiveCamSodaExclusiveVideos(t *testing.T) {

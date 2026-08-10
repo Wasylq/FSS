@@ -6,8 +6,8 @@ package dungeoncorp
 import (
 	"regexp"
 
-	"github.com/Wasylq/FSS/internal/scrapers/dungeoncorputil"
-	"github.com/Wasylq/FSS/scraper"
+	"github.com/Anastylosis/FSS/internal/scrapers/dungeoncorputil"
+	"github.com/Anastylosis/FSS/scraper"
 )
 
 var sites = []dungeoncorputil.SiteConfig{

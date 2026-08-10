@@ -5,7 +5,7 @@ package dorcelclub
 import (
 	"testing"
 
-	"github.com/Wasylq/FSS/internal/scrapers/testutil"
+	"github.com/Anastylosis/FSS/internal/scrapers/testutil"
 )
 
 const liveStudioURL = "https://www.dorcelclub.com/en/news-videos-x-marc-dorcel"

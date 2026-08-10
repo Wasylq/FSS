@@ -3,7 +3,7 @@ package scoregroup
 import (
 	"testing"
 
-	"github.com/Wasylq/FSS/scraper"
+	"github.com/Anastylosis/FSS/scraper"
 )
 
 func TestAllSitesRegister(t *testing.T) {

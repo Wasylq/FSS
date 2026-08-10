@@ -5,7 +5,7 @@ package naughtyamerica
 import (
 	"testing"
 
-	"github.com/Wasylq/FSS/internal/scrapers/testutil"
+	"github.com/Anastylosis/FSS/internal/scrapers/testutil"
 )
 
 // naughtyamerica advertises 7 patterns — the main catalogue, the pornstar mode

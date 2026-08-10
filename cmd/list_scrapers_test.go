@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/Wasylq/FSS/scraper"
+	"github.com/Anastylosis/FSS/scraper"
 )
 
 // `list-scrapers` is how a user discovers whether a site is supported, so its

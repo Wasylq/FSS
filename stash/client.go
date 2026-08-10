@@ -15,8 +15,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/Wasylq/FSS/internal/httpx"
-	"github.com/Wasylq/FSS/internal/mediafetch"
+	"github.com/Anastylosis/FSS/internal/httpx"
+	"github.com/Anastylosis/FSS/internal/mediafetch"
 )
 
 // Filter targets that do not exist in Stash. FindScenes used to return zero

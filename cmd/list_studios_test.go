@@ -3,7 +3,7 @@ package cmd
 import (
 	"testing"
 
-	"github.com/Wasylq/FSS/internal/config"
+	"github.com/Anastylosis/FSS/internal/config"
 )
 
 // list-studios used to read only its own --db flag, so an operator who set

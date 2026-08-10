@@ -1,8 +1,8 @@
 package flourish
 
 import (
-	"github.com/Wasylq/FSS/internal/scrapers/flourishutil"
-	"github.com/Wasylq/FSS/scraper"
+	"github.com/Anastylosis/FSS/internal/scrapers/flourishutil"
+	"github.com/Anastylosis/FSS/scraper"
 )
 
 var sites = []flourishutil.SiteConfig{

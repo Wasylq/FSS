@@ -5,8 +5,8 @@ package swearl
 import (
 	"regexp"
 
-	"github.com/Wasylq/FSS/internal/scrapers/swearlutil"
-	"github.com/Wasylq/FSS/scraper"
+	"github.com/Anastylosis/FSS/internal/scrapers/swearlutil"
+	"github.com/Anastylosis/FSS/scraper"
 )
 
 var sites = []swearlutil.SiteConfig{

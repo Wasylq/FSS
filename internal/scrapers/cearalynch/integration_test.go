@@ -5,7 +5,7 @@ package cearalynch
 import (
 	"testing"
 
-	"github.com/Wasylq/FSS/internal/scrapers/testutil"
+	"github.com/Anastylosis/FSS/internal/scrapers/testutil"
 )
 
 func TestLiveCearaLynch(t *testing.T) {

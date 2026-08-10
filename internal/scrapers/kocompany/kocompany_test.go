@@ -10,7 +10,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Wasylq/FSS/scraper"
+	"github.com/Anastylosis/FSS/scraper"
 )
 
 // Trimmed fixture mirroring real ko-video.com markup — three product

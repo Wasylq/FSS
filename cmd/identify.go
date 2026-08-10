@@ -10,8 +10,8 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/Wasylq/FSS/identify"
-	"github.com/Wasylq/FSS/match"
+	"github.com/Anastylosis/FSS/identify"
+	"github.com/Anastylosis/FSS/match"
 )
 
 var identifyCmd = &cobra.Command{

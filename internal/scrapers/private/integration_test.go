@@ -5,7 +5,7 @@ package private
 import (
 	"testing"
 
-	"github.com/Wasylq/FSS/internal/scrapers/testutil"
+	"github.com/Anastylosis/FSS/internal/scrapers/testutil"
 )
 
 // Main catalogue (/scenes/) — the workhorse listing every user will hit.

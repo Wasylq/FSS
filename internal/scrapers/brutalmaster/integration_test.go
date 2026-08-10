@@ -5,7 +5,7 @@ package brutalmaster
 import (
 	"testing"
 
-	"github.com/Wasylq/FSS/internal/scrapers/testutil"
+	"github.com/Anastylosis/FSS/internal/scrapers/testutil"
 )
 
 // New() is used rather than a locally-built config so the test exercises the

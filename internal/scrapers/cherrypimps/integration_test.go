@@ -5,8 +5,8 @@ package cherrypimps
 import (
 	"testing"
 
-	"github.com/Wasylq/FSS/internal/scrapers/cherrypimpsutil"
-	"github.com/Wasylq/FSS/internal/scrapers/testutil"
+	"github.com/Anastylosis/FSS/internal/scrapers/cherrypimpsutil"
+	"github.com/Anastylosis/FSS/internal/scrapers/testutil"
 )
 
 func TestLiveCherryPimps(t *testing.T) {

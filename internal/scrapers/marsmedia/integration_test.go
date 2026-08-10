@@ -5,8 +5,8 @@ package marsmedia
 import (
 	"testing"
 
-	"github.com/Wasylq/FSS/internal/scrapers/natscmsutil"
-	"github.com/Wasylq/FSS/internal/scrapers/testutil"
+	"github.com/Anastylosis/FSS/internal/scrapers/natscmsutil"
+	"github.com/Anastylosis/FSS/internal/scrapers/testutil"
 )
 
 // All 12 sites share the same NATS CMS API; one live smoke per CMS area

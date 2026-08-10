@@ -13,7 +13,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/Wasylq/FSS/models"
+	"github.com/Anastylosis/FSS/models"
 )
 
 // StudioScraper is implemented once per supported site.

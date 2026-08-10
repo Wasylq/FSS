@@ -11,7 +11,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/Wasylq/FSS/models"
+	"github.com/Anastylosis/FSS/models"
 
 	// Registers the cgo-free "sqlite" driver with database/sql.
 	_ "modernc.org/sqlite"

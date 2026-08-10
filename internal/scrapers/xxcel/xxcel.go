@@ -3,8 +3,8 @@
 package xxcel
 
 import (
-	"github.com/Wasylq/FSS/internal/scrapers/xxcelutil"
-	"github.com/Wasylq/FSS/scraper"
+	"github.com/Anastylosis/FSS/internal/scrapers/xxcelutil"
+	"github.com/Anastylosis/FSS/scraper"
 )
 
 var sites = []xxcelutil.SiteConfig{

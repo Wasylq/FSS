@@ -10,7 +10,7 @@ import (
 	"github.com/adrg/xdg"
 	"github.com/spf13/cobra"
 
-	"github.com/Wasylq/FSS/internal/config"
+	"github.com/Anastylosis/FSS/internal/config"
 )
 
 func isolateXDG(t *testing.T) {

@@ -12,7 +12,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Wasylq/FSS/models"
+	"github.com/Anastylosis/FSS/models"
 )
 
 const testURL = "https://www.manyvids.com/Profile/590705/bettie-bondage/Store/Videos"

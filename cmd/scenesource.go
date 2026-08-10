@@ -7,10 +7,10 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/Wasylq/FSS/internal/config"
-	"github.com/Wasylq/FSS/internal/store"
-	"github.com/Wasylq/FSS/match"
-	"github.com/Wasylq/FSS/models"
+	"github.com/Anastylosis/FSS/internal/config"
+	"github.com/Anastylosis/FSS/internal/store"
+	"github.com/Anastylosis/FSS/match"
+	"github.com/Anastylosis/FSS/models"
 )
 
 // sceneSource describes where scenes were loaded from, so commands can say so.

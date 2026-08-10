@@ -5,8 +5,8 @@ package dungeoncorp
 import (
 	"testing"
 
-	"github.com/Wasylq/FSS/internal/scrapers/dungeoncorputil"
-	"github.com/Wasylq/FSS/internal/scrapers/testutil"
+	"github.com/Anastylosis/FSS/internal/scrapers/dungeoncorputil"
+	"github.com/Anastylosis/FSS/internal/scrapers/testutil"
 )
 
 func TestLiveSocietySM(t *testing.T) {

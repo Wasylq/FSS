@@ -5,7 +5,7 @@ package d2pass
 import (
 	"testing"
 
-	"github.com/Wasylq/FSS/internal/scrapers/testutil"
+	"github.com/Anastylosis/FSS/internal/scrapers/testutil"
 )
 
 func live(t *testing.T, id string) {

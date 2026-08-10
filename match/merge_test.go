@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Wasylq/FSS/models"
+	"github.com/Anastylosis/FSS/models"
 )
 
 func TestMergeScenesBasic(t *testing.T) {

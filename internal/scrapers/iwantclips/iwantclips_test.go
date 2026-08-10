@@ -12,7 +12,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Wasylq/FSS/scraper"
+	"github.com/Anastylosis/FSS/scraper"
 )
 
 const testStudioURL = "https://iwantclips.com/store/327/Diane-Andrews"

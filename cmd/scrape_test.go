@@ -11,9 +11,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Wasylq/FSS/internal/store"
-	"github.com/Wasylq/FSS/models"
-	"github.com/Wasylq/FSS/scraper"
+	"github.com/Anastylosis/FSS/internal/store"
+	"github.com/Anastylosis/FSS/models"
+	"github.com/Anastylosis/FSS/scraper"
 )
 
 func TestMergeSiteDelays_emptyInputs(t *testing.T) {

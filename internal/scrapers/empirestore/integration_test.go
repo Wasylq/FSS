@@ -8,8 +8,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/Wasylq/FSS/internal/scrapers/empirestoreutil"
-	"github.com/Wasylq/FSS/internal/scrapers/testutil"
+	"github.com/Anastylosis/FSS/internal/scrapers/empirestoreutil"
+	"github.com/Anastylosis/FSS/internal/scrapers/testutil"
 )
 
 func newSiteScraper(cfg siteConfig) *siteScraper {

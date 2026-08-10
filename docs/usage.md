@@ -134,7 +134,7 @@ Patterns: brazzers.com, brazzers.com/pornstar/{id}/{slug}, ...
 $ fss check https://example.com/unknown
 Not supported: https://example.com/unknown
 
-Request support: https://github.com/Wasylq/FSS/issues/new?template=new_scraper.yml&url=...
+Request support: https://github.com/Anastylosis/FSS/issues/new?template=new_scraper.yml&url=...
 ```
 
 The scheme is optional — `fss check brazzers.com` and `fss check www.brazzers.com/videos` are read as `https://`. The same applies to `fss detect` and `fss scrape`. Pass `http://` explicitly for the handful of sites that are http-only.
@@ -188,7 +188,7 @@ Update available: v1.28.1 → v1.29.0
 
   Existing scrapers are unaffected; no config or store changes.
 
-https://github.com/Wasylq/FSS/releases/latest
+https://github.com/Anastylosis/FSS/releases/latest
 ```
 
 Releases cut from a lightweight tag simply have no such message and print the notice alone.

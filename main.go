@@ -8,28 +8,28 @@
 //	fss list-scrapers
 //	fss stash import --dir ./data
 //
-// See https://github.com/Wasylq/FSS for full CLI documentation.
+// See https://github.com/Anastylosis/FSS for full CLI documentation.
 //
 // # Library
 //
 // FSS can be imported as a Go module. Nine public packages are available:
 //
-//   - [github.com/Wasylq/FSS/scraper] — scraper registry and streaming interface
-//   - [github.com/Wasylq/FSS/models] — Scene, PriceSnapshot, StudioFile types
-//   - [github.com/Wasylq/FSS/scrapers/all] — blank-import to register all scrapers
-//   - [github.com/Wasylq/FSS/match] — filename→title matching and cross-site merging
-//   - [github.com/Wasylq/FSS/output] — WriteJSON, WriteCSV, Slugify
-//   - [github.com/Wasylq/FSS/parseutil] — video duration parsing (MM:SS, ISO 8601)
-//   - [github.com/Wasylq/FSS/stash] — GraphQL client for Stash
-//   - [github.com/Wasylq/FSS/nfo] — Kodi-style NFO XML generation
-//   - [github.com/Wasylq/FSS/identify] — video directory scan + match + NFO write
+//   - [github.com/Anastylosis/FSS/scraper] — scraper registry and streaming interface
+//   - [github.com/Anastylosis/FSS/models] — Scene, PriceSnapshot, StudioFile types
+//   - [github.com/Anastylosis/FSS/scrapers/all] — blank-import to register all scrapers
+//   - [github.com/Anastylosis/FSS/match] — filename→title matching and cross-site merging
+//   - [github.com/Anastylosis/FSS/output] — WriteJSON, WriteCSV, Slugify
+//   - [github.com/Anastylosis/FSS/parseutil] — video duration parsing (MM:SS, ISO 8601)
+//   - [github.com/Anastylosis/FSS/stash] — GraphQL client for Stash
+//   - [github.com/Anastylosis/FSS/nfo] — Kodi-style NFO XML generation
+//   - [github.com/Anastylosis/FSS/identify] — video directory scan + match + NFO write
 //
 // Blank-import the scraper packages you need to register them, then look up
 // by URL or ID:
 //
 //	import (
-//	    "github.com/Wasylq/FSS/scraper"
-//	    _ "github.com/Wasylq/FSS/scrapers/all"
+//	    "github.com/Anastylosis/FSS/scraper"
+//	    _ "github.com/Anastylosis/FSS/scrapers/all"
 //	)
 //
 //	s, err := scraper.ForURL("https://www.manyvids.com/Profile/590705/bettie-bondage/Store/Videos")
@@ -42,8 +42,8 @@
 package main
 
 import (
-	"github.com/Wasylq/FSS/cmd"
-	_ "github.com/Wasylq/FSS/internal/scrapers/all"
+	"github.com/Anastylosis/FSS/cmd"
+	_ "github.com/Anastylosis/FSS/internal/scrapers/all"
 )
 
 // Set by -ldflags at release build time.

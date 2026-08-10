@@ -5,8 +5,8 @@ package coedproductions
 import (
 	"testing"
 
-	"github.com/Wasylq/FSS/internal/scrapers/coedutil"
-	"github.com/Wasylq/FSS/internal/scrapers/testutil"
+	"github.com/Anastylosis/FSS/internal/scrapers/coedutil"
+	"github.com/Anastylosis/FSS/internal/scrapers/testutil"
 )
 
 func TestLiveNebraskaCoeds(t *testing.T) {

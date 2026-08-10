@@ -1,8 +1,8 @@
 package vixen
 
 import (
-	"github.com/Wasylq/FSS/internal/scrapers/vixenutil"
-	"github.com/Wasylq/FSS/scraper"
+	"github.com/Anastylosis/FSS/internal/scrapers/vixenutil"
+	"github.com/Anastylosis/FSS/scraper"
 )
 
 var sites = []vixenutil.SiteConfig{

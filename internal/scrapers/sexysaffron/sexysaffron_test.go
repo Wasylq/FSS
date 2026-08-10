@@ -4,8 +4,8 @@ import (
 	"regexp"
 	"testing"
 
-	"github.com/Wasylq/FSS/internal/scrapers/veutil"
-	"github.com/Wasylq/FSS/scraper"
+	"github.com/Anastylosis/FSS/internal/scrapers/veutil"
+	"github.com/Anastylosis/FSS/scraper"
 )
 
 func newTestScraper() *veutil.Scraper {

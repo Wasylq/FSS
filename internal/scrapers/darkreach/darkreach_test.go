@@ -3,7 +3,7 @@ package darkreach
 import (
 	"testing"
 
-	"github.com/Wasylq/FSS/internal/scrapers/testutil"
+	"github.com/Anastylosis/FSS/internal/scrapers/testutil"
 )
 
 // darkreach is a config-only wrapper — 48 site entries across four util

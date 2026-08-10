@@ -6,8 +6,8 @@
 package swallowsalon
 
 import (
-	"github.com/Wasylq/FSS/internal/scrapers/julesjordanutil"
-	"github.com/Wasylq/FSS/scraper"
+	"github.com/Anastylosis/FSS/internal/scrapers/julesjordanutil"
+	"github.com/Anastylosis/FSS/scraper"
 )
 
 func New() *julesjordanutil.Scraper {

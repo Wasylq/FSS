@@ -5,8 +5,8 @@ package bronetwork
 import (
 	"testing"
 
-	"github.com/Wasylq/FSS/internal/scrapers/bronetworkutil"
-	"github.com/Wasylq/FSS/internal/scrapers/testutil"
+	"github.com/Anastylosis/FSS/internal/scrapers/bronetworkutil"
+	"github.com/Anastylosis/FSS/internal/scrapers/testutil"
 )
 
 // site looks a config up by ID rather than by position in `sites`. The slice

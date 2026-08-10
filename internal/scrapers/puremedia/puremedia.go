@@ -5,8 +5,8 @@ package puremedia
 import (
 	"regexp"
 
-	"github.com/Wasylq/FSS/internal/scrapers/puremediautil"
-	"github.com/Wasylq/FSS/scraper"
+	"github.com/Anastylosis/FSS/internal/scrapers/puremediautil"
+	"github.com/Anastylosis/FSS/scraper"
 )
 
 var sites = []puremediautil.SiteConfig{

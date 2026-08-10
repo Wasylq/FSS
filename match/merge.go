@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/Wasylq/FSS/models"
+	"github.com/Anastylosis/FSS/models"
 )
 
 var (

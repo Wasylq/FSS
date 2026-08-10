@@ -9,7 +9,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Wasylq/FSS/internal/httpx"
+	"github.com/Anastylosis/FSS/internal/httpx"
 )
 
 func TestSlugFromURL(t *testing.T) {

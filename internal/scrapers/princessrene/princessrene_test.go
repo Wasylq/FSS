@@ -10,8 +10,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Wasylq/FSS/internal/scrapers/testutil"
-	"github.com/Wasylq/FSS/scraper"
+	"github.com/Anastylosis/FSS/internal/scrapers/testutil"
+	"github.com/Anastylosis/FSS/scraper"
 )
 
 // listingFixture mirrors the real /videos/ card markup: real scene links plus

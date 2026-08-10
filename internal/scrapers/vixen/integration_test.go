@@ -5,8 +5,8 @@ package vixen
 import (
 	"testing"
 
-	"github.com/Wasylq/FSS/internal/scrapers/testutil"
-	"github.com/Wasylq/FSS/internal/scrapers/vixenutil"
+	"github.com/Anastylosis/FSS/internal/scrapers/testutil"
+	"github.com/Anastylosis/FSS/internal/scrapers/vixenutil"
 )
 
 func TestLiveVixen(t *testing.T) {

@@ -10,7 +10,7 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/Wasylq/FSS/scraper"
+	"github.com/Anastylosis/FSS/scraper"
 )
 
 // Fixtures derived from facialabuse.com/tour/ + a sample trailer page.

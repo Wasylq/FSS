@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Wasylq/FSS/scraper"
+	"github.com/Anastylosis/FSS/scraper"
 )
 
 func runLive(t *testing.T, studioURL string, limit int) {

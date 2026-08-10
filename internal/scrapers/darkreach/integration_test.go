@@ -5,8 +5,8 @@ package darkreach
 import (
 	"testing"
 
-	"github.com/Wasylq/FSS/internal/scrapers/testutil"
-	"github.com/Wasylq/FSS/scraper"
+	"github.com/Anastylosis/FSS/internal/scrapers/testutil"
+	"github.com/Anastylosis/FSS/scraper"
 )
 
 func TestLiveHammerBoys(t *testing.T) {

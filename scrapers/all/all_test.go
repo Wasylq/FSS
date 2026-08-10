@@ -3,7 +3,7 @@ package all
 import (
 	"testing"
 
-	"github.com/Wasylq/FSS/scraper"
+	"github.com/Anastylosis/FSS/scraper"
 )
 
 // This package is the public re-export that external modules blank-import to

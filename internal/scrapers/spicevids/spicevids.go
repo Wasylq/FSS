@@ -4,8 +4,8 @@ import (
 	"context"
 	"regexp"
 
-	"github.com/Wasylq/FSS/internal/scrapers/ayloutil"
-	"github.com/Wasylq/FSS/scraper"
+	"github.com/Anastylosis/FSS/internal/scrapers/ayloutil"
+	"github.com/Anastylosis/FSS/scraper"
 )
 
 var ayloConfig = ayloutil.SiteConfig{

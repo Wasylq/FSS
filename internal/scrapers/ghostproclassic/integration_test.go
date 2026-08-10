@@ -5,7 +5,7 @@ package ghostproclassic
 import (
 	"testing"
 
-	"github.com/Wasylq/FSS/internal/scrapers/testutil"
+	"github.com/Anastylosis/FSS/internal/scrapers/testutil"
 )
 
 // One smoke per representative site. All four sister sites share the same

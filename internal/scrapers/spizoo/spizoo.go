@@ -1,8 +1,8 @@
 package spizoo
 
 import (
-	"github.com/Wasylq/FSS/internal/scrapers/spizooutil"
-	"github.com/Wasylq/FSS/scraper"
+	"github.com/Anastylosis/FSS/internal/scrapers/spizooutil"
+	"github.com/Anastylosis/FSS/scraper"
 )
 
 var sites = []spizooutil.SiteConfig{

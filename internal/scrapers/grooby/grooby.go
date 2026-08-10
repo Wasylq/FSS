@@ -1,8 +1,8 @@
 package grooby
 
 import (
-	"github.com/Wasylq/FSS/internal/scrapers/groobyutil"
-	"github.com/Wasylq/FSS/scraper"
+	"github.com/Anastylosis/FSS/internal/scrapers/groobyutil"
+	"github.com/Anastylosis/FSS/scraper"
 )
 
 var sites = []groobyutil.SiteConfig{

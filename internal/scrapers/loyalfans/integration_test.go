@@ -5,7 +5,7 @@ package loyalfans
 import (
 	"testing"
 
-	"github.com/Wasylq/FSS/internal/scrapers/testutil"
+	"github.com/Anastylosis/FSS/internal/scrapers/testutil"
 )
 
 // Limit is deliberately above the site's page size (20) so the scrape

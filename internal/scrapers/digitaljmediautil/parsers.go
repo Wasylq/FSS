@@ -6,8 +6,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/Wasylq/FSS/models"
-	"github.com/Wasylq/FSS/parseutil"
+	"github.com/Anastylosis/FSS/models"
+	"github.com/Anastylosis/FSS/parseutil"
 )
 
 // newScene builds a scene shell with the shared identity fields populated.

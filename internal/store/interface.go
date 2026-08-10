@@ -5,8 +5,8 @@ import (
 	"io"
 	"time"
 
-	"github.com/Wasylq/FSS/models"
-	"github.com/Wasylq/FSS/output"
+	"github.com/Anastylosis/FSS/models"
+	"github.com/Anastylosis/FSS/output"
 )
 
 // validateScenes rejects scenes that would be unaddressable downstream:

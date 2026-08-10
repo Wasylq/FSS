@@ -6,8 +6,8 @@ import (
 	"regexp"
 	"testing"
 
-	"github.com/Wasylq/FSS/internal/scrapers/fotoroutil"
-	"github.com/Wasylq/FSS/internal/scrapers/testutil"
+	"github.com/Anastylosis/FSS/internal/scrapers/fotoroutil"
+	"github.com/Anastylosis/FSS/internal/scrapers/testutil"
 )
 
 func TestLiveHumiliationPOV(t *testing.T) {

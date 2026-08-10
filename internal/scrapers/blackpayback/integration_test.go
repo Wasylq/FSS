@@ -5,8 +5,8 @@ package blackpayback
 import (
 	"testing"
 
-	"github.com/Wasylq/FSS/internal/scrapers/adultdoorwayclassicutil"
-	"github.com/Wasylq/FSS/internal/scrapers/testutil"
+	"github.com/Anastylosis/FSS/internal/scrapers/adultdoorwayclassicutil"
+	"github.com/Anastylosis/FSS/internal/scrapers/testutil"
 )
 
 func TestLiveBlackPayback(t *testing.T) {

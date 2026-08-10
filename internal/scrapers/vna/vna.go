@@ -1,8 +1,8 @@
 package vna
 
 import (
-	"github.com/Wasylq/FSS/internal/scrapers/vnautil"
-	"github.com/Wasylq/FSS/scraper"
+	"github.com/Anastylosis/FSS/internal/scrapers/vnautil"
+	"github.com/Anastylosis/FSS/scraper"
 )
 
 var sites = []vnautil.SiteConfig{

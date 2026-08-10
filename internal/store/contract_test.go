@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Wasylq/FSS/models"
+	"github.com/Anastylosis/FSS/models"
 )
 
 const contractURL = "https://www.contract-test.com/videos"

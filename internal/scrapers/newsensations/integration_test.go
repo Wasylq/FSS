@@ -5,8 +5,8 @@ package newsensations
 import (
 	"testing"
 
-	"github.com/Wasylq/FSS/internal/scrapers/newsensationsutil"
-	"github.com/Wasylq/FSS/internal/scrapers/testutil"
+	"github.com/Anastylosis/FSS/internal/scrapers/newsensationsutil"
+	"github.com/Anastylosis/FSS/internal/scrapers/testutil"
 )
 
 func TestLiveNewSensations(t *testing.T) {

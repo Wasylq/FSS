@@ -5,8 +5,8 @@ package adultdoorway
 import (
 	"testing"
 
-	"github.com/Wasylq/FSS/internal/scrapers/adultdoorwayutil"
-	"github.com/Wasylq/FSS/internal/scrapers/testutil"
+	"github.com/Anastylosis/FSS/internal/scrapers/adultdoorwayutil"
+	"github.com/Anastylosis/FSS/internal/scrapers/testutil"
 )
 
 // One representative site per template variant — facialabuse uses the

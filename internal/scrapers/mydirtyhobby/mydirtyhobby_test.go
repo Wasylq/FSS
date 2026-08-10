@@ -11,8 +11,8 @@ import (
 	"strconv"
 	"testing"
 
-	"github.com/Wasylq/FSS/parseutil"
-	"github.com/Wasylq/FSS/scraper"
+	"github.com/Anastylosis/FSS/parseutil"
+	"github.com/Anastylosis/FSS/scraper"
 )
 
 const testStudioURL = "https://www.mydirtyhobby.com/profil/2517040-Dirty-Tina/videos"

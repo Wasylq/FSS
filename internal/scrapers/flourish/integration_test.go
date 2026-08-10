@@ -5,8 +5,8 @@ package flourish
 import (
 	"testing"
 
-	"github.com/Wasylq/FSS/internal/scrapers/flourishutil"
-	"github.com/Wasylq/FSS/internal/scrapers/testutil"
+	"github.com/Anastylosis/FSS/internal/scrapers/flourishutil"
+	"github.com/Anastylosis/FSS/internal/scrapers/testutil"
 )
 
 func TestLiveTheFlourishXXX(t *testing.T) {

@@ -10,11 +10,11 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/Wasylq/FSS/internal/config"
-	"github.com/Wasylq/FSS/internal/httpx"
-	"github.com/Wasylq/FSS/internal/store"
-	"github.com/Wasylq/FSS/scraper"
-	"github.com/Wasylq/FSS/stash"
+	"github.com/Anastylosis/FSS/internal/config"
+	"github.com/Anastylosis/FSS/internal/httpx"
+	"github.com/Anastylosis/FSS/internal/store"
+	"github.com/Anastylosis/FSS/scraper"
+	"github.com/Anastylosis/FSS/stash"
 )
 
 var doctorCmd = &cobra.Command{

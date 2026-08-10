@@ -5,7 +5,7 @@ package vip4k
 import (
 	"testing"
 
-	"github.com/Wasylq/FSS/internal/scrapers/testutil"
+	"github.com/Anastylosis/FSS/internal/scrapers/testutil"
 )
 
 const liveStudioURL = "https://vip4k.com"

@@ -6,8 +6,8 @@ package titanmedia
 import (
 	"regexp"
 
-	"github.com/Wasylq/FSS/internal/scrapers/titanmediautil"
-	"github.com/Wasylq/FSS/scraper"
+	"github.com/Anastylosis/FSS/internal/scrapers/titanmediautil"
+	"github.com/Anastylosis/FSS/scraper"
 )
 
 var sites = []titanmediautil.SiteConfig{

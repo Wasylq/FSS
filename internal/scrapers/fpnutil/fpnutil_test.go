@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Wasylq/FSS/scraper"
+	"github.com/Anastylosis/FSS/scraper"
 )
 
 const sampleCard = `<div class="flex flex-col justify-between h-full p-1 mt-auto md:m-0" data-setid="10803">

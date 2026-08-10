@@ -6,8 +6,8 @@ import (
 	"regexp"
 	"testing"
 
-	"github.com/Wasylq/FSS/internal/scrapers/testutil"
-	"github.com/Wasylq/FSS/internal/scrapers/wankitnowutil"
+	"github.com/Anastylosis/FSS/internal/scrapers/testutil"
+	"github.com/Anastylosis/FSS/internal/scrapers/wankitnowutil"
 )
 
 func newLiveScraper() *wankitnowutil.Scraper {

@@ -125,7 +125,7 @@ func TestLatestReleaseDecodesAnnotatedBody(t *testing.T) {
 		"Update available: v1.28.1 → v1.29.0",
 		"  maintenance only, no new scrapers",
 		"  Existing scrapers are unaffected.",
-		"https://github.com/Wasylq/FSS/releases/latest",
+		"https://github.com/Anastylosis/FSS/releases/latest",
 	} {
 		if !strings.Contains(joined, want) {
 			t.Errorf("output missing %q:\n%s", want, joined)

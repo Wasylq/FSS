@@ -10,7 +10,7 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/Wasylq/FSS/scraper"
+	"github.com/Anastylosis/FSS/scraper"
 )
 
 // Fixtures derived from real blackpayback.com markup.

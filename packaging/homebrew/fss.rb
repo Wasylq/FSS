@@ -3,8 +3,8 @@
 # don't use a tap repository.
 class Fss < Formula
   desc "Scrapes all scenes and metadata from a studio URL"
-  homepage "https://github.com/Wasylq/FSS"
-  url "https://github.com/Wasylq/FSS/archive/vVERSION.tar.gz"
+  homepage "https://github.com/Anastylosis/FSS"
+  url "https://github.com/Anastylosis/FSS/archive/vVERSION.tar.gz"
   sha256 "PLACEHOLDER"
   license "GPL-3.0-only"
 

@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	_ "github.com/Wasylq/FSS/internal/scrapers/all"
+	_ "github.com/Anastylosis/FSS/internal/scrapers/all"
 )
 
 func executeCheck(t *testing.T, url string) string {

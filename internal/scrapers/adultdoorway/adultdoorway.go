@@ -11,8 +11,8 @@ package adultdoorway
 import (
 	"regexp"
 
-	"github.com/Wasylq/FSS/internal/scrapers/adultdoorwayutil"
-	"github.com/Wasylq/FSS/scraper"
+	"github.com/Anastylosis/FSS/internal/scrapers/adultdoorwayutil"
+	"github.com/Anastylosis/FSS/scraper"
 )
 
 var sites = []adultdoorwayutil.SiteConfig{

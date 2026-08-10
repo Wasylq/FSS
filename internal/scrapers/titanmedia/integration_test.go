@@ -5,8 +5,8 @@ package titanmedia
 import (
 	"testing"
 
-	"github.com/Wasylq/FSS/internal/scrapers/testutil"
-	"github.com/Wasylq/FSS/internal/scrapers/titanmediautil"
+	"github.com/Anastylosis/FSS/internal/scrapers/testutil"
+	"github.com/Anastylosis/FSS/internal/scrapers/titanmediautil"
 )
 
 func TestLiveGloryholeSwallow(t *testing.T) {

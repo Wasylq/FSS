@@ -5,8 +5,8 @@ package puffy
 import (
 	"testing"
 
-	"github.com/Wasylq/FSS/internal/scrapers/puffyutil"
-	"github.com/Wasylq/FSS/internal/scrapers/testutil"
+	"github.com/Anastylosis/FSS/internal/scrapers/puffyutil"
+	"github.com/Anastylosis/FSS/internal/scrapers/testutil"
 )
 
 func TestLiveWetAndPuffy(t *testing.T) {

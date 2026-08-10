@@ -8,8 +8,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/Wasylq/FSS/parseutil"
-	"github.com/Wasylq/FSS/scraper"
+	"github.com/Anastylosis/FSS/parseutil"
+	"github.com/Anastylosis/FSS/scraper"
 )
 
 // card renders a real Peter Fever listing/model card (markup captured from

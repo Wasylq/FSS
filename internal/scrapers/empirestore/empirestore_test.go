@@ -3,7 +3,7 @@ package empirestore
 import (
 	"testing"
 
-	"github.com/Wasylq/FSS/scraper"
+	"github.com/Anastylosis/FSS/scraper"
 )
 
 func TestSitesTable(t *testing.T) {

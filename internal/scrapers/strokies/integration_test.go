@@ -5,8 +5,8 @@ package strokies
 import (
 	"testing"
 
-	"github.com/Wasylq/FSS/internal/scrapers/strokiesutil"
-	"github.com/Wasylq/FSS/internal/scrapers/testutil"
+	"github.com/Anastylosis/FSS/internal/scrapers/strokiesutil"
+	"github.com/Anastylosis/FSS/internal/scrapers/testutil"
 )
 
 func TestLiveStrokies(t *testing.T) {

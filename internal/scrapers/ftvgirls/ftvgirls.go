@@ -1,8 +1,8 @@
 package ftvgirls
 
 import (
-	"github.com/Wasylq/FSS/internal/scrapers/ftvutil"
-	"github.com/Wasylq/FSS/scraper"
+	"github.com/Anastylosis/FSS/internal/scrapers/ftvutil"
+	"github.com/Anastylosis/FSS/scraper"
 )
 
 var s = ftvutil.New(ftvutil.SiteConfig{

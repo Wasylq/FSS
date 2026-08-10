@@ -5,27 +5,32 @@ FSS can be imported as a Go module. The scraper engine, matching, merging, Stash
 ## Install
 
 ```bash
-go get github.com/Wasylq/FSS@latest # Or use tag for stable release
+go get github.com/Anastylosis/FSS@latest # Or use tag for stable release
 ```
+
+The module path changed from `github.com/Wasylq/FSS` when the repository moved to
+the `Anastylosis` organisation. Update the import paths in your code and drop the
+old `require` line — GitHub redirects the repository, but Go verifies the module
+path declared in `go.mod`, so the old path resolves only for tags up to `v1.28.1`.
 
 ## Public Packages
 
 | Package | Import path | Purpose |
 |---------|------------|---------|
-| `scrapers/all` | `github.com/Wasylq/FSS/scrapers/all` | Blank-import to register all scrapers |
-| `scraper` | `github.com/Wasylq/FSS/scraper` | Registry API, `StudioScraper` interface, `SceneResult` channel protocol |
-| `models` | `github.com/Wasylq/FSS/models` | `Scene`, `PriceSnapshot` — the core data model |
-| `match` | `github.com/Wasylq/FSS/match` | Filename→title matching, cross-site merging, JSON loading |
-| `output` | `github.com/Wasylq/FSS/output` | `WriteJSON`, `WriteCSV`, `Slugify` — write FSS output files |
-| `parseutil` | `github.com/Wasylq/FSS/parseutil` | `ParseDurationColon`, `ParseDurationISO`, `StripOrdinalSuffix`, `OpenGraph`, `TryParseDate`, `ExtractVideoObject`, `ExtractVideoObjects` — shared parsing helpers |
-| `stash` | `github.com/Wasylq/FSS/stash` | GraphQL client for Stash |
-| `nfo` | `github.com/Wasylq/FSS/nfo` | Kodi-style NFO XML generation |
-| `identify` | `github.com/Wasylq/FSS/identify` | Video directory scan + match + NFO write |
+| `scrapers/all` | `github.com/Anastylosis/FSS/scrapers/all` | Blank-import to register all scrapers |
+| `scraper` | `github.com/Anastylosis/FSS/scraper` | Registry API, `StudioScraper` interface, `SceneResult` channel protocol |
+| `models` | `github.com/Anastylosis/FSS/models` | `Scene`, `PriceSnapshot` — the core data model |
+| `match` | `github.com/Anastylosis/FSS/match` | Filename→title matching, cross-site merging, JSON loading |
+| `output` | `github.com/Anastylosis/FSS/output` | `WriteJSON`, `WriteCSV`, `Slugify` — write FSS output files |
+| `parseutil` | `github.com/Anastylosis/FSS/parseutil` | `ParseDurationColon`, `ParseDurationISO`, `StripOrdinalSuffix`, `OpenGraph`, `TryParseDate`, `ExtractVideoObject`, `ExtractVideoObjects` — shared parsing helpers |
+| `stash` | `github.com/Anastylosis/FSS/stash` | GraphQL client for Stash |
+| `nfo` | `github.com/Anastylosis/FSS/nfo` | Kodi-style NFO XML generation |
+| `identify` | `github.com/Anastylosis/FSS/identify` | Video directory scan + match + NFO write |
 
 **Registering scrapers:** The individual scraper implementations live under `internal/scrapers/`, but a public aggregator package re-exports them all:
 
 ```go
-import _ "github.com/Wasylq/FSS/scrapers/all"  // registers all scrapers
+import _ "github.com/Anastylosis/FSS/scrapers/all"  // registers all scrapers
 ```
 
 This is all you need to populate the registry for scraping from external code.
@@ -40,8 +45,8 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/Wasylq/FSS/scraper"
-	_ "github.com/Wasylq/FSS/scrapers/all"
+	"github.com/Anastylosis/FSS/scraper"
+	_ "github.com/Anastylosis/FSS/scrapers/all"
 )
 
 func main() {
@@ -79,7 +84,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/Wasylq/FSS/match"
+	"github.com/Anastylosis/FSS/match"
 )
 
 func main() {
@@ -120,11 +125,11 @@ If you only need a few scrapers (to reduce binary size), you can blank-import in
 
 ```go
 // Only works within the FSS module (forks, custom builds).
-_ "github.com/Wasylq/FSS/internal/scrapers/manyvids"
-_ "github.com/Wasylq/FSS/internal/scrapers/clips4sale"
+_ "github.com/Anastylosis/FSS/internal/scrapers/manyvids"
+_ "github.com/Anastylosis/FSS/internal/scrapers/clips4sale"
 ```
 
-From external modules, use `_ "github.com/Wasylq/FSS/scrapers/all"` to register all scrapers at once.
+From external modules, use `_ "github.com/Anastylosis/FSS/scrapers/all"` to register all scrapers at once.
 
 ## Registry API
 
@@ -276,8 +281,8 @@ The `match` package provides filename-to-title matching and cross-site scene mer
 
 ```go
 import (
-    "github.com/Wasylq/FSS/match"
-    _ "github.com/Wasylq/FSS/internal/scrapers/manyvids"
+    "github.com/Anastylosis/FSS/match"
+    _ "github.com/Anastylosis/FSS/internal/scrapers/manyvids"
 )
 
 // Load scenes from FSS JSON files.
@@ -334,7 +339,7 @@ competing values as `"siteID: value"`.
 The `nfo` package generates Kodi-style `.nfo` XML files from merged scene metadata.
 
 ```go
-import "github.com/Wasylq/FSS/nfo"
+import "github.com/Anastylosis/FSS/nfo"
 
 mov := nfo.FromMergedScene(merged) // merged is a match.MergedScene
 data, err := nfo.Marshal(mov)
@@ -348,7 +353,7 @@ os.WriteFile("scene.nfo", data, 0o644)
 The `identify` package scans a directory of video files, matches them against an FSS scene index, and optionally writes `.nfo` sidecar files.
 
 ```go
-import "github.com/Wasylq/FSS/identify"
+import "github.com/Anastylosis/FSS/identify"
 
 videos, _ := identify.FindVideos("/path/to/videos")
 results := identify.Run(videos, idx, identify.Options{
@@ -387,7 +392,7 @@ and a failed poster download drops it too rather than falling back to the URL.
 The `stash` package provides a GraphQL client for interacting with a [Stash](https://stashapp.cc/) instance.
 
 ```go
-import "github.com/Wasylq/FSS/stash"
+import "github.com/Anastylosis/FSS/stash"
 
 client := stash.NewClient("http://localhost:9999", "optional-api-key")
 
@@ -427,8 +432,8 @@ The `output` package writes FSS-format JSON and CSV files, and provides URL-to-f
 
 ```go
 import (
-    "github.com/Wasylq/FSS/models"
-    "github.com/Wasylq/FSS/output"
+    "github.com/Anastylosis/FSS/models"
+    "github.com/Anastylosis/FSS/output"
 )
 
 // Write scenes as JSON (atomic file replacement — safe on crash).
@@ -467,7 +472,7 @@ share. Public so external callers can reuse the same logic — the helpers
 are stable enough that duplicating them would just diverge.
 
 ```go
-import "github.com/Wasylq/FSS/parseutil"
+import "github.com/Anastylosis/FSS/parseutil"
 
 // Video duration strings commonly emitted on adult sites.
 parseutil.ParseDurationColon("30:00")    // → 1800 (seconds)

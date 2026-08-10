@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Wasylq/FSS/scraper"
+	"github.com/Anastylosis/FSS/scraper"
 )
 
 func videoBlock(id, title, thumb, date string, durationMin int) string {

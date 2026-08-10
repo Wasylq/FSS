@@ -5,7 +5,7 @@ package girlsgonehypnotized
 import (
 	"testing"
 
-	"github.com/Wasylq/FSS/internal/scrapers/testutil"
+	"github.com/Anastylosis/FSS/internal/scrapers/testutil"
 )
 
 func TestLiveGirlsGoneHypnotized(t *testing.T) {

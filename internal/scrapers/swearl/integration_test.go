@@ -5,8 +5,8 @@ package swearl
 import (
 	"testing"
 
-	"github.com/Wasylq/FSS/internal/scrapers/swearlutil"
-	"github.com/Wasylq/FSS/internal/scrapers/testutil"
+	"github.com/Anastylosis/FSS/internal/scrapers/swearlutil"
+	"github.com/Anastylosis/FSS/internal/scrapers/testutil"
 )
 
 func scraperForID(t *testing.T, id string) *swearlutil.Scraper {

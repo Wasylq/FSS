@@ -12,7 +12,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Wasylq/FSS/scraper"
+	"github.com/Anastylosis/FSS/scraper"
 )
 
 func noopSleep(_ context.Context, _ time.Duration) error { return nil }

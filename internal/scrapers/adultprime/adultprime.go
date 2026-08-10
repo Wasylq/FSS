@@ -1,8 +1,8 @@
 package adultprime
 
 import (
-	"github.com/Wasylq/FSS/internal/scrapers/adultprimeutil"
-	"github.com/Wasylq/FSS/scraper"
+	"github.com/Anastylosis/FSS/internal/scrapers/adultprimeutil"
+	"github.com/Anastylosis/FSS/scraper"
 )
 
 var sites = []adultprimeutil.SiteConfig{

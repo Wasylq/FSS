@@ -3,7 +3,7 @@ package nastymedia
 import (
 	"regexp"
 
-	"github.com/Wasylq/FSS/scraper"
+	"github.com/Anastylosis/FSS/scraper"
 )
 
 // sites lists the 4 live Nasty Media Group sites. The other 9 stashdb

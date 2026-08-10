@@ -6,8 +6,8 @@ package hussiepass
 import (
 	"regexp"
 
-	"github.com/Wasylq/FSS/internal/scrapers/hussieutil"
-	"github.com/Wasylq/FSS/scraper"
+	"github.com/Anastylosis/FSS/internal/scrapers/hussieutil"
+	"github.com/Anastylosis/FSS/scraper"
 )
 
 var sites = []hussieutil.SiteConfig{

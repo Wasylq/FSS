@@ -5,7 +5,7 @@ package onepassforallsites
 import (
 	"testing"
 
-	"github.com/Wasylq/FSS/internal/scrapers/testutil"
+	"github.com/Anastylosis/FSS/internal/scrapers/testutil"
 )
 
 func TestLive1PassForAllSites(t *testing.T) {

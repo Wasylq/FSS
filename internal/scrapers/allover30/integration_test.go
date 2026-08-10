@@ -5,7 +5,7 @@ package allover30
 import (
 	"testing"
 
-	"github.com/Wasylq/FSS/internal/scrapers/testutil"
+	"github.com/Anastylosis/FSS/internal/scrapers/testutil"
 )
 
 const liveModelURL = "https://new.allover30.com/model-pages/ryan-keely/1549"

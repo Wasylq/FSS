@@ -121,7 +121,7 @@ jobs:
 
       - name: Lowercase image repo for Trivy
         # OCI references must be all-lowercase. ${{ github.repository }} can
-        # contain uppercase (e.g. "Wasylq/FSS"), and GitHub expressions have
+        # contain uppercase (e.g. "Anastylosis/FSS"), and GitHub expressions have
         # no case-conversion function — so we bounce through bash to produce
         # a lowercase ref that Trivy can parse.
         if: github.event_name != 'pull_request'

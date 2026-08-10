@@ -4,8 +4,8 @@
 package pervcity
 
 import (
-	"github.com/Wasylq/FSS/internal/scrapers/pervcityutil"
-	"github.com/Wasylq/FSS/scraper"
+	"github.com/Anastylosis/FSS/internal/scrapers/pervcityutil"
+	"github.com/Anastylosis/FSS/scraper"
 )
 
 var sites = []pervcityutil.SiteConfig{

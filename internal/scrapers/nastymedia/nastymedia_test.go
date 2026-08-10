@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Wasylq/FSS/internal/scrapers/testutil"
+	"github.com/Anastylosis/FSS/internal/scrapers/testutil"
 )
 
 const fixtureHOME = `<!doctype html>

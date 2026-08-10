@@ -7,8 +7,8 @@ import (
 	"regexp"
 	"time"
 
-	"github.com/Wasylq/FSS/internal/scrapers/fotoroutil"
-	"github.com/Wasylq/FSS/scraper"
+	"github.com/Anastylosis/FSS/internal/scrapers/fotoroutil"
+	"github.com/Anastylosis/FSS/scraper"
 )
 
 // config is the single source of truth for this site, so the integration test

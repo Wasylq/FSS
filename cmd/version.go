@@ -7,7 +7,7 @@ import (
 	"time"
 	"unicode"
 
-	"github.com/Wasylq/FSS/internal/httpx"
+	"github.com/Anastylosis/FSS/internal/httpx"
 	"github.com/spf13/cobra"
 )
 
@@ -68,7 +68,7 @@ func updateLines(current, latest, note string) []string {
 	default:
 		lines := []string{fmt.Sprintf("Update available: %s → %s", current, latest)}
 		lines = append(lines, noteLines(note)...)
-		return append(lines, "https://github.com/Wasylq/FSS/releases/latest")
+		return append(lines, "https://github.com/Anastylosis/FSS/releases/latest")
 	}
 }
 
@@ -164,7 +164,7 @@ func fetchLatestRelease() (latestRelease, error) {
 	// stall the user with 0s/2s/4s retry backoff if GitHub is having
 	// a bad day.
 	resp, err := httpx.Do(ctx, client, httpx.Request{
-		URL:         "https://api.github.com/repos/Wasylq/FSS/releases/latest",
+		URL:         "https://api.github.com/repos/Anastylosis/FSS/releases/latest",
 		Headers:     map[string]string{"Accept": "application/vnd.github+json"},
 		MaxAttempts: 1,
 	})

@@ -5,7 +5,7 @@ package gloryquest
 import (
 	"testing"
 
-	"github.com/Wasylq/FSS/internal/scrapers/testutil"
+	"github.com/Anastylosis/FSS/internal/scrapers/testutil"
 )
 
 func TestLiveGloryQuestAll(t *testing.T) {

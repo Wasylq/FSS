@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/Wasylq/FSS/models"
+	"github.com/Anastylosis/FSS/models"
 )
 
 func FuzzSlugify(f *testing.F) {

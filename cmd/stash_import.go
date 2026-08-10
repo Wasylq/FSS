@@ -16,8 +16,8 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/Wasylq/FSS/match"
-	"github.com/Wasylq/FSS/stash"
+	"github.com/Anastylosis/FSS/match"
+	"github.com/Anastylosis/FSS/stash"
 )
 
 var stashImportCmd = &cobra.Command{

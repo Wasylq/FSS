@@ -7,8 +7,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Wasylq/FSS/internal/store"
-	"github.com/Wasylq/FSS/models"
+	"github.com/Anastylosis/FSS/internal/store"
+	"github.com/Anastylosis/FSS/models"
 )
 
 const importURL = "https://example.com/studio/import"

@@ -3,7 +3,7 @@ package kocompany
 import (
 	"regexp"
 
-	"github.com/Wasylq/FSS/scraper"
+	"github.com/Anastylosis/FSS/scraper"
 )
 
 // sites enumerates every KO Company sub-label per stashdb. Each

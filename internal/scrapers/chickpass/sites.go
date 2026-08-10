@@ -3,7 +3,7 @@ package chickpass
 import (
 	"regexp"
 
-	"github.com/Wasylq/FSS/scraper"
+	"github.com/Anastylosis/FSS/scraper"
 )
 
 // sites is the table of ChickPass Network sites. cms_area_id UUIDs are pulled

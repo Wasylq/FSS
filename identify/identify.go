@@ -15,10 +15,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/Wasylq/FSS/internal/httpx"
-	"github.com/Wasylq/FSS/internal/mediafetch"
-	"github.com/Wasylq/FSS/match"
-	"github.com/Wasylq/FSS/nfo"
+	"github.com/Anastylosis/FSS/internal/httpx"
+	"github.com/Anastylosis/FSS/internal/mediafetch"
+	"github.com/Anastylosis/FSS/match"
+	"github.com/Anastylosis/FSS/nfo"
 )
 
 var videoExtensions = map[string]bool{

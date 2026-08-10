@@ -1,8 +1,8 @@
 package store
 
 import (
-	"github.com/Wasylq/FSS/models"
-	"github.com/Wasylq/FSS/output"
+	"github.com/Anastylosis/FSS/models"
+	"github.com/Anastylosis/FSS/output"
 )
 
 func WriteCSV(scenes []models.Scene, path string) error {

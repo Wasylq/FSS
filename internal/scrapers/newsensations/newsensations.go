@@ -1,8 +1,8 @@
 package newsensations
 
 import (
-	"github.com/Wasylq/FSS/internal/scrapers/newsensationsutil"
-	"github.com/Wasylq/FSS/scraper"
+	"github.com/Anastylosis/FSS/internal/scrapers/newsensationsutil"
+	"github.com/Anastylosis/FSS/scraper"
 )
 
 var sites = []newsensationsutil.SiteConfig{

@@ -10,9 +10,9 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 
-	"github.com/Wasylq/FSS/internal/config"
-	"github.com/Wasylq/FSS/internal/store"
-	"github.com/Wasylq/FSS/models"
+	"github.com/Anastylosis/FSS/internal/config"
+	"github.com/Anastylosis/FSS/internal/store"
+	"github.com/Anastylosis/FSS/models"
 )
 
 // newImportTestCmd builds a command carrying the same flags as stashImportCmd,

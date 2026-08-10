@@ -5,7 +5,7 @@ package bangbros
 import (
 	"testing"
 
-	"github.com/Wasylq/FSS/internal/scrapers/testutil"
+	"github.com/Anastylosis/FSS/internal/scrapers/testutil"
 )
 
 func TestLiveBangBrosModel(t *testing.T) {

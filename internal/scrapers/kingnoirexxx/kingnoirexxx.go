@@ -4,8 +4,8 @@ import (
 	"context"
 	"regexp"
 
-	"github.com/Wasylq/FSS/internal/scrapers/mymemberutil"
-	"github.com/Wasylq/FSS/scraper"
+	"github.com/Anastylosis/FSS/internal/scrapers/mymemberutil"
+	"github.com/Anastylosis/FSS/scraper"
 )
 
 var mm = mymemberutil.New(mymemberutil.SiteConfig{

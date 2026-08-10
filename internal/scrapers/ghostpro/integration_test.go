@@ -5,7 +5,7 @@ package ghostpro
 import (
 	"testing"
 
-	"github.com/Wasylq/FSS/internal/scrapers/testutil"
+	"github.com/Anastylosis/FSS/internal/scrapers/testutil"
 )
 
 // One live smoke per template variant the network exposes. We don't run a
