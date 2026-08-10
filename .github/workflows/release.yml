@@ -157,7 +157,7 @@ jobs:
         # part a checksum cannot cover. The docker job already did this for the
         # image; the tarballs are what most people actually download.
         #   gh attestation verify <file> --owner <owner>
-        uses: actions/attest-build-provenance@v4.1.1
+        uses: actions/attest-build-provenance@v4.2.2
         with:
           subject-path: 'dist/*'
 
@@ -450,7 +450,7 @@ jobs:
         # manifest list free of `unknown/unknown` entries. Users verify with
         #   gh attestation verify oci://ghcr.io/<owner>/<repo>@<digest> --owner <owner>
         # (see the release notes' "Verifying the docker image" section).
-        uses: actions/attest-build-provenance@v4.1.1
+        uses: actions/attest-build-provenance@v4.2.2
         with:
           subject-name: ghcr.io/${{ github.repository }}
           subject-digest: ${{ steps.build.outputs.digest }}
