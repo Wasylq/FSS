@@ -521,15 +521,18 @@ The gate is a **trust-me** check — nothing verifies that you actually ran the 
 
 ### CI tool version pins
 
-These pins live inside `run:` shell strings (not `go.mod`) so Dependabot can't bump them automatically — review them when you cut a release:
+These pins live inside `run:` shell strings (not `go.mod`) so Dependabot can't bump them automatically — review them when you cut a release. They now live in `Anastylosis/.github`, as input defaults on the reusable workflows, and a repo overrides one by passing the input rather than by editing a `go install` line:
 
-| Tool | Pin | Workflow |
-|------|-----|----------|
-| `gotestsum` | `v1.13.0` | `.github/workflows/ci.yml` (test job) |
-| `govulncheck` | `v1.3.0` | `.github/workflows/ci.yml` (vulncheck job) |
-| `nfpm` | `v2.46.3` | `.github/workflows/release.yml` (build job) |
+| Tool | Pin | Input | Reusable workflow |
+|------|-----|-------|-------------------|
+| `gotestsum` | `v1.13.0` | `gotestsum-version` | `go-ci.yml` (test job) |
+| `golangci-lint` | `v2.11.4` | `golangci-lint-version` | `go-ci.yml` (lint job) |
+| `govulncheck` | `v1.3.0` | `govulncheck-version` | `go-ci.yml` (vulncheck job) |
+| `nfpm` | `v2.46.3` | `nfpm-version` | `go-release.yml` (build job) |
 
-Bump by editing the `@vX.Y.Z` suffix in each `go install` line. Check the upstream changelog for breaking format changes — `gotestsum` in particular produces the `junit.xml` uploaded to Codecov. (The coverage summary reads `coverage.out` directly, so it is unaffected by `gotestsum`'s output format.)
+Bump the default in the shared repo when every project should move together; pass the input from this repo's caller when only FSS should. Check the upstream changelog for breaking format changes — `gotestsum` in particular produces the `junit.xml` uploaded to Codecov. (The coverage summary reads `coverage.out` directly, so it is unaffected by `gotestsum`'s output format.)
+
+The actions themselves (`actions/checkout`, `codecov/codecov-action`, …) are pinned to exact patch versions in the shared workflows, not to moving major tags, so an unrelated `v7.x` release cannot turn CI red. One Dependabot PR in `Anastylosis/.github` bumps them for every repo at once; nothing needs changing here, because this repo's workflows reference `…@v1`, a major tag that is re-pointed as the shared workflows move.
 
 ### Cross-platform testing
 

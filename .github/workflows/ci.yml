@@ -13,314 +13,38 @@ permissions:
   contents: read
 
 jobs:
-  test:
-    name: Test
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v7
-
-      - name: Set up Go
-        uses: actions/setup-go@v7
-        with:
-          go-version-file: go.mod
-
-      - name: Build
-        run: go build ./...
-
-      - name: Install gotestsum
-        # Pinned so a silent change to its junit output doesn't break the
-        # test-results upload. Bump together with the govulncheck pin in the
-        # vulncheck job.
-        run: go install gotest.tools/gotestsum@v1.13.0
-
-      - name: Test with coverage
-        # `shell: bash` for pipefail. The default Linux shell is `bash -e` with
-        # NO pipefail, so the step would exit with tee's status (always 0) and a
-        # failing test would go green — that masked a flaky sexlikereal test.
-        # test-output.txt is the raw log kept for debugging; the coverage
-        # summary below reads coverage.out, not this.
-        #
-        # -coverpkg=./... attributes a statement to whichever test executed it,
-        # not just to its own package's tests. Without it the registry tests in
-        # internal/scrapers/all — which call ID/Patterns/MatchesURL and drive
-        # ListScenes on every registered scraper — count for nothing, and ~1400
-        # genuinely-exercised statements read as uncovered (80.6% vs 83.8%).
-        # Note this changes what `go test`'s own per-package percentage means:
-        # it becomes a share of ALL statements, which is why the summary step
-        # recomputes per-package figures from the profile instead.
-        shell: bash
-        run: gotestsum --junitfile junit.xml -- -race -count=1 -coverpkg=./... -coverprofile=coverage.out -covermode=atomic ./... 2>&1 | tee test-output.txt
-
-      - name: Compact coverage profile
-        # -coverpkg makes every test binary emit a block for every instrumented
-        # package, so the raw profile repeats each block once per binary: 13M
-        # lines and 997 MB, far past what the Codecov upload should carry.
-        # Summing duplicate blocks is exact under -covermode=atomic and gets
-        # back the 2.6 MB / 32k-line profile with an identical total (84.0%).
-        if: always()
-        run: |
-          [ -f coverage.out ] || exit 0
-          awk 'NR==1 { print; next } { n[$1] = $2; c[$1] += $3 } END { for (k in n) print k, n[k], c[k] }' \
-            coverage.out > coverage.merged
-          mv coverage.merged coverage.out
-
-      # Each target runs one at a time because -fuzz accepts a single target per
-      # invocation. 10s is enough to re-run the seed corpus plus a short random
-      # walk; every regression these have caught so far reproduced from a seed,
-      # so a failure here is deterministic rather than luck.
-      - name: Fuzz tests (seed corpus)
-        run: |
-          go test ./match/... -run "^$" -fuzz FuzzNormalize -fuzztime 10s
-          go test ./parseutil/... -run "^$" -fuzz FuzzParseDurationColon -fuzztime 10s
-          go test ./parseutil/... -run "^$" -fuzz FuzzParseDurationISO -fuzztime 10s
-          go test ./output/... -run "^$" -fuzz FuzzSlugify -fuzztime 10s
-          go test ./output/... -run "^$" -fuzz FuzzWriteCSVNeverEmitsAFormula -fuzztime 10s
-          go test ./nfo/... -run "^$" -fuzz FuzzMarshalProducesWellFormedXML -fuzztime 10s
-
-      - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v7
-        with:
-          files: coverage.out
-          disable_search: true
-          fail_ci_if_error: false
-          token: ${{ secrets.CODECOV_TOKEN }}
-
-      - name: Upload test results to Codecov
-        # test-results-action@v1 is deprecated; codecov-action does both jobs,
-        # distinguished by report_type. Runs on `!cancelled()` so a failing
-        # suite still reports which tests failed — that is the whole point of
-        # the junit upload, and with pipefail the test step now does fail.
-        if: ${{ !cancelled() }}
-        uses: codecov/codecov-action@v7
-        with:
-          report_type: test_results
-          files: junit.xml
-          disable_search: true
-          fail_ci_if_error: false
-          token: ${{ secrets.CODECOV_TOKEN }}
-
-      - name: Generate coverage summary
-        if: always()
-        run: |
-          total=$(go tool cover -func=coverage.out | tail -1 | awk '{print $NF}')
-
-          {
-            echo "## Test Results"
-            echo ""
-            echo "**Total coverage: ${total}**"
-            echo ""
-            echo "| Package | Coverage |"
-            echo "|---------|----------|"
-            # Recomputed from the profile: under -coverpkg every package reports
-            # its share of ALL statements, so `go test`'s own per-package number
-            # is no longer the package's own coverage. Summing the profile's
-            # blocks by package restores that, and credits statements covered by
-            # another package's tests. LC_ALL=C so printf emits a dot, not a
-            # locale decimal comma.
-            LC_ALL=C awk 'NR>1 {
-              split($1, a, ":"); n = split(a[1], b, "/")
-              pkg = b[1]; for (i = 2; i < n; i++) pkg = pkg "/" b[i]
-              tot[pkg] += $2; if ($3 > 0) cov[pkg] += $2
-            } END {
-              for (k in tot) printf "| `%s` | %.1f%% |\n", k, 100 * cov[k] / tot[k]
-            }' coverage.out | sort
-          } >> $GITHUB_STEP_SUMMARY
-
-  platform:
-    name: Test (${{ matrix.os }})
-    runs-on: ${{ matrix.os }}
-    # The main `test` job runs on Linux only, but release binaries ship for
-    # windows/amd64 and darwin — and `cross-build` merely *compiles* those, so
-    # until this job existed no Windows or macOS code path was ever executed.
-    # That is not hypothetical here: `internal/store/flock_windows.go` makes the
-    # process lock a no-op on Windows, `output.atomicWriteFile` relies on
-    # rename-over-existing semantics that differ there, and the 250-byte
-    # Slugify cap is reasoned from the POSIX 255-byte *filename* limit rather
-    # than Windows's limit on the whole path.
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [windows-latest, macos-latest]
-    steps:
-      - uses: actions/checkout@v7
-
-      - name: Set up Go
-        uses: actions/setup-go@v7
-        with:
-          go-version-file: go.mod
-
-      - name: Build
-        run: go build ./...
-
-      # No -race here, deliberately. Data races are OS-independent and the
-      # Linux `test` job already covers them under the race detector; what this
-      # job is for is filesystem, path and locking behaviour. Dropping -race
-      # also avoids depending on a C toolchain being present on the Windows
-      # image, which would make the job fail for a reason unrelated to the bug
-      # class it exists to catch.
-      - name: Test
-        run: go test -count=1 ./...
-
-  offline:
-    name: Offline test isolation
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-    steps:
-      - uses: actions/checkout@v7
-
-      - name: Set up Go
-        uses: actions/setup-go@v7
-        with:
-          go-version-file: go.mod
-
-      - name: Prime the module and build caches
-        run: |
-          go mod download
-          go build ./...
-
-      - name: Run the unit suite with no network
-        # Enforces CONTRIBUTING § "Offline means offline". The normal Test job
-        # runs with network, so a unit test that reaches a live site passes
-        # there and hides a scraper that is actually broken — maturefetish did
-        # exactly this, grading live markup instead of its own fixture and
-        # failing only on a network-less runner.
-        #
-        # A new network namespace with only loopback up: httptest still binds
-        # 127.0.0.1, every outbound request fails immediately. `ip link set lo
-        # up` is load-bearing — without it httptest cannot bind and every
-        # package fails for the wrong reason.
-        #
-        # `sudo unshare` rather than `unshare -r` because Ubuntu restricts
-        # unprivileged user namespaces via AppArmor; runners have passwordless
-        # sudo. We drop straight back to the normal user so the Go caches
-        # populated by setup-go are reused — HOME/GOCACHE/GOMODCACHE must be
-        # passed explicitly because sudo resets HOME even with --preserve-env.
-        #
-        # Integration tests are excluded by their build tag, so nothing here
-        # tries to reach a real site on purpose.
-        run: |
-          GOCACHE=$(go env GOCACHE)
-          GOMODCACHE=$(go env GOMODCACHE)
-          sudo unshare --net sh -c "
-            ip link set lo up
-            exec sudo -u '$USER' env \
-              HOME='$HOME' GOCACHE='$GOCACHE' GOMODCACHE='$GOMODCACHE' PATH='$PATH' \
-              go test -count=1 ./...
-          "
-
-  lint:
-    name: Lint
-    runs-on: ubuntu-latest
+  ci:
+    uses: Anastylosis/.github/.github/workflows/go-ci.yml@v1
     permissions:
       contents: read
       checks: write
-    steps:
-      - uses: actions/checkout@v7
-
-      - name: Set up Go
-        uses: actions/setup-go@v7
-        with:
-          go-version-file: go.mod
-
-      - name: Run go vet
-        run: go vet ./...
-
-      - name: Run go vet (integration build tag)
-        # Static-only — compiles the integration_test.go files (gated by
-        # `//go:build integration`) and runs vet checks against them. This
-        # is NOT `go test`; nothing executes and no network traffic happens,
-        # so it's safe to run on shared GitHub runners even though live
-        # integration tests are blocked by site-side WAFs.
-        # Without this, broken integration test code (typos, undefined
-        # symbols, stale testutil signatures) stays invisible until a
-        # contributor runs `make smoke` locally.
-        run: go vet -tags=integration ./...
-
-      - name: Run golangci-lint
-        uses: golangci/golangci-lint-action@v9
-        with:
-          version: v2.11.4
-          args: --timeout=5m
-
-      - name: Check AUR .SRCINFO is in sync with PKGBUILD
-        # Catches the class of drift we hit with license=MIT vs GPL-3.0-only:
-        # the committed .SRCINFO must match what `gen-srcinfo.sh` produces
-        # from the current PKGBUILD. If this fails locally, run
-        # `packaging/aur/gen-srcinfo.sh` and commit the result.
-        run: ./packaging/aur/gen-srcinfo.sh --check
-
-      - name: Check Dockerfile GO_VERSION matches go.mod
-        # CI builds pass GO_VERSION dynamically from go.mod via
-        # scripts/go-version.sh, but the Dockerfile's ARG default is the
-        # fallback for naive `docker build .` runs locally. Keep them in
-        # sync — bump both when bumping the Go toolchain.
-        run: |
-          gomod_ver=$(./scripts/go-version.sh)
-          dockerfile_ver=$(awk -F= '/^ARG GO_VERSION=/ { print $2; exit }' Dockerfile)
-          if [ "$gomod_ver" != "$dockerfile_ver" ]; then
-            echo "::error::go.mod says Go $gomod_ver but Dockerfile default ARG GO_VERSION=$dockerfile_ver."
-            echo "::error::Edit Dockerfile so the ARG GO_VERSION default matches go.mod."
-            exit 1
-          fi
-          echo "OK: Dockerfile GO_VERSION=$dockerfile_ver matches go.mod"
-
-  # Vulncheck is intentionally informational and is NOT gated on release.
-  # The Go vulnerability database reports findings for older Go *toolchains*
-  # as well as third-party deps, so a "fail on any finding" policy would
-  # require bumping go.mod / the Go toolchain on every new Go point release
-  # to keep the pipeline green. We prefer to see findings as warnings and
-  # decide deliberately when to upgrade — see CONTRIBUTING.md → "CI
-  # security checks" for the rationale and the manual review cadence.
-  vulncheck:
-    name: Vulncheck (informational)
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v7
-
-      - name: Set up Go
-        uses: actions/setup-go@v7
-        with:
-          go-version-file: go.mod
-
-      - name: Install govulncheck
-        run: go install golang.org/x/vuln/cmd/govulncheck@v1.3.0
-
-      - name: Run govulncheck
-        run: govulncheck ./... || echo "::warning::govulncheck found vulnerabilities (see above)"
-
-  # Cross-build deliberately omits linux/amd64: the `test` job above runs on
-  # ubuntu-latest (linux/amd64) and does `go build ./...` natively before
-  # tests, so the native build is already gated. This matrix exists only to
-  # catch breakage in *cross-compilation* for the other platforms shipped by
-  # release.yml (which builds all five platforms, including linux/amd64).
-  cross-build:
-    name: Cross-build
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v7
-
-      - name: Set up Go
-        uses: actions/setup-go@v7
-        with:
-          go-version-file: go.mod
-
-      - name: Build
-        env:
-          GOOS: ${{ matrix.goos }}
-          GOARCH: ${{ matrix.goarch }}
-        run: |
-          binary="fss"
-          if [ "$GOOS" = "windows" ]; then binary="fss.exe"; fi
-          go build -o "$binary" .
-    strategy:
-      matrix:
-        include:
-          - goos: linux
-            goarch: arm64
-          - goos: darwin
-            goarch: amd64
-          - goos: darwin
-            goarch: arm64
-          - goos: windows
-            goarch: amd64
+      # Codecov uploads authenticate with an OIDC token rather than a stored
+      # CODECOV_TOKEN. A reusable workflow cannot grant itself more than the
+      # caller holds, so it has to be here — without it the upload silently
+      # no-ops (`fail_ci_if_error: false`) and coverage stops moving.
+      id-token: write
+    secrets: inherit
+    with:
+      binary-name: fss
+      main-package: '.'
+      # Registry tests in internal/scrapers/all drive ID/Patterns/MatchesURL
+      # and ListScenes across every registered scraper; without -coverpkg those
+      # ~1400 exercised statements read as uncovered (80.6% vs 83.8%).
+      coverpkg: true
+      # flock_windows.go makes the process lock a no-op on Windows,
+      # output.atomicWriteFile relies on rename-over-existing semantics that
+      # differ there, and the 250-byte Slugify cap is reasoned from POSIX.
+      platform-tests: true
+      # A scraper unit test that reaches the live site passes while its parser
+      # is broken — maturefetish graded live markup instead of its fixture.
+      offline-isolation: true
+      vet-integration-tag: true
+      check-aur-srcinfo: true
+      check-dockerfile-go-version: true
+      fuzz-targets: |
+        ./match/... FuzzNormalize
+        ./parseutil/... FuzzParseDurationColon
+        ./parseutil/... FuzzParseDurationISO
+        ./output/... FuzzSlugify
+        ./output/... FuzzWriteCSVNeverEmitsAFormula
+        ./nfo/... FuzzMarshalProducesWellFormedXML

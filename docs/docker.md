@@ -196,14 +196,16 @@ docker buildx build --platform linux/amd64,linux/arm64 -t fss:dev .
 
 ## CI/CD
 
-Two workflows handle the image, split by purpose so a release can never ship a docker image without the manual smoke-test approval.
+Two workflows handle the image, split by purpose so a release can never ship a docker image without the manual smoke-test approval. Both are thin callers of `Anastylosis/.github/.github/workflows/docker-publish.yml@v1`, which differs between them only in `mode` — the QEMU/buildx setup, build-args, SLSA attestation and Trivy scan are one shared implementation.
 
 | Workflow | Trigger | Tags pushed |
 |----------|---------|-------------|
-| `.github/workflows/docker.yml` | Push to `main`/`master` | `master`, `sha-<short>` |
-| `.github/workflows/docker.yml` | Pull request touching the Dockerfile | _(builds, no push)_ |
-| `.github/workflows/docker.yml` | Manual `workflow_dispatch` | `master`, `sha-<short>` |
-| `.github/workflows/release.yml` (`docker` job, after `release`) | Push of `v*` tag, **after `manual-smoke-gate` approval** | `vX.Y.Z`, `vX.Y`, `vX`, `latest` |
+| `.github/workflows/docker.yml` (`mode: dev`) | Push to `main`/`master` | `master`, `sha-<short>` |
+| `.github/workflows/docker.yml` (`mode: dev`) | Pull request touching the Dockerfile | _(builds, no push)_ |
+| `.github/workflows/docker.yml` (`mode: dev`) | Manual `workflow_dispatch` | `master`, `sha-<short>` |
+| `.github/workflows/release.yml` (`docker` job, after `release`) | Push of `v*` tag, **after `manual-smoke-gate` approval** | `X.Y.Z`, `X.Y`, `X`, `latest` |
+
+Release image tags carry **no `v`**: `docker/metadata-action`'s semver patterns strip it, so tag `v1.28.1` publishes `ghcr.io/anastylosis/fss:1.28.1`. Only the archive names and `go install` keep the `v`.
 
 The release flow is sequential: tag push → `build` (tests + binaries) → wait for `manual-smoke-gate` approval → `release` (GitHub Release) → `docker` (multi-arch image to GHCR with the version tags). Reject the gate and neither the GitHub Release nor the docker image lands.
 

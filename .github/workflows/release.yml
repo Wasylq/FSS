@@ -10,470 +10,92 @@ concurrency:
   cancel-in-progress: false
 
 permissions:
-  contents: write
-  packages: write # for the docker job that pushes to ghcr after release
-  discussions: write # each release opens a linked thread in Announcements
+  contents: read
 
 jobs:
-  build:
-    name: Test and build binaries
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v7
-        with:
-          fetch-depth: 0
-
-      - name: Set up Go
-        uses: actions/setup-go@v7
-        with:
-          go-version-file: go.mod
-
-      - name: Run tests
-        run: go test -race -count=1 ./...
-
-      - name: Build binaries
-        run: |
-          VERSION="${GITHUB_REF#refs/tags/}"
-          COMMIT="${GITHUB_SHA::8}"
-          DATE="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
-          LDFLAGS="-s -w -X main.version=${VERSION} -X main.commit=${COMMIT} -X main.date=${DATE}"
-          mkdir -p dist
-
-          platforms=(
-            "linux/amd64"
-            "linux/arm64"
-            "darwin/amd64"
-            "darwin/arm64"
-            "windows/amd64"
-          )
-
-          for platform in "${platforms[@]}"; do
-            GOOS="${platform%/*}"
-            GOARCH="${platform#*/}"
-            binary="fss"
-            archive="fss-${VERSION}-${GOOS}-${GOARCH}"
-
-            if [ "$GOOS" = "windows" ]; then
-              binary="fss.exe"
-            fi
-
-            echo "Building ${GOOS}/${GOARCH}..."
-            GOOS=$GOOS GOARCH=$GOARCH go build -ldflags "$LDFLAGS" -o "dist/${binary}" .
-
-            cd dist
-            if [ "$GOOS" = "windows" ]; then
-              zip "${archive}.zip" "${binary}"
-            else
-              tar czf "${archive}.tar.gz" "${binary}"
-            fi
-            rm "${binary}"
-            cd ..
-          done
-
-      - name: Build .deb and .rpm packages
-        run: |
-          VERSION="${GITHUB_REF#refs/tags/v}"
-          COMMIT="${GITHUB_SHA::8}"
-          DATE="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
-          LDFLAGS="-s -w -X main.version=v${VERSION} -X main.commit=${COMMIT} -X main.date=${DATE}"
-
-          # Pinned so a breaking nfpm bump can't silently corrupt .deb/.rpm
-          # artifacts on the next release. Bump deliberately.
-          go install github.com/goreleaser/nfpm/v2/cmd/nfpm@v2.46.3
-
-          for arch in amd64 arm64; do
-            echo "Packaging linux/${arch}..."
-            GOOS=linux GOARCH=$arch go build -ldflags "$LDFLAGS" -o dist/fss .
-
-            GOARCH=$arch VERSION=$VERSION nfpm package --packager deb --target dist/
-            GOARCH=$arch VERSION=$VERSION nfpm package --packager rpm --target dist/
-
-            rm dist/fss
-          done
-
-      - name: Upload release artifacts
-        uses: actions/upload-artifact@v7
-        with:
-          name: release-binaries
-          path: dist/
-          retention-days: 7
-
   release:
-    name: Publish GitHub release
-    runs-on: ubuntu-latest
-    needs: build
-    # Pauses here until a reviewer of the `manual-smoke-gate` environment
-    # approves — the approver attests they have run the manual integration
-    # smoke tests (`make smoke`) that CI cannot run because Cloudflare blocks
-    # GitHub-runner IP ranges. The downstream `docker` job inherits this gate
-    # transitively via `needs: release`, so one approval covers both.
-    # See CONTRIBUTING.md → "Cutting a release" for the full checklist.
-    environment:
-      name: manual-smoke-gate
-      url: ${{ github.server_url }}/${{ github.repository }}/blob/master/CONTRIBUTING.md#cutting-a-release
+    uses: Anastylosis/.github/.github/workflows/go-release.yml@v1
     permissions:
       # contents: write to publish the release; the rest are for
-      # actions/attest-build-provenance over the downloadable artifacts.
-      # Declaring them at the job level narrows the top-level grant — this job
-      # has no reason to hold `packages: write`.
+      # attest-build-provenance over the downloadable artifacts.
       contents: write
       discussions: write
       id-token: write
       attestations: write
-    steps:
-      - uses: actions/checkout@v7
-        with:
-          fetch-depth: 0
+    secrets: inherit
+    with:
+      binary-name: fss
+      main-package: '.'
+      nfpm: true
+      aur: true
+      aur-pkgname: fss
+      aur-commit-username: Wasylq
+      aur-commit-email: wasylq@protonmail.com
+      # Pauses until a reviewer of the `manual-smoke-gate` environment approves,
+      # attesting they ran `make smoke` — CI cannot, because Cloudflare blocks
+      # GitHub runner IP ranges and Stash is a local service. The docker job
+      # below inherits the gate transitively via `needs`, so one approval covers
+      # both. See CONTRIBUTING.md → "Cutting a release".
+      environment-name: manual-smoke-gate
+      environment-url: ${{ github.server_url }}/${{ github.repository }}/blob/master/CONTRIBUTING.md#cutting-a-release
+      pre-release-notice: >-
+        Approver attests they have run the release checklist (integration smoke
+        tests, changelog review).
+      # The category must already exist; renaming it on GitHub without changing
+      # it here fails the API call after the gate has been approved.
+      discussion-category: Announcements
+      docker-image: ghcr.io/anastylosis/fss
+      # {{version}} is the tag minus its `v` — docker/metadata-action's semver
+      # patterns strip it, so a v1.2.3 tag publishes the image as 1.2.3. Archive
+      # names and `go install` keep the `v`, so those use github.ref_name.
+      install-instructions: |
+        Download the binary for your platform, extract, and place it on your PATH:
 
-      - name: Pre-release reminder
-        run: |
-          echo "::notice title=Manual checks confirmed::Approver attests they have run the release checklist (integration smoke tests, changelog review)."
+        ```sh
+        # Linux (amd64)
+        tar xzf fss-${{ github.ref_name }}-linux-amd64.tar.gz
+        chmod +x fss
+        ./fss --version
 
-      - name: Download release artifacts
-        uses: actions/download-artifact@v8
-        with:
-          name: release-binaries
-          path: dist/
+        # macOS (Apple Silicon)
+        tar xzf fss-${{ github.ref_name }}-darwin-arm64.tar.gz
+        chmod +x fss
+        ./fss --version
+        ```
 
-      - name: Generate SHA256SUMS
-        run: |
-          cd dist
-          # Capture checksums into a variable BEFORE creating SHA256SUMS — bash
-          # creates redirect targets before expanding globs, so `* > SHA256SUMS`
-          # would otherwise hash an empty SHA256SUMS into its own listing.
-          # Sort by filename so the file is stable and diffable across runs.
-          sums=$(sha256sum -- *)
-          echo "$sums" | LC_ALL=C sort -k2 > SHA256SUMS
-          echo "Generated SHA256SUMS:"
-          cat SHA256SUMS
-          # Self-check: every line must verify cleanly before we hand it to users.
-          sha256sum --check --strict SHA256SUMS
+        ### Linux packages
 
-      - name: Attest build provenance for the release artifacts
-        # SHA256SUMS proves a download was not corrupted in transit, but it is
-        # generated in this same job — anyone able to influence the build can
-        # regenerate it, so it says nothing about *origin*. This binds every
-        # artifact to the workflow run and commit that produced it, which is the
-        # part a checksum cannot cover. The docker job already did this for the
-        # image; the tarballs are what most people actually download.
-        #   gh attestation verify <file> --owner <owner>
-        uses: actions/attest-build-provenance@v4.1.1
-        with:
-          subject-path: 'dist/*'
+        ```sh
+        # Arch Linux (AUR)
+        yay -S fss
 
-      - name: Generate changelog
-        id: changelog
-        run: |
-          PREV_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
-          if [ -z "$PREV_TAG" ]; then
-            CHANGELOG=$(git log --oneline --no-merges)
-          else
-            CHANGELOG=$(git log --oneline --no-merges "${PREV_TAG}..HEAD")
-          fi
-          echo "changelog<<EOF" >> $GITHUB_OUTPUT
-          echo "$CHANGELOG" >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
+        # Debian / Ubuntu
+        sudo dpkg -i fss_*_amd64.deb
 
-      - name: Read tag annotation
-        id: tagnote
-        # An annotated tag's message becomes a callout at the top of the release
-        # page, for saying things the commit list cannot ("maintenance only, no
-        # new scrapers"). Tag with `git tag -a v1.2.3 -m "..."`; a lightweight
-        # tag just omits the callout.
-        run: |
-          TAG="${GITHUB_REF_NAME}"
-          note=""
-          # A lightweight tag points straight at the commit, and %(contents:*)
-          # would then return that commit's message — not a release note.
-          if [ "$(git cat-file -t "$TAG" 2>/dev/null)" = "tag" ]; then
-            subject=$(git for-each-ref "refs/tags/$TAG" --format='%(contents:subject)')
-            # contents:subject + contents:body rather than plain contents:
-            # contents includes the PGP block on a signed tag.
-            body=$(git for-each-ref "refs/tags/$TAG" --format='%(contents:body)')
-            if [ -n "$subject" ]; then
-              note="> **${subject}**"
-              if [ -n "$(printf '%s' "$body" | tr -d '[:space:]')" ]; then
-                note="${note}"$'\n'">"$'\n'"$(printf '%s\n' "$body" | sed 's/^/> /' | sed 's/[[:space:]]*$//')"
-              fi
-            fi
-          fi
-          {
-            echo "note<<TAGNOTE_EOF"
-            echo "$note"
-            echo "TAGNOTE_EOF"
-          } >> "$GITHUB_OUTPUT"
+        # Fedora / RHEL
+        sudo rpm -i fss_*_amd64.rpm
+        ```
 
-      - name: Create GitHub Release
-        uses: softprops/action-gh-release@v3
-        with:
-          files: dist/*
-          generate_release_notes: true
-          # Opens a Discussion linked to the release, seeded with the release
-          # body, so users have somewhere to reply that is not an issue.
-          #
-          # The category must already exist — a name that matches nothing fails
-          # the API call, and it does so *after* the binaries are built and the
-          # smoke gate is approved. Do not rename it on GitHub without changing
-          # it here. A release whose discussion already exists cannot have it
-          # changed either, so re-running this job on an existing tag will fail
-          # here; cut a new patch tag instead.
-          discussion_category_name: Announcements
-          body: |
-            ${{ steps.tagnote.outputs.note }}
+        Or build from source:
+        ```sh
+        go install github.com/Anastylosis/FSS@${{ github.ref_name }}
+        ```
 
-            ## Changes
-
-            ${{ steps.changelog.outputs.changelog }}
-
-            ## Installation
-
-            Download the binary for your platform, extract, and place it on your PATH:
-
-            ```sh
-            # Linux (amd64)
-            tar xzf fss-${{ github.ref_name }}-linux-amd64.tar.gz
-            chmod +x fss
-            ./fss --version
-
-            # macOS (Apple Silicon)
-            tar xzf fss-${{ github.ref_name }}-darwin-arm64.tar.gz
-            chmod +x fss
-            ./fss --version
-            ```
-
-            ### Linux packages
-
-            ```sh
-            # Arch Linux (AUR)
-            yay -S fss
-
-            # Debian / Ubuntu
-            sudo dpkg -i fss_*_amd64.deb
-
-            # Fedora / RHEL
-            sudo rpm -i fss_*_amd64.rpm
-            ```
-
-            Or build from source:
-            ```sh
-            go install github.com/Anastylosis/FSS@${{ github.ref_name }}
-            ```
-
-            Or pull the Docker image:
-            ```sh
-            docker pull ghcr.io/anastylosis/fss:${{ github.ref_name }}
-            ```
-
-            ## Verifying your download
-
-            Every artifact attached to this release is hashed in **`SHA256SUMS`**. After downloading, verify the file you have against that line:
-
-            **Linux / macOS** — download `SHA256SUMS` next to your artifact, then run:
-            ```sh
-            sha256sum --ignore-missing --check SHA256SUMS
-            # fss-${{ github.ref_name }}-linux-amd64.tar.gz: OK
-            ```
-
-            On macOS, `shasum -a 256` works the same way (`shasum -a 256 -c SHA256SUMS`).
-
-            **Windows (PowerShell)**:
-            ```powershell
-            # Compare the printed hash against the matching line in SHA256SUMS.
-            Get-FileHash fss-${{ github.ref_name }}-windows-amd64.zip -Algorithm SHA256
-            ```
-
-            A mismatch — or `FAILED` from `sha256sum --check` — means the file is corrupted or tampered with; do not run it.
-
-            ### Verifying where a binary came from
-
-            `SHA256SUMS` tells you a download arrived intact. It does not tell you who built it — it is produced by the same workflow as the binaries. Every artifact here also carries a [SLSA v1 build attestation](https://slsa.dev/) binding it to the workflow run and commit that produced it.
-
-            Requires the [`gh` CLI](https://cli.github.com/) v2.49+:
-
-            ```sh
-            gh attestation verify fss-${{ github.ref_name }}-linux-amd64.tar.gz --owner Anastylosis
-            ```
-
-            A successful check names the workflow and the commit SHA it was built from. Anything else — including "no attestations found" — means the file did not come from this release pipeline.
-
-            ### Verifying the Docker image
-
-            The Docker image is published with a [SLSA v1 build attestation](https://slsa.dev/) that you can verify before pulling. The attestation is stored on the GitHub release run (not embedded in the image index, so the manifest list stays clean).
-
-            Requires the [`gh` CLI](https://cli.github.com/) v2.49+:
-
-            ```sh
-            # Look up the image digest you want to verify
-            docker pull ghcr.io/anastylosis/fss:${{ github.ref_name }}
-            digest=$(docker buildx imagetools inspect ghcr.io/anastylosis/fss:${{ github.ref_name }} --format '{{json .Manifest}}' | jq -r '.digest')
-
-            # Verify provenance against the GitHub workflow that built it
-            gh attestation verify oci://ghcr.io/anastylosis/fss@$digest --owner Anastylosis
-            ```
-
-            A successful run prints the build workflow's identity (commit SHA, repo, runner). Failure means the image wasn't built by this repo's release pipeline.
-
-  aur:
-    name: Publish to AUR
-    runs-on: ubuntu-latest
-    # Decoupled from the `release` job: a transient AUR/SSH failure here used
-    # to leave AUR stale because the steps lived in the release job, which is
-    # one-shot and gates everything downstream. As its own job it can be re-run
-    # from the Actions UI without re-cutting the GitHub release.
-    needs: release
-    steps:
-      - uses: actions/checkout@v7
-        with:
-          fetch-depth: 0
-
-      - name: Stamp PKGBUILD version
-        # Defensive substitution: matches any prior pkgver= line so the step
-        # still works if the sentinel `VERSION` placeholder is ever changed.
-        run: sed -i "s/^pkgver=.*/pkgver=${GITHUB_REF#refs/tags/v}/" ./packaging/aur/PKGBUILD
-
-      # AUR pushes can fail transiently on the SSH side (aur.archlinux.org
-      # accepts only a handful of concurrent sessions). We retry once with a
-      # short delay before surfacing a real failure to the user — the job can
-      # still be re-run from the Actions UI if even the retry fails.
-      - name: Publish to AUR (attempt 1)
-        id: aur1
-        uses: KSXGitHub/github-actions-deploy-aur@v4.2.0
-        continue-on-error: true
-        with:
-          pkgname: fss
-          pkgbuild: ./packaging/aur/PKGBUILD
-          commit_username: Wasylq
-          commit_email: wasylq@protonmail.com
-          ssh_private_key: ${{ secrets.AUR_SSH_PRIVATE_KEY }}
-          commit_message: "Update to ${{ github.ref_name }}"
-          # Run `updpkgsums` so the committed PKGBUILD ships real sha256 hashes
-          # for the GitHub source tarball — replaces the SKIP placeholder.
-          updpkgsums: true
-
-      - name: Wait before retry
-        if: steps.aur1.outcome == 'failure'
-        run: sleep 30
-
-      - name: Publish to AUR (attempt 2)
-        if: steps.aur1.outcome == 'failure'
-        uses: KSXGitHub/github-actions-deploy-aur@v4.2.0
-        with:
-          pkgname: fss
-          pkgbuild: ./packaging/aur/PKGBUILD
-          commit_username: Wasylq
-          commit_email: wasylq@protonmail.com
-          ssh_private_key: ${{ secrets.AUR_SSH_PRIVATE_KEY }}
-          commit_message: "Update to ${{ github.ref_name }}"
-          updpkgsums: true
+        Or pull the Docker image:
+        ```sh
+        docker pull ghcr.io/anastylosis/fss:{{version}}
+        ```
 
   docker:
     name: Build and push docker image
-    runs-on: ubuntu-latest
-    # Runs only after the gated release job succeeds, so no image lands on
-    # GHCR unless the manual smoke-test gate was approved.
+    # Runs only after the gated release job succeeds, so no image lands on GHCR
+    # unless the manual smoke-test gate was approved.
     needs: release
+    uses: Anastylosis/.github/.github/workflows/docker-publish.yml@v1
     permissions:
       contents: read
       packages: write
-      # Needed for actions/attest-build-provenance — OIDC + attestation write.
-      # Attestation lives on the workflow run, not in the registry image
-      # index (`push-to-registry: false`), so the manifest list stays clean
-      # of `unknown/unknown` entries that pollute GHCR's UI.
       id-token: write
       attestations: write
-    steps:
-      - uses: actions/checkout@v7
-        with:
-          fetch-depth: 0
-
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v4
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v4
-
-      - name: Log in to GHCR
-        uses: docker/login-action@v4
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Compute image metadata
-        id: meta
-        uses: docker/metadata-action@v6
-        with:
-          images: ghcr.io/${{ github.repository }}
-          tags: |
-            type=semver,pattern={{version}}
-            type=semver,pattern={{major}}.{{minor}}
-            type=semver,pattern={{major}}
-            type=raw,value=latest
-
-      - name: Resolve build args
-        id: args
-        run: |
-          echo "version=${GITHUB_REF#refs/tags/}" >> "$GITHUB_OUTPUT"
-          echo "commit=${GITHUB_SHA::8}" >> "$GITHUB_OUTPUT"
-          echo "date=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$GITHUB_OUTPUT"
-          # Mirror go.mod's `go` directive into the Docker build so the
-          # builder image always matches the toolchain go.mod declares.
-          echo "go_version=$(./scripts/go-version.sh)" >> "$GITHUB_OUTPUT"
-
-      - name: Build and push
-        id: build
-        uses: docker/build-push-action@v7
-        with:
-          context: .
-          file: ./Dockerfile
-          platforms: linux/amd64,linux/arm64
-          push: true
-          # Intentionally disabled: provenance: true embeds attestation
-          # manifests in the image index as `unknown/unknown` entries,
-          # which clutters GHCR's UI. SLSA provenance is generated below
-          # via `actions/attest-build-provenance` and stored on the
-          # workflow run instead, verifiable via `gh attestation verify`.
-          provenance: false
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-          build-args: |
-            GO_VERSION=${{ steps.args.outputs.go_version }}
-            VERSION=${{ steps.args.outputs.version }}
-            COMMIT=${{ steps.args.outputs.commit }}
-            DATE=${{ steps.args.outputs.date }}
-
-      - name: Attest build provenance
-        # SLSA v1 attestation pinned to the pushed image digest. Stored on
-        # the workflow run, not in the registry — keeps the multi-arch
-        # manifest list free of `unknown/unknown` entries. Users verify with
-        #   gh attestation verify oci://ghcr.io/<owner>/<repo>@<digest> --owner <owner>
-        # (see the release notes' "Verifying the docker image" section).
-        uses: actions/attest-build-provenance@v4.1.1
-        with:
-          subject-name: ghcr.io/${{ github.repository }}
-          subject-digest: ${{ steps.build.outputs.digest }}
-          push-to-registry: false
-
-      - name: Lowercase image repo for Trivy
-        # OCI references must be all-lowercase. ${{ github.repository }} can
-        # contain uppercase (e.g. "Anastylosis/FSS"), and GitHub expressions have
-        # no case-conversion function — so we bounce through bash to produce
-        # a lowercase ref that Trivy can parse. Same fix as docker.yml.
-        run: echo "IMAGE_REPO_LC=ghcr.io/${REPO,,}" >> "$GITHUB_ENV"
-        env:
-          REPO: ${{ github.repository }}
-
-      - name: Trivy scan (informational)
-        # Reports HIGH/CRITICAL CVEs in the pushed image; informational only
-        # (`exit-code: '0'`) for the same reason govulncheck is informational
-        # — a "fail on any finding" gate would force base-image bumps on
-        # every new CVE. Findings show up in the workflow log; bump deliberately.
-        uses: aquasecurity/trivy-action@v0.36.0
-        with:
-          image-ref: ${{ env.IMAGE_REPO_LC }}@${{ steps.build.outputs.digest }}
-          severity: HIGH,CRITICAL
-          format: table
-          exit-code: '0'
-          ignore-unfixed: true
+    with:
+      mode: release

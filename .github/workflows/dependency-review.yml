@@ -17,21 +17,14 @@ permissions:
 
 jobs:
   review:
-    name: Review dependency changes
-    runs-on: ubuntu-latest
+    uses: Anastylosis/.github/.github/workflows/dependency-review.yml@v1
     permissions:
       contents: read
       # Required by comment-summary-in-pr; without it the action cannot post
       # and the step fails for a reason unrelated to the dependencies.
       pull-requests: write
-    steps:
-      - uses: actions/checkout@v7
-
-      - name: Dependency review
-        uses: actions/dependency-review-action@v5
-        with:
-          # Block on high and above. Anything lower is noise on a PR that is
-          # usually adding one scraper, and Dependabot picks the rest up on its
-          # weekly gomod pass.
-          fail-on-severity: high
-          comment-summary-in-pr: on-failure
+    with:
+      # Block on high and above. Anything lower is noise on a PR that is
+      # usually adding one scraper, and Dependabot picks the rest up on its
+      # weekly gomod pass.
+      fail-on-severity: high

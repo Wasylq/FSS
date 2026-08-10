@@ -20,123 +20,17 @@ concurrency:
 
 permissions:
   contents: read
-  packages: write
-
-env:
-  REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}
 
 jobs:
-  build:
-    name: Build and push image
-    runs-on: ubuntu-latest
+  docker:
+    uses: Anastylosis/.github/.github/workflows/docker-publish.yml@v1
     permissions:
       contents: read
       packages: write
-      # Needed for actions/attest-build-provenance: OIDC token + attestation
-      # write. Attestations are stored on the workflow run (verifiable via
-      # `gh attestation verify`), NOT embedded in the registry image index —
-      # that keeps the manifest list clean of "unknown/unknown" entries.
+      # attest-build-provenance needs OIDC + attestation write. The attestation
+      # is stored on the workflow run, not in the registry image index, so the
+      # manifest list stays free of `unknown/unknown` entries.
       id-token: write
       attestations: write
-    steps:
-      - uses: actions/checkout@v7
-        with:
-          fetch-depth: 0
-
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v4
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v4
-
-      - name: Log in to GHCR
-        if: github.event_name != 'pull_request'
-        uses: docker/login-action@v4
-        with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Compute image metadata
-        id: meta
-        uses: docker/metadata-action@v6
-        with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-          tags: |
-            type=ref,event=branch
-            type=ref,event=pr
-            type=sha,prefix=sha-,format=short
-
-      - name: Resolve build args
-        id: args
-        run: |
-          if [ "${GITHUB_REF}" = "refs/heads/main" ] || [ "${GITHUB_REF}" = "refs/heads/master" ]; then
-            VERSION="main"
-          else
-            VERSION="${GITHUB_REF##*/}"
-          fi
-          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
-          echo "commit=${GITHUB_SHA::8}" >> "$GITHUB_OUTPUT"
-          echo "date=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$GITHUB_OUTPUT"
-          # Mirror go.mod's `go` directive into the Docker build so the
-          # builder image always matches the toolchain go.mod declares.
-          echo "go_version=$(./scripts/go-version.sh)" >> "$GITHUB_OUTPUT"
-
-      - name: Build and push
-        id: build
-        uses: docker/build-push-action@v7
-        with:
-          context: .
-          file: ./Dockerfile
-          platforms: linux/amd64,linux/arm64
-          push: ${{ github.event_name != 'pull_request' }}
-          # Intentionally disabled: provenance: true bakes attestation
-          # manifests into the image index as `unknown/unknown` entries,
-          # which clutters GHCR's UI. SLSA provenance is generated below
-          # via `actions/attest-build-provenance` and stored on the
-          # workflow run instead, verifiable via `gh attestation verify`.
-          provenance: false
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-          build-args: |
-            GO_VERSION=${{ steps.args.outputs.go_version }}
-            VERSION=${{ steps.args.outputs.version }}
-            COMMIT=${{ steps.args.outputs.commit }}
-            DATE=${{ steps.args.outputs.date }}
-
-      - name: Attest build provenance
-        # Generates a SLSA v1 attestation linked to the pushed image digest.
-        # Stored on the workflow run, not in the registry — keeps the image
-        # index clean. Verify with:
-        #   gh attestation verify oci://ghcr.io/<owner>/<repo>@<digest> --owner <owner>
-        if: github.event_name != 'pull_request'
-        uses: actions/attest-build-provenance@v4.1.1
-        with:
-          subject-name: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-          subject-digest: ${{ steps.build.outputs.digest }}
-          push-to-registry: false
-
-      - name: Lowercase image repo for Trivy
-        # OCI references must be all-lowercase. ${{ github.repository }} can
-        # contain uppercase (e.g. "Anastylosis/FSS"), and GitHub expressions have
-        # no case-conversion function — so we bounce through bash to produce
-        # a lowercase ref that Trivy can parse.
-        if: github.event_name != 'pull_request'
-        run: echo "IMAGE_REPO_LC=${REGISTRY}/${IMAGE_NAME,,}" >> "$GITHUB_ENV"
-
-      - name: Trivy scan (informational)
-        # Reports HIGH/CRITICAL CVEs in the pushed image; informational only
-        # (`exit-code: '0'`) for the same reason govulncheck is informational —
-        # a "fail on any finding" gate would force base-image bumps on every
-        # new CVE. Findings show up in the workflow log; bump deliberately.
-        if: github.event_name != 'pull_request'
-        uses: aquasecurity/trivy-action@v0.36.0
-        with:
-          image-ref: ${{ env.IMAGE_REPO_LC }}@${{ steps.build.outputs.digest }}
-          severity: HIGH,CRITICAL
-          format: table
-          exit-code: '0'
-          ignore-unfixed: true
+    with:
+      mode: dev
