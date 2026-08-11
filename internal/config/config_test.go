@@ -33,23 +33,23 @@ func TestSanitizeWindowsPaths(t *testing.T) {
 	}{
 		{
 			name: "windows absolute path",
-			in:   `db: "C:\Users\nlaci\bin\fss.db"`,
-			want: `db: "C:/Users/nlaci/bin/fss.db"`,
+			in:   `db: "C:\Users\testuser\bin\fss.db"`,
+			want: `db: "C:/Users/testuser/bin/fss.db"`,
 		},
 		{
 			name: "multiple path fields",
-			in:   "out_dir: \"D:\\data\\fss\"\ndb: \"C:\\Users\\nlaci\\fss.db\"",
-			want: "out_dir: \"D:/data/fss\"\ndb: \"C:/Users/nlaci/fss.db\"",
+			in:   "out_dir: \"D:\\data\\fss\"\ndb: \"C:\\Users\\testuser\\fss.db\"",
+			want: "out_dir: \"D:/data/fss\"\ndb: \"C:/Users/testuser/fss.db\"",
 		},
 		{
 			name: "single-quoted path unchanged",
-			in:   `db: 'C:\Users\nlaci\fss.db'`,
-			want: `db: 'C:\Users\nlaci\fss.db'`,
+			in:   `db: 'C:\Users\testuser\fss.db'`,
+			want: `db: 'C:\Users\testuser\fss.db'`,
 		},
 		{
 			name: "unquoted path unchanged",
-			in:   `db: C:\Users\nlaci\fss.db`,
-			want: `db: C:\Users\nlaci\fss.db`,
+			in:   `db: C:\Users\testuser\fss.db`,
+			want: `db: C:\Users\testuser\fss.db`,
 		},
 		{
 			name: "unix path unchanged",
@@ -82,7 +82,7 @@ func TestWindowsPathsRoundTrip(t *testing.T) {
 	raw := []byte(`workers: 5
 output: csv
 out_dir: "D:\data\fss\output"
-db: "C:\Users\nlaci\bin\fss.db"
+db: "C:\Users\testuser\bin\fss.db"
 delay: 500
 
 site_delays:
@@ -118,8 +118,8 @@ stash:
 	if cfg.OutDir != "D:/data/fss/output" {
 		t.Errorf("OutDir = %q, want D:/data/fss/output", cfg.OutDir)
 	}
-	if db, set := cfg.DBSetting(); !set || db != "C:/Users/nlaci/bin/fss.db" {
-		t.Errorf("DB = %q (set=%v), want C:/Users/nlaci/bin/fss.db", db, set)
+	if db, set := cfg.DBSetting(); !set || db != "C:/Users/testuser/bin/fss.db" {
+		t.Errorf("DB = %q (set=%v), want C:/Users/testuser/bin/fss.db", db, set)
 	}
 	if cfg.Delay != 500 {
 		t.Errorf("Delay = %d, want 500", cfg.Delay)
