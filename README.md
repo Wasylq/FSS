@@ -281,3 +281,9 @@ CLI flags always override config values. See [docs/usage.md](docs/usage.md#confi
 | [docs/platform-detection.md](docs/platform-detection.md) | Per-platform detection signals and which `*util` package a site belongs to |
 | [docs/enhancements.md](docs/enhancements.md) | Known gaps and ideas not yet built |
 | [SECURITY.md](SECURITY.md) | Credential handling, network policy, vulnerability reporting |
+
+## License
+
+Copyright (C) 2024-2026 Wasylq
+
+[GPL-3.0-only](LICENSE).
