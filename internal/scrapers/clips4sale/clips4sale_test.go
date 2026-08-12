@@ -500,3 +500,77 @@ func TestGoldenStudioPageKeepsBothDateKeys(t *testing.T) {
 		}
 	}
 }
+
+// A discounted clip carries `discounted_price` as an *object*, not a number.
+// Decoding it as float64 failed the entire page — 24 clips lost because one of
+// them was on sale — which is how studio 76113 came back 100 scenes short with
+// only a warning to show for it.
+func TestDiscountedPriceObjectShape(t *testing.T) {
+	page := []byte(`<script>window.__remixContext = {"state":{"loaderData":{"routes/($lang).studio.$id_.$studioSlug.$":{"clips":[` +
+		`{"clipId":"1","title":"Not on sale","link":"/studio/1/1/a","price":18.99,` +
+		`"date_display":"7/19/26 2:10 PM","discounted_price":null,"onSale":null},` +
+		`{"clipId":"2","title":"Half off","link":"/studio/1/2/b","price":18.99,` +
+		`"date_display":"7/19/26 2:10 PM","onSale":true,` +
+		`"discounted_price":{"name":null,"id":null,"sale_type":"classic","percent":50,"tiers":null,"discount":9.5}}` +
+		`],"clipsCount":2,"page":1}}}};</script>`)
+
+	clips, total, err := extractClips(page)
+	if err != nil {
+		t.Fatalf("extractClips: %v — a sale object must not fail the page", err)
+	}
+	if len(clips) != 2 || total != 2 {
+		t.Fatalf("got %d clips (total %d), want 2 — a sale clip must not drop its page", len(clips), total)
+	}
+
+	if clips[0].DiscountedPrice != nil {
+		t.Errorf("non-sale clip: DiscountedPrice = %+v, want nil", clips[0].DiscountedPrice)
+	}
+
+	d := clips[1].DiscountedPrice
+	if d == nil {
+		t.Fatal("sale clip: DiscountedPrice is nil, want the parsed sale object")
+	}
+	if d.Percent != 50 || d.Discount != 9.5 || d.SaleType != "classic" {
+		t.Errorf("sale object = %+v, want percent 50 / discount 9.5 / classic", *d)
+	}
+
+	scene, err := toScene("https://www.clips4sale.com/studio/1/x", "https://www.clips4sale.com", clips[1], time.Now().UTC())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(scene.PriceHistory) != 1 {
+		t.Fatalf("got %d price snapshots, want 1", len(scene.PriceHistory))
+	}
+	p := scene.PriceHistory[0]
+	if p.Regular != 18.99 {
+		t.Errorf("Regular = %v, want 18.99", p.Regular)
+	}
+	// `discount` is what you pay, not what comes off: the clip page renders
+	// 18.99 struck through followed by 9.50.
+	if p.Discounted != 9.5 {
+		t.Errorf("Discounted = %v, want 9.5 (the charged price)", p.Discounted)
+	}
+	if !p.IsOnSale || p.DiscountPercent != 50 {
+		t.Errorf("IsOnSale = %v, DiscountPercent = %d, want true / 50", p.IsOnSale, p.DiscountPercent)
+	}
+	if got := p.Effective(); got != 9.5 {
+		t.Errorf("Effective() = %v, want 9.5", got)
+	}
+	if scene.LowestPrice != 9.5 {
+		t.Errorf("LowestPrice = %v, want the sale price 9.5", scene.LowestPrice)
+	}
+}
+
+// The field used to be a bare number, and old pages may still serve one.
+func TestDiscountedPriceBareNumberStillDecodes(t *testing.T) {
+	page := []byte(`<script>window.__remixContext = {"state":{"loaderData":{"routes/($lang).studio.$id_.$studioSlug.$":{"clips":[` +
+		`{"clipId":"1","title":"t","link":"/studio/1/1/a","price":20,"date_display":"7/19/26 2:10 PM",` +
+		`"discounted_price":12.5,"onSale":true}],"clipsCount":1,"page":1}}}};</script>`)
+	clips, _, err := extractClips(page)
+	if err != nil {
+		t.Fatalf("extractClips: %v", err)
+	}
+	if len(clips) != 1 || clips[0].DiscountedPrice == nil || clips[0].DiscountedPrice.Discount != 12.5 {
+		t.Fatalf("bare-number discounted_price did not decode: %+v", clips)
+	}
+}

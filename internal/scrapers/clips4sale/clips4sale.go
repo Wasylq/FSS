@@ -219,19 +219,24 @@ func toScene(studioURL, siteBase string, clip c4sClip, now time.Time) (models.Sc
 		ScrapedAt:   now,
 	}
 
-	discounted := 0.0
+	discounted, percent := 0.0, 0
 	if clip.DiscountedPrice != nil {
-		discounted = *clip.DiscountedPrice
+		discounted = clip.DiscountedPrice.Discount
+		percent = clip.DiscountedPrice.Percent
 	}
-	isOnSale := false
-	if clip.OnSale != nil {
-		isOnSale = *clip.OnSale
+	isOnSale := clip.OnSale != nil && *clip.OnSale
+	if discounted > 0 {
+		// The sale object is the authority. A clip has been seen carrying one
+		// with onSale still null, and recording a discount the snapshot then
+		// ignores would understate LowestPrice.
+		isOnSale = true
 	}
 	scene.AddPrice(models.PriceSnapshot{
-		Date:       now,
-		Regular:    clip.Price,
-		Discounted: discounted,
-		IsOnSale:   isOnSale,
+		Date:            now,
+		Regular:         clip.Price,
+		Discounted:      discounted,
+		IsOnSale:        isOnSale,
+		DiscountPercent: percent,
 	})
 
 	return scene, nil
@@ -319,8 +324,44 @@ type c4sClip struct {
 	ScreenSize           string          `json:"screen_size"`
 	Format               string          `json:"format"`
 	Price                float64         `json:"price"`
-	DiscountedPrice      *float64        `json:"discounted_price"`
+	DiscountedPrice      *c4sDiscount    `json:"discounted_price"`
 	OnSale               *bool           `json:"onSale"`
+}
+
+// c4sDiscount is clips4sale's `discounted_price`. It is null on a clip that is
+// not on sale and an object describing the sale on one that is — decoding it as
+// a bare float64 failed the whole page the moment one discounted clip appeared
+// on it, losing that page's other 23 clips with it. A bare number is still
+// accepted because that is the shape this field used to have.
+//
+// `discount` is the price actually charged, not the amount taken off: a clip
+// listed at 18.99 with percent 50 carries discount 9.5, and the clip page
+// renders 18.99 struck through followed by 9.50.
+type c4sDiscount struct {
+	SaleType string  `json:"sale_type"`
+	Percent  int     `json:"percent"`
+	Discount float64 `json:"discount"`
+}
+
+func (d *c4sDiscount) UnmarshalJSON(b []byte) error {
+	if string(b) == "null" {
+		return nil
+	}
+	if len(b) > 0 && b[0] == '{' {
+		type raw c4sDiscount
+		var r raw
+		if err := json.Unmarshal(b, &r); err != nil {
+			return err
+		}
+		*d = c4sDiscount(r)
+		return nil
+	}
+	var f float64
+	if err := json.Unmarshal(b, &f); err != nil {
+		return fmt.Errorf("discounted_price is neither an object nor a number: %s", b)
+	}
+	d.Discount = f
+	return nil
 }
 
 type c4sPerformer struct {
