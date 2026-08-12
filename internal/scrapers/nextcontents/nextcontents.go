@@ -72,6 +72,10 @@ var sites = []siteConfig{
 	// are channels on this host, not separate domains.
 	{"alterotic", "AltErotic", "https://alterotic.com", "videos", ""},
 
+	// Red-XXX. `Red` is the site's owner and appears in every scene's model
+	// list as a genuine performer, so there is no brand slug to strip here.
+	{"redxxx", "Red-XXX", "https://tour.red-xxx.com", "scenes", ""},
+
 	// Blake Mason, the surviving Twisted XXX Media brand (that network's
 	// domain no longer resolves; the site is run by IndieBucks now). Its
 	// payload leaves seconds_duration null and uses the older `thumbnail`
