@@ -30,6 +30,9 @@ var sites = []siteConfig{
 	{"cumtrainer", "cumtrainer.com", "Cum Trainer", nil, nil},
 	{"facialcasting", "facialcasting.com", "Facial Casting", nil, nil},
 	{"glamourbunnies", "glamourbunnies.com", "Glamour Bunnies", nil, nil},
+	// The domain is the only place "Goddess Diane" appears; the site itself
+	// brands as Diane Andrews throughout, which is also its StashDB name.
+	{"goddessdiane", "goddessdiane.com", "Diane Andrews", []string{"Diane Andrews"}, nil},
 	{"lisariveraxo", "lisariveraxo.com", "Lisa Rivera XO", []string{"Lisa Rivera"}, nil},
 	{"monstermalesprod", "monstermalesprod.com", "Monster Males", nil, nil},
 	{"mugurporn", "mugurporn.com", "Mugur Porn", nil, nil},
