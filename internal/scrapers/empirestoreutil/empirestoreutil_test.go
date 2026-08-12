@@ -247,3 +247,45 @@ func TestRunKnownIDs(t *testing.T) {
 		t.Fatalf("got %d scenes, want 1", len(results))
 	}
 }
+
+// The per-scene synopsis is the only prose these stores publish, and it went
+// unread until now — every Jodi West scene came back with an empty Description
+// while the page carried one.
+func TestParseDetailPageSynopsis(t *testing.T) {
+	body := []byte(`
+<div class="synopsis"><p>I prefer masturbating outdoors, with the sun kissing my
+fevered flesh. Today I came so hard &amp; my panties are soaked!</p></div>
+<div class="release-date"><span class="font-weight-bold mr-2">Released:</span>Aug 14, 2026</div>
+`)
+	d := ParseDetailPage(body)
+	want := "I prefer masturbating outdoors, with the sun kissing my fevered flesh. " +
+		"Today I came so hard & my panties are soaked!"
+	if d.Description != want {
+		t.Errorf("Description = %q, want %q", d.Description, want)
+	}
+}
+
+func TestParseDetailPageSynopsisMultipleParagraphs(t *testing.T) {
+	body := []byte(`<div class="synopsis"><p>First para.</p><p>Second para.</p></div>`)
+	d := ParseDetailPage(body)
+	if d.Description != "First para. Second para." {
+		t.Errorf("Description = %q, want both paragraphs joined", d.Description)
+	}
+}
+
+// Most of the network publishes no scene text at all — the block is absent
+// rather than empty — so a miss must stay an empty string, not an error or a
+// scrap of surrounding markup.
+func TestParseDetailPageNoSynopsis(t *testing.T) {
+	body := []byte(`
+<div class="release-date"><span class="font-weight-bold mr-2">Released:</span>Jan 5, 2020</div>
+<div class="studio"><span class="font-weight-bold mr-2">Studio:</span><span>Bob's Videos</span></div>
+`)
+	d := ParseDetailPage(body)
+	if d.Description != "" {
+		t.Errorf("Description = %q, want empty when the site publishes none", d.Description)
+	}
+	if d.Studio != "Bob's Videos" {
+		t.Errorf("Studio = %q — the other fields must still parse", d.Studio)
+	}
+}

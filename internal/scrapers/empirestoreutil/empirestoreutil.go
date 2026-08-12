@@ -274,14 +274,20 @@ var (
 	studioRe      = regexp.MustCompile(`(?s)Studio:</span>\s*<span>(.*?)</span>`)
 	seriesRe      = regexp.MustCompile(`(?s)Series:</span>\s*<a[^>]*>(.*?)</a>`)
 	scenePriceRe  = regexp.MustCompile(`\$(\d+\.\d+)`)
+	// The synopsis block is absent entirely on sites that publish no scene
+	// text (Vouyer Media, Bob's Videos and the rest), so a miss here means the
+	// site has nothing to say rather than that the parse broke.
+	synopsisRe = regexp.MustCompile(`(?s)<div class="synopsis">(.*?)</div>`)
+	tagStripRe = regexp.MustCompile(`<[^>]*>`)
 )
 
 type DetailData struct {
-	Date   time.Time
-	Tags   []string
-	Studio string
-	Series string
-	Price  float64
+	Date        time.Time
+	Tags        []string
+	Studio      string
+	Series      string
+	Price       float64
+	Description string
 }
 
 func ParseDetailPage(body []byte) DetailData {
@@ -309,6 +315,13 @@ func ParseDetailPage(body []byte) DetailData {
 
 	if m := seriesRe.FindStringSubmatch(page); m != nil {
 		d.Series = strings.TrimSpace(html.UnescapeString(m[1]))
+	}
+
+	if m := synopsisRe.FindStringSubmatch(page); m != nil {
+		// The block wraps one or more <p>; strip them rather than keeping the
+		// markup, and collapse the whitespace they leave behind.
+		text := html.UnescapeString(tagStripRe.ReplaceAllString(m[1], " "))
+		d.Description = strings.Join(strings.Fields(text), " ")
 	}
 
 	idx := strings.Index(page, "Buy This Scene")
@@ -364,6 +377,7 @@ func (s *Scraper) fetchDetail(ctx context.Context, _ string, ls listingScene, st
 		if detail.Series != "" {
 			scene.Series = detail.Series
 		}
+		scene.Description = detail.Description
 		if detail.Price > 0 {
 			scene.AddPrice(models.PriceSnapshot{
 				Date:    now,

@@ -21,6 +21,7 @@ var sites = []siteConfig{
 	{"elegantangel", "elegantangel.com", "Elegant Angel", "/watch-newest-elegant-angel-clips-and-scenes.html"},
 	{"vouyermedia", "vouyermedia.com", "Vouyer Media", "/watch-newest-vouyer-media-clips-and-scenes.html"},
 	{"reaganfoxx", "reaganfoxx.com", "Reagan Foxx", "/scenes/673608/reagan-foxx-streaming-pornstar-videos.html"},
+	{"jodiwest", "jodiwest.com", "Jodi West", "/watch-newest-jodi-west-clips-and-scenes.html"},
 	{"bobsvideos", "bobsvideos.empirestores.co", "Bob's Videos", "/shop-streaming-video-by-scene.html"},
 	{"justinslayer", "jsi.empirestores.co", "Justin Slayer International", "/shop-streaming-video-by-scene.html"},
 	{"spungygunkfilms", "spungygunkfilms.empirestores.co", "Spungy Gunk Films", "/shop-streaming-video-by-scene.html"},

@@ -53,3 +53,10 @@ func TestLiveBobsVideos(t *testing.T) {
 	cfg := siteConfig{"bobsvideos", "bobsvideos.empirestores.co", "Bob's Videos", "/shop-streaming-video-by-scene.html"}
 	testutil.RunLiveScrape(t, newSiteScraper(cfg), u, 2)
 }
+
+func TestLiveJodiWest(t *testing.T) {
+	const u = "https://jodiwest.com/watch-newest-jodi-west-clips-and-scenes.html"
+	testutil.SkipIfPlaceholder(t, u)
+	cfg := siteConfig{"jodiwest", "jodiwest.com", "Jodi West", "/watch-newest-jodi-west-clips-and-scenes.html"}
+	testutil.RunLiveScrape(t, newSiteScraper(cfg), u, 2)
+}

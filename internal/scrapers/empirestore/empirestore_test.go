@@ -7,8 +7,8 @@ import (
 )
 
 func TestSitesTable(t *testing.T) {
-	if len(sites) != 6 {
-		t.Errorf("sites count = %d, want 6", len(sites))
+	if len(sites) != 7 {
+		t.Errorf("sites count = %d, want 7", len(sites))
 	}
 }
 
@@ -27,6 +27,9 @@ func TestMatchesURL(t *testing.T) {
 		{"https://vouyermedia.com/157946/vouyer-media-test-streaming-scene-video.html", "vouyermedia"},
 		{"https://www.reaganfoxx.com/", "reaganfoxx"},
 		{"https://reaganfoxx.com/scenes/673608/reagan-foxx-streaming-pornstar-videos.html", "reaganfoxx"},
+		{"https://jodiwest.com/", "jodiwest"},
+		{"https://www.jodiwest.com/watch-newest-jodi-west-clips-and-scenes.html", "jodiwest"},
+		{"https://jodiwest.com/1572568/jodi-west-an-angel-gets-into-the-vip-section-streaming-scene-video.html", "jodiwest"},
 		{"https://bobsvideos.empirestores.co/shop-streaming-video-by-scene.html", "bobsvideos"},
 		{"https://jsi.empirestores.co/", "justinslayer"},
 		{"https://spungygunkfilms.empirestores.co/", "spungygunkfilms"},
