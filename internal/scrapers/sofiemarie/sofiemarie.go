@@ -48,11 +48,16 @@ func (s *Scraper) Patterns() []string {
 		"sofiemariexxx.com",
 		"sofiemariexxx.com/models/{slug}.html",
 		"sofiemariexxx.com/dvds/{slug}.html",
+		"yummysofie.com",
 	}
 }
 
 var (
-	matchRe = regexp.MustCompile(`^https?://(?:www\.)?sofiemariexxx\.com(?:/|$)`)
+	// yummysofie.com is an alias, not a second catalogue: it serves the same
+	// pages with every self-link rewritten to its own host, and both join
+	// through join.sofiemariexxx.com. It stays one SiteID fetching one
+	// siteBase, because two would ingest the whole catalogue twice.
+	matchRe = regexp.MustCompile(`^https?://(?:www\.)?(?:sofiemariexxx\.com|yummysofie\.com)(?:/|$)`)
 	modelRe = regexp.MustCompile(`/models/([^/?#]+)\.html`)
 	dvdRe   = regexp.MustCompile(`/dvds/([^/?#]+)\.html`)
 )

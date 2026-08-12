@@ -21,11 +21,18 @@ func TestMatchesURL(t *testing.T) {
 		"https://sofiemariexxx.com/models/sofie-marie.html",
 		"https://sofiemariexxx.com/dvds/Dirt-Road-Warriors.html",
 		"http://sofiemariexxx.com/categories/movies.html",
+		// Alias domain serving the same catalogue.
+		"https://yummysofie.com",
+		"https://yummysofie.com/",
+		"https://www.yummysofie.com/models/sofie-marie.html",
 	}
 	no := []string{
 		"https://example.com",
 		"https://sofiemarie.com",
 		"https://notsofiemariexxx.com",
+		"https://notyummysofie.com",
+		// The press blog, not a catalogue — it must stay unclaimed.
+		"https://www.sofiemarie.com",
 	}
 
 	for _, u := range yes {
@@ -550,4 +557,19 @@ func TestDVDScrape(t *testing.T) {
 
 func TestScraperInterface(t *testing.T) {
 	var _ scraper.StudioScraper = New()
+}
+
+// The alias must resolve to the one canonical catalogue. Fetching yummysofie.com
+// on its own would ingest every scene a second time under a second set of URLs.
+func TestAliasDomainUsesTheCanonicalSiteBase(t *testing.T) {
+	s := New()
+	if s.siteBase != defaultSiteBase {
+		t.Fatalf("siteBase = %q, want %q", s.siteBase, defaultSiteBase)
+	}
+	if strings.Contains(s.siteBase, "yummysofie") {
+		t.Errorf("siteBase %q points at the alias host", s.siteBase)
+	}
+	if s.ID() != "sofiemarie" {
+		t.Errorf("ID() = %q — the alias must not introduce a second SiteID", s.ID())
+	}
 }
