@@ -163,6 +163,22 @@ func TestEstimateTotal(t *testing.T) {
 	}
 }
 
+// The site links its pages with a sort suffix (movies_2_d.html), which the
+// scraper never requests but which is the only place a page count is published.
+// Missing them made every run report a single page: a 343-scene catalogue was
+// announced as 10.
+func TestEstimateTotalReadsSuffixedPaginationLinks(t *testing.T) {
+	body := []byte(`<div class="global_pagination">
+		<a href="/categories/movies_1_d.html">1</a>
+		<a href="/categories/movies_2_d.html">2</a>
+		<a href="/categories/movies_35_d.html">35</a>
+		<a href="/categories/movies_1_z.html">A-Z</a>
+	</div>`)
+	if got := estimateTotal(body, 10); got != 350 {
+		t.Errorf("estimateTotal = %d, want 350 (35 pages x 10)", got)
+	}
+}
+
 const listingTpl = `%s
 %s`
 

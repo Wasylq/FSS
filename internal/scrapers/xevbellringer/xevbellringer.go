@@ -172,7 +172,11 @@ var (
 	dateRe      = regexp.MustCompile(`<span>(\d{2}/\d{2}/\d{4})</span>`)
 	priceRe     = regexp.MustCompile(`Buy \$(\d+(?:\.\d+)?)`)
 	thumbRe     = regexp.MustCompile(`src="(content/[^"]+)"`)
-	maxPageRe   = regexp.MustCompile(`/categories/movies_(\d+)\.html`)
+	// The site's own pagination links carry a sort suffix — movies_2_d.html,
+	// movies_1_z.html — so a pattern anchored on movies_{N}.html matched none
+	// of them and every scrape reported a one-page total. The suffixless form
+	// is still accepted because that is what this scraper requests.
+	maxPageRe = regexp.MustCompile(`/categories/movies_(\d+)(?:_[a-z]+)?\.html`)
 
 	descRe = regexp.MustCompile(`(?s)class="latest_update_description">(.*?)</span>`)
 	tagsRe = regexp.MustCompile(`(?s)class="update_tags">(.*?)</span>`)
