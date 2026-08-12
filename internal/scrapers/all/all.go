@@ -181,6 +181,7 @@ import (
 	_ "github.com/Anastylosis/FSS/internal/scrapers/legsemporium"
 	_ "github.com/Anastylosis/FSS/internal/scrapers/lewood"
 	_ "github.com/Anastylosis/FSS/internal/scrapers/lifeselector"
+	_ "github.com/Anastylosis/FSS/internal/scrapers/littlecapricedreams"
 	_ "github.com/Anastylosis/FSS/internal/scrapers/littlemutt"
 	_ "github.com/Anastylosis/FSS/internal/scrapers/loveherfilms"
 	_ "github.com/Anastylosis/FSS/internal/scrapers/lovinglyhandmade"
