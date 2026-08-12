@@ -315,6 +315,7 @@ import (
 	_ "github.com/Anastylosis/FSS/internal/scrapers/tokyohot"
 	_ "github.com/Anastylosis/FSS/internal/scrapers/treasureislandmedia"
 	_ "github.com/Anastylosis/FSS/internal/scrapers/tribdolls"
+	_ "github.com/Anastylosis/FSS/internal/scrapers/trixvideo"
 	_ "github.com/Anastylosis/FSS/internal/scrapers/underwatershow"
 	_ "github.com/Anastylosis/FSS/internal/scrapers/updateitem"
 	_ "github.com/Anastylosis/FSS/internal/scrapers/uptimely"

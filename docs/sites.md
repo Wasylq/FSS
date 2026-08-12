@@ -1,6 +1,6 @@
 # Covered Sites — All Domains
 
-1634 scrapers covering 1708 distinct domains. Auto-generated from the scraper registry by `TestSitesMdInSync` — do not hand-edit; instead update the scraper's `Patterns()` and re-run `go test ./internal/scrapers/all/...`. The `stashbox` scraper is omitted here because its covered hosts are config-driven; see [`scrapers.md`](scrapers.md).
+1642 scrapers covering 1716 distinct domains. Auto-generated from the scraper registry by `TestSitesMdInSync` — do not hand-edit; instead update the scraper's `Patterns()` and re-run `go test ./internal/scrapers/all/...`. The `stashbox` scraper is omitted here because its covered hosts are config-driven; see [`scrapers.md`](scrapers.md).
 
 Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scraper ID(s)** column lists every scraper that claims URLs on that domain — most domains have one entry, but table-driven networks (`adultprime`, `tmw`, `nextdoorstudios`, etc.) host many sub-studios on a single root domain. See [`scrapers.md`](scrapers.md) for what each ID covers.
 
@@ -406,6 +406,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | dahlia-av.jp | `faleno` |
 | dahliasky.puba.com | `pubadahliasky` |
 | daisymonroe.puba.com | `pubadaisymonroe` |
+| dallasdiamondz.com | `dallasdiamondz` |
 | damselsinperil.com | `damselsinperil` |
 | danadearmond.puba.com | `pubadanadearmond` |
 | dancingbear.com | `dancingbear` |
@@ -453,6 +454,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | dirtyscout.com | `bigstr` |
 | disgracethatbitch.com | `disgracethatbitch` |
 | disruptivefilms.com | `disruptivefilms` |
+| dixiestrailerpark.com | `dixiestrailerpark` |
 | dogfartnetwork.com | `dogfartnetwork` |
 | doghousedigital.com | `doghousedigital` |
 | dollsporn.com | `dollsporn` |
@@ -643,6 +645,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | gothgirlfriends.com | `gothgirlfriends` |
 | gothgirlfriendsvip.com | `gothgirlfriendsvip` |
 | grandparentsx.com | `grandparentsx` |
+| grannycumshere.com | `grannycumshere` |
 | grannygetsafacial.com | `grannygetsafacial` |
 | grannyghetto.com | `grannyghetto` |
 | grannyguide.com | `grannyguide` |
@@ -967,6 +970,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | mrluckyraw.com | `mrluckyraw` |
 | mrluckyvip.com | `mrluckyvip` |
 | mrpov.com | `mrpov` |
+| msparisandfriends.com | `msparisandfriends` |
 | mugurporn.com | `mugurporn` |
 | mybabysittersclub.com | `mybabysittersclub` |
 | mybadmilfs.com | `mybadmilfs` |
@@ -1364,6 +1368,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | subbyhubby.com | `subbyhubby` |
 | submissived.com | `submissived` |
 | subspaceland.com | `subspaceland` |
+| suburbantaboo.com | `suburbantaboo` |
 | sugardaddyporn.com | `sugardaddyporn` |
 | suggabunny.com | `porngutter` |
 | sukmydick.com | `sukmydick` |
@@ -1374,6 +1379,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | swappz.com | `swappz` |
 | sweetheartvideo.com | `sweetheartvideo` |
 | sweetsinner.com | `sweetsinner` |
+| swingingbicouples.com | `swingingbicouples` |
 | swnude.com | `swnude` |
 | sybian1.com | `sybian1` |
 | t.porn | `tporn` |
@@ -1386,6 +1392,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | tainster.com | `tainster` |
 | takara-tv.jp | `takaratv` |
 | tamedteens.com | `tamedteens` |
+| tampahousewives.com | `tampahousewives` |
 | taratainton.com | `taratainton` |
 | tawny-peaks.com | `tawny-peaks` |
 | taylorvixen.puba.com | `pubataylorvixen` |
@@ -1612,6 +1619,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | wetwetgirls.com | `wetwetgirls` |
 | wheretheboysarent.com | `wheretheboysarent` |
 | whiteghetto.com | `whiteghetto` |
+| whorebaithals.com | `whorebaithals` |
 | whynotbi.com | `whynotbi` |
 | wicked.com | `wicked` |
 | wifey.com | `wifey` |
