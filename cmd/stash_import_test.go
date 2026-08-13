@@ -1025,3 +1025,52 @@ func TestEntityLookupPerformerAndStudio(t *testing.T) {
 		t.Errorf("studios = %v", l.studios)
 	}
 }
+
+// Import must never drop a performer Stash already has: the update seeds its
+// PerformerIDs from the scene's existing cast and only appends. This matters
+// most with `fss scrape --performer`, which replaces the performer list on the
+// FSS side — if import were authoritative, relabelling a solo performer would
+// strip her co-stars out of Stash rather than merely stop adding them.
+func TestApplyScene_keepsPerformersAlreadyOnTheStashScene(t *testing.T) {
+	f := newFakeStash(t)
+	f.existingPerf = map[string]string{"Jodi West": "p-jodi"}
+
+	ss := stash.StashScene{
+		ID:    "1",
+		Files: []stash.StashFile{{Path: "/v/a.mp4"}},
+		// Already attached in Stash, and deliberately absent from merged.
+		Performers: []stash.StashPerf{{ID: "p-costar", Name: "Marcello Bravo"}},
+	}
+	merged := match.MergedScene{Title: "T", Performers: []string{"Jodi West"}}
+
+	if _, err := applyScene(context.Background(), f.client(), ss, merged,
+		nil, nil, "imp1", importOpts{apply: true}); err != nil {
+		t.Fatalf("applyScene: %v", err)
+	}
+
+	f.mu.Lock()
+	vars := f.last
+	f.mu.Unlock()
+	if vars == nil {
+		t.Fatal("no sceneUpdate was sent")
+	}
+
+	input, ok := vars["input"].(map[string]any)
+	if !ok {
+		t.Fatalf("sceneUpdate had no input object: %#v", vars)
+	}
+	raw, ok := input["performer_ids"].([]any)
+	if !ok {
+		t.Fatalf("performer_ids missing or not a list: %#v", input["performer_ids"])
+	}
+	got := map[string]bool{}
+	for _, v := range raw {
+		got[fmt.Sprint(v)] = true
+	}
+	if !got["p-costar"] {
+		t.Errorf("performer_ids = %v — the co-star already in Stash was dropped", raw)
+	}
+	if !got["p-jodi"] {
+		t.Errorf("performer_ids = %v — the merged performer was not added", raw)
+	}
+}

@@ -103,6 +103,12 @@ Two things this deliberately does *not* do:
 
 `fss scrape --no-preserve` restores the old behaviour for a real rebuild.
 
+`--performer`/`--studio` are unaffected by any of this. They replace those
+fields on every scene a run scrapes *before* the fresh scene reaches
+`preserveEnrichment`, and what they write is non-empty, so there is nothing for
+the fallback to restore — the operator's value wins over both the site's and the
+stored one. See [usage.md](usage.md#relabelling-a-scrape---performer----studio).
+
 ## Cross-site identity
 
 `(id, siteId)` is site-local: the same scene scraped from two sites has two

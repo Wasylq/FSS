@@ -360,7 +360,7 @@ func TestScrapeAll_preservesPriceHistory(t *testing.T) {
 				id:      "fakesite",
 				batches: [][]models.Scene{{build(t1, 4.99)}},
 			}
-			scenes, _, err := scrapeAll(context.Background(), sc, st, studioURL, 1, 0, true)
+			scenes, _, err := scrapeAll(context.Background(), sc, st, studioURL, 1, 0, true, sceneOverrides{})
 			if err != nil {
 				t.Fatalf("scrapeAll: %v", err)
 			}
@@ -420,7 +420,7 @@ func TestScrapeAll_dropsMissingScenes(t *testing.T) {
 		id:      "fakesite",
 		batches: [][]models.Scene{{build("2")}},
 	}
-	scenes, _, err := scrapeAll(context.Background(), sc, st, studioURL, 1, 0, true)
+	scenes, _, err := scrapeAll(context.Background(), sc, st, studioURL, 1, 0, true, sceneOverrides{})
 	if err != nil {
 		t.Fatalf("scrapeAll: %v", err)
 	}
@@ -501,7 +501,7 @@ func TestCollectScenes_absentErrorsKeepTraversalComplete(t *testing.T) {
 			scraper.AbsentError("https://example.com/dvds", errors.New("HTTP 410")),
 		},
 	}
-	scenes, tr, err := collectScenes(context.Background(), sc, "https://example.com", scraper.ListOpts{})
+	scenes, tr, err := collectScenes(context.Background(), sc, "https://example.com", scraper.ListOpts{}, sceneOverrides{})
 	if err != nil {
 		t.Fatalf("collectScenes: %v", err)
 	}
@@ -530,7 +530,7 @@ func TestCollectScenes_lossyErrorsMakeTraversalIncomplete(t *testing.T) {
 				scenes: []models.Scene{{ID: "1", SiteID: "kinded", Title: "Scene 1"}},
 				errs:   []error{c.err},
 			}
-			_, tr, err := collectScenes(context.Background(), sc, "https://example.com", scraper.ListOpts{})
+			_, tr, err := collectScenes(context.Background(), sc, "https://example.com", scraper.ListOpts{}, sceneOverrides{})
 			if err != nil {
 				t.Fatalf("collectScenes: %v", err)
 			}
@@ -551,7 +551,7 @@ func TestCollectScenes_mixedKindsCountLossesOnly(t *testing.T) {
 			scraper.ParseError("https://example.com/p/2", errors.New("no video block")),
 		},
 	}
-	_, tr, err := collectScenes(context.Background(), sc, "https://example.com", scraper.ListOpts{})
+	_, tr, err := collectScenes(context.Background(), sc, "https://example.com", scraper.ListOpts{}, sceneOverrides{})
 	if err != nil {
 		t.Fatalf("collectScenes: %v", err)
 	}
@@ -583,7 +583,7 @@ func TestCollectScenes_errorsWithSomeScenes(t *testing.T) {
 		},
 		errors: 2,
 	}
-	scenes, tr, err := collectScenes(context.Background(), sc, "https://example.com", scraper.ListOpts{})
+	scenes, tr, err := collectScenes(context.Background(), sc, "https://example.com", scraper.ListOpts{}, sceneOverrides{})
 	if err != nil {
 		t.Fatalf("expected no error when some scenes succeed, got: %v", err)
 	}
@@ -600,7 +600,7 @@ func TestCollectScenes_allErrorsNoScenes(t *testing.T) {
 		id:     "mix",
 		errors: 3,
 	}
-	_, _, err := collectScenes(context.Background(), sc, "https://example.com", scraper.ListOpts{})
+	_, _, err := collectScenes(context.Background(), sc, "https://example.com", scraper.ListOpts{}, sceneOverrides{})
 	if err == nil {
 		t.Fatal("expected error when all attempts fail with 0 scenes")
 	}
@@ -611,7 +611,7 @@ func TestCollectScenes_allErrorsNoScenes(t *testing.T) {
 
 func TestCollectScenes_noErrorsNoScenes(t *testing.T) {
 	sc := &mixedScraper{id: "mix"}
-	scenes, tr, err := collectScenes(context.Background(), sc, "https://example.com", scraper.ListOpts{})
+	scenes, tr, err := collectScenes(context.Background(), sc, "https://example.com", scraper.ListOpts{}, sceneOverrides{})
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -648,7 +648,7 @@ func TestScrapeRefresh_softDeleteAndRevive(t *testing.T) {
 		id:      "fakesite",
 		batches: [][]models.Scene{{build("1"), build("3")}},
 	}
-	result, _, err := scrapeRefresh(context.Background(), sc, st, studioURL, 1, 0, true)
+	result, _, err := scrapeRefresh(context.Background(), sc, st, studioURL, 1, 0, true, sceneOverrides{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -673,7 +673,7 @@ func TestScrapeRefresh_softDeleteAndRevive(t *testing.T) {
 		id:      "fakesite",
 		batches: [][]models.Scene{{build("1"), build("2"), build("3")}},
 	}
-	result2, _, err := scrapeRefresh(context.Background(), sc2, st, studioURL, 1, 0, true)
+	result2, _, err := scrapeRefresh(context.Background(), sc2, st, studioURL, 1, 0, true, sceneOverrides{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -833,7 +833,7 @@ func TestScrapeOne_normalizesStudioURL(t *testing.T) {
 
 	st := store.NewFlat(t.TempDir(), []string{"json"})
 	if err := scrapeOne(context.Background(), st, requested, "", "", "", []string{"json"},
-		false, false, false, true, 1, 0, nil); err != nil {
+		false, false, false, true, 1, 0, nil, sceneOverrides{}); err != nil {
 		t.Fatalf("scrapeOne: %v", err)
 	}
 
@@ -870,7 +870,7 @@ func TestScrapeAll_multiSiteKeyAndDedup(t *testing.T) {
 	}
 
 	st := store.NewFlat(t.TempDir(), []string{"json"})
-	scenes, _, err := scrapeAll(context.Background(), sc, st, studioURL, 1, 0, true)
+	scenes, _, err := scrapeAll(context.Background(), sc, st, studioURL, 1, 0, true, sceneOverrides{})
 	if err != nil {
 		t.Fatalf("scrapeAll: %v", err)
 	}
@@ -908,7 +908,7 @@ func TestScrapeAll_incompletePreservesExisting(t *testing.T) {
 
 	// A run that re-collects only scene 1 but reports a fetch error (tr.incomplete).
 	sc := &mixedScraper{id: "a1", scenes: []models.Scene{mk("1")}, errors: 1}
-	scenes, _, err := scrapeAll(context.Background(), sc, st, studioURL, 1, 0, true)
+	scenes, _, err := scrapeAll(context.Background(), sc, st, studioURL, 1, 0, true, sceneOverrides{})
 	if err != nil {
 		t.Fatalf("scrapeAll: %v", err)
 	}
@@ -941,7 +941,7 @@ func TestScrapeAll_completeDropsMissing(t *testing.T) {
 		t.Fatalf("seed: %v", err)
 	}
 	sc := &fakeScraper{id: "a1c", batches: [][]models.Scene{{mk("1")}}} // clean, only scene 1
-	scenes, _, err := scrapeAll(context.Background(), sc, st, studioURL, 1, 0, true)
+	scenes, _, err := scrapeAll(context.Background(), sc, st, studioURL, 1, 0, true, sceneOverrides{})
 	if err != nil {
 		t.Fatalf("scrapeAll: %v", err)
 	}
@@ -967,7 +967,7 @@ func TestScrapeRefresh_incompleteSkipsSoftDelete(t *testing.T) {
 
 	// Re-collect only scene 1, with an error (tr.incomplete).
 	sc := &mixedScraper{id: "a1r", scenes: []models.Scene{mk("1")}, errors: 1}
-	scenes, _, err := scrapeRefresh(context.Background(), sc, st, studioURL, 1, 0, true)
+	scenes, _, err := scrapeRefresh(context.Background(), sc, st, studioURL, 1, 0, true, sceneOverrides{})
 	if err != nil {
 		t.Fatalf("scrapeRefresh: %v", err)
 	}
@@ -995,7 +995,7 @@ func TestScrapeOne_emptyWipeGuard(t *testing.T) {
 
 	// --full, no --force: must refuse and keep the existing scene.
 	if err := scrapeOne(context.Background(), st, url, "", "", "", []string{"json"},
-		true, false, false, true, 1, 0, nil); err != nil {
+		true, false, false, true, 1, 0, nil, sceneOverrides{}); err != nil {
 		t.Fatalf("scrapeOne (guard): %v", err)
 	}
 	got, _ := st.Load(url)
@@ -1005,7 +1005,7 @@ func TestScrapeOne_emptyWipeGuard(t *testing.T) {
 
 	// --force: the wipe is allowed.
 	if err := scrapeOne(context.Background(), st, url, "", "", "", []string{"json"},
-		true, false, true, true, 1, 0, nil); err != nil {
+		true, false, true, true, 1, 0, nil, sceneOverrides{}); err != nil {
 		t.Fatalf("scrapeOne (force): %v", err)
 	}
 	got, _ = st.Load(url)
@@ -1064,7 +1064,7 @@ func TestScrapeRefresh_preservesEnrichment(t *testing.T) {
 			t.Fatal(err)
 		}
 		sc := &fakeScraper{id: "fakesite", batches: [][]models.Scene{{stripped}}}
-		result, _, err := scrapeRefresh(context.Background(), sc, st, studioURL, 1, 0, preserve)
+		result, _, err := scrapeRefresh(context.Background(), sc, st, studioURL, 1, 0, preserve, sceneOverrides{})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -1223,7 +1223,7 @@ func TestScrapeOneCollapseSkipsDestructiveSave(t *testing.T) {
 	// Declined at the prompt: the store must be untouched.
 	withPrompt(t, true, "n\n")
 	if err := scrapeOne(context.Background(), st, studioURL, "", "", dir, []string{"json"},
-		true, false, false, true, 1, 0, nil); err != nil {
+		true, false, false, true, 1, 0, nil, sceneOverrides{}); err != nil {
 		t.Fatalf("scrapeOne: %v", err)
 	}
 	after, err := st.Load(studioURL)
@@ -1237,7 +1237,7 @@ func TestScrapeOneCollapseSkipsDestructiveSave(t *testing.T) {
 	// Confirmed: the authoritative save goes through as it always did.
 	withPrompt(t, true, "y\n")
 	if err := scrapeOne(context.Background(), st, studioURL, "", "", dir, []string{"json"},
-		true, false, false, true, 1, 0, nil); err != nil {
+		true, false, false, true, 1, 0, nil, sceneOverrides{}); err != nil {
 		t.Fatalf("scrapeOne (confirmed): %v", err)
 	}
 	after, err = st.Load(studioURL)

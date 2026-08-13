@@ -40,10 +40,50 @@ For choosing a store, inspecting a database, and moving between the two, see [st
 | `--delay` | int | `500` | Milliseconds to sleep between page requests (default from config; `--delay 0` disables) |
 | `--site-delay` | []string | _(none)_ | Per-scraper delay overrides as `name=ms` pairs, e.g. `--site-delay manyvids=0,pornhub=2000` |
 | `--name` | string | _(none)_ | Human-readable label for this studio (stored when `--db` is set) |
+| `--performer` | []string | _(none)_ | Replace the performers on every scene this run scrapes. Repeat the flag, or comma-separate, for several |
+| `--studio` | string | _(none)_ | Replace the studio on every scene this run scrapes |
 
 `--full` and `--refresh` are mutually exclusive.
 
 **Per-site delay precedence:** `--site-delay <id>=N` (CLI) > `site_delays.<id>: N` (config) > `--delay`/`delay` (global). A site explicitly set to `0` disables delay even when the global default is non-zero. `--full` re-fetches every scene (carrying price history forward) and drops scenes no longer on the site. `--refresh` traverses the full scene list but re-uses existing IDs to update metadata in place and detect deletions.
+
+### Relabelling a scrape: `--performer` / `--studio`
+
+One performer's catalogue is often spread over several sites that each credit
+her differently. Scraping them all under one name files every scene together
+instead of leaving the store with an alias per site:
+
+```bash
+fss scrape https://siteA.com https://siteB.com https://siteC.com \
+  --performer "Jodi West" --studio "Jodi West"
+```
+
+Both flags apply to **every URL in the invocation**, and both **replace** rather
+than merge — the point is to drop the site's spelling, and a scene that kept
+both would hold one person under two names. On a scene the site credited to
+several people, the co-stars are replaced too, so this fits solo-performer sites
+and is lossy elsewhere. Pass every name you want kept:
+
+```bash
+fss scrape https://siteA.com --performer "Jodi West" --performer "Marcello Bravo"
+fss scrape https://siteA.com --performer "Jodi West, Marcello Bravo"   # same thing
+```
+
+The override applies to the scenes a run **scrapes**, not to everything already
+stored. An incremental run therefore relabels only what it re-collects; use
+`--full` or `--refresh` to relabel a whole catalogue. The run prints what it is
+doing (`overriding: performers → …`) so the relabel is not invisible.
+
+`--studio` is not `--name`: `--name` is the studio's label in the SQLite
+`studios` table, while `--studio` is the per-scene `Studio` field. On a network
+scraper whose scenes carry sub-brands (Gamma, Empire Stores, Trix Video),
+`--studio` flattens them all to the one value.
+
+**Effect on `fss stash import`:** performers are safe — the import seeds a
+scene's performer list from what Stash already has and only appends, so a name
+dropped here is never removed from Stash, merely no longer added by FSS. A
+brand-new Stash scene, though, gets only the names you supplied. `--studio`
+does replace the Stash studio, since a scene has exactly one.
 
 ### `fss list-scrapers`
 
