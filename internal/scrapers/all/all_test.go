@@ -165,3 +165,52 @@ func domainOfPattern(p string) string {
 	}
 	return strings.ToLower(p)
 }
+
+// TestAmbiguousHostRouting pins hosts that more than one scraper could claim.
+//
+// scraper.ForURL returns the *first* registered match and reports the tie only
+// at -d, so an overlap does not fail anything — it just silently picks by
+// registration order. thelisaann.com is the live case: its bare host serves a
+// 120-scene marketing listing (`thelisaann`, in the darkreach table) while
+// /vod/ is a separate 319-scene VOD tour (`thelisaannvod`), and the marketing
+// entry's original host-wide pattern claimed both.
+func TestAmbiguousHostRouting(t *testing.T) {
+	cases := []struct {
+		url  string
+		want string
+	}{
+		{"https://www.thelisaann.com/", "thelisaann"},
+		{"https://thelisaann.com", "thelisaann"},
+		{"https://www.thelisaann.com/updates/page_2.html", "thelisaann"},
+		{"https://thelisaann.com/vod/", "thelisaannvod"},
+		{"https://www.thelisaann.com/vod/", "thelisaannvod"},
+		{"https://thelisaann.com/vod/categories/movies_3_d.html", "thelisaannvod"},
+		{"https://thelisaann.com/vod/models/lisa-ann.html", "thelisaannvod"},
+		{"https://thelisaann.com/vod/scenes/Some-Scene_vids.html", "thelisaannvod"},
+	}
+	for _, tt := range cases {
+		s, err := scraper.ForURL(tt.url)
+		if err != nil {
+			t.Errorf("ForURL(%q): %v", tt.url, err)
+			continue
+		}
+		if s.ID() != tt.want {
+			t.Errorf("ForURL(%q) = %q, want %q", tt.url, s.ID(), tt.want)
+		}
+	}
+
+	// The routing above only holds while exactly one scraper matches each URL.
+	// Assert that directly, so a future host-wide pattern fails here rather
+	// than silently winning or losing on registration order.
+	for _, tt := range cases {
+		var matched []string
+		for _, s := range scraper.All() {
+			if s.MatchesURL(tt.url) {
+				matched = append(matched, s.ID())
+			}
+		}
+		if len(matched) != 1 {
+			t.Errorf("%q matched %v, want exactly one scraper", tt.url, matched)
+		}
+	}
+}

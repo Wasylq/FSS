@@ -309,6 +309,7 @@ import (
 	_ "github.com/Anastylosis/FSS/internal/scrapers/teencoreclub"
 	_ "github.com/Anastylosis/FSS/internal/scrapers/teendreams"
 	_ "github.com/Anastylosis/FSS/internal/scrapers/thatfetishgirl"
+	_ "github.com/Anastylosis/FSS/internal/scrapers/thelisaannvod"
 	_ "github.com/Anastylosis/FSS/internal/scrapers/timtales"
 	_ "github.com/Anastylosis/FSS/internal/scrapers/titanmedia"
 	_ "github.com/Anastylosis/FSS/internal/scrapers/titanmen"

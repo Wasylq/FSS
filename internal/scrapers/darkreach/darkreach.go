@@ -130,7 +130,11 @@ var updatesMarketingSites = []darkreachupdatesutil.SiteConfig{
 		SiteBase: "https://www.thelisaann.com",
 		Studio:   "Lisa Ann",
 		Patterns: []string{"thelisaann.com", "thelisaann.com/updates/page_{N}.html"},
-		MatchRe:  regexp.MustCompile(`^https?://(?:www\.)?thelisaann\.com(?:/|$)`),
+		// Scoped to the two paths this marketing listing serves. A host-wide
+		// pattern also claimed /vod/, the site's separate 319-scene VOD tour
+		// (`thelisaannvod`), and ForURL takes the first registration — so which
+		// scraper ran was an accident of ordering, reported only at -d.
+		MatchRe: regexp.MustCompile(`^https?://(?:www\.)?thelisaann\.com/?(?:updates/page_\d+\.html)?$`),
 	},
 	{
 		ID:       "theavaaddams",

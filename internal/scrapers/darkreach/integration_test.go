@@ -32,3 +32,19 @@ func TestLiveEvolvedFightsLez(t *testing.T) {
 	}
 	testutil.RunLiveScrape(t, s, url, 3)
 }
+
+// thelisaann is the marketing listing on a host that also serves a separate VOD
+// tour (`thelisaannvod`). Its match pattern was narrowed to the two paths it
+// actually serves so the tour's URLs stop resolving here; this pins that the
+// narrowing did not also cost it its own catalogue.
+func TestLiveTheLisaAnn(t *testing.T) {
+	url := "https://www.thelisaann.com/"
+	s, err := scraper.ForURL(url)
+	if err != nil {
+		t.Fatalf("no scraper matched %s: %v", url, err)
+	}
+	if s.ID() != "thelisaann" {
+		t.Fatalf("expected thelisaann, got %s", s.ID())
+	}
+	testutil.RunLiveScrape(t, s, url, 3)
+}
