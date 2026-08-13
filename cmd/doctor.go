@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
+	"strings"
 	"time"
 
 	"github.com/spf13/cobra"
@@ -24,6 +25,7 @@ var doctorCmd = &cobra.Command{
 
 func init() {
 	rootCmd.AddCommand(doctorCmd)
+	doctorCmd.Flags().Bool("prune", false, "delete performer/tag/category rows no scene references any more")
 }
 
 func runDoctor(cmd *cobra.Command, _ []string) error {
@@ -76,6 +78,38 @@ func runDoctor(cmd *cobra.Command, _ []string) error {
 		}
 		_ = s.Close()
 		return dbPath, true
+	})
+	check("vocabulary", func() (string, bool) {
+		db, path, err := openConfiguredDB()
+		if err != nil || db == nil {
+			return "no database", true
+		}
+		defer func() { _ = db.Close() }()
+		_ = path
+
+		prune, _ := cmd.Flags().GetBool("prune")
+		counts, err := db.UnreferencedVocabulary()
+		if err != nil {
+			return err.Error(), false
+		}
+		total := 0
+		for _, n := range counts {
+			total += n
+		}
+		if total == 0 {
+			return "no unreferenced rows", true
+		}
+		if !prune {
+			// Reported, not fixed: deleting rows is the operator's call, and
+			// a count on its own is often the first sign of a parser that
+			// briefly wrote mangled names.
+			return fmt.Sprintf("%s unreferenced (run `fss doctor --prune` to remove)", describeCounts(counts)), true
+		}
+		removed, err := db.PruneVocabulary()
+		if err != nil {
+			return err.Error(), false
+		}
+		return "pruned " + describeCounts(removed), true
 	})
 	check("output directory", func() (string, bool) {
 		dir := "."
@@ -149,4 +183,32 @@ func runDoctor(cmd *cobra.Command, _ []string) error {
 		_, _ = fmt.Fprintln(w, "Some checks failed — see above.")
 	}
 	return nil
+}
+
+// openConfiguredDB opens the database named in the config, or returns nil when
+// none is configured. The caller must Close a non-nil result.
+func openConfiguredDB() (*store.SQLite, string, error) {
+	path := config.ResolveDBPath(configuredDB())
+	if path == "" {
+		return nil, "", nil
+	}
+	db, err := store.NewSQLite(path)
+	if err != nil {
+		return nil, path, err
+	}
+	return db, path, nil
+}
+
+// describeCounts renders a per-table breakdown in a stable order.
+func describeCounts(counts map[string]int) string {
+	parts := make([]string, 0, len(counts))
+	for _, name := range []string{"performers", "tags", "categories"} {
+		if n := counts[name]; n > 0 {
+			parts = append(parts, fmt.Sprintf("%d %s", n, name))
+		}
+	}
+	if len(parts) == 0 {
+		return "nothing"
+	}
+	return strings.Join(parts, ", ")
 }

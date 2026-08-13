@@ -2188,3 +2188,100 @@ func TestOrderedNames(t *testing.T) {
 		})
 	}
 }
+
+// Save removes a scene's junction rows but leaves the shared entity rows they
+// pointed at, so vocabulary accumulates across re-scrapes. These cover the
+// maintenance path that clears it.
+func TestUnreferencedVocabularyAndPrune(t *testing.T) {
+	db := newTestDB(t)
+	const studio = "https://vocab.example.com"
+
+	sc := models.Scene{
+		ID: "1", SiteID: "s", StudioURL: studio, Title: "One",
+		ScrapedAt:  time.Now().UTC(),
+		Performers: []string{"Ada Stone"},
+		Tags:       []string{"Tockings", "Silk"},
+		Categories: []string{"Solo"},
+	}
+	if err := db.Save(studio, []models.Scene{sc}); err != nil {
+		t.Fatal(err)
+	}
+	if counts, err := db.UnreferencedVocabulary(); err != nil {
+		t.Fatal(err)
+	} else if counts["tags"] != 0 || counts["performers"] != 0 {
+		t.Fatalf("fresh save already has unreferenced rows: %v", counts)
+	}
+
+	// The scrape that corrects a truncated tag: the junction rows move, the old
+	// vocabulary row is left behind.
+	sc.Tags = []string{"Stockings", "Silk"}
+	if err := db.Save(studio, []models.Scene{sc}); err != nil {
+		t.Fatal(err)
+	}
+	counts, err := db.UnreferencedVocabulary()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if counts["tags"] != 1 {
+		t.Fatalf("unreferenced tags = %d, want 1 (the corrected spelling orphans the old row)", counts["tags"])
+	}
+
+	removed, err := db.PruneVocabulary()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if removed["tags"] != 1 {
+		t.Errorf("pruned %d tags, want 1", removed["tags"])
+	}
+	after, err := db.UnreferencedVocabulary()
+	if err != nil {
+		t.Fatal(err)
+	}
+	for table, n := range after {
+		if n != 0 {
+			t.Errorf("%s still has %d unreferenced rows after prune", table, n)
+		}
+	}
+
+	// Pruning must not touch anything a scene still references.
+	got, err := db.Load(studio)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(got) != 1 || len(got[0].Tags) != 2 || len(got[0].Performers) != 1 {
+		t.Fatalf("prune damaged live data: %+v", got)
+	}
+}
+
+// An entity shared by two studios must survive one of them dropping it.
+func TestPruneVocabularyKeepsSharedEntities(t *testing.T) {
+	db := newTestDB(t)
+	const a, b = "https://a.example.com", "https://b.example.com"
+	now := time.Now().UTC()
+
+	mk := func(studio, id string, tags ...string) models.Scene {
+		return models.Scene{ID: id, SiteID: "s", StudioURL: studio, Title: id, ScrapedAt: now, Tags: tags}
+	}
+	if err := db.Save(a, []models.Scene{mk(a, "1", "Shared")}); err != nil {
+		t.Fatal(err)
+	}
+	if err := db.Save(b, []models.Scene{mk(b, "2", "Shared")}); err != nil {
+		t.Fatal(err)
+	}
+	// Studio A stops using the tag; studio B still does.
+	if err := db.Save(a, []models.Scene{mk(a, "1")}); err != nil {
+		t.Fatal(err)
+	}
+	if removed, err := db.PruneVocabulary(); err != nil {
+		t.Fatal(err)
+	} else if removed["tags"] != 0 {
+		t.Errorf("pruned %d tags, want 0 — the tag is still on studio B", removed["tags"])
+	}
+	got, err := db.Load(b)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(got) != 1 || len(got[0].Tags) != 1 || got[0].Tags[0] != "Shared" {
+		t.Fatalf("shared tag lost from studio B: %+v", got)
+	}
+}

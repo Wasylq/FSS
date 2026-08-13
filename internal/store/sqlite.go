@@ -1607,3 +1607,68 @@ func unmarshalStrings(s string) ([]string, error) {
 	}
 	return result, nil
 }
+
+// UnreferencedVocabulary counts entity rows no scene links to any more, per
+// table.
+//
+// Save deletes a scene's junction rows but never the `performers` / `tags` /
+// `categories` rows they pointed at, because the entity may still be shared
+// with another studio and proving otherwise costs a scan. Over years of
+// re-scrapes those accumulate: a parser that briefly truncated tag names leaves
+// its mistakes in the vocabulary long after the junction rows are corrected.
+//
+// Deliberately not folded into Save. Each query walks the whole junction table,
+// and Save is the hot path an incremental scrape runs per studio — the whole
+// point of its content-hash short-circuit is not to touch 1.4M junction rows to
+// record one new scene. This is maintenance, so it runs when asked.
+func (s *SQLite) UnreferencedVocabulary() (map[string]int, error) {
+	out := make(map[string]int, len(vocabularyTables))
+	for _, t := range vocabularyTables {
+		var n int
+		q := fmt.Sprintf(`SELECT COUNT(*) FROM %s WHERE id NOT IN (SELECT %s FROM %s)`,
+			t.entity, t.fk, t.junction)
+		if err := s.db.QueryRow(q).Scan(&n); err != nil {
+			return nil, fmt.Errorf("counting unreferenced %s: %w", t.entity, err)
+		}
+		out[t.entity] = n
+	}
+	return out, nil
+}
+
+// PruneVocabulary deletes the rows UnreferencedVocabulary counts, returning how
+// many went per table. It is safe to run at any time: a row with no junction
+// row is unreachable from every scene, so nothing observable changes.
+func (s *SQLite) PruneVocabulary() (map[string]int, error) {
+	tx, err := s.db.Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer func() { _ = tx.Rollback() }()
+
+	out := make(map[string]int, len(vocabularyTables))
+	for _, t := range vocabularyTables {
+		q := fmt.Sprintf(`DELETE FROM %s WHERE id NOT IN (SELECT %s FROM %s)`,
+			t.entity, t.fk, t.junction)
+		res, err := tx.Exec(q)
+		if err != nil {
+			return nil, fmt.Errorf("pruning %s: %w", t.entity, err)
+		}
+		n, err := res.RowsAffected()
+		if err != nil {
+			return nil, fmt.Errorf("counting pruned %s: %w", t.entity, err)
+		}
+		out[t.entity] = int(n)
+	}
+	if err := tx.Commit(); err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+// vocabularyTables lists the shared entity tables and the junction column that
+// references each.
+var vocabularyTables = []struct{ entity, junction, fk string }{
+	{"performers", "scene_performers", "performer_id"},
+	{"tags", "scene_tags", "tag_id"},
+	{"categories", "scene_categories", "category_id"},
+}
