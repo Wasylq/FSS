@@ -832,7 +832,7 @@ func TestScrapeOne_normalizesStudioURL(t *testing.T) {
 	})
 
 	st := store.NewFlat(t.TempDir(), []string{"json"})
-	if err := scrapeOne(context.Background(), st, requested, "", "", "", []string{"json"},
+	if err := scrapeOne(context.Background(), st, scrapeTarget{url: requested}, "", "", "", []string{"json"},
 		false, false, false, true, 1, 0, nil, sceneOverrides{}); err != nil {
 		t.Fatalf("scrapeOne: %v", err)
 	}
@@ -994,7 +994,7 @@ func TestScrapeOne_emptyWipeGuard(t *testing.T) {
 	}
 
 	// --full, no --force: must refuse and keep the existing scene.
-	if err := scrapeOne(context.Background(), st, url, "", "", "", []string{"json"},
+	if err := scrapeOne(context.Background(), st, scrapeTarget{url: url}, "", "", "", []string{"json"},
 		true, false, false, true, 1, 0, nil, sceneOverrides{}); err != nil {
 		t.Fatalf("scrapeOne (guard): %v", err)
 	}
@@ -1004,7 +1004,7 @@ func TestScrapeOne_emptyWipeGuard(t *testing.T) {
 	}
 
 	// --force: the wipe is allowed.
-	if err := scrapeOne(context.Background(), st, url, "", "", "", []string{"json"},
+	if err := scrapeOne(context.Background(), st, scrapeTarget{url: url}, "", "", "", []string{"json"},
 		true, false, true, true, 1, 0, nil, sceneOverrides{}); err != nil {
 		t.Fatalf("scrapeOne (force): %v", err)
 	}
@@ -1222,7 +1222,7 @@ func TestScrapeOneCollapseSkipsDestructiveSave(t *testing.T) {
 
 	// Declined at the prompt: the store must be untouched.
 	withPrompt(t, true, "n\n")
-	if err := scrapeOne(context.Background(), st, studioURL, "", "", dir, []string{"json"},
+	if err := scrapeOne(context.Background(), st, scrapeTarget{url: studioURL}, "", "", dir, []string{"json"},
 		true, false, false, true, 1, 0, nil, sceneOverrides{}); err != nil {
 		t.Fatalf("scrapeOne: %v", err)
 	}
@@ -1236,7 +1236,7 @@ func TestScrapeOneCollapseSkipsDestructiveSave(t *testing.T) {
 
 	// Confirmed: the authoritative save goes through as it always did.
 	withPrompt(t, true, "y\n")
-	if err := scrapeOne(context.Background(), st, studioURL, "", "", dir, []string{"json"},
+	if err := scrapeOne(context.Background(), st, scrapeTarget{url: studioURL}, "", "", dir, []string{"json"},
 		true, false, false, true, 1, 0, nil, sceneOverrides{}); err != nil {
 		t.Fatalf("scrapeOne (confirmed): %v", err)
 	}

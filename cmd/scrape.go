@@ -22,10 +22,18 @@ import (
 )
 
 var scrapeCmd = &cobra.Command{
-	Use:   "scrape <studio-url> [studio-url ...]",
-	Short: "Scrape all scenes from one or more studio URLs",
-	Args:  cobra.MinimumNArgs(1),
-	RunE:  runScrape,
+	Use:   "scrape [studio-url ...]",
+	Short: "Scrape all scenes from one or more studio URLs, or from a creator's storefronts",
+	Long: `Scrape all scenes from one or more studio URLs.
+
+Studios can be named directly, or selected through creators.d — one YAML file
+per creator listing the several storefronts one person sells on:
+
+    fss scrape https://clipmarket.example/studio/4021/mara-vance
+    fss scrape --creator "Mara Vance"
+    fss scrape --all-creators --stale 7d`,
+	Args: cobra.ArbitraryArgs,
+	RunE: runScrape,
 }
 
 func init() {
@@ -45,13 +53,18 @@ func init() {
 	scrapeCmd.Flags().StringSlice("site-delay", nil, "per-scraper delay override, e.g. --site-delay manyvids=0,pornhub=2000 (overrides --delay for matching sites)")
 	scrapeCmd.Flags().StringArray("performer", nil, "replace the performers on every scene this run scrapes (repeat, or comma-separate, for several)")
 	scrapeCmd.Flags().String("studio", "", "replace the studio on every scene this run scrapes")
+	scrapeCmd.Flags().StringArray("creator", nil, "scrape every storefront defined for this creator in creators.d (repeatable)")
+	scrapeCmd.Flags().Bool("all-creators", false, "scrape every storefront of every creator in creators.d")
+	scrapeCmd.Flags().String("stale", "", "only scrape studios not scraped within this window, e.g. 12h, 7d, 2w (needs --db)")
+	scrapeCmd.Flags().String("creators-dir", "", "directory of creator YAML files (default: config creators_dir, else ~/.config/fss/creators.d)")
 }
 
 func runScrape(cmd *cobra.Command, args []string) error {
-	// Normalised once here: this URL is matched, fetched, and used as the store key.
-	args = append([]string(nil), args...)
-	for i := range args {
-		args[i] = normalizeInputURL(args[i])
+	// URLs are normalised once, inside resolveScrapeTargets: the result is what
+	// gets matched, fetched, and used as the store key.
+	targets, err := resolveScrapeTargets(cmd, args)
+	if err != nil {
+		return err
 	}
 
 	// --- resolve flags against config ---
@@ -86,7 +99,7 @@ func runScrape(cmd *cobra.Command, args []string) error {
 	dbPath := resolveDBPath(cmd)
 
 	name, _ := cmd.Flags().GetString("name")
-	if name != "" && len(args) > 1 {
+	if name != "" && len(targets) > 1 {
 		return fmt.Errorf("--name cannot be used when scraping multiple URLs")
 	}
 	if name != "" && dbPath == "" {
@@ -139,6 +152,24 @@ func runScrape(cmd *cobra.Command, args []string) error {
 
 	warnFlatStoreDefaultChanging(dbPath != "")
 
+	// --stale is applied after the store is open so it can read the studios
+	// table, and before any fetching so a cron run that has nothing due exits
+	// without touching the network.
+	if staleFlag, _ := cmd.Flags().GetString("stale"); staleFlag != "" {
+		maxAge, err := parseStaleDuration(staleFlag)
+		if err != nil {
+			return err
+		}
+		targets, err = filterStale(targets, maxAge, st, dbPath)
+		if err != nil {
+			return err
+		}
+		if len(targets) == 0 {
+			return nil
+		}
+		fmt.Println()
+	}
+
 	// --- graceful shutdown on Ctrl+C ---
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
@@ -147,12 +178,12 @@ func runScrape(cmd *cobra.Command, args []string) error {
 	// only; we deliberately do NOT run multiple URLs in parallel so the worker
 	// cap is the global cap (no N×workers explosion against unrelated hosts).
 	var firstErr error
-	for i, studioURL := range args {
+	for i, tgt := range targets {
 		if i > 0 {
 			fmt.Println()
 		}
-		if err := scrapeOne(ctx, st, studioURL, name, dbPath, outDir, formats, full, refresh, force, !noPreserve, workers, defaultDelay, siteDelays, overrides); err != nil {
-			fmt.Fprintf(os.Stderr, "error scraping %s: %v\n", studioURL, err)
+		if err := scrapeOne(ctx, st, tgt, name, dbPath, outDir, formats, full, refresh, force, !noPreserve, workers, defaultDelay, siteDelays, overrides); err != nil {
+			fmt.Fprintf(os.Stderr, "error scraping %s: %v\n", tgt.url, err)
 			if firstErr == nil {
 				firstErr = err
 			}
@@ -164,8 +195,9 @@ func runScrape(cmd *cobra.Command, args []string) error {
 	return firstErr
 }
 
-func scrapeOne(ctx context.Context, st store.Store, studioURL, name, dbPath, outDir string, formats []string, full, refresh, force, preserve bool, workers int, defaultDelay time.Duration, siteDelays map[string]int, ov sceneOverrides) error {
+func scrapeOne(ctx context.Context, st store.Store, tgt scrapeTarget, name, dbPath, outDir string, formats []string, full, refresh, force, preserve bool, workers int, defaultDelay time.Duration, siteDelays map[string]int, ov sceneOverrides) error {
 	start := time.Now()
+	studioURL := tgt.url
 
 	sc, err := scraper.ForURL(studioURL)
 	if err != nil {
@@ -178,7 +210,7 @@ func scrapeOne(ctx context.Context, st store.Store, studioURL, name, dbPath, out
 	}
 	defer func() { _ = unlock.Close() }()
 
-	delay := resolveSiteDelay(sc.ID(), defaultDelay, siteDelays)
+	delay := resolveTargetDelay(tgt, sc.ID(), defaultDelay, siteDelays)
 	scraper.Debugf(1, "scraper: %s, delay: %v, workers: %d", sc.ID(), delay, workers)
 
 	if !ov.empty() {
@@ -189,13 +221,13 @@ func scrapeOne(ctx context.Context, st store.Store, studioURL, name, dbPath, out
 	var cov coverage
 	switch {
 	case full:
-		fmt.Printf("Full scrape: %s\n", studioURL)
+		fmt.Printf("Full scrape: %s\n", tgt.label())
 		scenes, cov, err = scrapeAll(ctx, sc, st, studioURL, workers, delay, preserve, ov)
 	case refresh:
-		fmt.Printf("Refresh scrape: %s\n", studioURL)
+		fmt.Printf("Refresh scrape: %s\n", tgt.label())
 		scenes, cov, err = scrapeRefresh(ctx, sc, st, studioURL, workers, delay, preserve, ov)
 	default:
-		fmt.Printf("Incremental scrape: %s\n", studioURL)
+		fmt.Printf("Incremental scrape: %s\n", tgt.label())
 		scenes, cov, err = scrapeIncremental(ctx, sc, st, studioURL, workers, delay, preserve, ov)
 	}
 	if err != nil {
