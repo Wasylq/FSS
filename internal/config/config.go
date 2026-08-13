@@ -33,9 +33,13 @@ type Config struct {
 	Notices *bool `yaml:"notices"`
 	// SiteDelays overrides Delay per scraper ID (e.g. "manyvids", "pornhub").
 	// Sites without an entry fall back to Delay.
-	SiteDelays map[string]int   `yaml:"site_delays"`
-	Stash      StashConfig      `yaml:"stash"`
-	Stashbox   []StashboxConfig `yaml:"stashbox"`
+	SiteDelays map[string]int `yaml:"site_delays"`
+	// CreatorsDir is the directory of one-creator-per-file YAML definitions.
+	// Empty means the conventional location beside this config. Point it at a
+	// clone to use a shared set.
+	CreatorsDir string           `yaml:"creators_dir"`
+	Stash       StashConfig      `yaml:"stash"`
+	Stashbox    []StashboxConfig `yaml:"stashbox"`
 }
 
 type StashboxConfig struct {
@@ -76,6 +80,15 @@ func DefaultPath() string {
 // platform, under the XDG data directory (e.g. ~/.local/share/fss/fss.db).
 func DefaultDBPath() string {
 	return filepath.Join(xdg.DataHome, "fss", "fss.db")
+}
+
+// CreatorsPath returns the configured creators directory, or "" to let the
+// creators package use its conventional location. Safe on a nil Config.
+func (c *Config) CreatorsPath() string {
+	if c == nil {
+		return ""
+	}
+	return c.CreatorsDir
 }
 
 // DBRef is a helper for building a Config with a literal `db:` value, since the

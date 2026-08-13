@@ -49,6 +49,14 @@ site_delays:
   # clips4sale: 1000
   # brazzers: 500
 
+# Directory of creator definitions — one YAML file per creator, binding the
+# several storefronts one person sells the same catalogue on. It powers
+# `fss scrape --creator/--all-creators` and `fss compare`.
+# Empty (or absent) means ~/.config/fss/creators.d. These files carry no
+# credentials, so point this at a git clone to use a shared set.
+# Bootstrap yours with `fss creators suggest --write`. See docs/creators.md.
+creators_dir: ""
+
 # Stashbox instances for the stashbox scraper.
 # Each entry maps a GraphQL endpoint to an API key. The scraper matches
 # incoming URLs against these endpoints to find the right key.
