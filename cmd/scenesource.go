@@ -8,6 +8,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/Anastylosis/FSS/internal/config"
+	"github.com/Anastylosis/FSS/internal/creators"
 	"github.com/Anastylosis/FSS/internal/store"
 	"github.com/Anastylosis/FSS/match"
 	"github.com/Anastylosis/FSS/models"
@@ -31,6 +32,33 @@ func addSceneSourceFlags(cmd *cobra.Command) {
 		"only use scenes from these studios — a studio URL, a studio name, or a per-scene studio/sub-brand name (repeatable: any match)")
 	cmd.Flags().StringSlice("from-performer", nil,
 		"only use scenes featuring these performers (repeatable: any match)")
+	cmd.Flags().StringSlice("from-creator", nil,
+		"only use scenes from this creator's storefronts, as defined in creators.d (repeatable: any match)")
+	cmd.Flags().String("creators-dir", "",
+		"directory of creator YAML files (default: config creators_dir, else ~/.config/fss/creators.d)")
+}
+
+// creatorStudioURLs expands --from-creator into studio URLs, which the studio
+// filter already knows how to match. A creator is a named set of studio URLs,
+// so it resolves to exactly the same thing as listing them by hand.
+func creatorStudioURLs(cmd *cobra.Command) ([]string, error) {
+	names, _ := cmd.Flags().GetStringSlice("from-creator")
+	if len(names) == 0 {
+		return nil, nil
+	}
+	list, err := loadCreators(cmd)
+	if err != nil {
+		return nil, err
+	}
+	var urls []string
+	for _, n := range names {
+		c, err := creators.Find(list, n)
+		if err != nil {
+			return nil, err
+		}
+		urls = append(urls, c.URLs()...)
+	}
+	return urls, nil
 }
 
 // resolveDBPath returns the database path for a command. An empty result means
@@ -115,6 +143,11 @@ func loadFSSScenes(cmd *cobra.Command) ([]models.Scene, sceneSource, error) {
 
 	studios, _ := cmd.Flags().GetStringSlice("from-studio")
 	performers, _ := cmd.Flags().GetStringSlice("from-performer")
+	creatorURLs, err := creatorStudioURLs(cmd)
+	if err != nil {
+		return nil, src, err
+	}
+	studios = append(studios, creatorURLs...)
 	scenes, err = filterScenes(scenes, studios, performers, studioNames)
 	if err != nil {
 		return nil, src, err
