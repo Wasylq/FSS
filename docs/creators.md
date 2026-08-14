@@ -146,6 +146,37 @@ both apply: an explicit flag beats a standing default.
 It changes what future scrapes *store*; it does not rewrite scenes already saved.
 To fold an existing duplicate, re-run that store with `--refresh`.
 
+### Studios are not merged, and should not be
+
+Only performer credits are folded. Each storefront keeps its own studio, its own
+row, and whatever name it publishes — a shop trading as `Vera Quill Films` still
+records `Vera Quill Films` as the studio on every one of its scenes.
+
+That asymmetry is the point, because the two cases are opposites:
+
+| | duplication is | so a creator file |
+|---|---|---|
+| performer | **wrong** — one person filed as several | folds it |
+| studio | **correct** — these really are different shops | leaves it |
+
+Merging the studios would destroy `fss compare`, whose entire output — how many
+scenes each store carries, which titles overlap, where each one is cheapest —
+exists *because* the storefronts stay distinct. A creator is a grouping layer
+**over** studios, not a replacement for them; `--from-creator` is how you ask for
+all of them as one set.
+
+One consequence worth knowing: `fss stash import` pushes `Scene.Studio` into
+Stash, so each storefront arrives there as its own studio. If you would rather it
+did not, relabel at scrape time:
+
+```bash
+fss scrape https://fanhub.example/veraquillfilms --studio "Vera Quill"
+```
+
+That replaces the studio on everything the run collects. It is per-invocation and
+not something a creator file can set, deliberately — storing one name for four
+shops would lose the distinction the stored data is keeping for you.
+
 ---
 
 ## Bootstrapping from what you already scrape

@@ -152,6 +152,34 @@ Scrapers should still avoid emitting stray whitespace; normalising here also
 repairs catalogues already on disk, which no scraper fix can do without a full
 re-scrape.
 
+### Storefront branding, folded before the store sees it
+
+The merge key above resolves spelling differences. It cannot resolve a credit
+that is not a person's name at all: storefronts routinely list *themselves* as
+the performer, so a shop trading as `Vera Quill Films` credits `Vera Quill Films`
+on every scene. That is a different string from the person's name by any
+canonical key, so merging keeps them apart — correctly, since nothing in the
+scene says they are the same.
+
+What resolves it is knowing the storefront belongs to that person, which is
+exactly what a [creator file](creators.md) records. So a scrape of a listed store
+rewrites branding credits to the creator's name in `collectScenes`, before merge,
+`preserveEnrichment` or `Save` ever see the scene. A credit counts as branding
+when it matches the scene's own `Studio` value — a shop crediting itself fills
+both fields with the same string — or a spelling declared in the creator file.
+
+Two properties this relies on:
+
+- It is a **rewrite, not a replacement**. Only the branding credit changes;
+  co-stars are stored exactly as published. This is what separates it from
+  `--performer`, which replaces the whole list.
+- It only affects what a scrape **stores**. Scenes already saved keep the credits
+  they were saved with, so folding an existing duplicate needs a `--refresh` of
+  that store.
+
+Studios are deliberately left alone — see
+[Studios are not merged](creators.md#studios-are-not-merged-and-should-not-be).
+
 ## Merge provenance
 
 `MergedScene.Sites` said *which* sites contributed, but not what each one

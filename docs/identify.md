@@ -53,7 +53,7 @@ The positional argument `<video-dir>` is required — the directory of video fil
 
 Scene sources work exactly as in `fss stash import` — same flags, same
 precedence, same filter semantics. See
-[Scene sources](usage.md#scene-sources-fss-stash-import-fss-identify) for the
+[Scene sources](usage.md#scene-sources-fss-stash-import-fss-identify-fss-compare-fss-creators-suggest) for the
 full rules.
 
 In short: `--json` loads specific files, `--dir` loads every `*.json` in a

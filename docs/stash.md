@@ -126,7 +126,7 @@ Dry-run: 12 would match, 38 already up-to-date, 5 skipped, 0 ambiguous
 ## Scene sources and filters
 
 Scenes can come from JSON files or the SQLite store; see
-[Scene sources](usage.md#scene-sources-fss-stash-import-fss-identify) for the
+[Scene sources](usage.md#scene-sources-fss-stash-import-fss-identify-fss-compare-fss-creators-suggest) for the
 precedence rules and how `--from-studio` resolves. With `db:` set in config,
 `stash import` reads the database by default.
 

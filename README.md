@@ -214,6 +214,11 @@ fss scrape --all-creators --stale 7d --db
 fss compare --db --from-creator "Mara Vance"
 ```
 
+Scraping a store listed in a creator file also folds that storefront's own
+branding out of the performer credits, so a shop crediting itself does not file
+one person as several performers. It needs no configuration beyond the file
+itself and leaves co-stars alone.
+
 Definitions are one YAML file per creator and carry no credentials, so a
 directory of them can be kept in git and shared. See
 [docs/creators.md](docs/creators.md) and [docs/compare.md](docs/compare.md).

@@ -248,8 +248,6 @@ If the URL is already supported by a registered scraper, it reports that instead
 
 Checks environment health: config file, scraper registry, database writability, Stash connectivity, `ffprobe` availability, and network egress.
 
-### `fss doctor`
-
 | Flag | Type | Default | Description |
 |------|------|---------|-------------|
 | `--prune` | bool | false | Delete performer/tag/category rows no scene references any more |
