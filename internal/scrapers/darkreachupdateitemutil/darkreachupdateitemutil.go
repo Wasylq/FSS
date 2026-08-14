@@ -254,6 +254,14 @@ func (s *Scraper) scrapeModelPage(ctx context.Context, studioURL string, opts sc
 
 	items := parseListing(body)
 	if len(items) == 0 {
+		// Not every site on this template renders its model pages as
+		// updateItem cards — bigbootytgirls.com uses an `update_table_right`
+		// block instead. Returning quietly there makes a model URL look like a
+		// performer with no scenes, so say what happened.
+		select {
+		case out <- scraper.Error(scraper.ParseError(pageURL, fmt.Errorf("no updateItem cards on model page"))):
+		case <-ctx.Done():
+		}
 		return
 	}
 	scraper.Debugf(1, "%s: found %d scenes on model page", s.cfg.ID, len(items))

@@ -262,3 +262,40 @@ func TestListScenes_modelPage(t *testing.T) {
 		t.Errorf("got %d scenes, want 3", scenes)
 	}
 }
+
+// Not every site on this template renders model pages as updateItem cards —
+// bigbootytgirls.com uses an `update_table_right` block. Returning quietly
+// there makes a model URL indistinguishable from a performer with no scenes,
+// so an unparseable model page is reported.
+func TestListScenes_modelPageWithNoCardsIsReported(t *testing.T) {
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.Header().Set("Content-Type", "text/html")
+		_, _ = fmt.Fprint(w, `<html><body><div class="update_table_right">`+
+			`<a href="/updates/Some-Scene.html">Some Scene</a></div></body></html>`)
+	}))
+	defer ts.Close()
+
+	s := New(SiteConfig{
+		ID: "spartavideo", SiteBase: ts.URL, Studio: "Sparta Video",
+		MatchRe: regexp.MustCompile(`.*`),
+	})
+	ch, err := s.ListScenes(context.Background(), ts.URL+"/models/Nobody.html", scraper.ListOpts{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	var errs []error
+	for r := range ch {
+		switch r.Kind {
+		case scraper.KindScene:
+			t.Error("unexpected scene")
+		case scraper.KindError:
+			errs = append(errs, r.Err)
+		}
+	}
+	if len(errs) == 0 {
+		t.Fatal("an unparseable model page reported no error")
+	}
+	if k := scraper.Classify(errs[0]); k != scraper.FailureParse {
+		t.Errorf("classified as %v, want FailureParse", k)
+	}
+}
