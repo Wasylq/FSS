@@ -581,7 +581,7 @@ func collectScenes(ctx context.Context, sc scraper.StudioScraper, studioURL stri
 		case scraper.KindScene:
 		}
 		sc := result.Scene
-		sc.Performers = canon.Apply(sc.Performers)
+		sc.Performers = canon.Apply(sc.Studio, sc.Performers)
 		scenes = append(scenes, ov.apply(sc))
 		elapsed := time.Since(start).Round(time.Second)
 		if total > 0 {

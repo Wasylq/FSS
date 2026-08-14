@@ -63,7 +63,7 @@ stores:
 | Key | Required | Meaning |
 |-----|----------|---------|
 | `name` | yes | The creator. Must be unique across all files, after normalisation |
-| `aliases` | no | Extra spellings `--creator` and `--from-creator` match, and that a scrape rewrites in performer credits — see [Aliases normalise performer credits](#aliases-normalise-performer-credits) |
+| `aliases` | no | Extra spellings `--creator` and `--from-creator` match, and that a scrape folds into the creator's name when a storefront credits one — see [Storefront branding in performer credits](#storefront-branding-in-performer-credits) |
 | `stores` | yes | At least one storefront |
 | `stores[].url` | yes | Full studio URL including the scheme |
 | `stores[].delay` | no | Per-request delay in ms for this store, overriding `site_delays` and `delay` |
@@ -81,48 +81,59 @@ storefronts.
 
 ---
 
-## Aliases normalise performer credits
+## Storefront branding in performer credits
 
-Storefronts credit their own branding as the performer. LoyalFans lists
-`Tara Tainton TV`, ManyVids lists `RedMilfRachelSteele`. Stored as published,
-one person becomes several performers, and everything that reasons across stores
-fragments with them — `fss compare`, a Stash import, and `creators suggest`'s own
-shared-performer signal, which is how it finds storefronts whose *names* have
-nothing in common.
+Storefronts routinely credit themselves as the performer. A shop trading as
+`Vera Quill Films` lists `Vera Quill Films` as the performer on every scene;
+another spells it `VeraQuill`. Stored as published, one person becomes three
+performers, and everything that reasons across stores fragments with them —
+`fss compare`, a Stash import, and `creators suggest`'s own shared-performer
+signal, which is how it finds storefronts whose *names* have nothing in common.
 
-Every `aliases:` entry is therefore also a rewrite rule. When a scrape collects a
-scene from a store listed in a creator file, any performer credit matching that
-creator's name or one of its aliases is stored under the creator's name:
+A creator file already says everything needed to fix this: **this person, these
+links.** So a scrape of a listed store rewrites branding credits to the creator's
+name, and **you do not have to configure anything for it** — no aliases, no extra
+keys:
 
 ```yaml
-name: Tara Tainton
-aliases:
-  - Tara Tainton TV        # ← LoyalFans credits this; stored as "Tara Tainton"
+name: Vera Quill
 stores:
-  - url: https://www.clips4sale.com/studio/21571/tara-tainton
-  - url: https://www.loyalfans.com/tarataintontv
+  - url: https://clipmarket.example/studio/4021/vera-quill
+  - url: https://fanhub.example/veraquillfilms
 ```
 
 ```
-$ fss scrape --creator tara
-[2/4] https://www.loyalfans.com/tarataintontv
-  performer credits normalised to "Tara Tainton" (creators.d)
+$ fss scrape --creator vera
+[2/2] https://fanhub.example/veraquillfilms
+  performer credits normalised to "Vera Quill" (creators.d)
 ```
+
+A credit is treated as branding when it matches either:
+
+- **the scene's own `Studio` value.** A shop crediting itself fills both fields
+  with the same string, and on a creator's store the shop is the creator. This is
+  the overwhelming majority of cases and needs nothing written down.
+- **the creator's `name` or an `aliases:` entry.** The escape hatch for the
+  residue, where a store spells its own name one way in the studio field and
+  another in the credit — `Mara Vance 1` as the studio, `MaraVance` as the
+  performer. Add an alias only when you see that happen.
 
 Matching ignores case, spacing and punctuation, so `VeraQuill` and `Vera Quill`
-need only one alias between them. A scene crediting both spellings collapses to
-one name rather than storing the person twice.
+are already the same string as far as this is concerned. A scene crediting both
+the shop and the person collapses to one name rather than storing them twice.
 
-**Two limits make this safe to leave on.**
+**Co-stars are never touched.** Only two things can be rewritten: the shop's own
+name, and a spelling you declared. Anything else is somebody else and is stored
+exactly as published, however much it resembles the creator's name — a credit of
+`Vera` or `Quill Bishop` on Vera Quill's own store survives untouched. This is
+deliberately not `--performer`, which replaces the whole list and would drop
+every co-star on a multi-performer scene.
 
-It only rewrites strings you wrote in the file, and only on stores you listed as
-that creator's. A co-star is never touched, however much their name resembles the
-creator's — `Ares` on a Rachel Steele store stays `Ares`, and a `Tara Tainton TV`
-credit appearing on somebody else's site is left alone. There is no guessing: the
-judgement of whether an unfamiliar name is really this creator needs evidence a
-single scene does not carry, so it lives in `fss creators suggest`, which has the
-whole library to reason over and writes its conclusion to the file for you to
-review.
+There is no fuzzy matching. Deciding that an unfamiliar name is really this
+creator needs evidence a single scene does not carry — which storefronts credit
+it, and nothing else — so that judgement stays in `fss creators suggest`, which
+has the whole library to reason over and writes its conclusion to the file for
+you to review.
 
 A store listed under two creators is skipped rather than assigned to whichever
 file loaded first. `fss creators` warns about the duplicate separately.
@@ -133,8 +144,7 @@ the two routes disagree about who is in a scene. `--performer` still wins where
 both apply: an explicit flag beats a standing default.
 
 It changes what future scrapes *store*; it does not rewrite scenes already saved.
-To fold an existing duplicate, add the alias and re-run that store with
-`--refresh`.
+To fold an existing duplicate, re-run that store with `--refresh`.
 
 ---
 
