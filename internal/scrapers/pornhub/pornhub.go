@@ -2,6 +2,7 @@ package pornhub
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"html"
 	"net/http"
@@ -69,6 +70,20 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 		}
 		items, total, err := s.fetchPage(ctx, pageURL)
 		if err != nil {
+			// Past the last page the listing 404s, and that is the only
+			// end-of-list signal the markup offers: `page_next` is rendered on
+			// the final page too, and the old `showingCounter` total is no
+			// longer in the HTML. Treated as an error it made every --full run
+			// report a failure and demoted the traversal to non-authoritative.
+			//
+			// Only past page 1. A 404 on page 1 is a bad slug or a removed
+			// performer, which must stay loud — and the 404 body carries a
+			// recommendations rail whose cards parse as scenes, so it is
+			// discarded rather than read.
+			if page > 1 && isNotFound(err) {
+				scraper.Debugf(1, "pornhub: page %d is past the last page (404) — done", page)
+				return scraper.PageResult{Done: true}, nil
+			}
 			return scraper.PageResult{}, err
 		}
 		scenes := make([]models.Scene, len(items))
@@ -77,6 +92,12 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 		}
 		return scraper.PageResult{Scenes: scenes, Total: total}, nil
 	})
+}
+
+// isNotFound reports whether err is the listing answering 404.
+func isNotFound(err error) bool {
+	var se *httpx.StatusError
+	return errors.As(err, &se) && se.StatusCode == http.StatusNotFound
 }
 
 // buildPageURL derives the paginated video-list URL from a studio URL.

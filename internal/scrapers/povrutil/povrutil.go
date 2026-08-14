@@ -97,7 +97,7 @@ func (s *Scraper) run(ctx context.Context, opts scraper.ListOpts, out chan<- scr
 
 	now := time.Now().UTC()
 	scraper.Paginate(ctx, opts, s.cfg.ID, out, func(ctx context.Context, page int) (scraper.PageResult, error) {
-		cards, err := s.fetchListingPage(ctx, page)
+		cards, hasNext, err := s.fetchListingPage(ctx, page)
 		if err != nil {
 			return scraper.PageResult{}, err
 		}
@@ -110,7 +110,11 @@ func (s *Scraper) run(ctx context.Context, opts scraper.ListOpts, out chan<- scr
 			}
 			scenes = append(scenes, s.buildScene(c, lookup[c.path], id, now))
 		}
-		return scraper.PageResult{Scenes: scenes}, nil
+		// Stop on the site's own marker rather than by overshooting into the
+		// 404. Only when the page actually held cards: no cards and no marker
+		// is a parse failure, and Paginate already ends on an empty page, so
+		// leaving Done unset there keeps that case reported as it was.
+		return scraper.PageResult{Scenes: scenes, Done: len(cards) > 0 && !hasNext}, nil
 	})
 }
 
@@ -214,7 +218,14 @@ func parseListingCards(body []byte) []listingCard {
 	return cards
 }
 
-func (s *Scraper) fetchListingPage(ctx context.Context, page int) ([]listingCard, error) {
+// hasNextRe marks that another listing page exists. It is the site's own
+// end-of-list signal and is what keeps the walk off the past-end page, which
+// answers 404 — read as an error that made every full run report a failure and
+// demoted the traversal to non-authoritative. Live-checked on milfvr: present
+// on page 29, absent on the last page 30, and page 31 is the 404.
+var hasNextRe = regexp.MustCompile(`rel="next"`)
+
+func (s *Scraper) fetchListingPage(ctx context.Context, page int) ([]listingCard, bool, error) {
 	u := fmt.Sprintf("%s/?o=d&p=%d", s.cfg.SiteBase, page)
 	resp, err := httpx.Do(ctx, s.Client, httpx.Request{
 		URL: u,
@@ -225,15 +236,15 @@ func (s *Scraper) fetchListingPage(ctx context.Context, page int) ([]listingCard
 		}(),
 	})
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
 	defer func() { _ = resp.Body.Close() }()
 
 	body, err := httpx.ReadBody(resp.Body)
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
-	return parseListingCards(body), nil
+	return parseListingCards(body), hasNextRe.Match(body), nil
 }
 
 func urlPath(rawURL string) string {

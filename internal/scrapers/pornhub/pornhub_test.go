@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -91,6 +92,19 @@ func testItem3() testItem {
 		durStr:     "1:05:00",
 		studioSlug: "dee-williams",
 		studioName: "Dee Williams",
+	}
+}
+
+// testItem4 stands in for a card on the 404 page's recommendations rail — a
+// real-looking item that belongs to no listing page and must never be stored.
+func testItem4() testItem {
+	return testItem{
+		vkey:       "998877ffeedd",
+		title:      "Recommended Elsewhere",
+		thumbURL:   "https://ei.phncdn.com/videos/202410/05/555555555/original/(m=eafTGgaaaa)11.jpg",
+		durStr:     "08:15",
+		studioSlug: "someone-else",
+		studioName: "Someone Else",
 	}
 }
 
@@ -393,5 +407,91 @@ func TestListScenesKnownIDs(t *testing.T) {
 	}
 	if len(scenes) > 0 && scenes[0].Scene.ID != "aabbcc112233" {
 		t.Errorf("scene ID = %q, want %q", scenes[0].Scene.ID, "aabbcc112233")
+	}
+}
+
+// Past the last page the listing 404s, and that is the only end-of-list signal
+// the markup offers — `page_next` is rendered on the final page too. Treating
+// it as an error made every full run report a failure and demoted the
+// traversal to non-authoritative.
+func TestPastEndPage404EndsTheWalkQuietly(t *testing.T) {
+	pages := [][]testItem{
+		{testItem1(), testItem2()},
+		{testItem3()},
+	}
+	var requested []int
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		p, _ := strconv.Atoi(r.URL.Query().Get("page"))
+		requested = append(requested, p)
+		if p < 1 || p > len(pages) {
+			// The live 404 body carries a recommendations rail whose cards
+			// parse as scenes; serving it here pins that they stay out.
+			w.WriteHeader(http.StatusNotFound)
+			_, _ = w.Write(videoListHTML([]testItem{testItem4()}))
+			return
+		}
+		_, _ = w.Write(videoListHTML(pages[p-1]))
+	}))
+	defer ts.Close()
+
+	s := &Scraper{client: ts.Client()}
+	ch, err := s.ListScenes(context.Background(), ts.URL+"/pornstar/dee-williams", scraper.ListOpts{})
+	if err != nil {
+		t.Fatalf("ListScenes error: %v", err)
+	}
+
+	var ids []string
+	var errs []error
+	for r := range ch {
+		switch r.Kind {
+		case scraper.KindScene:
+			ids = append(ids, r.Scene.ID)
+		case scraper.KindError:
+			errs = append(errs, r.Err)
+		}
+	}
+
+	if len(errs) != 0 {
+		t.Errorf("a past-end 404 was reported as an error: %v", errs)
+	}
+	if len(ids) != 3 {
+		t.Fatalf("got %d scenes, want 3: %v", len(ids), ids)
+	}
+	for _, id := range ids {
+		if id == "998877ffeedd" {
+			t.Error("a card from the 404 recommendations rail was stored as a scene")
+		}
+	}
+	if len(requested) != 3 || requested[2] != 3 {
+		t.Errorf("requested pages %v, want 1,2,3 (the 404 detecting the end)", requested)
+	}
+}
+
+// A 404 on page 1 is a bad slug or a removed performer, not the end of a
+// listing, and must stay loud.
+func TestFirstPage404IsStillAnError(t *testing.T) {
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusNotFound)
+		_, _ = w.Write(videoListHTML(nil))
+	}))
+	defer ts.Close()
+
+	s := &Scraper{client: ts.Client()}
+	ch, err := s.ListScenes(context.Background(), ts.URL+"/pornstar/nobody", scraper.ListOpts{})
+	if err != nil {
+		t.Fatalf("ListScenes error: %v", err)
+	}
+
+	var errs []error
+	for r := range ch {
+		if r.Kind == scraper.KindError {
+			errs = append(errs, r.Err)
+		}
+	}
+	if len(errs) == 0 {
+		t.Fatal("a 404 on page 1 reported no error")
+	}
+	if k := scraper.Classify(errs[0]); !k.MissingData() {
+		t.Errorf("classified as %v, which does not count as missing data", k)
 	}
 }

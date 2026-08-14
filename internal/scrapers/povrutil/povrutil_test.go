@@ -380,3 +380,107 @@ func TestGoldenVideosExportIsRawCapture(t *testing.T) {
 		t.Error("fixture lost embed_html; the unknown-field tolerance is no longer covered")
 	}
 }
+
+// The listing's own `rel="next"` marker ends the walk. Without it the walk
+// overshot into the past-end page, which answers 404 — reported as an error on
+// every full run and enough to demote the traversal to non-authoritative.
+func TestWalkStopsOnTheRelNextMarkerNotThe404(t *testing.T) {
+	card := func(slug, title string) string {
+		return `<div class="cards-list__item card "><div class="card__body">` +
+			`<a href="/` + slug + `" class="card__video video"><div class="video__body"></div></a>` +
+			`<div class="card__footer"><div class="card__h">` + title + `</div>` +
+			`<div class="card__inf"><div class="card__links"><a href="/actor-a">Actor A</a></div>` +
+			`<div class="card__date"><svg><use xlink:href="#date"></use></svg> 20 April, 2026</div>` +
+			`</div></div></div></div>`
+	}
+
+	var requested []string
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/export/videos.json" {
+			w.Header().Set("Content-Type", "application/json")
+			_ = json.NewEncoder(w).Encode([]exportVideo{})
+			return
+		}
+		p := r.URL.Query().Get("p")
+		requested = append(requested, p)
+		switch p {
+		case "1":
+			// Not the last page: the marker is present.
+			_, _ = w.Write([]byte(`<html><head><link rel="next" href="/?o=d&p=2"></head><body>` + card("scene-one-100", "Scene One") + `</body></html>`))
+		case "2":
+			// The last page renders no marker.
+			_, _ = w.Write([]byte(`<html><body>` + card("scene-two-200", "Scene Two") + `</body></html>`))
+		default:
+			// Past the end the site 404s. Reaching this is the bug.
+			w.WriteHeader(http.StatusNotFound)
+		}
+	}))
+	defer ts.Close()
+
+	s := &Scraper{
+		cfg: SiteConfig{
+			ID: "milfvr", Studio: "MilfVR", SiteBase: ts.URL,
+			MatchRe: regexp.MustCompile(`.*`),
+		},
+		Client: ts.Client(),
+	}
+
+	ch, err := s.ListScenes(context.Background(), ts.URL, scraper.ListOpts{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	var titles []string
+	var errs []error
+	for r := range ch {
+		switch r.Kind {
+		case scraper.KindScene:
+			titles = append(titles, r.Scene.Title)
+		case scraper.KindError:
+			errs = append(errs, r.Err)
+		}
+	}
+
+	if len(errs) != 0 {
+		t.Errorf("the walk overshot and reported: %v", errs)
+	}
+	if len(titles) != 2 {
+		t.Fatalf("got %v, want both pages", titles)
+	}
+	for _, p := range requested {
+		if p == "3" {
+			t.Error("page 3 was requested — the walk overshot into the 404")
+		}
+	}
+}
+
+// A page that fetched cleanly, parsed to no cards and carried no marker must
+// not be read as an orderly end: Paginate already stops on an empty page, and
+// leaving Done unset there keeps that path reporting as it did.
+func TestEmptyPageDoesNotSetDoneItself(t *testing.T) {
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/export/videos.json" {
+			w.Header().Set("Content-Type", "application/json")
+			_ = json.NewEncoder(w).Encode([]exportVideo{})
+			return
+		}
+		_, _ = w.Write([]byte(`<html><body></body></html>`))
+	}))
+	defer ts.Close()
+
+	s := &Scraper{
+		cfg: SiteConfig{
+			ID: "milfvr", Studio: "MilfVR", SiteBase: ts.URL,
+			MatchRe: regexp.MustCompile(`.*`),
+		},
+		Client: ts.Client(),
+	}
+	ch, err := s.ListScenes(context.Background(), ts.URL, scraper.ListOpts{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	for r := range ch {
+		if r.Kind == scraper.KindScene {
+			t.Error("unexpected scene from an empty listing")
+		}
+	}
+}
