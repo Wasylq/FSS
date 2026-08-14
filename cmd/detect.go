@@ -282,7 +282,7 @@ func detectNextJS(page, lp string, _ []*http.Cookie) []detection {
 		}
 	}
 	if strings.Contains(lp, "yppcdn.com") || strings.Contains(lp, "nats_site_id") {
-		results = append(results, detection{"Next.js Paysite (Ghost Pro / KB Productions)", "ghostpro / kbproductions", detail})
+		results = append(results, detection{"Next.js Paysite (Ghost Pro / KB Productions)", "ghostpro / kbproductions / hobybuchanon", detail})
 	}
 	return results
 }

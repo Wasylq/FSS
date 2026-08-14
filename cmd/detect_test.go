@@ -121,7 +121,7 @@ func TestDetectPlatform_nextNestedWankItNow(t *testing.T) {
 
 func TestDetectPlatform_ghostProNextSignal(t *testing.T) {
 	got := detectPlatform(`<script id="__NEXT_DATA__">x</script> yppcdn.com`, nil, nil)
-	if _, ok := hasPkg(got, "ghostpro / kbproductions"); !ok {
+	if _, ok := hasPkg(got, "ghostpro / kbproductions / hobybuchanon"); !ok {
 		t.Fatalf("expected ghostpro/kbproductions, got %+v", got)
 	}
 }
