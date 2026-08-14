@@ -1,30 +1,25 @@
 package uptimely
 
 import (
-	"fmt"
-	"regexp"
-	"strings"
 	"testing"
 
 	"github.com/Anastylosis/FSS/internal/scrapers/uptimelyutil"
 )
 
 func TestSiteCount(t *testing.T) {
-	if len(sites) != 14 {
-		t.Errorf("expected 14 sites, got %d", len(sites))
+	if len(sites) != 15 {
+		t.Errorf("expected 15 sites, got %d", len(sites))
 	}
 }
 
-// buildScraper mirrors init()'s per-site construction so URL matching can be
-// asserted offline.
+// buildScraper reuses init()'s own matcher rather than restating the pattern,
+// so the two cannot drift apart.
 func buildScraper(cfg siteConfig) *uptimelyutil.Scraper {
-	escaped := strings.ReplaceAll(cfg.Domain, ".", `\.`)
-	re := regexp.MustCompile(fmt.Sprintf(`^https?://(?:www\.)?%s/(?:works/list/|actress/detail/)`, escaped))
 	return uptimelyutil.New(uptimelyutil.SiteConfig{
 		ID:      cfg.SiteID,
 		Studio:  cfg.StudioName,
 		Domain:  cfg.Domain,
-		MatchRe: re,
+		MatchRe: matchRe(cfg.Domain),
 	})
 }
 
@@ -37,6 +32,13 @@ func TestNewSitesMatchURLs(t *testing.T) {
 		"ebody": {
 			"https://av-e-body.com/works/list/release",
 			"https://www.av-e-body.com/actress/detail/45",
+		},
+		// The bare host is the whole-catalogue entry point and must match, or
+		// `fss scrape https://tameikegoro.jp/` reports the site unsupported.
+		"tameikegoro": {
+			"https://tameikegoro.jp",
+			"https://tameikegoro.jp/",
+			"https://www.tameikegoro.jp/works/list/genre/113",
 		},
 	}
 	for id, urls := range cases {

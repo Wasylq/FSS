@@ -3,9 +3,6 @@
 package uptimely
 
 import (
-	"fmt"
-	"regexp"
-	"strings"
 	"testing"
 
 	"github.com/Anastylosis/FSS/internal/scrapers/testutil"
@@ -22,9 +19,6 @@ func findSite(id string) siteConfig {
 }
 
 func newTestScraper(cfg siteConfig) *uptimelyutil.Scraper {
-	escaped := strings.ReplaceAll(cfg.Domain, ".", `\.`)
-	re := regexp.MustCompile(fmt.Sprintf(`^https?://(?:www\.)?%s/(?:works/list/|actress/detail/)`, escaped))
-
 	return uptimelyutil.New(uptimelyutil.SiteConfig{
 		ID:     cfg.SiteID,
 		Studio: cfg.StudioName,
@@ -37,7 +31,7 @@ func newTestScraper(cfg siteConfig) *uptimelyutil.Scraper {
 			cfg.Domain + "/works/list/label/{id}",
 			cfg.Domain + "/actress/detail/{id}",
 		},
-		MatchRe: re,
+		MatchRe: matchRe(cfg.Domain),
 	})
 }
 
@@ -71,4 +65,14 @@ func TestLiveEbody(t *testing.T) {
 
 func TestLiveChijoHeaven(t *testing.T) {
 	testutil.RunLiveScrape(t, newTestScraper(findSite("chijoheaven")), "https://bi-av.com/works/list/release", 2)
+}
+
+func TestLiveTameikeGoro(t *testing.T) {
+	testutil.RunLiveScrape(t, newTestScraper(findSite("tameikegoro")), "https://tameikegoro.jp/works/list/genre/113", 2)
+}
+
+// The bare host is the catalogue mode: the genre index is walked instead of
+// the release page, which shows only the newest works.
+func TestLiveTameikeGoroCatalogue(t *testing.T) {
+	testutil.RunLiveScrape(t, newTestScraper(findSite("tameikegoro")), "https://tameikegoro.jp/", 2)
 }

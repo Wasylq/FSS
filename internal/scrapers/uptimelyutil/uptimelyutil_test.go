@@ -7,6 +7,7 @@ import (
 	"net/http/httptest"
 	"regexp"
 	"strings"
+	"sync"
 	"testing"
 
 	"github.com/Anastylosis/FSS/internal/scrapers/testutil"
@@ -446,5 +447,325 @@ func TestListScenesPagination(t *testing.T) {
 	}
 	if !got["MIAD491"] || !got["MIAD469"] {
 		t.Errorf("missing expected scenes: got %v", got)
+	}
+}
+
+// ---- catalogue mode ----
+
+// hitCounter records request paths. The detail pool runs several goroutines
+// against the test server at once, so the map needs a lock of its own.
+type hitCounter struct {
+	mu sync.Mutex
+	n  map[string]int
+}
+
+func (h *hitCounter) add(path string) {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	h.n[path]++
+}
+
+func (h *hitCounter) get(path string) int {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	return h.n[path]
+}
+
+func genreIndexHTML(ids ...string) string {
+	var sb strings.Builder
+	sb.WriteString(`<html><body><ul class="p-genreList">`)
+	for _, id := range ids {
+		fmt.Fprintf(&sb, `<li><a href="https://example.com/works/list/genre/%s">Genre %s</a></li>`, id, id)
+	}
+	sb.WriteString(`</ul></body></html>`)
+	return sb.String()
+}
+
+// catalogueServer models the shape that made the release listing useless:
+// /works/list/release is one unpaginated page of the newest works, while the
+// genre listings paginate properly and between them hold the whole catalogue.
+func catalogueServer(t *testing.T) (*httptest.Server, *hitCounter) {
+	t.Helper()
+	hits := &hitCounter{n: map[string]int{}}
+	genres := map[string][][]listingItem{
+		"10": {
+			{{code: "AAA001", thumb: "/img/1.jpg"}, {code: "AAA002", thumb: "/img/2.jpg"}},
+			{{code: "AAA003", thumb: "/img/3.jpg"}},
+		},
+		// Overlaps genre 10 — a work carries several genres, so the union has
+		// to dedupe rather than fetch AAA003 twice.
+		"11": {{{code: "AAA003", thumb: "/img/3.jpg"}, {code: "AAA004", thumb: "/img/4.jpg"}}},
+	}
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		hits.add(r.URL.Path)
+		switch {
+		case r.URL.Path == "/works/genre":
+			_, _ = fmt.Fprint(w, genreIndexHTML("10", "11"))
+		case r.URL.Path == "/works/list/release":
+			// Never paginates: page 2 re-serves page 1 verbatim.
+			_, _ = fmt.Fprint(w, listingPageHTML([]listingItem{{code: "AAA004", thumb: "/img/4.jpg"}}, 1))
+		case strings.HasPrefix(r.URL.Path, "/works/list/genre/"):
+			id := strings.TrimPrefix(r.URL.Path, "/works/list/genre/")
+			pages := genres[id]
+			page := 1
+			if p := r.URL.Query().Get("page"); p != "" {
+				_, _ = fmt.Sscanf(p, "%d", &page)
+			}
+			if page < 1 || page > len(pages) {
+				_, _ = fmt.Fprint(w, listingPageHTML(nil, 0))
+				return
+			}
+			_, _ = fmt.Fprint(w, listingPageHTML(pages[page-1], 0))
+		case strings.HasPrefix(r.URL.Path, "/works/detail/"):
+			code := strings.TrimPrefix(r.URL.Path, "/works/detail/")
+			_, _ = fmt.Fprint(w, detailPageHTML(code, "Title "+code, "Desc", []string{"Ada Stone"}, "Dir", []string{"Tag"}, "", 60, "2026-02-03"))
+		default:
+			http.NotFound(w, r)
+		}
+	}))
+	return srv, hits
+}
+
+// A bare host is the whole-catalogue request. It must reach every genre rather
+// than the release page, which shows only the newest works and does not
+// paginate.
+func TestCatalogueModeUnionsTheGenreListings(t *testing.T) {
+	ts, hits := catalogueServer(t)
+	defer ts.Close()
+
+	s := &Scraper{cfg: testCfg, Client: ts.Client()}
+	ch, err := s.ListScenes(context.Background(), ts.URL+"/", scraper.ListOpts{})
+	if err != nil {
+		t.Fatalf("ListScenes error: %v", err)
+	}
+	scenes := testutil.CollectScenes(t, ch)
+
+	if len(scenes) != 4 {
+		t.Fatalf("got %d scenes, want 4 (the genre union)", len(scenes))
+	}
+	got := map[string]bool{}
+	for _, sc := range scenes {
+		if got[sc.ID] {
+			t.Errorf("%s emitted twice — the union did not dedupe", sc.ID)
+		}
+		got[sc.ID] = true
+	}
+	for _, want := range []string{"AAA001", "AAA002", "AAA003", "AAA004"} {
+		if !got[want] {
+			t.Errorf("missing %s", want)
+		}
+	}
+	if hits.get("/works/list/release") != 0 {
+		t.Error("catalogue mode fetched the release listing, which does not paginate")
+	}
+	if hits.get("/works/detail/AAA003") != 1 {
+		t.Errorf("AAA003 fetched %d times, want 1", hits.get("/works/detail/AAA003"))
+	}
+}
+
+// A /works/list/ URL still addresses that one view, unchanged.
+func TestListingURLStillScrapesJustThatListing(t *testing.T) {
+	ts, hits := catalogueServer(t)
+	defer ts.Close()
+
+	s := &Scraper{cfg: testCfg, Client: ts.Client()}
+	ch, err := s.ListScenes(context.Background(), ts.URL+"/works/list/genre/11", scraper.ListOpts{})
+	if err != nil {
+		t.Fatalf("ListScenes error: %v", err)
+	}
+	scenes := testutil.CollectScenes(t, ch)
+
+	if len(scenes) != 2 {
+		t.Fatalf("got %d scenes, want 2 from genre 11 alone", len(scenes))
+	}
+	if hits.get("/works/genre") != 0 {
+		t.Error("a single-listing URL consulted the genre index")
+	}
+}
+
+// The union is in genre order, not date order, so a known code must not stop
+// the walk — everything after it in genre order would be lost. Known works are
+// skipped instead, and the run reports itself as stopped early so an
+// authoritative save cannot read the smaller result as a deletion.
+func TestCatalogueModeSkipsKnownIDsWithoutTruncating(t *testing.T) {
+	ts, hits := catalogueServer(t)
+	defer ts.Close()
+
+	s := &Scraper{cfg: testCfg, Client: ts.Client()}
+	ch, err := s.ListScenes(context.Background(), ts.URL+"/", scraper.ListOpts{
+		KnownIDs: map[string]bool{"AAA001": true, "AAA003": true},
+	})
+	if err != nil {
+		t.Fatalf("ListScenes error: %v", err)
+	}
+
+	var ids []string
+	stoppedEarly := false
+	for res := range ch {
+		switch res.Kind {
+		case scraper.KindScene:
+			ids = append(ids, res.Scene.ID)
+		case scraper.KindStoppedEarly:
+			stoppedEarly = true
+		case scraper.KindError:
+			t.Errorf("unexpected error: %v", res.Err)
+		}
+	}
+
+	if len(ids) != 2 {
+		t.Fatalf("got %v, want just the two unknown works", ids)
+	}
+	if !stoppedEarly {
+		t.Error("skipping known works did not report StoppedEarly")
+	}
+	// AAA004 lives in the last genre walked and follows the known AAA003. A
+	// truncating early-stop would have dropped it.
+	var sawAAA004 bool
+	for _, id := range ids {
+		if id == "AAA004" {
+			sawAAA004 = true
+		}
+	}
+	if !sawAAA004 {
+		t.Error("AAA004 was lost — the walk truncated at a known code")
+	}
+	if hits.get("/works/detail/AAA001") != 0 {
+		t.Error("a known work was re-fetched")
+	}
+}
+
+// One unreachable genre must not end the traversal: bailing there would hand
+// an authoritative --full save a catalogue missing everything after it.
+func TestCatalogueModeContinuesPastAFailedGenre(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch {
+		case r.URL.Path == "/works/genre":
+			_, _ = fmt.Fprint(w, genreIndexHTML("10", "11"))
+		case r.URL.Path == "/works/list/genre/10":
+			http.Error(w, "boom", http.StatusInternalServerError)
+		case r.URL.Path == "/works/list/genre/11":
+			if r.URL.Query().Get("page") != "" {
+				_, _ = fmt.Fprint(w, listingPageHTML(nil, 0))
+				return
+			}
+			_, _ = fmt.Fprint(w, listingPageHTML([]listingItem{{code: "BBB001"}}, 1))
+		case strings.HasPrefix(r.URL.Path, "/works/detail/"):
+			code := strings.TrimPrefix(r.URL.Path, "/works/detail/")
+			_, _ = fmt.Fprint(w, detailPageHTML(code, "Title", "Desc", nil, "", nil, "", 60, "2026-02-03"))
+		default:
+			http.NotFound(w, r)
+		}
+	}))
+	defer srv.Close()
+
+	s := &Scraper{cfg: testCfg, Client: srv.Client()}
+	ch, err := s.ListScenes(context.Background(), srv.URL+"/", scraper.ListOpts{})
+	if err != nil {
+		t.Fatalf("ListScenes error: %v", err)
+	}
+
+	var scenes []string
+	var errs int
+	for res := range ch {
+		switch res.Kind {
+		case scraper.KindScene:
+			scenes = append(scenes, res.Scene.ID)
+		case scraper.KindError:
+			errs++
+		}
+	}
+	if errs == 0 {
+		t.Error("the failed genre was not reported")
+	}
+	if len(scenes) != 1 || scenes[0] != "BBB001" {
+		t.Errorf("got %v, want the surviving genre's work", scenes)
+	}
+}
+
+// A genre index that parses to nothing is a template change, not a label with
+// no works, so it is reported rather than returned as an empty success.
+func TestCatalogueModeReportsAnUnparseableGenreIndex(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		_, _ = fmt.Fprint(w, "<html><body>no genres here</body></html>")
+	}))
+	defer srv.Close()
+
+	s := &Scraper{cfg: testCfg, Client: srv.Client()}
+	ch, err := s.ListScenes(context.Background(), srv.URL+"/", scraper.ListOpts{})
+	if err != nil {
+		t.Fatalf("ListScenes error: %v", err)
+	}
+
+	var errs []error
+	for res := range ch {
+		if res.Kind == scraper.KindError {
+			errs = append(errs, res.Err)
+		}
+		if res.Kind == scraper.KindScene {
+			t.Error("scene emitted from an empty genre index")
+		}
+	}
+	if len(errs) == 0 {
+		t.Fatal("an unparseable genre index reported no error")
+	}
+	if k := scraper.Classify(errs[0]); k != scraper.FailureParse {
+		t.Errorf("classified as %v, want FailureParse", k)
+	}
+}
+
+func TestIsCatalogueURL(t *testing.T) {
+	cases := map[string]bool{
+		"https://example.com":                          true,
+		"https://example.com/":                         true,
+		"https://example.com/top":                      true,
+		"https://example.com/works/list/release":       false,
+		"https://example.com/works/list/genre/113":     false,
+		"https://example.com/actress/detail/700115":    false,
+		"https://example.com/works/detail/MIAD491":     false,
+		"https://www.example.com/works/list/series/12": false,
+	}
+	for u, want := range cases {
+		if got := isCatalogueURL(u); got != want {
+			t.Errorf("isCatalogueURL(%q) = %v, want %v", u, got, want)
+		}
+	}
+}
+
+func TestParseGenreIDsDedupes(t *testing.T) {
+	got := parseGenreIDs([]byte(genreIndexHTML("10", "11", "10")))
+	if len(got) != 2 || got[0] != "10" || got[1] != "11" {
+		t.Errorf("parseGenreIDs = %v, want [10 11] in index order", got)
+	}
+}
+
+// A listing URL whose first page parses to nothing is reported rather than
+// returned as an empty success — the widened host match means a /works/detail/
+// URL lands here too, and silence would look like a catalogue that vanished.
+func TestEmptyFirstListingPageIsReported(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		_, _ = fmt.Fprint(w, listingPageHTML(nil, 0))
+	}))
+	defer srv.Close()
+
+	s := &Scraper{cfg: testCfg, Client: srv.Client()}
+	ch, err := s.ListScenes(context.Background(), srv.URL+"/works/detail/MIAD491", scraper.ListOpts{})
+	if err != nil {
+		t.Fatalf("ListScenes error: %v", err)
+	}
+
+	var errs []error
+	for res := range ch {
+		if res.Kind == scraper.KindError {
+			errs = append(errs, res.Err)
+		}
+		if res.Kind == scraper.KindScene {
+			t.Error("unexpected scene")
+		}
+	}
+	if len(errs) == 0 {
+		t.Fatal("an empty first page reported no error")
+	}
+	if k := scraper.Classify(errs[0]); k != scraper.FailureParse {
+		t.Errorf("classified as %v, want FailureParse", k)
 	}
 }

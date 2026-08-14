@@ -29,19 +29,27 @@ var sites = []siteConfig{
 	{"moodyz", "moodyz.com", "MOODYZ"},
 	{"oppai", "oppai-av.com", "Oppai"},
 	{"s1no1style", "s1s1s1.com", "S1 NO.1 STYLE"},
+	{"tameikegoro", "tameikegoro.jp", "Tameike Goro"},
 	{"wanzfactory", "wanz-factory.com", "Wanz Factory"},
+}
+
+// matchRe builds a site's URL matcher. The host itself is the whole-catalogue
+// entry point; the narrower `/works/...` and `/actress/...` paths address one
+// view of it. Matching the bare host is what lets `fss scrape https://<domain>/`
+// reach the genre-index traversal.
+func matchRe(domain string) *regexp.Regexp {
+	escaped := strings.ReplaceAll(domain, ".", `\.`)
+	return regexp.MustCompile(fmt.Sprintf(`^https?://(?:www\.)?%s(?:/|$)`, escaped))
 }
 
 func init() {
 	for _, cfg := range sites {
-		escaped := strings.ReplaceAll(cfg.Domain, ".", `\.`)
-		re := regexp.MustCompile(fmt.Sprintf(`^https?://(?:www\.)?%s/(?:works/list/|actress/detail/)`, escaped))
-
 		s := uptimelyutil.New(uptimelyutil.SiteConfig{
 			ID:     cfg.SiteID,
 			Studio: cfg.StudioName,
 			Domain: cfg.Domain,
 			Patterns: []string{
+				cfg.Domain,
 				cfg.Domain + "/works/list/series/{id}",
 				cfg.Domain + "/works/list/release",
 				cfg.Domain + "/works/list/date/{date}",
@@ -49,7 +57,7 @@ func init() {
 				cfg.Domain + "/works/list/label/{id}",
 				cfg.Domain + "/actress/detail/{id}",
 			},
-			MatchRe: re,
+			MatchRe: matchRe(cfg.Domain),
 		})
 		scraper.Register(s)
 	}
