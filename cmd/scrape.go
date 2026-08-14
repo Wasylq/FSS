@@ -15,6 +15,7 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/Anastylosis/FSS/internal/creators"
 	"github.com/Anastylosis/FSS/internal/store"
 	"github.com/Anastylosis/FSS/models"
 	"github.com/Anastylosis/FSS/output"
@@ -123,6 +124,15 @@ func runScrape(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
+	// Creator files normalise storefront branding credited as a performer.
+	// Loaded for every run, not just --creator ones: naming a store's URL
+	// directly must store the same names as reaching it through its creator,
+	// or the two routes disagree about who is in a scene.
+	creatorList, err := loadCreators(cmd)
+	if err != nil {
+		return err
+	}
+	overrides.canon = creators.NewCanon(creatorList)
 
 	// --- pick store (opened once, shared across all URLs) ---
 	var st store.Store
@@ -538,6 +548,12 @@ func collectScenes(ctx context.Context, sc scraper.StudioScraper, studioURL stri
 	if err != nil {
 		return nil, traversal{incomplete: true}, fmt.Errorf("starting scrape: %w", err)
 	}
+	// Resolved once rather than per scene: whether a storefront belongs to a
+	// creator is a property of the run, not of the results.
+	canon := ov.canon.For(studioURL)
+	if canon.Active() {
+		fmt.Printf("  performer credits normalised to %q (creators.d)\n", canon.Name())
+	}
 	start := time.Now()
 	var scenes []models.Scene
 	errCount := 0
@@ -564,7 +580,9 @@ func collectScenes(ctx context.Context, sc scraper.StudioScraper, studioURL stri
 			continue
 		case scraper.KindScene:
 		}
-		scenes = append(scenes, ov.apply(result.Scene))
+		sc := result.Scene
+		sc.Performers = canon.Apply(sc.Performers)
+		scenes = append(scenes, ov.apply(sc))
 		elapsed := time.Since(start).Round(time.Second)
 		if total > 0 {
 			fmt.Printf("\r  fetching: %d / %d scenes (%s elapsed)", len(scenes), total, elapsed)

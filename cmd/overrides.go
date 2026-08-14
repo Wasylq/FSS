@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/Anastylosis/FSS/internal/creators"
 	"github.com/Anastylosis/FSS/models"
 	"github.com/spf13/cobra"
 )
@@ -22,6 +23,11 @@ import (
 type sceneOverrides struct {
 	performers []string
 	studio     string
+	// canon rewrites storefront branding credited as a performer into the
+	// creator's own name, per creators.d. Unlike the flags above it is not
+	// operator-supplied per run — it comes from the creator files and applies
+	// only to the stores those files list. The zero value rewrites nothing.
+	canon creators.Canon
 }
 
 func (o sceneOverrides) empty() bool { return len(o.performers) == 0 && o.studio == "" }

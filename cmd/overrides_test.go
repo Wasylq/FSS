@@ -5,6 +5,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/Anastylosis/FSS/internal/creators"
 	"github.com/Anastylosis/FSS/models"
 	"github.com/Anastylosis/FSS/scraper"
 	"github.com/spf13/cobra"
@@ -155,6 +156,62 @@ func TestCollectScenesAppliesOverrides(t *testing.T) {
 	// Everything else the scraper produced survives.
 	if scenes[0].Title != "One" || scenes[1].Title != "Two" {
 		t.Errorf("titles changed: %q %q", scenes[0].Title, scenes[1].Title)
+	}
+}
+
+// The creator rewrite has to land in the same funnel as the flags, or a store
+// reached by its URL stores different names than the same store reached through
+// --creator.
+func TestCollectScenesAppliesTheCreatorCanon(t *testing.T) {
+	const store = "https://www.loyalfans.com/tarataintontv"
+	sc := &fakeScraper{
+		id: "fake",
+		batches: [][]models.Scene{{
+			{ID: "1", SiteID: "fake", Title: "One", Performers: []string{"Tara Tainton TV"}},
+			{ID: "2", SiteID: "fake", Title: "Two", Performers: []string{"Tara Tainton TV", "Co Star"}},
+		}},
+	}
+	ov := sceneOverrides{canon: creators.NewCanon([]creators.Creator{{
+		Name:    "Tara Tainton",
+		Aliases: []string{"Tara Tainton TV"},
+		Stores:  []creators.Store{{URL: store}},
+	}})}
+
+	scenes, _, err := collectScenes(context.Background(), sc, store, scraper.ListOpts{}, ov)
+	if err != nil {
+		t.Fatalf("collectScenes: %v", err)
+	}
+	if got := strings.Join(scenes[0].Performers, "|"); got != "Tara Tainton" {
+		t.Errorf("scene 1 performers = %q, want Tara Tainton", got)
+	}
+	if got := strings.Join(scenes[1].Performers, "|"); got != "Tara Tainton|Co Star" {
+		t.Errorf("scene 2 performers = %q, want the co-star kept", got)
+	}
+}
+
+// --performer is an explicit instruction for this run; the creator file is a
+// standing default. The flag has to win.
+func TestOverrideFlagBeatsTheCreatorCanon(t *testing.T) {
+	const store = "https://www.loyalfans.com/tarataintontv"
+	sc := &fakeScraper{
+		id:      "fake",
+		batches: [][]models.Scene{{{ID: "1", SiteID: "fake", Performers: []string{"Tara Tainton TV"}}}},
+	}
+	ov := sceneOverrides{
+		performers: []string{"Someone Else"},
+		canon: creators.NewCanon([]creators.Creator{{
+			Name:    "Tara Tainton",
+			Aliases: []string{"Tara Tainton TV"},
+			Stores:  []creators.Store{{URL: store}},
+		}}),
+	}
+
+	scenes, _, err := collectScenes(context.Background(), sc, store, scraper.ListOpts{}, ov)
+	if err != nil {
+		t.Fatalf("collectScenes: %v", err)
+	}
+	if got := strings.Join(scenes[0].Performers, "|"); got != "Someone Else" {
+		t.Errorf("performers = %q, want the flag to win", got)
 	}
 }
 

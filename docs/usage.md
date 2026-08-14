@@ -55,6 +55,12 @@ The studio URL argument is optional when `--creator` or `--all-creators` selects
 one; passing none of the three is an error. URLs reachable more than one way are
 scraped once.
 
+Any scrape of a store listed in `creators.d` also normalises performer credits
+matching that creator's `aliases:` to the creator's own name, so a storefront
+crediting its own branding does not file one person as several performers. This
+happens whether the store was reached by URL or by `--creator`; `--performer`
+overrides it. See [creators.md](creators.md#aliases-normalise-performer-credits).
+
 **Per-site delay precedence:** `--site-delay <id>=N` (CLI) > `site_delays.<id>: N` (config) > `--delay`/`delay` (global). A site explicitly set to `0` disables delay even when the global default is non-zero. `--full` re-fetches every scene (carrying price history forward) and drops scenes no longer on the site. `--refresh` traverses the full scene list but re-uses existing IDs to update metadata in place and detect deletions.
 
 ### Relabelling a scrape: `--performer` / `--studio`
