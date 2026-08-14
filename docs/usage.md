@@ -10,6 +10,8 @@ Full technical reference. Use the section links to jump to what you need.
 - [Resume and update behaviour](#resume-and-update-behaviour)
 - [SQLite](#sqlite)
 
+For grouping one person's several storefronts, see [creators.md](creators.md).
+For comparing a creator's catalogue across those storefronts, see [compare.md](compare.md).
 For Stash integration, see [stash.md](stash.md).
 For NFO sidecar file generation, see [identify.md](identify.md).
 For the metadata model and store contract, see [metadata.md](metadata.md).
@@ -42,8 +44,16 @@ For choosing a store, inspecting a database, and moving between the two, see [st
 | `--name` | string | _(none)_ | Human-readable label for this studio (stored when `--db` is set) |
 | `--performer` | []string | _(none)_ | Replace the performers on every scene this run scrapes. Repeat the flag, or comma-separate, for several |
 | `--studio` | string | _(none)_ | Replace the studio on every scene this run scrapes |
+| `--creator` | []string | _(none)_ | Scrape every storefront defined for this creator in `creators.d`. Repeatable — see [creators.md](creators.md) |
+| `--all-creators` | bool | false | Scrape every storefront of every defined creator |
+| `--stale` | string | _(none)_ | Only scrape studios not scraped within this window, e.g. `12h`, `7d`, `2w`. Needs `--db` |
+| `--creators-dir` | string | _(from config)_ | Directory of creator YAML files |
 
 `--full` and `--refresh` are mutually exclusive.
+
+The studio URL argument is optional when `--creator` or `--all-creators` selects
+one; passing none of the three is an error. URLs reachable more than one way are
+scraped once.
 
 **Per-site delay precedence:** `--site-delay <id>=N` (CLI) > `site_delays.<id>: N` (config) > `--delay`/`delay` (global). A site explicitly set to `0` disables delay even when the global default is non-zero. `--full` re-fetches every scene (carrying price history forward) and drops scenes no longer on the site. `--refresh` traverses the full scene list but re-uses existing IDs to update metadata in place and detect deletions.
 
@@ -97,6 +107,38 @@ Prints all registered scrapers and the URL patterns each one handles.
 
 Lists all studios in the SQLite database with scene counts and last-scraped timestamps. Needs a database: pass `--db`, or set `db:` in the config file and omit the flag.
 
+### `fss creators`
+
+Lists the creators defined in `creators.d`, with each store's last scrape date when a database is configured. See [creators.md](creators.md).
+
+| Flag | Type | Default | Description |
+|------|------|---------|-------------|
+| `--creators-dir` | string | _(from config)_ | Directory of creator YAML files |
+
+### `fss creators suggest`
+
+Proposes `creators.d` files by clustering the studios you already scrape, on shared names and shared dominant performers. Prints for review by default.
+
+| Flag | Type | Default | Description |
+|------|------|---------|-------------|
+| `--write` | bool | false | Write the proposals into the creators directory instead of printing them |
+| `--force` | bool | false | With `--write`, overwrite creator files that already exist |
+| `--include-single` | bool | false | Also propose creators whose catalogue is on a single storefront |
+
+Plus the shared [scene-source flags](#scene-sources-fss-stash-import-fss-identify-fss-compare-fss-creators-suggest).
+
+### `fss compare`
+
+Compares each creator's catalogue across the storefronts they sell it on: what each store holds, which titles overlap, where each shared title is cheapest, and what only one store carries. Full detail in [compare.md](compare.md).
+
+| Flag | Type | Default | Description |
+|------|------|---------|-------------|
+| `--top` | int | 10 | How many of the widest price gaps to list per creator |
+| `--exclusives` | bool | false | Also report, per store, how many titles only it carries |
+| `--csv` | string | _(none)_ | Write every shared title to this CSV file |
+
+Plus the shared [scene-source flags](#scene-sources-fss-stash-import-fss-identify-fss-compare-fss-creators-suggest).
+
 ### `fss import <file-or-dir> ...`
 
 Loads studio JSON files into the SQLite database. Directories contribute their `*.json` entries (not recursive). Each file's own `studioUrl` decides which studio it belongs to — filenames are never parsed, since `Slugify` is lossy.
@@ -132,15 +174,17 @@ fss export --db --out-dir ./out -o json,csv
 
 A JSON → database → JSON round trip is lossless except for sub-second timestamp precision, which SQLite has never stored (times are written as RFC 3339 to the second).
 
-### Scene sources (`fss stash import`, `fss identify`)
+### Scene sources (`fss stash import`, `fss identify`, `fss compare`, `fss creators suggest`)
 
-Both commands read previously-scraped scenes. They share one set of flags for choosing where those scenes come from:
+These commands read previously-scraped scenes. They share one set of flags for choosing where those scenes come from:
 
 | `--json` | []string | _(none)_ | Specific JSON files to load |
 | `--dir` | string | _(config `out_dir`)_ | Directory of FSS JSON files |
 | `--db` | string | _(from config)_ | Load scenes from the SQLite store instead of JSON (`--db` alone uses the default path; `--db=/path` for a custom one). Cannot be combined with `--json`/`--dir` |
 | `--from-studio` | []string | _(none)_ | Only use scenes from these studios. Accepts a studio URL, a studio display name, or a per-scene studio/sub-brand name. Repeatable — any match |
 | `--from-performer` | []string | _(none)_ | Only use scenes featuring these performers. Repeatable — any match |
+| `--from-creator` | []string | _(none)_ | Only use scenes from this creator's storefronts, as defined in `creators.d`. Repeatable — any match |
+| `--creators-dir` | string | _(from config)_ | Directory of creator YAML files |
 
 **Precedence:** `--json` → `--db` → `--dir` → the config's `out_dir`. Passing `--db` together with `--json` or `--dir` is an error rather than a silent winner. Each run prints the source it resolved to.
 
@@ -160,7 +204,9 @@ A filter matching nothing is an **error listing the available names**, not an em
 
 **Combining filters:** repeated values of one flag are OR; different flags are AND. `--from-studio X --from-performer A` means scenes from X that also feature A.
 
-Note `--from-studio`/`--from-performer` filter the **FSS metadata**, while `fss stash import`'s `--studio`/`--performer` filter which **Stash scenes** are queried. They apply to opposite sides of the match and combine as AND.
+`--from-creator` resolves to that creator's store URLs and then behaves exactly like listing them under `--from-studio` — see [creators.md](creators.md).
+
+Note `--from-studio`/`--from-performer`/`--from-creator` filter the **FSS metadata**, while `fss stash import`'s `--studio`/`--performer` filter which **Stash scenes** are queried. They apply to opposite sides of the match and combine as AND.
 
 ### `fss check <url>`
 
@@ -194,6 +240,16 @@ If the URL is already supported by a registered scraper, it reports that instead
 ### `fss doctor`
 
 Checks environment health: config file, scraper registry, database writability, Stash connectivity, `ffprobe` availability, and network egress.
+
+### `fss doctor`
+
+| Flag | Type | Default | Description |
+|------|------|---------|-------------|
+| `--prune` | bool | false | Delete performer/tag/category rows no scene references any more |
+
+The `vocabulary` check counts entity rows nothing links to. `Save` deletes a scene's junction rows but never the shared `performers`/`tags`/`categories` rows they pointed at — the entity may still belong to another studio, and proving otherwise costs a full scan of the junction table, which is exactly what `Save`'s content-hash short-circuit exists to avoid. So they accumulate, and this is where they get cleared.
+
+A non-zero count is worth reading before pruning: a cluster of near-miss names (`Tockings`, `Triptease`, `Eductress`) is the fingerprint of a parser that briefly truncated what it wrote, long after the junction rows were corrected.
 
 ### `fss completion <bash|zsh|fish|powershell>`
 
@@ -259,6 +315,10 @@ db: ""            # str   — "" = flat store (explicit, survives the coming def
 delay: 500        # int   — ms between page requests; 0 disables
 user_agent: ""    # str   — "firefox" (default), "chrome", or a custom UA string
 notices: true     # bool  — advisory messages (e.g. an upcoming default change); false silences them
+
+creators_dir: ""  # str   — directory of one-YAML-per-creator definitions.
+                  #         "" = ~/.config/fss/creators.d. Point at a clone to use a
+                  #         shared set — see creators.md
 
 site_delays:      # map[string]int — per-scraper delay overrides (overrides `delay` for matching sites)
   # manyvids: 0

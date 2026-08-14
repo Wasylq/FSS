@@ -43,7 +43,7 @@ Scrapes all scenes and metadata from a studio URL. Designed to be easily extende
 | Glamose/UTG | UTG, Glamose, Prestige, … |
 | Railway/Express | Smoking Erotica, Smoking Models, Spanking Glamour |
 | Real Spankings | Real Spankings, Real Spankings Institute |
-| WordPress | Anal Therapy, Family Therapy, Tara Tainton, … |
+| WordPress | Anal Therapy, Family Therapy, Sonia Marek, … |
 | Stashbox | StashDB, any stashbox instance (config-driven) |
 | Standalone | Anal Vids, APClips, Bare Back Studios, Clips4Sale, Kink, ManyVids, Pornbox, Pornhub, SexLikeReal, … |
 
@@ -195,6 +195,29 @@ fss check <url>
 fss scrape -d <url>
 ```
 
+### Creators — one person, several storefronts
+
+A creator sells the same catalogue on Clips4Sale, ManyVids, LoyalFans and their
+own site, at different prices. Define the grouping once and work in that unit:
+
+```bash
+# Bootstrap creators.d from the studios you already scrape
+fss creators suggest --db --write
+
+# Scrape every storefront one creator sells on
+fss scrape --creator "Mara Vance"
+
+# Cron-friendly: everything not scraped in the last week
+fss scrape --all-creators --stale 7d --db
+
+# Where is each clip cheapest, and what is exclusive to one store?
+fss compare --db --from-creator "Mara Vance"
+```
+
+Definitions are one YAML file per creator and carry no credentials, so a
+directory of them can be kept in git and shared. See
+[docs/creators.md](docs/creators.md) and [docs/compare.md](docs/compare.md).
+
 ### NFO sidecar files
 
 ```bash
@@ -266,6 +289,8 @@ CLI flags always override config values. See [docs/usage.md](docs/usage.md#confi
 
 | Document | Contents |
 |----------|----------|
+| [docs/creators.md](docs/creators.md) | Grouping one person's storefronts: the creators.d format, bootstrapping it, scraping and filtering by creator, cron with `--stale` |
+| [docs/compare.md](docs/compare.md) | Comparing a creator's catalogue across storefronts: overlap, cheapest source, exclusives |
 | [docs/storage.md](docs/storage.md) | JSON vs SQLite: measured trade-offs, which to pick, inspecting a database without SQL, moving between the two |
 | [docs/metadata.md](docs/metadata.md) | The scene model: schema versioning, first-seen tracking, external IDs, what a re-scrape can and cannot change |
 | [docs/stash.md](docs/stash.md) | Stash integration: scene sources, matching, cross-site merging, import and revert |
