@@ -146,6 +146,7 @@ import (
 	_ "github.com/Anastylosis/FSS/internal/scrapers/hobybuchanon"
 	_ "github.com/Anastylosis/FSS/internal/scrapers/hollyrandall"
 	_ "github.com/Anastylosis/FSS/internal/scrapers/hookuphotshot"
+	_ "github.com/Anastylosis/FSS/internal/scrapers/hotoldermale"
 	_ "github.com/Anastylosis/FSS/internal/scrapers/houseofyre"
 	_ "github.com/Anastylosis/FSS/internal/scrapers/humiliationpov"
 	_ "github.com/Anastylosis/FSS/internal/scrapers/hussiepass"
