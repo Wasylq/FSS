@@ -115,6 +115,7 @@ import (
 	_ "github.com/Anastylosis/FSS/internal/scrapers/footfetishdaily"
 	_ "github.com/Anastylosis/FSS/internal/scrapers/fotoro"
 	_ "github.com/Anastylosis/FSS/internal/scrapers/fpn"
+	_ "github.com/Anastylosis/FSS/internal/scrapers/fratx"
 	_ "github.com/Anastylosis/FSS/internal/scrapers/frenchporn"
 	_ "github.com/Anastylosis/FSS/internal/scrapers/frenchtwinks"
 	_ "github.com/Anastylosis/FSS/internal/scrapers/frolicme"
