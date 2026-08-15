@@ -361,4 +361,5 @@ import (
 	_ "github.com/Anastylosis/FSS/internal/scrapers/youthlust"
 	_ "github.com/Anastylosis/FSS/internal/scrapers/yummygirl"
 	_ "github.com/Anastylosis/FSS/internal/scrapers/zishy"
+	_ "github.com/Anastylosis/FSS/internal/scrapers/zone8"
 )
