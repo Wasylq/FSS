@@ -1,15 +1,19 @@
-// Package hotoldermale scrapes hotoldermale.com, Pantheon Productions' tour.
+// Package pantheon scrapes the three tours running Pantheon Productions' CMS:
+// hotoldermale.com (847 scenes), blackboyaddictionz.com (617) and
+// monstercub.com (320). They are separate StashDB studios on separate domains
+// but one codebase — identical `/scenes`, `/models`, `/categories`, `/credits`
+// and `/clickAd/{n}` paths, and card-for-card identical markup.
 //
-// The `/scenes?page={N}` listing is server-rendered — 24 cards a page, 36 pages,
-// 847 scenes — but **past the last page it wraps back to page 1** rather than
-// emptying or 404ing, so the walk stops on a page that adds no new id. Cards
-// carry id, title, thumbnail, date, runtime and a truncated credit list
-// ("… and 5 more"), so each scene's own page is fetched for the full cast, the
-// description and the categories.
+// The `/scenes?page={N}` listing is server-rendered — 24 cards a page — but
+// **past the last page it wraps back to page 1** rather than emptying or
+// 404ing, so the walk stops on a page that adds no new id. Cards carry id,
+// title, thumbnail, date, runtime and a truncated credit list ("… and 5 more"),
+// so each scene's own page is fetched for the full cast, the description and
+// the categories.
 //
 // `/profile/{id}-{slug}` and `/scenes/category/{id}-{slug}` render the same
 // cards, so a URL naming either scrapes that slice through the same walk.
-package hotoldermale
+package pantheon
 
 import (
 	"context"
@@ -28,44 +32,60 @@ import (
 	"github.com/Anastylosis/FSS/scraper"
 )
 
-const (
-	siteID     = "hotoldermale"
-	domain     = "hotoldermale.com"
-	studioName = "Hot Older Male"
-)
+// SiteConfig describes one tour on the CMS.
+type SiteConfig struct {
+	SiteID     string
+	Domain     string
+	StudioName string
+}
+
+var sites = []SiteConfig{
+	{"hotoldermale", "hotoldermale.com", "Hot Older Male"},
+	{"blackboyaddictionz", "blackboyaddictionz.com", "Black Boy Addictionz"},
+	{"monstercub", "monstercub.com", "Monster Cub"},
+}
 
 type Scraper struct {
 	Client       *http.Client
+	cfg          SiteConfig
+	matchRe      *regexp.Regexp
 	baseOverride string
 }
 
-func New() *Scraper {
-	return &Scraper{Client: httpx.NewClient(30 * time.Second)}
+func New(cfg SiteConfig) *Scraper {
+	return &Scraper{
+		Client:  httpx.NewClient(30 * time.Second),
+		cfg:     cfg,
+		matchRe: regexp.MustCompile(`^https?://(?:www\.)?` + regexp.QuoteMeta(cfg.Domain) + `(?:/|$)`),
+	}
 }
 
 var _ scraper.StudioScraper = (*Scraper)(nil)
 
-func init() { scraper.Register(New()) }
+func init() {
+	for _, cfg := range sites {
+		scraper.Register(New(cfg))
+	}
+}
 
 var (
-	matchRe    = regexp.MustCompile(`^https?://(?:www\.)?hotoldermale\.com(?:/|$)`)
 	profileRe  = regexp.MustCompile(`/profile/(\d+-[^/?#]+)`)
 	categoryRe = regexp.MustCompile(`/scenes/category/(\d+-[^/?#]+)`)
 	sceneRe    = regexp.MustCompile(`/scene/(\d+)-([^/?#]+)`)
 )
 
-func (s *Scraper) ID() string { return siteID }
+func (s *Scraper) ID() string { return s.cfg.SiteID }
 
 func (s *Scraper) Patterns() []string {
 	return []string{
-		domain,
-		domain + "/scenes",
-		domain + "/scenes/category/{id}-{slug}",
-		domain + "/profile/{id}-{slug}",
+		s.cfg.Domain,
+		s.cfg.Domain + "/scenes",
+		s.cfg.Domain + "/scenes/category/{id}-{slug}",
+		s.cfg.Domain + "/profile/{id}-{slug}",
 	}
 }
 
-func (s *Scraper) MatchesURL(u string) bool { return matchRe.MatchString(u) }
+func (s *Scraper) MatchesURL(u string) bool { return s.matchRe.MatchString(u) }
 
 func (s *Scraper) ListScenes(ctx context.Context, studioURL string, opts scraper.ListOpts) (<-chan scraper.SceneResult, error) {
 	if opts.Workers <= 0 {
@@ -85,7 +105,7 @@ func (s *Scraper) base(studioURL string) string {
 	if u, err := url.Parse(studioURL); err == nil && u.Host != "" {
 		return u.Scheme + "://" + u.Host
 	}
-	return "https://www." + domain
+	return "https://www." + s.cfg.Domain
 }
 
 // listingPath is the path a walk pages through, without the page parameter.
@@ -107,7 +127,7 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 	// A single scene URL is a legitimate thing to point at, and walking the
 	// whole catalogue would be a strange way to honour it.
 	if m := sceneRe.FindStringSubmatch(studioURL); m != nil {
-		scraper.Debugf(1, "%s: scraping one scene %s", siteID, m[1])
+		scraper.Debugf(1, "%s: scraping one scene %s", s.cfg.SiteID, m[1])
 		if !send(ctx, out, scraper.Progress(1)) {
 			return
 		}
@@ -119,7 +139,7 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 	}
 
 	path := listingPath(studioURL)
-	scraper.Debugf(1, "%s: walking %s", siteID, path)
+	scraper.Debugf(1, "%s: walking %s", s.cfg.SiteID, path)
 
 	// Discovery and detail fetching run together. Walking all 36 listing pages
 	// before the first detail put the first scene 43s away; streaming each
@@ -165,7 +185,7 @@ func (s *Scraper) discover(ctx context.Context, base, path string, opts scraper.
 		}
 
 		pageURL := fmt.Sprintf("%s%s?page=%d", base, path, page)
-		scraper.Debugf(1, "%s: fetching listing page %d", siteID, page)
+		scraper.Debugf(1, "%s: fetching listing page %d", s.cfg.SiteID, page)
 		body, err := s.fetch(ctx, pageURL)
 		if err != nil {
 			send(ctx, out, scraper.Error(fmt.Errorf("listing page %d: %w", page, err)))
@@ -194,7 +214,7 @@ func (s *Scraper) discover(ctx context.Context, base, path string, opts scraper.
 			if opts.KnownIDs[c.id] {
 				// The listing is newest-first, so a stored id means the rest
 				// of the walk is stored too.
-				scraper.Debugf(1, "%s: hit known ID %s, stopping early", siteID, c.id)
+				scraper.Debugf(1, "%s: hit known ID %s, stopping early", s.cfg.SiteID, c.id)
 				send(ctx, out, scraper.StoppedEarly())
 				return sent
 			}
@@ -237,11 +257,11 @@ func (s *Scraper) buildScene(ctx context.Context, studioURL, base string, e list
 	sceneURL := base + e.path
 	scene := models.Scene{
 		ID:         e.id,
-		SiteID:     siteID,
+		SiteID:     s.cfg.SiteID,
 		StudioURL:  studioURL,
 		Title:      e.title,
 		URL:        sceneURL,
-		Studio:     studioName,
+		Studio:     s.cfg.StudioName,
 		Thumbnail:  e.thumb,
 		Date:       e.date,
 		Duration:   e.duration,

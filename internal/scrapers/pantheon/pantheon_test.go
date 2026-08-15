@@ -1,4 +1,4 @@
-package hotoldermale
+package pantheon
 
 import (
 	"context"
@@ -142,8 +142,12 @@ func newSite(t *testing.T, pages, per int) *stubSite {
 	return site
 }
 
+// testSite is the first table entry; the three tours share one codebase, so
+// one is enough to exercise the parser.
+func testSite() SiteConfig { return sites[0] }
+
 func newTestScraper(srv *httptest.Server) *Scraper {
-	s := New()
+	s := New(testSite())
 	s.Client = srv.Client()
 	s.baseOverride = srv.URL
 	return s
@@ -207,7 +211,7 @@ func TestDetailSuppliesTheFullCastAndDescription(t *testing.T) {
 	}
 	got := scenes[0]
 
-	if got.ID != "900" || got.SiteID != siteID || got.Studio != studioName {
+	if got.ID != "900" || got.SiteID != testSite().SiteID || got.Studio != testSite().StudioName {
 		t.Errorf("identity = %q/%q/%q", got.ID, got.SiteID, got.Studio)
 	}
 	if got.Description != "A full description." {
@@ -389,7 +393,7 @@ func TestDetailFailureKeepsTheCardOnlyScene(t *testing.T) {
 }
 
 func TestMatchesURL(t *testing.T) {
-	s := New()
+	s := New(testSite())
 	for _, u := range []string{
 		"https://hotoldermale.com",
 		"https://www.hotoldermale.com/",
@@ -449,5 +453,33 @@ func TestContextCancellationStopsTheWalk(t *testing.T) {
 	}
 	cancel()
 	for range ch { //nolint:revive // drain so the goroutines can finish their sends
+	}
+}
+
+// The three tours are separate StashDB studios on one codebase, so each needs
+// its own registration and none may claim another's host.
+func TestEachSiteMatchesOnlyItsOwnHost(t *testing.T) {
+	if len(sites) != 3 {
+		t.Fatalf("expected 3 sites, got %d", len(sites))
+	}
+	seen := map[string]bool{}
+	for _, cfg := range sites {
+		if seen[cfg.SiteID] {
+			t.Errorf("duplicate SiteID %q", cfg.SiteID)
+		}
+		seen[cfg.SiteID] = true
+
+		s := New(cfg)
+		if !s.MatchesURL("https://www." + cfg.Domain + "/scenes") {
+			t.Errorf("%s does not match its own host", cfg.SiteID)
+		}
+		for _, other := range sites {
+			if other.Domain == cfg.Domain {
+				continue
+			}
+			if s.MatchesURL("https://www." + other.Domain + "/scenes") {
+				t.Errorf("%s also matches %s", cfg.SiteID, other.Domain)
+			}
+		}
 	}
 }
