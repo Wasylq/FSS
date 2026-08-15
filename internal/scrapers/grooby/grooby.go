@@ -14,6 +14,13 @@ var sites = []groobyutil.SiteConfig{
 	{SiteID: "braziliantranssexuals", Domain: "brazilian-transsexuals.com", StudioName: "Brazilian Transsexuals", TourPrefix: "/tour"},
 	{SiteID: "braziltgirls", Domain: "braziltgirls.xxx", StudioName: "Brazil TGirls", TourPrefix: "/tour"},
 	{SiteID: "canadatgirl", Domain: "canada-tgirl.com", StudioName: "Canada TGirl", TourPrefix: "/tour"},
+	// TransErotica performer sub-tours: same CMS and billing, own catalogue at
+	// the document root. Only the two that still serve one are registered —
+	// cherrymavrik carries 4 scenes the main tour does not. The other 15
+	// StashDB children are parked, personal bio pages, or (marissaminx) render
+	// every card as an affiliate redirect with no scene URL to store.
+	{SiteID: "cherrymavrik", Domain: "cherrymavrik.com", StudioName: "Cherry Mavrik"},
+	{SiteID: "kayleighcoxx", Domain: "kayleighcoxx.com", StudioName: "Kayleigh Coxx"},
 	{SiteID: "eurotgirls", Domain: "euro-tgirls.com", StudioName: "Euro Tgirls", TourPrefix: "/tour"},
 	{SiteID: "femout", Domain: "femout.xxx", StudioName: "Femout.xxx", TourPrefix: "/tour"},
 	{SiteID: "femoutsex", Domain: "femoutsex.xxx", StudioName: "Femoutsex.xxx", TourPrefix: "/tour"},
@@ -42,6 +49,7 @@ var sites = []groobyutil.SiteConfig{
 	{SiteID: "tgirlx", Domain: "tgirlx.com", StudioName: "TGirl X", TourPrefix: "/tour"},
 	{SiteID: "tporn", Domain: "t.porn", StudioName: "T.Porn", TourPrefix: "/tour"},
 	{SiteID: "transexdomination", Domain: "transexdomination.com", StudioName: "Transex Domination", TourPrefix: "/tour"},
+	{SiteID: "transerotica", Domain: "tour.transerotica.com", StudioName: "TransErotica", AltDomains: []string{"transerotica.com"}},
 	{SiteID: "transexpov", Domain: "transexpov.com", StudioName: "Transex POV", TourPrefix: "/tour"},
 	{SiteID: "transgasm", Domain: "transgasm.com", StudioName: "Transgasm", TourPrefix: "/tour"},
 	{SiteID: "transnificent", Domain: "transnificent.com", StudioName: "Transnificent", TourPrefix: "/tour"},

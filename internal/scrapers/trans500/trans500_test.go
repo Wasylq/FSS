@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -36,10 +37,42 @@ func detailHTML(title, site, desc, setDir string) string {
 </div></body></html>`, title, site, setDir, setDir, desc)
 }
 
+// stubSite counts requests by path. The detail pool runs several goroutines
+// against the server at once, so the counters need a lock of their own.
 type stubSite struct {
 	*httptest.Server
+	mu          sync.Mutex
 	listingHits map[string]int
 	detailHits  map[string]int
+}
+
+func (s *stubSite) hit(m map[string]int, key string) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	m[key]++
+}
+
+func (s *stubSite) listing(id string) int {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.listingHits[id]
+}
+
+func (s *stubSite) detail(slug string) int {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.detailHits[slug]
+}
+
+// listingIDs returns the category ids that were requested at least once.
+func (s *stubSite) listingIDs() []string {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	ids := make([]string, 0, len(s.listingHits))
+	for id := range s.listingHits {
+		ids = append(ids, id)
+	}
+	return ids
 }
 
 // catalogueServer serves a two-page category listing plus detail pages, and
@@ -58,7 +91,7 @@ func catalogueServer(t *testing.T) *stubSite {
 	site.Server = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch {
 		case r.URL.Path == "/tour3/category.php":
-			site.listingHits[r.URL.Query().Get("id")]++
+			site.hit(site.listingHits, r.URL.Query().Get("id"))
 			page := 1
 			_, _ = fmt.Sscanf(r.URL.Query().Get("page"), "%d", &page)
 			// Clamp rather than 404 — this is what makes an "empty page" stop
@@ -72,7 +105,7 @@ func catalogueServer(t *testing.T) *stubSite {
 			_, _ = fmt.Fprint(w, "<html><body>"+strings.Join(pages[page-1], "\n")+"</body></html>")
 		case strings.HasPrefix(r.URL.Path, "/tour3/trailers/"):
 			slug := strings.TrimSuffix(strings.TrimPrefix(r.URL.Path, "/tour3/trailers/"), ".html")
-			site.detailHits[slug]++
+			site.hit(site.detailHits, slug)
 			switch slug {
 			case "Pounding-Pamela":
 				_, _ = fmt.Fprint(w, detailHTML("Pounding Pamela", "I Kill It TS", "Pamela is back.", "kill499"))
@@ -137,10 +170,10 @@ func TestBareHostScrapesTheFullCatalogueCategory(t *testing.T) {
 	if len(scenes) != 3 || total != 3 {
 		t.Fatalf("got %d scenes (total %d), want 3", len(scenes), total)
 	}
-	if site.listingHits[catalogueCategory] == 0 {
-		t.Errorf("category %s was never fetched; hits=%v", catalogueCategory, site.listingHits)
+	if site.listing(catalogueCategory) == 0 {
+		t.Errorf("category %s was never fetched; got %v", catalogueCategory, site.listingIDs())
 	}
-	for id := range site.listingHits {
+	for _, id := range site.listingIDs() {
 		if id != catalogueCategory {
 			t.Errorf("fetched category %s as well as the catalogue", id)
 		}
@@ -160,11 +193,11 @@ func TestWalkStopsWhenAPageAddsNothingNew(t *testing.T) {
 		t.Fatalf("got %d scenes, want 3", len(scenes))
 	}
 	// Two pages of content, plus the clamped third that ends the walk.
-	if got := site.listingHits[catalogueCategory]; got != 3 {
+	if got := site.listing(catalogueCategory); got != 3 {
 		t.Errorf("fetched %d listing pages, want 3 (two of content, one to detect the end)", got)
 	}
 	for _, sc := range scenes {
-		if site.detailHits[strings.TrimPrefix(sc.URL, site.URL+"/tour3/trailers/")] > 1 {
+		if site.detail(strings.TrimPrefix(sc.URL, site.URL+"/tour3/trailers/")) > 1 {
 			t.Errorf("%s fetched more than once", sc.URL)
 		}
 	}
@@ -235,10 +268,10 @@ func TestCategoryURLScrapesThatCategory(t *testing.T) {
 	if len(errs) != 0 {
 		t.Fatalf("unexpected errors: %v", errs)
 	}
-	if site.listingHits["44"] == 0 {
-		t.Errorf("category 44 was never fetched; hits=%v", site.listingHits)
+	if site.listing("44") == 0 {
+		t.Errorf("category 44 was never fetched; got %v", site.listingIDs())
 	}
-	if site.listingHits[catalogueCategory] != 0 {
+	if site.listing(catalogueCategory) != 0 {
 		t.Error("a category URL also walked the full catalogue")
 	}
 }
@@ -257,7 +290,7 @@ func TestModelPageIsReadOnce(t *testing.T) {
 	if len(scenes) != 2 {
 		t.Fatalf("got %d scenes, want 2", len(scenes))
 	}
-	if site.listingHits[""] != 0 {
+	if site.listing("") != 0 {
 		t.Error("the model page walked into pagination")
 	}
 }
@@ -272,7 +305,7 @@ func TestModelIndexIsNotTreatedAsAModel(t *testing.T) {
 	if len(errs) != 0 {
 		t.Fatalf("unexpected errors: %v", errs)
 	}
-	if site.listingHits[catalogueCategory] == 0 {
+	if site.listing(catalogueCategory) == 0 {
 		t.Error("the model index did not fall through to the catalogue")
 	}
 }

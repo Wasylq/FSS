@@ -481,3 +481,173 @@ func TestParseListingStillSkipsTrailingComingSoonCard(t *testing.T) {
 		t.Errorf("kept item id = %q, want 11111", items[0].id)
 	}
 }
+
+// ---- the newer `sexyvideo_outer` card ----
+
+// outerCardHTML reproduces the newer template, where the credit block, the
+// runtime and the date all sit OUTSIDE the inner `sexyvideo` div. Chunking on
+// the inner div alone silently dropped all three on 26 of the 42 registered
+// sites — 488 of 488 uk-tgirls scenes had no performer, no date and no
+// duration. Note the details that differ from the older card: a site-logo
+// <img> before the model link, the name as anchor text rather than in a
+// <span>, `&nbsp;` between the video icon and the runtime, `fa-calendar-check`
+// rather than `fa-calendar`, and scheme-relative hrefs.
+const outerCardHTML = `<div class="sexyvideo_outer">
+	<div class="modelnamecontainer">
+		<div class="modelname">
+		<img class="logo_x" src="https://www.testsite.com/tour/custom_assets/images/logo_x.png">
+<a href="//www.testsite.com/models/AdaStone.html">Ada Stone</a>
+		</div>
+	</div>
+	<div class="sexyvideo">
+		<div class="videoblock"><div class="videohere">
+			<div class="video_stats">
+			<i class='fas fa-video'></i>&nbsp;&nbsp;<div style='display:inline'>20:27&nbsp;HD Video</div> &amp; 50&nbsp;Photos			</div>
+			<a href="//www.testsite.com/trailers/ada-stone-scene.html" title="A Newer Card">
+			<img id="set-target-1341" alt="A Newer Card" class="mainThumb thumbs stdimage" src="/content//contentthumbs/45/47/24547-2x.jpg" />
+			</a>
+		</div></div>
+		<h4><a href="//www.testsite.com/trailers/ada-stone-scene.html" title="A Newer Card">A Newer Card</a></h4>
+		<p class="photodesc">A description on the newer template.</p>
+		<div class="dateadded" STYLE="DISPLAY: NONE"><i class='far fa-calendar-check' style="color: #295777"></i> 17th Aug 2026</div>
+		<div class="rating"><i class="fa fa-trophy"></i> Rating: 4.64</div>
+	</div>
+</div>`
+
+func TestParseListingOuterCardKeepsPerformerDateAndDuration(t *testing.T) {
+	items := parseListingPage([]byte(`<html><body><div class="videos clear">` + outerCardHTML + `</div></body></html>`))
+	if len(items) != 1 {
+		t.Fatalf("got %d items, want 1", len(items))
+	}
+	got := items[0]
+
+	if got.id != "1341" {
+		t.Errorf("id = %q", got.id)
+	}
+	if got.title != "A Newer Card" {
+		t.Errorf("title = %q", got.title)
+	}
+	// The whole point: these three live outside the inner card.
+	if len(got.performers) != 1 || got.performers[0] != "Ada Stone" {
+		t.Errorf("performers = %v, want [Ada Stone]", got.performers)
+	}
+	if got.duration != 1227 {
+		t.Errorf("duration = %d, want 1227 (20:27)", got.duration)
+	}
+	if got.date.Format("2006-01-02") != "2026-08-17" {
+		t.Errorf("date = %v, want 2026-08-17", got.date)
+	}
+	if got.description != "A description on the newer template." {
+		t.Errorf("description = %q", got.description)
+	}
+}
+
+// A page carrying only the older card shape must parse exactly as before: the
+// outer wrapper is preferred, not required.
+func TestParseListingStillHandlesTheOlderCard(t *testing.T) {
+	items := parseListingPage([]byte(`<html><body>` + testCardHTML + testCardMinimal + `</body></html>`))
+	if len(items) != 2 {
+		t.Fatalf("got %d items, want 2", len(items))
+	}
+	if len(items[0].performers) != 2 {
+		t.Errorf("performers = %v, want both credits", items[0].performers)
+	}
+	if items[0].duration != 1016 {
+		t.Errorf("duration = %d, want 1016 (16:56)", items[0].duration)
+	}
+	if items[0].date.Format("2006-01-02") != "2026-05-08" {
+		t.Errorf("date = %v", items[0].date)
+	}
+}
+
+// Each outer card must claim only its own credit. The blocks are siblings, so a
+// chunking mistake pairs a scene with the next card's performer.
+func TestOuterCardsDoNotBorrowEachOthersCredits(t *testing.T) {
+	second := strings.NewReplacer(
+		"AdaStone", "MaraVance",
+		"Ada Stone", "Mara Vance",
+		"set-target-1341", "set-target-1342",
+		"ada-stone-scene", "mara-vance-scene",
+		"A Newer Card", "Another Card",
+	).Replace(outerCardHTML)
+
+	items := parseListingPage([]byte(`<html><body>` + outerCardHTML + second + `</body></html>`))
+	if len(items) != 2 {
+		t.Fatalf("got %d items, want 2", len(items))
+	}
+	want := map[string]string{"1341": "Ada Stone", "1342": "Mara Vance"}
+	for _, it := range items {
+		if len(it.performers) != 1 {
+			t.Fatalf("scene %s has performers %v, want exactly one", it.id, it.performers)
+		}
+		if it.performers[0] != want[it.id] {
+			t.Errorf("scene %s credited %q, want %q", it.id, it.performers[0], want[it.id])
+		}
+	}
+}
+
+// Scheme-relative hrefs are what the newer template writes. Joined as if they
+// were rooted paths they became `https://host//host/trailers/x.html`.
+func TestToSceneSchemeRelativeURLs(t *testing.T) {
+	item := sceneItem{
+		id:    "42",
+		title: "Test",
+		url:   "//tour.example.com/trailers/test.html",
+		thumb: "//cdn.example.com/thumbs/42.jpg",
+	}
+	scene := item.toScene("testid", "Test Studio", "https://tour.example.com", time.Now())
+	if scene.URL != "https://tour.example.com/trailers/test.html" {
+		t.Errorf("URL = %q", scene.URL)
+	}
+	if scene.Thumbnail != "https://cdn.example.com/thumbs/42.jpg" {
+		t.Errorf("Thumbnail = %q", scene.Thumbnail)
+	}
+}
+
+// `www.` belongs in front of a bare apex only. Prefixing a host that already
+// names a subdomain produced `www.tour.transerotica.com`, which serves a
+// certificate for another host and fails the handshake outright.
+func TestHostForOnlyPrefixesAnApex(t *testing.T) {
+	cases := map[string]string{
+		"black-tgirls.com":      "www.black-tgirls.com",
+		"tgirls.porn":           "www.tgirls.porn",
+		"braziltgirls.xxx":      "www.braziltgirls.xxx",
+		"tour.transerotica.com": "tour.transerotica.com",
+		"a.b.example.co.uk":     "a.b.example.co.uk",
+	}
+	for in, want := range cases {
+		if got := hostFor(in); got != want {
+			t.Errorf("hostFor(%q) = %q, want %q", in, got, want)
+		}
+	}
+}
+
+// The performer sub-tours link every card through the NATS affiliate redirect,
+// which is a billing URL carrying a tracking code rather than the scene's own
+// address. The tour serves the same scene at its own `/trailers/{slug}.html`.
+func TestToSceneRewritesTheAffiliateRedirect(t *testing.T) {
+	item := sceneItem{
+		id:    "2134",
+		title: "Test",
+		url:   "https://join.transerotica.com/track/MC4wLjEwOS4xODAuMC4wLjAuMC4w/trailers/Some-Scene.html",
+	}
+	scene := item.toScene("cherrymavrik", "Cherry Mavrik", "https://www.cherrymavrik.com", time.Now())
+	if want := "https://www.cherrymavrik.com/trailers/Some-Scene.html"; scene.URL != want {
+		t.Errorf("URL = %q, want %q", scene.URL, want)
+	}
+}
+
+// Only the redirect shape is rewritten. Any other absolute URL — a CDN
+// thumbnail, a scene already on its own host — is left exactly as published.
+func TestToSceneLeavesOtherAbsoluteURLsAlone(t *testing.T) {
+	for _, u := range []string{
+		"https://tour.example.com/trailers/Some-Scene.html",
+		"https://join.example.com/signup/signup.php?nats=abc",
+		"https://cdn.example.com/thumbs/1.jpg",
+	} {
+		item := sceneItem{id: "1", title: "T", url: u}
+		if got := item.toScene("x", "X", "https://www.example.com", time.Now()).URL; got != u {
+			t.Errorf("URL %q was rewritten to %q", u, got)
+		}
+	}
+}

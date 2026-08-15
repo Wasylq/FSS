@@ -34,8 +34,20 @@ func New(cfg SiteConfig) *Scraper {
 	return &Scraper{
 		cfg:    cfg,
 		client: httpx.NewClient(30 * time.Second),
-		base:   "https://www." + cfg.Domain,
+		base:   "https://" + hostFor(cfg.Domain),
 	}
+}
+
+// hostFor prefixes `www.` only for a bare apex. Every Grooby domain registered
+// so far is two labels (`tgirls.porn`, `braziltgirls.xxx`), and all of them
+// serve the tour from `www.`; a domain that already names a subdomain does not
+// — `www.tour.transerotica.com` resolves to a certificate for another host
+// entirely and fails the handshake.
+func hostFor(domain string) string {
+	if strings.Count(domain, ".") == 1 {
+		return "www." + domain
+	}
+	return domain
 }
 
 var _ scraper.StudioScraper = (*Scraper)(nil)
@@ -62,17 +74,31 @@ func (s *Scraper) ListScenes(ctx context.Context, studioURL string, opts scraper
 }
 
 var (
+	// Two card shapes are in play across the network. The older one is a bare
+	// `<div class="sexyvideo">`; the newer wraps it in `sexyvideo_outer`
+	// together with the `modelname` block, so the performer, and on most of
+	// those sites the date and duration, sit *outside* the inner div. Chunking
+	// on the inner card there silently dropped all three on 26 of the 42
+	// registered sites — 488 of 488 scenes on uk-tgirls had no performer, no
+	// date and no duration. outerCardRe is preferred when the page has any.
+	outerCardRe  = regexp.MustCompile(`<div class="sexyvideo_outer"`)
 	cardRe       = regexp.MustCompile(`<div class="sexyvideo"`)
 	sceneIDRe    = regexp.MustCompile(`id="set-target-(\d+)"`)
 	comingSoonRe = regexp.MustCompile(`class="comingsoon"`)
 	titleRe      = regexp.MustCompile(`(?s)<h4>\s*<a[^>]+title="([^"]+)"`)
 	sceneURLRe   = regexp.MustCompile(`(?s)<h4>\s*<a\s+href="([^"]+)"`)
 	thumbRe      = regexp.MustCompile(`<img[^>]*class="[^"]*mainThumb[^"]*"[^>]*src="([^"]+)"`)
-	durationRe   = regexp.MustCompile(`<i class='fas fa-video'></i>\s*<div[^>]*>(\d+:\d{2}(?::\d{2})?)`)
-	performerRe  = regexp.MustCompile(`<div class="modelname">\s*<a[^>]+><span[^>]*>([^<]+)</span></a>`)
-	descRe       = regexp.MustCompile(`<p class="photodesc">([^<]+)</p>`)
-	dateRe       = regexp.MustCompile(`<i class='far fa-calendar'[^>]*></i>\s*(\d{1,2}(?:st|nd|rd|th)\s+\w+\s+\d{4})`)
-	maxPageRe    = regexp.MustCompile(`movies_(\d+)_d\.html`)
+	// `(?:&nbsp;|\s)*` because the newer template separates the icon from the
+	// runtime with two non-breaking spaces rather than whitespace.
+	durationRe = regexp.MustCompile(`<i class='fas fa-video'></i>(?:&nbsp;|\s)*<div[^>]*>(\d+:\d{2}(?::\d{2})?)`)
+	// The older template wraps the name in a <span>; the newer writes it as the
+	// anchor text and puts a site-logo <img> before the anchor. Matching the
+	// model link itself covers both without a second pattern per field.
+	performerRe = regexp.MustCompile(`(?s)<div class="modelname">.*?<a[^>]+href="[^"]*/models/[^"]*"[^>]*>(?:\s*<span[^>]*>)?([^<]+)`)
+	descRe      = regexp.MustCompile(`<p class="photodesc">([^<]+)</p>`)
+	// `fa-calendar` on the older template, `fa-calendar-check` on the newer.
+	dateRe    = regexp.MustCompile(`<i class='far fa-calendar(?:-check)?'[^>]*></i>\s*(\d{1,2}(?:st|nd|rd|th)\s+\w+\s+\d{4})`)
+	maxPageRe = regexp.MustCompile(`movies_(\d+)_d\.html`)
 
 	modelSlugRe = regexp.MustCompile(`/models/([^_/.]+?)(?:\.html)?$`)
 )
@@ -125,7 +151,12 @@ func cardEnd(page string, start, limit int) int {
 
 func parseListingPage(body []byte) []sceneItem {
 	page := string(body)
-	starts := cardRe.FindAllStringIndex(page, -1)
+	// Prefer the outer wrapper where the template uses one: it is the whole
+	// card. The inner div alone excludes the credit block that precedes it.
+	starts := outerCardRe.FindAllStringIndex(page, -1)
+	if len(starts) == 0 {
+		starts = cardRe.FindAllStringIndex(page, -1)
+	}
 	items := make([]sceneItem, 0, len(starts))
 
 	for i, loc := range starts {
@@ -296,14 +327,8 @@ func (s *Scraper) scrapeListingPages(ctx context.Context, opts scraper.ListOpts,
 }
 
 func (item sceneItem) toScene(siteID, studio, base string, now time.Time) models.Scene {
-	url := item.url
-	if strings.HasPrefix(url, "/") {
-		url = base + url
-	}
-	thumb := item.thumb
-	if strings.HasPrefix(thumb, "/") {
-		thumb = base + thumb
-	}
+	url := absolutize(item.url, base)
+	thumb := absolutize(item.thumb, base)
 	return models.Scene{
 		ID:          item.id,
 		SiteID:      siteID,
@@ -317,6 +342,38 @@ func (item sceneItem) toScene(siteID, studio, base string, now time.Time) models
 		Description: item.description,
 		Studio:      studio,
 		ScrapedAt:   now,
+	}
+}
+
+// affiliateTrailerRe matches the NATS tracking form some tours link scenes
+// through: `https://join.<site>/track/<nats-code>/trailers/<slug>.html`.
+var affiliateTrailerRe = regexp.MustCompile(`^https?://join\.[^/]+/track/[^/]*/(trailers/[^"?#]+\.html)$`)
+
+// absolutize resolves a card's href against the tour's origin.
+//
+// Two shapes need rewriting. The newer template writes scheme-relative links
+// (`//tour.example.com/trailers/x.html`), which a plain base+path join turns
+// into `https://host//host/trailers/x.html`. The performer sub-tours instead
+// link every card through the NATS affiliate redirect, which is a billing URL
+// carrying a tracking code rather than the scene's address — the tour serves
+// the same scene at its own `/trailers/{slug}.html`, so that is what is stored.
+func absolutize(ref, base string) string {
+	switch {
+	case ref == "":
+		return ""
+	case strings.HasPrefix(ref, "//"):
+		scheme := "https:"
+		if i := strings.Index(base, "//"); i > 0 {
+			scheme = base[:i]
+		}
+		return scheme + ref
+	case strings.HasPrefix(ref, "/"):
+		return base + ref
+	default:
+		if m := affiliateTrailerRe.FindStringSubmatch(ref); m != nil {
+			return base + "/" + m[1]
+		}
+		return ref
 	}
 }
 

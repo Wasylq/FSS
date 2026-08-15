@@ -3,8 +3,8 @@ package grooby
 import "testing"
 
 func TestSiteCount(t *testing.T) {
-	if len(sites) != 42 {
-		t.Errorf("got %d sites, want 42", len(sites))
+	if len(sites) != 45 {
+		t.Errorf("got %d sites, want 45", len(sites))
 	}
 }
 
