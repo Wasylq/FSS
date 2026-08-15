@@ -402,3 +402,103 @@ func TestPerformerSearch(t *testing.T) {
 		t.Errorf("duration = %d, want 600", results[0].Duration)
 	}
 }
+
+// The live sitemap is in no order at all — czechcasting's runs 2011-11-22,
+// 2011-11-05, 2012-01-09 … 2026-04-28, 2026-08-17, 2024-10-08 — so entries are
+// sorted on the sitemap's own publication_date before the KnownIDs stop is
+// applied. Without that the stop aborts at whatever position the first stored
+// scene occupies and permanently misses everything after it.
+func TestSortNewestFirst(t *testing.T) {
+	entry := func(slug, date string) sceneEntry {
+		var e sceneEntry
+		e.slug = slug
+		e.url.Video.PubDate = date
+		return e
+	}
+	entries := []sceneEntry{
+		entry("old", "2011-11-22"),
+		entry("newest", "2026-08-17"),
+		entry("undated", ""),
+		entry("middle", "2024-10-08"),
+		entry("unparseable", "not-a-date"),
+	}
+	sortNewestFirst(entries)
+
+	got := make([]string, len(entries))
+	for i, e := range entries {
+		got[i] = e.slug
+	}
+	// Undated entries lead, in their original relative order, so a stop can
+	// never skip past one; the dated ones follow newest-first.
+	want := []string{"undated", "unparseable", "newest", "middle", "old"}
+	for i := range want {
+		if got[i] != want[i] {
+			t.Fatalf("order = %v, want %v", got, want)
+		}
+	}
+}
+
+// A performer page is a single already-fetched page whose scenes are in no
+// particular order, so a stop there saves nothing and would drop everything
+// listed after the first stored slug. Known slugs are skipped instead, and the
+// run says so.
+func TestPerformerPageSkipsKnownSlugsInsteadOfStopping(t *testing.T) {
+	slugs := []string{"alpha", "beta", "gamma"}
+
+	var sb strings.Builder
+	sb.WriteString(`<html><body>`)
+	for _, s := range slugs {
+		fmt.Fprintf(&sb, `<a href="/video/%s/">%s</a>`, s, s)
+	}
+	sb.WriteString(`</body></html>`)
+	performerPage := sb.String()
+
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if strings.HasPrefix(r.URL.Path, "/video/") {
+			slug := strings.Trim(strings.TrimPrefix(r.URL.Path, "/video/"), "/")
+			_, _ = fmt.Fprintf(w, `<html><head>
+<meta property="og:title" content="Scene %s" />
+<meta property="og:description" content="desc" />
+<meta property="og:image" content="https://cdn.example/%s.jpg" />
+</head><body></body></html>`, slug, slug)
+			return
+		}
+		_, _ = fmt.Fprint(w, performerPage)
+	}))
+	defer ts.Close()
+
+	s := New(SiteConfig{SiteID: "czechcasting", Domain: "czechcasting.com", Studio: "Czech Casting"})
+	s.Client = ts.Client()
+	s.Base = ts.URL
+
+	ch, err := s.ListScenes(context.Background(), ts.URL+"/pages/search/?q=Somebody&adult-performer", scraper.ListOpts{
+		Workers: 1,
+		// The FIRST of three. A truncating stop would yield nothing at all.
+		KnownIDs: map[string]bool{"alpha": true},
+	})
+	if err != nil {
+		t.Fatalf("ListScenes: %v", err)
+	}
+
+	var ids []string
+	stopped := false
+	for r := range ch {
+		switch r.Kind {
+		case scraper.KindScene:
+			ids = append(ids, r.Scene.ID)
+		case scraper.KindStoppedEarly:
+			stopped = true
+		}
+	}
+	if len(ids) != 2 {
+		t.Fatalf("got %v, want the two unknown slugs", ids)
+	}
+	if !stopped {
+		t.Error("skipping stored scenes did not report StoppedEarly")
+	}
+	for _, id := range ids {
+		if id == "alpha" {
+			t.Error("a stored scene was re-fetched")
+		}
+	}
+}

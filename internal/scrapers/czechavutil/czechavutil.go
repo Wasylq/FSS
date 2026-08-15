@@ -7,6 +7,7 @@ import (
 	"html"
 	"net/http"
 	"regexp"
+	"sort"
 	"strings"
 	"sync"
 	"time"
@@ -242,14 +243,15 @@ func (s *Scraper) scrapePerformerSearch(ctx context.Context, studioURL string, o
 		}()
 	}
 
+	// A performer page is a single page that has already been fetched in full,
+	// and its scenes are in no particular order, so stopping at the first
+	// stored slug saves nothing and would drop every scene listed after it.
+	// Known slugs are skipped instead.
+	skipped := 0
 	for _, slug := range slugs {
 		if opts.KnownIDs[slug] {
-			scraper.Debugf(1, "%s: hit known ID %s, stopping early", s.cfg.SiteID, slug)
-			select {
-			case out <- scraper.StoppedEarly():
-			case <-ctx.Done():
-			}
-			break
+			skipped++
+			continue
 		}
 		select {
 		case work <- slug:
@@ -258,6 +260,42 @@ func (s *Scraper) scrapePerformerSearch(ctx context.Context, studioURL string, o
 	}
 	close(work)
 	wg.Wait()
+
+	if skipped > 0 {
+		scraper.Debugf(1, "%s: skipped %d already-stored scene(s)", s.cfg.SiteID, skipped)
+		select {
+		case out <- scraper.StoppedEarly():
+		case <-ctx.Done():
+		}
+	}
+}
+
+// sceneEntry pairs a sitemap URL with the slug derived from it.
+type sceneEntry struct {
+	slug string
+	url  sitemapURL
+}
+
+// sortNewestFirst orders sitemap entries by publication date, newest first.
+// Entries whose date is missing or unparseable sort ahead of everything dated,
+// so the KnownIDs stop can never skip past one.
+func sortNewestFirst(entries []sceneEntry) {
+	sort.SliceStable(entries, func(i, j int) bool {
+		di, oki := pubDate(entries[i])
+		dj, okj := pubDate(entries[j])
+		if oki != okj {
+			return !oki
+		}
+		return di.After(dj)
+	})
+}
+
+func pubDate(e sceneEntry) (time.Time, bool) {
+	t, err := time.Parse("2006-01-02", strings.TrimSpace(e.url.Video.PubDate))
+	if err != nil {
+		return time.Time{}, false
+	}
+	return t, true
 }
 
 func (s *Scraper) fetchSceneBySlug(ctx context.Context, slug, studioURL string) (models.Scene, error) {
@@ -320,11 +358,6 @@ func (s *Scraper) scrapeSitemap(ctx context.Context, studioURL string, opts scra
 		return
 	}
 
-	type sceneEntry struct {
-		slug string
-		url  sitemapURL
-	}
-
 	var entries []sceneEntry
 	for _, u := range urls {
 		slug := ExtractSlug(u.Loc, s.cfg.Domain)
@@ -337,6 +370,14 @@ func (s *Scraper) scrapeSitemap(ctx context.Context, studioURL string, opts scra
 	if len(entries) == 0 {
 		return
 	}
+
+	// The sitemap is in no order at all — czechcasting's runs 2011-11-22,
+	// 2011-11-05, 2012-01-09 … 2026-04-28, 2026-08-17, 2024-10-08 — so the
+	// KnownIDs stop below would abort at whatever position the first stored
+	// scene happened to occupy and permanently miss everything after it.
+	// Sorting on the sitemap's own publication_date makes the stop mean what
+	// it says. Undated entries sort first so a stop can never skip them.
+	sortNewestFirst(entries)
 
 	select {
 	case out <- scraper.Progress(len(entries)):

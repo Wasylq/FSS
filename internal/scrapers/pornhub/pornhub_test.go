@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"strconv"
 	"strings"
 	"testing"
@@ -372,41 +373,96 @@ func TestListScenesChannel(t *testing.T) {
 
 // ---- TestListScenesKnownIDs ----
 
-func TestListScenesKnownIDs(t *testing.T) {
+// The listing is not newest-first — riley-reid's page 1 runs 2026-07-23,
+// 07-21, 04-03, 03-18, 02-07, 03-30 — so an early stop at the first stored id
+// would drop everything after it, and `--full`'s authoritative Save would then
+// delete those scenes. KnownIDs is therefore ignored and every run re-walks.
+func TestKnownIDsDoNotStopTheWalk(t *testing.T) {
 	items := []testItem{testItem1(), testItem2(), testItem3()}
 
+	pageCount := 0
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		pageCount++
+		if pageCount > 1 {
+			w.WriteHeader(http.StatusNotFound)
+			return
+		}
 		_, _ = w.Write(videoListHTML(items))
 	}))
 	defer ts.Close()
 
 	s := &Scraper{client: ts.Client()}
 	ch, err := s.ListScenes(context.Background(), ts.URL+"/pornstar/dee-williams", scraper.ListOpts{
+		// The second of three — a truncating stop would leave exactly one.
 		KnownIDs: map[string]bool{"ddeeff445566": true},
 	})
 	if err != nil {
 		t.Fatalf("ListScenes error: %v", err)
 	}
 
-	var scenes []scraper.SceneResult
+	var ids []string
 	sawStoppedEarly := false
 	for r := range ch {
-		if r.Kind == scraper.KindStoppedEarly {
+		switch r.Kind {
+		case scraper.KindStoppedEarly:
 			sawStoppedEarly = true
+		case scraper.KindScene:
+			ids = append(ids, r.Scene.ID)
+		case scraper.KindError:
+			t.Errorf("unexpected error: %v", r.Err)
+		}
+	}
+	if len(ids) != 3 {
+		t.Errorf("got %d scenes (%v), want all 3 — the walk was truncated", len(ids), ids)
+	}
+	if sawStoppedEarly {
+		t.Error("StoppedEarly was reported; this listing has no usable early stop")
+	}
+}
+
+// The page number is set on top of whatever the operator wrote, not instead of
+// it: rebuilding the query from scratch silently dropped `?o=mr`-style sort and
+// filter options from the URL that was actually asked for.
+func TestBuildPageURLKeepsTheOperatorsQuery(t *testing.T) {
+	cases := []struct {
+		in       string
+		page     int
+		wantPath string
+		wantQ    map[string]string
+	}{
+		{"https://www.pornhub.com/pornstar/dee-williams?o=mr", 2,
+			"/pornstar/dee-williams/videos", map[string]string{"o": "mr", "page": "2"}},
+		{"https://www.pornhub.com/channels/brazzers?hd=1&o=mr", 3,
+			"/channels/brazzers/videos", map[string]string{"hd": "1", "o": "mr", "page": "3"}},
+		{"https://www.pornhub.com/pornstar/dee-williams", 1,
+			"/pornstar/dee-williams/videos", map[string]string{"page": "1"}},
+		// An existing page parameter is replaced, not duplicated.
+		{"https://www.pornhub.com/pornstar/dee-williams/videos?page=9", 4,
+			"/pornstar/dee-williams/videos", map[string]string{"page": "4"}},
+	}
+	for _, c := range cases {
+		got, err := buildPageURL(c.in, c.page)
+		if err != nil {
+			t.Errorf("buildPageURL(%q): %v", c.in, err)
 			continue
 		}
-		if r.Err == nil {
-			scenes = append(scenes, r)
+		u, err := url.Parse(got)
+		if err != nil {
+			t.Errorf("parsing %q: %v", got, err)
+			continue
 		}
-	}
-	if len(scenes) != 1 {
-		t.Errorf("got %d scenes, want 1 (early stop at known ID)", len(scenes))
-	}
-	if !sawStoppedEarly {
-		t.Error("expected StoppedEarly signal, got none")
-	}
-	if len(scenes) > 0 && scenes[0].Scene.ID != "aabbcc112233" {
-		t.Errorf("scene ID = %q, want %q", scenes[0].Scene.ID, "aabbcc112233")
+		if u.Path != c.wantPath {
+			t.Errorf("buildPageURL(%q) path = %q, want %q", c.in, u.Path, c.wantPath)
+		}
+		q := u.Query()
+		if len(q) != len(c.wantQ) {
+			t.Errorf("buildPageURL(%q) query = %v, want %v", c.in, q, c.wantQ)
+		}
+		for k, v := range c.wantQ {
+			if q.Get(k) != v {
+				t.Errorf("buildPageURL(%q) %s = %q, want %q", c.in, k, q.Get(k), v)
+			}
+		}
 	}
 }
 

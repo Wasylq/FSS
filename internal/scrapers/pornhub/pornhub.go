@@ -62,6 +62,14 @@ func (s *Scraper) ListScenes(ctx context.Context, studioURL string, opts scraper
 func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOpts, out chan<- scraper.SceneResult) {
 	defer close(out)
 
+	// The listing is not newest-first. Walking riley-reid's page 1 gives
+	// 2026-07-23, 07-21, 04-03, 03-18, 02-07, 03-30 — non-monotonic in either
+	// direction, and `?o=mr` does not change it on this endpoint. An early
+	// stop at the first stored id would therefore drop everything after it,
+	// and `--full`'s authoritative Save would delete those scenes. Incremental
+	// runs re-walk instead: more requests, no silent loss.
+	opts.KnownIDs = nil
+
 	now := time.Now().UTC()
 	scraper.Paginate(ctx, opts, "pornhub", out, func(ctx context.Context, page int) (scraper.PageResult, error) {
 		pageURL, err := buildPageURL(studioURL, page)
@@ -110,15 +118,23 @@ func buildPageURL(studioURL string, page int) (string, error) {
 	}
 	if m := pornstarRe.FindStringSubmatch(u.Path); m != nil {
 		u.Path = "/pornstar/" + m[1] + "/videos"
-		u.RawQuery = "page=" + strconv.Itoa(page)
+		u.RawQuery = withPage(u.Query(), page)
 		return u.String(), nil
 	}
 	if m := channelRe.FindStringSubmatch(u.Path); m != nil {
 		u.Path = "/channels/" + m[1] + "/videos"
-		u.RawQuery = "page=" + strconv.Itoa(page)
+		u.RawQuery = withPage(u.Query(), page)
 		return u.String(), nil
 	}
 	return "", fmt.Errorf("cannot extract pornhub slug from %q", studioURL)
+}
+
+// withPage sets the page number, keeping everything else the operator wrote.
+// Rebuilding the query from scratch silently dropped filters and sort options
+// (`?o=mr`, `?hd=1`) from the URL that was actually asked for.
+func withPage(q url.Values, page int) string {
+	q.Set("page", strconv.Itoa(page))
+	return q.Encode()
 }
 
 // ---- page fetch ----
