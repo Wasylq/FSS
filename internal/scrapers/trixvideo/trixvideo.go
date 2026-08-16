@@ -16,13 +16,16 @@ import (
 	"github.com/Anastylosis/FSS/scraper"
 )
 
-type siteConfig struct {
+// SiteConfig describes one site on this template. It is exported because the
+// template is a vendor one rather than a Trix Video invention — housewifekelly
+// runs the same tour and reuses this engine from its own package.
+type SiteConfig struct {
 	SiteID     string
 	Domain     string
 	StudioName string
 }
 
-var sites = []siteConfig{
+var sites = []SiteConfig{
 	{"dallasdiamondz", "dallasdiamondz.com", "Dallas Diamondz"},
 	{"dixiestrailerpark", "dixiestrailerpark.com", "Dixie's Trailer Park"},
 	{"grannycumshere", "grannycumshere.com", "Granny Cums Here"},
@@ -35,12 +38,13 @@ var sites = []siteConfig{
 
 type Scraper struct {
 	Client       *http.Client
-	cfg          siteConfig
+	cfg          SiteConfig
 	matchRe      *regexp.Regexp
 	baseOverride string
 }
 
-func New(cfg siteConfig) *Scraper {
+// New builds a scraper for one site on this template.
+func New(cfg SiteConfig) *Scraper {
 	return &Scraper{
 		Client:  httpx.NewClient(30 * time.Second),
 		cfg:     cfg,

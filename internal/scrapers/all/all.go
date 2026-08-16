@@ -148,6 +148,7 @@ import (
 	_ "github.com/Anastylosis/FSS/internal/scrapers/hollyrandall"
 	_ "github.com/Anastylosis/FSS/internal/scrapers/hookuphotshot"
 	_ "github.com/Anastylosis/FSS/internal/scrapers/houseofyre"
+	_ "github.com/Anastylosis/FSS/internal/scrapers/housewifekelly"
 	_ "github.com/Anastylosis/FSS/internal/scrapers/humiliationpov"
 	_ "github.com/Anastylosis/FSS/internal/scrapers/hussiepass"
 	_ "github.com/Anastylosis/FSS/internal/scrapers/hustler"

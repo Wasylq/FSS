@@ -14,7 +14,7 @@ import (
 	"github.com/Anastylosis/FSS/scraper"
 )
 
-func siteByID(t *testing.T, id string) siteConfig {
+func siteByID(t *testing.T, id string) SiteConfig {
 	t.Helper()
 	for _, cfg := range sites {
 		if cfg.SiteID == id {
@@ -22,7 +22,7 @@ func siteByID(t *testing.T, id string) siteConfig {
 		}
 	}
 	t.Fatalf("site %q not in table", id)
-	return siteConfig{}
+	return SiteConfig{}
 }
 
 func TestScraperInterface(t *testing.T) {
