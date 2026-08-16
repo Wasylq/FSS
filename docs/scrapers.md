@@ -832,6 +832,8 @@ site comes back.
 | Maximo Garcia | `maximogarcia.com` | Parked: redirects to a `ww1.` domain-parking page. |
 | Bellesa House | `bellesa.co`, `bellesaplus.co` | `bellesa.co` is a tube aggregating other studios (LetsDoeIt, Adult Time, Erika Lust…), and Bellesa's own-brand channels there (`bellesa house`, `bellesa films`, `bellesa house party`, `bellesa blind date`) all return zero videos. The originals moved to `bellesaplus.co`, which answers 403. |
 | Ballet Heels | `ballet-heels.com` | **Photo sets, not scenes.** The sitemap names 511 `/shooting/` pages and every one of them is a stills gallery — each header reads "N Photos", 40 sampled at random carry no video element, no `.mp4` and no video-count marker, and the site navigation has no videos section at all. StashDB counts 273 "scenes" here; they are the photo sets. Nothing on the site is a scene in FSS's sense. |
+| Legendarylootz | `legendarylootz.com` | Single-page WordPress landing site. The whole domain is five pages — the sitemap says so — and the home page is anchors (`#about`, `#pricing`, `#team`) with no video element anywhere. `customs.legendarylootz.com` and `faq.legendarylootz.com` both redirect back into it, and the FAQ page points buyers at OnlyFans and Fansly. Nothing is published on a scrapeable host. |
+| Kate Kuray | `kate-kuray.com` | Single-page personal site: two pages and two FAQ entries in the whole sitemap, no video element, no listing, no catalogue. StashDB's 255 scenes are distributed on fan platforms, not here. |
 
 ## Shared scraper packages
 
