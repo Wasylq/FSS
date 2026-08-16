@@ -830,6 +830,7 @@ site comes back.
 | Bailey Jay | `ts-baileyjay.com` | The tour's updates page is a static image collage — seven `<img>` tags and nothing else. No titles, dates, scene links, listing, pagination or sitemap. (The `tgirl-network.com` aggregator does paginate, but yields only id/title/performer/thumb with no date.) |
 | Maximo Garcia | `maximogarcia.com` | Parked: redirects to a `ww1.` domain-parking page. |
 | Bellesa House | `bellesa.co`, `bellesaplus.co` | `bellesa.co` is a tube aggregating other studios (LetsDoeIt, Adult Time, Erika Lust…), and Bellesa's own-brand channels there (`bellesa house`, `bellesa films`, `bellesa house party`, `bellesa blind date`) all return zero videos. The originals moved to `bellesaplus.co`, which answers 403. |
+| Ballet Heels | `ballet-heels.com` | **Photo sets, not scenes.** The sitemap names 511 `/shooting/` pages and every one of them is a stills gallery — each header reads "N Photos", 40 sampled at random carry no video element, no `.mp4` and no video-count marker, and the site navigation has no videos section at all. StashDB counts 273 "scenes" here; they are the photo sets. Nothing on the site is a scene in FSS's sense. |
 
 ## Shared scraper packages
 
