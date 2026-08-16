@@ -35,9 +35,13 @@
 //   - There is no separate scene title; the `<h4>` anchor is the **model
 //     name**. We use the first sentence of the description as a synthesised
 //     title and store the model name in Performers.
-//   - No publication date is shown on the card — `Scene.Date` stays zero,
-//     which means `KnownIDs` early-stop is not reliable (the listing order
-//     across pages is stable in practice, but not formally date-sorted).
+//   - No publication date is shown on the card — `Scene.Date` stays zero, and
+//     the listing is not in date order: creampiethais' first page runs set ids
+//     2008, 1816, 1700, 1644, 10061, 10079. There is nothing to order on and
+//     nothing to sort by, so the `KnownIDs` early-stop is **not used** — it
+//     would abort at whatever position the first stored scene occupied and
+//     permanently miss everything after it. Every run re-walks, which is cheap
+//     here: the pages are listing-only, with no detail fetch behind them.
 //   - Every detail link goes to `join.{site}.com/signup/signup.php`. There
 //     are no public detail pages, so all metadata comes from the card.
 //
@@ -201,6 +205,10 @@ func (s *Scraper) listingURL(page int) string {
 func (s *Scraper) run(ctx context.Context, _ string, opts scraper.ListOpts, out chan<- scraper.SceneResult) {
 	defer close(out)
 	scraper.Debugf(1, "%s: scraping full catalog", s.cfg.ID)
+
+	// See the package doc: this listing has no date and no dependable order, so
+	// there is no position at which stopping early is safe.
+	opts.KnownIDs = nil
 
 	now := time.Now().UTC()
 	var firstPageSize int

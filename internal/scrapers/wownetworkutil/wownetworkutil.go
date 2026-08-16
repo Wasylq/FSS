@@ -127,6 +127,7 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 
 	performers := s.fetchListingPerformers(ctx, base+"/tour/whats-new")
 
+	skipped := 0
 	for i, u := range trailerURLs {
 		if ctx.Err() != nil {
 			return
@@ -141,28 +142,43 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 		}
 
 		slug := extractSlug(u)
+		// The sitemap is in no order at all — wowgirls' first twelve trailers
+		// run 2013, 2024, 2025, 2026, 2014, 2024, 2012, 2023 — and it carries
+		// no <lastmod> or any other date to sort on; the date only exists on
+		// the detail page, which is the very fetch an early stop exists to
+		// avoid. So a stop at the first stored slug would abort at an
+		// arbitrary position and permanently miss everything after it. Stored
+		// scenes are skipped instead, which costs nothing on a list this size.
 		if opts.KnownIDs[slug] {
-			scraper.Debugf(1, "%s: hit known ID, stopping early", s.cfg.SiteID)
-			select {
-			case out <- scraper.StoppedEarly():
-			case <-ctx.Done():
-			}
-			return
+			skipped++
+			continue
 		}
 
 		scene, err := s.fetchDetail(ctx, u, studioURL, performers)
 		if err != nil {
+			// One unreachable trailer is not the catalogue. Report it and keep
+			// going: returning here handed an authoritative --full save every
+			// scene up to the first failure and nothing after it.
 			select {
 			case out <- scraper.Error(fmt.Errorf("%s: %w", slug, err)):
 			case <-ctx.Done():
+				return
 			}
-			return
+			continue
 		}
 
 		select {
 		case out <- scraper.Scene(scene):
 		case <-ctx.Done():
 			return
+		}
+	}
+
+	if skipped > 0 {
+		scraper.Debugf(1, "%s: skipped %d already-stored scene(s)", s.cfg.SiteID, skipped)
+		select {
+		case out <- scraper.StoppedEarly():
+		case <-ctx.Done():
 		}
 	}
 }

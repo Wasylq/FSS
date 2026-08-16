@@ -279,7 +279,11 @@ func TestEndToEnd(t *testing.T) {
 	}
 }
 
-func TestKnownIDsEarlyStop(t *testing.T) {
+// The sitemap is in no order at all — wowgirls' first twelve trailers run 2013,
+// 2024, 2025, 2026, 2014, 2024, 2012, 2023 — and carries no date to sort on, so
+// a stop at the first stored slug would abort at an arbitrary position and
+// permanently miss everything after it. Stored scenes are skipped instead.
+func TestKnownIDsAreSkippedNotStoppedOn(t *testing.T) {
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case "/sitemap.xml":
@@ -289,6 +293,8 @@ func TestKnownIDsEarlyStop(t *testing.T) {
 			_, _ = fmt.Fprint(w, `<html><body></body></html>`)
 		case "/tour/trailer/trailers/scene-one":
 			_, _ = fmt.Fprint(w, detailPage(testJSONLD("Scene One", "2020-01-15", "PT30M0S")))
+		case "/tour/trailer/whatsnew/scene-three":
+			_, _ = fmt.Fprint(w, detailPage(testJSONLD("Scene Three", "2019-05-01", "PT20M0S")))
 		default:
 			http.NotFound(w, r)
 		}
@@ -296,35 +302,83 @@ func TestKnownIDsEarlyStop(t *testing.T) {
 	defer ts.Close()
 
 	domain := strings.TrimPrefix(ts.URL, "http://")
-	cfg := SiteConfig{SiteID: "test", Domain: domain, StudioName: "Test"}
-	s := New(cfg)
+	s := New(SiteConfig{SiteID: "test", Domain: domain, StudioName: "Test"})
 
-	ctx := context.Background()
-	ch, err := s.ListScenes(ctx, ts.URL, scraper.ListOpts{
-		Delay:    time.Millisecond,
+	ch, err := s.ListScenes(context.Background(), ts.URL, scraper.ListOpts{
+		Delay: time.Millisecond,
+		// The MIDDLE entry. A stop here would drop scene-three, which follows
+		// it in the sitemap.
 		KnownIDs: map[string]bool{"scene-two": true},
 	})
 	if err != nil {
 		t.Fatalf("ListScenes: %v", err)
 	}
 
-	sceneCount := 0
+	var titles []string
 	stoppedEarly := false
 	for res := range ch {
 		switch res.Kind {
 		case scraper.KindScene:
-			sceneCount++
+			titles = append(titles, res.Scene.Title)
 		case scraper.KindStoppedEarly:
 			stoppedEarly = true
 		case scraper.KindError:
 			t.Fatalf("unexpected error: %v", res.Err)
 		}
 	}
-	if sceneCount != 1 {
-		t.Errorf("got %d scenes, want 1", sceneCount)
+	if len(titles) != 2 {
+		t.Fatalf("got %v, want both unknown scenes", titles)
 	}
 	if !stoppedEarly {
-		t.Error("expected StoppedEarly")
+		t.Error("skipping stored scenes did not report StoppedEarly")
+	}
+}
+
+// One unreachable trailer is not the catalogue. Returning at the first failure
+// handed an authoritative --full save everything before it and nothing after.
+func TestOneFailedDetailDoesNotEndTheRun(t *testing.T) {
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case "/sitemap.xml":
+			w.Header().Set("Content-Type", "application/xml")
+			_, _ = fmt.Fprint(w, strings.ReplaceAll(testSitemap, "https://example.com", "http://"+r.Host))
+		case "/tour/whats-new":
+			_, _ = fmt.Fprint(w, `<html><body></body></html>`)
+		case "/tour/trailer/trailers/scene-one":
+			http.Error(w, "boom", http.StatusInternalServerError)
+		case "/tour/trailer/trailers/scene-two":
+			_, _ = fmt.Fprint(w, detailPage(testJSONLD("Scene Two", "2020-02-15", "PT30M0S")))
+		case "/tour/trailer/whatsnew/scene-three":
+			_, _ = fmt.Fprint(w, detailPage(testJSONLD("Scene Three", "2019-05-01", "PT20M0S")))
+		default:
+			http.NotFound(w, r)
+		}
+	}))
+	defer ts.Close()
+
+	domain := strings.TrimPrefix(ts.URL, "http://")
+	s := New(SiteConfig{SiteID: "test", Domain: domain, StudioName: "Test"})
+
+	ch, err := s.ListScenes(context.Background(), ts.URL, scraper.ListOpts{Delay: time.Millisecond})
+	if err != nil {
+		t.Fatalf("ListScenes: %v", err)
+	}
+
+	var titles []string
+	errs := 0
+	for res := range ch {
+		switch res.Kind {
+		case scraper.KindScene:
+			titles = append(titles, res.Scene.Title)
+		case scraper.KindError:
+			errs++
+		}
+	}
+	if errs != 1 {
+		t.Errorf("got %d errors, want the one failed trailer", errs)
+	}
+	if len(titles) != 2 {
+		t.Fatalf("got %v, want the two that follow the failure", titles)
 	}
 }
 

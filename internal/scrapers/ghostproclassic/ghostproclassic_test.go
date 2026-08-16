@@ -231,19 +231,25 @@ func TestListScenes_endToEnd(t *testing.T) {
 	}
 }
 
-func TestListScenes_knownIDsStopsEarly(t *testing.T) {
+// The listing has no date and no dependable order — creampiethais' first page
+// runs set ids 2008, 1816, 1700, 1644, 10061, 10079 — so there is no position
+// at which stopping early is safe. KnownIDs is ignored and every run re-walks.
+func TestListScenes_knownIDsDoNotStopTheWalk(t *testing.T) {
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/html")
 		if r.URL.Path == "/categories/updates_1_p.html" {
 			_, _ = fmt.Fprint(w, listingHTML)
 			return
 		}
-		http.NotFound(w, r)
+		// Past the last page the template serves a card-free page, which is
+		// the clean stop signal.
+		_, _ = fmt.Fprint(w, `<html><body></body></html>`)
 	}))
 	defer ts.Close()
 
 	s := New(testConfig(ts.URL))
 	ch, err := s.ListScenes(context.Background(), ts.URL+"/", scraper.ListOpts{
+		// The second card. A truncating stop would leave exactly one.
 		KnownIDs: map[string]bool{"1816": true},
 	})
 	if err != nil {
@@ -262,11 +268,11 @@ func TestListScenes_knownIDsStopsEarly(t *testing.T) {
 			t.Errorf("unexpected error: %v", r.Err)
 		}
 	}
-	if scenes != 1 {
-		t.Errorf("got %d scenes, want 1 (stop before known)", scenes)
+	if scenes != 2 {
+		t.Errorf("got %d scenes, want both — the walk was truncated", scenes)
 	}
-	if !stoppedEarly {
-		t.Error("expected StoppedEarly signal")
+	if stoppedEarly {
+		t.Error("StoppedEarly was reported; this listing has no usable early stop")
 	}
 }
 
