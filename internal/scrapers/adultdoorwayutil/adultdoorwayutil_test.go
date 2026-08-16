@@ -447,3 +447,56 @@ func TestCheckCMSErrorDetectsTheDBOutagePage(t *testing.T) {
 		}
 	}
 }
+
+// Adult Doorway's own sites slug in lowercase, but the same template is used
+// with mixed-case slugs — himeros.tv publishes `/tour/trailers/The-Good-Boys.html`
+// — and a lowercase-only pattern matched none of them, so the listing parsed
+// to zero scenes.
+func TestParseListingAcceptsMixedCaseSlugs(t *testing.T) {
+	page := `<div class="item-update no-overlay item-video col-xxl-4">
+  <div class="item-thumb">
+    <img src="/tour/content//contentthumbs/47/74/14774-1x.jpg" class="stdimage update_thumb thumbs" />
+  </div>
+  <div class="item-footer">
+    <div class="item-title">
+      <a href="https://himeros.tv/tour/trailers/The-Good-Boys.html" title="The Good Boys"> The Good Boys </a>
+    </div>
+    <div class="item-date"> August 17, 2026 | 22:44 | 1,780 views </div>
+  </div>
+</div><!--//item-update-->`
+
+	items := parseListing([]byte(page))
+	if len(items) != 1 {
+		t.Fatalf("got %d items, want 1", len(items))
+	}
+	if items[0].id != "The-Good-Boys" {
+		t.Errorf("id = %q, want the mixed-case slug", items[0].id)
+	}
+	if items[0].title != "The Good Boys" {
+		t.Errorf("title = %q", items[0].title)
+	}
+	// Not every site labels the runtime: this one writes a bare HH:MM between
+	// pipes in the item-date row.
+	if items[0].duration != 22*60+44 {
+		t.Errorf("duration = %d, want %d", items[0].duration, 22*60+44)
+	}
+}
+
+// The labelled form still wins where it is present, so the sites that use it
+// are untouched by the bare-time fallback.
+func TestLabelledRuntimeStillWins(t *testing.T) {
+	page := `<div class="item-update col-md-6">
+  <div class="item-footer">
+    <div class="item-title"><a href="/tour/trailers/some-scene.html" title="Some Scene">Some Scene</a></div>
+    <div class="item-date">Runtime: 01:02:47 | 991 Photos</div>
+  </div>
+</div><!--//item-update-->`
+
+	items := parseListing([]byte(page))
+	if len(items) != 1 {
+		t.Fatalf("got %d items, want 1", len(items))
+	}
+	if items[0].duration != 1*3600+2*60+47 {
+		t.Errorf("duration = %d", items[0].duration)
+	}
+}

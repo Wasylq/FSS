@@ -97,14 +97,24 @@ func (s *Scraper) ListScenes(ctx context.Context, studioURL string, opts scraper
 // the `item-video` subclass (Cherry Pimps does) because some Adult Doorway
 // sites use the plain-thumbnail variant `item-thumb` without `videothumb`.
 var (
-	cardStartRe  = regexp.MustCompile(`<div class="item-update[^"]*"`)
-	titleRe      = regexp.MustCompile(`(?s)<div class="item-title">\s*<a[^>]+title="([^"]+)"`)
-	sceneURLRe   = regexp.MustCompile(`(?s)<div class="item-title">\s*<a\s+href="([^"]+)"`)
-	posterRe     = regexp.MustCompile(`data-videoposter="([^"]+)"`)
-	imgThumbRe   = regexp.MustCompile(`<img[^>]+class="[^"]*stdimage[^"]*"[^>]+src="([^"]+)"`)
-	imgThumbAlt  = regexp.MustCompile(`<img[^>]+src="([^"]+)"[^>]+class="[^"]*stdimage[^"]*"`)
-	durationRe   = regexp.MustCompile(`Runtime:\s*([0-9:]+)`)
-	slugFromURL  = regexp.MustCompile(`/trailers/([a-z0-9][a-z0-9-]*)\.html`)
+	cardStartRe = regexp.MustCompile(`<div class="item-update[^"]*"`)
+	titleRe     = regexp.MustCompile(`(?s)<div class="item-title">\s*<a[^>]+title="([^"]+)"`)
+	sceneURLRe  = regexp.MustCompile(`(?s)<div class="item-title">\s*<a\s+href="([^"]+)"`)
+	posterRe    = regexp.MustCompile(`data-videoposter="([^"]+)"`)
+	imgThumbRe  = regexp.MustCompile(`<img[^>]+class="[^"]*stdimage[^"]*"[^>]+src="([^"]+)"`)
+	imgThumbAlt = regexp.MustCompile(`<img[^>]+src="([^"]+)"[^>]+class="[^"]*stdimage[^"]*"`)
+	durationRe  = regexp.MustCompile(`Runtime:\s*([0-9:]+)`)
+	// Not every site on this template labels the runtime. himeros.tv writes the
+	// item-date row as "August 17, 2026 | 22:44 | 1,780 views", so a bare
+	// HH:MM(:SS) between pipes is the fallback — only consulted when the
+	// labelled form is absent, so the labelled sites are unaffected.
+	itemDateRowRe = regexp.MustCompile(`(?s)<div class="item-date">(.*?)</div>`)
+	bareRuntimeRe = regexp.MustCompile(`(?:^|\|)\s*(\d{1,2}:\d{2}(?::\d{2})?)\s*(?:\||$)`)
+	// Case-insensitive: Adult Doorway's own sites slug in lowercase, but the
+	// same template is used with mixed-case slugs (himeros.tv publishes
+	// `/tour/trailers/The-Good-Boys.html`), and a lowercase-only pattern
+	// matched none of them — the listing parsed to zero scenes.
+	slugFromURL  = regexp.MustCompile(`/trailers/([A-Za-z0-9][A-Za-z0-9-]*)\.html`)
 	categorySlug = regexp.MustCompile(`/categories/([^_/.]+)`)
 	maxPageRe    = regexp.MustCompile(`movies_(\d+)_d\.html`)
 )
@@ -181,6 +191,10 @@ func parseListing(body []byte) []sceneItem {
 		// Listing-side runtime if available; detail fetch may overwrite.
 		if sm := durationRe.FindStringSubmatch(block); sm != nil {
 			item.duration = parseutil.ParseDurationColon(sm[1])
+		} else if row := itemDateRowRe.FindStringSubmatch(block); row != nil {
+			if sm := bareRuntimeRe.FindStringSubmatch(row[1]); sm != nil {
+				item.duration = parseutil.ParseDurationColon(sm[1])
+			}
 		}
 
 		items = append(items, item)
