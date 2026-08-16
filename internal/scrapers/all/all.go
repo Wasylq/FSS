@@ -244,6 +244,7 @@ import (
 	_ "github.com/Anastylosis/FSS/internal/scrapers/playboyplus"
 	_ "github.com/Anastylosis/FSS/internal/scrapers/pornbox"
 	_ "github.com/Anastylosis/FSS/internal/scrapers/porncz"
+	_ "github.com/Anastylosis/FSS/internal/scrapers/porndudecasting"
 	_ "github.com/Anastylosis/FSS/internal/scrapers/porngutter"
 	_ "github.com/Anastylosis/FSS/internal/scrapers/pornhub"
 	_ "github.com/Anastylosis/FSS/internal/scrapers/pornplus"
