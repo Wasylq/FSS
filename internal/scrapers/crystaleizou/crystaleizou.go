@@ -110,7 +110,7 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 				sendResult(ctx, out, scraper.StoppedEarly())
 				return
 			}
-			if !sendResult(ctx, out, scraper.Scene(item.toScene(studioURL, s.base, now))) {
+			if !sendResult(ctx, out, scraper.Scene(item.toScene(studioURL, s.base, pageURL, now))) {
 				return
 			}
 		}
@@ -234,18 +234,24 @@ func cleanPerformer(s string) string {
 	return strings.TrimSpace(s)
 }
 
-func (p product) toScene(studioURL, base string, now time.Time) models.Scene {
+func (p product) toScene(studioURL, base, pageURL string, now time.Time) models.Scene {
 	thumb := p.thumbnail
 	if thumb != "" && !strings.HasPrefix(thumb, "http") {
 		thumb = base + "/" + thumb
 	}
 
 	sc := models.Scene{
-		ID:          p.code,
-		SiteID:      siteID,
-		StudioURL:   studioURL,
-		Title:       p.title,
-		URL:         base + "/",
+		ID:        p.code,
+		SiteID:    siteID,
+		StudioURL: studioURL,
+		Title:     p.title,
+		// The site publishes no per-product page — the whole catalogue lives on
+		// the front page and its monthly `archive/{YYYY_MM}.html` pages — so
+		// every scene used to be stored under the same bare `/info/` URL. The
+		// page it was actually found on, anchored on the product code, is the
+		// closest thing to an address the site offers and at least tells two
+		// scenes apart.
+		URL:         pageURL + "#" + p.code,
 		Thumbnail:   thumb,
 		Date:        p.date,
 		Duration:    p.duration,

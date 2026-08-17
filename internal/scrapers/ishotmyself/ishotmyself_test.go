@@ -50,8 +50,9 @@ func TestParseListingPage(t *testing.T) {
 	}
 
 	s := scenes[0]
-	if s.ID != "IDGAF_2" {
-		t.Errorf("ID = %q, want IDGAF_2", s.ID)
+	// Keyed on (artist, folio): the folio alone is not unique across artists.
+	if s.ID != "F15159/IDGAF_2" {
+		t.Errorf("ID = %q, want F15159/IDGAF_2", s.ID)
 	}
 	if s.Title != "IDGAF 2" {
 		t.Errorf("Title = %q, want %q", s.Title, "IDGAF 2")
@@ -73,8 +74,8 @@ func TestParseListingPage(t *testing.T) {
 	}
 
 	s2 := scenes[1]
-	if s2.ID != "self_care_day" {
-		t.Errorf("ID = %q, want self_care_day", s2.ID)
+	if s2.ID != "F14481/self_care_day" {
+		t.Errorf("ID = %q, want F14481/self_care_day", s2.ID)
 	}
 	if s2.Title != "self care day" {
 		t.Errorf("Title = %q, want %q", s2.Title, "self care day")
@@ -138,7 +139,7 @@ func TestKnownIDsEarlyStop(t *testing.T) {
 
 	scenes := parseListingPage([]byte(html), "https://ishotmyself.com")
 
-	known := map[string]bool{"vid_2": true}
+	known := map[string]bool{"F101/vid_2": true}
 	var collected []string
 	for _, sc := range scenes {
 		if known[sc.ID] {
@@ -146,8 +147,35 @@ func TestKnownIDsEarlyStop(t *testing.T) {
 		}
 		collected = append(collected, sc.ID)
 	}
-	if len(collected) != 1 || collected[0] != "vid_1" {
-		t.Errorf("collected = %v, want [vid_1]", collected)
+	if len(collected) != 1 || collected[0] != "F100/vid_1" {
+		t.Errorf("collected = %v, want [F100/vid_1]", collected)
+	}
+}
+
+// The site needs both the artist id and the folio to address a scene, and the
+// folio alone is not unique: across 554 live scenes there are only 536 distinct
+// folio names, 17 of them used by two artists each. Keyed on the folio alone
+// those pairs overwrote each other on Save and cross-triggered the early stop.
+func TestSceneIDIncludesTheArtist(t *testing.T) {
+	html := buildISMPage([]struct{ artistID, folio, performer, date string }{
+		{"F0394", "supershine", "Alice", "01 Jan 21"},
+		{"F0888", "supershine", "Bob", "15 Dec 20"},
+	})
+
+	scenes := parseListingPage([]byte(html), "https://ishotmyself.com")
+	if len(scenes) != 2 {
+		t.Fatalf("got %d scenes, want 2", len(scenes))
+	}
+	if scenes[0].ID == scenes[1].ID {
+		t.Fatalf("two artists' scenes share the id %q — one would overwrite the other", scenes[0].ID)
+	}
+	if scenes[0].ID != "F0394/supershine" || scenes[1].ID != "F0888/supershine" {
+		t.Errorf("ids = %q, %q", scenes[0].ID, scenes[1].ID)
+	}
+	// The stored URL already carried both, which is what made the mismatch
+	// visible: two scenes, one id, two different pages.
+	if scenes[0].URL == scenes[1].URL {
+		t.Error("the two scenes share a URL as well")
 	}
 }
 

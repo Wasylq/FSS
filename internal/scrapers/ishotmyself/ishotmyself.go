@@ -185,7 +185,13 @@ func parseListingPage(body []byte, studioURL string) []models.Scene {
 		sceneURL := fmt.Sprintf("%s/public/view_artist.php?artid=%s&folio=%s", siteBase, artistID, folioName)
 
 		scenes = append(scenes, models.Scene{
-			ID:         folioName,
+			// The site needs BOTH the artist id and the folio to address a
+			// scene, and the folio alone is not unique: across 554 scenes there
+			// are only 536 distinct folio names, with 17 of them used by two
+			// artists each (`TheJewels` and `supershine` are both F0394's and
+			// F0888's). Keyed on the folio alone those pairs overwrote each
+			// other on Save and cross-triggered the early stop.
+			ID:         artistID + "/" + folioName,
 			SiteID:     "ishotmyself",
 			StudioURL:  studioURL,
 			Title:      title,

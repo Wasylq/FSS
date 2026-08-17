@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
 	"github.com/Anastylosis/FSS/internal/scrapers/testutil"
 	"github.com/Anastylosis/FSS/scraper"
@@ -225,5 +226,30 @@ func TestKnownIDsStopsEarly(t *testing.T) {
 	}
 	if len(results) != 1 || results[0].ID != "EKDV-820" {
 		t.Errorf("got %v, want [EKDV-820]", results)
+	}
+}
+
+// The site publishes no per-product page: the catalogue lives on the front page
+// and its monthly `archive/{YYYY_MM}.html` pages. Every scene used to be stored
+// under the same bare `/info/` URL, which tells two scenes apart not at all.
+func TestSceneURLIsThePageItWasFoundOn(t *testing.T) {
+	a := product{code: "ABC-001", title: "One"}.
+		toScene("https://www.crystal-eizou.jp/info", "https://www.crystal-eizou.jp/info",
+			"https://www.crystal-eizou.jp/info/archive/2024_03.html", time.Now())
+	b := product{code: "ABC-002", title: "Two"}.
+		toScene("https://www.crystal-eizou.jp/info", "https://www.crystal-eizou.jp/info",
+			"https://www.crystal-eizou.jp/info/archive/2024_03.html", time.Now())
+	c := product{code: "ABC-003", title: "Three"}.
+		toScene("https://www.crystal-eizou.jp/info", "https://www.crystal-eizou.jp/info",
+			"https://www.crystal-eizou.jp/info/", time.Now())
+
+	if a.URL == b.URL {
+		t.Errorf("two scenes on one archive page share a URL: %q", a.URL)
+	}
+	if want := "https://www.crystal-eizou.jp/info/archive/2024_03.html#ABC-001"; a.URL != want {
+		t.Errorf("URL = %q, want %q", a.URL, want)
+	}
+	if want := "https://www.crystal-eizou.jp/info/#ABC-003"; c.URL != want {
+		t.Errorf("front-page URL = %q, want %q", c.URL, want)
 	}
 }
