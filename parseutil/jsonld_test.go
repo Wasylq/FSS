@@ -230,3 +230,61 @@ func TestExtractVideoObjects_mixedBlocks(t *testing.T) {
 		t.Errorf("[1].Name = %q", vos[1].Name)
 	}
 }
+
+// schema.org declares thumbnailUrl as an ImageObject *or* a URL, and
+// publishers split on it. Declared as a plain string, an array form made
+// json.Unmarshal fail on the whole block and the VideoObject was silently
+// skipped — the page read as having none at all.
+func TestExtractVideoObjectAcceptsThumbnailArray(t *testing.T) {
+	body := []byte(`<html><head><script type="application/ld+json">
+{"@context":"https://schema.org","@type":"VideoObject","name":"A Scene",
+ "thumbnailUrl":["https://cdn.example/first.jpg","https://cdn.example/second.jpg"],
+ "uploadDate":"2026-07-20T00:00:00.000Z"}
+</script></head></html>`)
+
+	vo := ExtractVideoObject(body)
+	if vo == nil {
+		t.Fatal("an array thumbnailUrl made the whole VideoObject disappear")
+	}
+	if vo.Name != "A Scene" {
+		t.Errorf("Name = %q", vo.Name)
+	}
+	if vo.ThumbnailURL != "https://cdn.example/first.jpg" {
+		t.Errorf("ThumbnailURL = %q, want the first entry", vo.ThumbnailURL)
+	}
+}
+
+func TestExtractVideoObjectStillAcceptsThumbnailString(t *testing.T) {
+	body := []byte(`<html><head><script type="application/ld+json">
+{"@context":"https://schema.org","@type":"VideoObject","name":"A Scene",
+ "thumbnailUrl":"https://cdn.example/only.jpg"}
+</script></head></html>`)
+
+	vo := ExtractVideoObject(body)
+	if vo == nil {
+		t.Fatal("no VideoObject found")
+	}
+	if vo.ThumbnailURL != "https://cdn.example/only.jpg" {
+		t.Errorf("ThumbnailURL = %q", vo.ThumbnailURL)
+	}
+}
+
+// A shape neither string nor array — an ImageObject, say — leaves the field
+// empty rather than failing the block it belongs to.
+func TestExtractVideoObjectSurvivesAnObjectThumbnail(t *testing.T) {
+	body := []byte(`<html><head><script type="application/ld+json">
+{"@context":"https://schema.org","@type":"VideoObject","name":"A Scene",
+ "thumbnailUrl":{"@type":"ImageObject","url":"https://cdn.example/x.jpg"}}
+</script></head></html>`)
+
+	vo := ExtractVideoObject(body)
+	if vo == nil {
+		t.Fatal("an object thumbnailUrl made the whole VideoObject disappear")
+	}
+	if vo.Name != "A Scene" {
+		t.Errorf("Name = %q", vo.Name)
+	}
+	if vo.ThumbnailURL != "" {
+		t.Errorf("ThumbnailURL = %q, want empty", vo.ThumbnailURL)
+	}
+}

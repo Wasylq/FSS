@@ -28,7 +28,7 @@ type rawVideoObject struct {
 	URL           string          `json:"url"`
 	Name          string          `json:"name"`
 	Description   string          `json:"description"`
-	ThumbnailURL  string          `json:"thumbnailUrl"`
+	ThumbnailURL  flexString      `json:"thumbnailUrl"`
 	ContentURL    string          `json:"contentUrl"`
 	Duration      string          `json:"duration"`
 	UploadDate    string          `json:"uploadDate"`
@@ -39,6 +39,32 @@ type rawVideoObject struct {
 	PartOfSeries  *struct {
 		Name string `json:"name"`
 	} `json:"partOfSeries"`
+}
+
+// flexString accepts a JSON string or an array of them, keeping the first.
+// schema.org declares thumbnailUrl as an ImageObject *or* a URL, and publishers
+// split on it: most emit a bare string, some (bananafever) an array. Declaring
+// it as a plain string made json.Unmarshal fail on the whole block, so the
+// VideoObject was silently skipped and the page read as having none at all.
+type flexString string
+
+func (f *flexString) UnmarshalJSON(b []byte) error {
+	var one string
+	if err := json.Unmarshal(b, &one); err == nil {
+		*f = flexString(one)
+		return nil
+	}
+	var many []string
+	if err := json.Unmarshal(b, &many); err == nil {
+		if len(many) > 0 {
+			*f = flexString(many[0])
+		}
+		return nil
+	}
+	// Anything else — an ImageObject, say — leaves the field empty rather than
+	// failing the block it belongs to.
+	*f = ""
+	return nil
 }
 
 type rawItemList struct {
@@ -115,7 +141,7 @@ func convertRaw(rvo rawVideoObject) VideoObject {
 		URL:           rvo.URL,
 		Name:          rvo.Name,
 		Description:   rvo.Description,
-		ThumbnailURL:  rvo.ThumbnailURL,
+		ThumbnailURL:  string(rvo.ThumbnailURL),
 		ContentURL:    rvo.ContentURL,
 		Duration:      rvo.Duration,
 		UploadDate:    rvo.UploadDate,

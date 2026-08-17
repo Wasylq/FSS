@@ -34,6 +34,7 @@ import (
 	_ "github.com/Anastylosis/FSS/internal/scrapers/aziani"
 	_ "github.com/Anastylosis/FSS/internal/scrapers/badoink"
 	_ "github.com/Anastylosis/FSS/internal/scrapers/bamvisions"
+	_ "github.com/Anastylosis/FSS/internal/scrapers/bananafever"
 	_ "github.com/Anastylosis/FSS/internal/scrapers/bang"
 	_ "github.com/Anastylosis/FSS/internal/scrapers/bangbros"
 	_ "github.com/Anastylosis/FSS/internal/scrapers/barebackstudios"
