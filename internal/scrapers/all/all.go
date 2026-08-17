@@ -173,6 +173,7 @@ import (
 	_ "github.com/Anastylosis/FSS/internal/scrapers/jizzonteens"
 	_ "github.com/Anastylosis/FSS/internal/scrapers/joybear"
 	_ "github.com/Anastylosis/FSS/internal/scrapers/julesjordan"
+	_ "github.com/Anastylosis/FSS/internal/scrapers/justdanica"
 	_ "github.com/Anastylosis/FSS/internal/scrapers/karissadiamond"
 	_ "github.com/Anastylosis/FSS/internal/scrapers/karups"
 	_ "github.com/Anastylosis/FSS/internal/scrapers/kbproductions"

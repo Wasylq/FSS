@@ -23,17 +23,35 @@ type SiteConfig struct {
 	SiteID     string
 	Domain     string
 	StudioName string
+	// DateLayout parses the tour's `update_date` value. The template prints a
+	// bare `dd/mm/yyyy`-shaped string with no clue which way round it is, and
+	// the sites disagree: every Trix Video tour and housewifekelly write
+	// MM/DD/YYYY (second component runs past 12, first never does), while
+	// justdanica writes DD/MM/YYYY (first component runs to 30, second never
+	// past 12). Guessing wrong silently mis-dates every scene whose day is
+	// 12 or lower, so it is stated per site. Empty means MM/DD/YYYY.
+	DateLayout string
+}
+
+// defaultDateLayout is the MM/DD/YYYY form the majority of these tours use.
+const defaultDateLayout = "01/02/2006"
+
+func (c SiteConfig) dateLayout() string {
+	if c.DateLayout == "" {
+		return defaultDateLayout
+	}
+	return c.DateLayout
 }
 
 var sites = []SiteConfig{
-	{"dallasdiamondz", "dallasdiamondz.com", "Dallas Diamondz"},
-	{"dixiestrailerpark", "dixiestrailerpark.com", "Dixie's Trailer Park"},
-	{"grannycumshere", "grannycumshere.com", "Granny Cums Here"},
-	{"msparisandfriends", "msparisandfriends.com", "Ms Paris & Friends"},
-	{"suburbantaboo", "suburbantaboo.com", "Suburban Taboo"},
-	{"swingingbicouples", "swingingbicouples.com", "Swinging Bi Couples"},
-	{"tampahousewives", "tampahousewives.com", "Tampa Housewives"},
-	{"whorebaithals", "whorebaithals.com", "Whore Bait Hal's"},
+	{SiteID: "dallasdiamondz", Domain: "dallasdiamondz.com", StudioName: "Dallas Diamondz"},
+	{SiteID: "dixiestrailerpark", Domain: "dixiestrailerpark.com", StudioName: "Dixie's Trailer Park"},
+	{SiteID: "grannycumshere", Domain: "grannycumshere.com", StudioName: "Granny Cums Here"},
+	{SiteID: "msparisandfriends", Domain: "msparisandfriends.com", StudioName: "Ms Paris & Friends"},
+	{SiteID: "suburbantaboo", Domain: "suburbantaboo.com", StudioName: "Suburban Taboo"},
+	{SiteID: "swingingbicouples", Domain: "swingingbicouples.com", StudioName: "Swinging Bi Couples"},
+	{SiteID: "tampahousewives", Domain: "tampahousewives.com", StudioName: "Tampa Housewives"},
+	{SiteID: "whorebaithals", Domain: "whorebaithals.com", StudioName: "Whore Bait Hal's"},
 }
 
 type Scraper struct {
@@ -300,7 +318,7 @@ func (s *Scraper) fetchDetail(ctx context.Context, studioURL, base string, e lis
 	} else if e.thumbnail != "" {
 		scene.Thumbnail = resolveURL(base, e.thumbnail)
 	}
-	if t, ok := parseDate(firstNonEmpty(d.date, e.date)); ok {
+	if t, ok := parseDate(firstNonEmpty(d.date, e.date), s.cfg.dateLayout()); ok {
 		scene.Date = t
 	}
 	return scene, nil
@@ -468,8 +486,8 @@ func firstNonEmpty(vals ...string) string {
 	return ""
 }
 
-func parseDate(s string) (time.Time, bool) {
-	t, err := time.Parse("01/02/2006", s)
+func parseDate(s, layout string) (time.Time, bool) {
+	t, err := time.Parse(layout, s)
 	if err != nil {
 		return time.Time{}, false
 	}

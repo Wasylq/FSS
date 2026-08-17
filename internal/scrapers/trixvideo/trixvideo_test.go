@@ -251,8 +251,12 @@ func TestParseDetailNewBuildAndNoModels(t *testing.T) {
 	}
 }
 
+// The template prints a bare dd/mm-shaped string with no clue which way round
+// it is, and the sites disagree: every Trix Video tour writes MM/DD/YYYY while
+// justdanica writes DD/MM/YYYY. Guessing wrong silently mis-dates every scene
+// whose day is 12 or lower, so the layout is stated per site.
 func TestParseDate(t *testing.T) {
-	got, ok := parseDate("01/20/2018")
+	got, ok := parseDate("01/20/2018", defaultDateLayout)
 	if !ok {
 		t.Fatal("parseDate failed on a well-formed date")
 	}
@@ -262,11 +266,39 @@ func TestParseDate(t *testing.T) {
 	if got.Location() != time.UTC {
 		t.Errorf("location = %v, want UTC", got.Location())
 	}
-	if _, ok := parseDate(""); ok {
+	if _, ok := parseDate("", defaultDateLayout); ok {
 		t.Error("parseDate accepted an empty string")
 	}
-	if _, ok := parseDate("20/01/2018"); ok {
-		t.Error("parseDate accepted DD/MM/YYYY")
+	if _, ok := parseDate("20/01/2018", defaultDateLayout); ok {
+		t.Error("parseDate accepted DD/MM/YYYY under the MM/DD layout")
+	}
+
+	// The same string under the other layout is a different, valid date — this
+	// is exactly the silent mis-dating the per-site layout exists to prevent.
+	euro, ok := parseDate("03/01/2012", "02/01/2006")
+	if !ok {
+		t.Fatal("parseDate failed under the DD/MM layout")
+	}
+	if euro.Month() != time.January || euro.Day() != 3 {
+		t.Errorf("DD/MM parse = %v, want 3 January 2012", euro)
+	}
+	us, _ := parseDate("03/01/2012", defaultDateLayout)
+	if us.Month() != time.March || us.Day() != 1 {
+		t.Errorf("MM/DD parse = %v, want 1 March 2012", us)
+	}
+}
+
+func TestDateLayoutDefaultsToUS(t *testing.T) {
+	if got := (SiteConfig{}).dateLayout(); got != defaultDateLayout {
+		t.Errorf("dateLayout() = %q, want %q", got, defaultDateLayout)
+	}
+	if got := (SiteConfig{DateLayout: "02/01/2006"}).dateLayout(); got != "02/01/2006" {
+		t.Errorf("dateLayout() = %q, want the configured layout", got)
+	}
+	for _, cfg := range sites {
+		if cfg.DateLayout != "" {
+			t.Errorf("%s sets a DateLayout; every Trix Video tour is MM/DD", cfg.SiteID)
+		}
 	}
 }
 
