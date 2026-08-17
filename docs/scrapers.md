@@ -839,6 +839,9 @@ site comes back.
 | Ballet Heels | `ballet-heels.com` | **Photo sets, not scenes.** The sitemap names 511 `/shooting/` pages and every one of them is a stills gallery — each header reads "N Photos", 40 sampled at random carry no video element, no `.mp4` and no video-count marker, and the site navigation has no videos section at all. StashDB counts 273 "scenes" here; they are the photo sets. Nothing on the site is a scene in FSS's sense. |
 | Legendarylootz | `legendarylootz.com` | Single-page WordPress landing site. The whole domain is five pages — the sitemap says so — and the home page is anchors (`#about`, `#pricing`, `#team`) with no video element anywhere. `customs.legendarylootz.com` and `faq.legendarylootz.com` both redirect back into it, and the FAQ page points buyers at OnlyFans and Fansly. Nothing is published on a scrapeable host. |
 | Kate Kuray | `kate-kuray.com` | Single-page personal site: two pages and two FAQ entries in the whole sitemap, no video element, no listing, no catalogue. StashDB's 255 scenes are distributed on fan platforms, not here. |
+| Amber Hahn | `amberhahn.com` | The domain serves one hand-rolled "Content Warning" page and nothing else: no links at all, no tour, and `/enter`, `/tour/` and the other usual entry paths 404. |
+| Milena Velba | `milena-velba.com`, `milena-velba.de` (same site) | **Photos, not scenes.** Behind the splash, `/enter.html` leads to `photos.html`, `club.html`, `news.html`, `shop.html` and `story.html` — stills galleries driven by a `showpic()` JavaScript, with no `<video>`, `.mp4` or `.wmv` reference anywhere on any of them. |
+| Isiah Maxwell | `isiahmaxwellxxx.com`, `tour.isiahmaxwellxxx.com` | The apex 302s to `onlyfans.com/isiahmaxwell` and the `tour.` host is NXDOMAIN. Nothing of the studio's own remains. |
 
 ## Shared scraper packages
 
