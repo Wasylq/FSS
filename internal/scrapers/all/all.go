@@ -333,6 +333,7 @@ import (
 	_ "github.com/Anastylosis/FSS/internal/scrapers/trans500"
 	_ "github.com/Anastylosis/FSS/internal/scrapers/treasureislandmedia"
 	_ "github.com/Anastylosis/FSS/internal/scrapers/tribdolls"
+	_ "github.com/Anastylosis/FSS/internal/scrapers/tripforfuck"
 	_ "github.com/Anastylosis/FSS/internal/scrapers/trixvideo"
 	_ "github.com/Anastylosis/FSS/internal/scrapers/underwatershow"
 	_ "github.com/Anastylosis/FSS/internal/scrapers/updateitem"
