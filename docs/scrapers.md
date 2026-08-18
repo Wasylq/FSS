@@ -848,6 +848,7 @@ site comes back.
 | Brandon Iron Productions — Load My Mouth, Cover My Face, Sperm Cocktail | `loadmymouth.com`, `covermyface.com`, `spermcocktail.com` | The whole tree is gone: `loadmymouth.com` serves a "For Sale" parking page, `covermyface.com` does not resolve, and `spermcocktail.com` has been resold and now runs an unrelated Vietnamese tube. |
 | Hot Kinky Jo | `hotkinkyjo.xxx` | The origin answers a bare Apache `403 Forbidden` to every request — including one with a full browser header set — and its own ErrorDocument 403s too, which is a server-level deny rather than a bot check. Nothing is reachable. Re-probe from a different network. |
 | First Gloryhole | `firstgloryhole.com` | Same shape: a flat Apache `403 Forbidden` on every path regardless of headers. Re-probe from a different network. |
+| Triple A Spanking | `aaaspanking.com` | **Already covered, at its storefront.** The own-domain tour is 44 hand-built marketing pages of sliced background images (`model_box_01.jpg` … `model_box_15.jpg`) with a couple of preview clips and no scene list, titles, dates or per-scene URLs anywhere. Its catalogue is sold on Clips4Sale, which the `clips4sale` scraper handles: `fss scrape https://www.clips4sale.com/studio/43405/triple-a-spanking` returns 1481 scenes with titles, dates and credits. The site's menu also names seven sibling Clips4Sale studios (POV Spanking, Cheerleader Spankings, Sarah Gregory and others), all reachable the same way. |
 
 ## Shared scraper packages
 
