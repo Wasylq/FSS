@@ -272,6 +272,18 @@ func (s *Scraper) enqueueItems(ctx context.Context, listURL string, opts scraper
 
 		items, total := parseListingPage(body)
 		if len(items) == 0 {
+			if page == 1 {
+				// A first page with no items is a broken search, not an empty
+				// catalogue — the site sits behind a CloudFront distribution
+				// that ignores the query string, so `search.php` can answer
+				// with a stale cached result set for a different query.
+				// Returning silently would report that as a clean scrape.
+				select {
+				case out <- scraper.Error(scraper.ParseError(u,
+					fmt.Errorf("no items in the search listing"))):
+				case <-ctx.Done():
+				}
+			}
 			return
 		}
 

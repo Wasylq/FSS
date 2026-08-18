@@ -209,6 +209,22 @@ func (s *Scraper) Run(ctx context.Context, studioURL string, opts scraper.ListOp
 	wg.Wait()
 }
 
+// apiHeaders shapes the request as the XHR it actually is. The platform's WAF
+// started answering 403 to navigation-shaped headers on this endpoint — all
+// three sites broke at once, and `Sec-Fetch-Dest: document` on an API call is
+// what it objects to — so the fetch-metadata headers say `empty`/`cors` and the
+// Accept asks for JSON. A page fetch elsewhere still uses `httpx.BrowserHeaders`.
+func apiHeaders() map[string]string {
+	return map[string]string{
+		"User-Agent":      httpx.UserAgentFirefox,
+		"Accept":          "application/json, text/plain, */*",
+		"Accept-Language": "en-US,en;q=0.5",
+		"Sec-Fetch-Dest":  "empty",
+		"Sec-Fetch-Mode":  "cors",
+		"Sec-Fetch-Site":  "same-origin",
+	}
+}
+
 // FetchPage retrieves a single page of the video listing API.
 func (s *Scraper) FetchPage(ctx context.Context, page int) (VideosPage, error) {
 	args, _ := json.Marshal([]any{[]string{fmt.Sprintf("page=%d", page)}})
@@ -216,7 +232,7 @@ func (s *Scraper) FetchPage(ctx context.Context, page int) (VideosPage, error) {
 
 	resp, err := httpx.Do(ctx, s.Client, httpx.Request{
 		URL:     reqURL,
-		Headers: httpx.BrowserHeaders(httpx.UserAgentFirefox),
+		Headers: apiHeaders(),
 	})
 	if err != nil {
 		return VideosPage{}, err

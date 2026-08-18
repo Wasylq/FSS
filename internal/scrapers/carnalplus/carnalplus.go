@@ -131,6 +131,10 @@ var (
 	gridTitleRe = regexp.MustCompile(`<span class='update-title'>\s*([^<]+?)\s*</span>`)
 	// Series — `<span class='update-series'>{series}</span>`.
 	gridSeriesRe = regexp.MustCompile(`<span class='update-series'>\s*([^<]+?)\s*</span>`)
+	// Full-movie cards use neither span and put the name straight in the
+	// heading, so without this fallback they arrive with an empty Title.
+	gridHeadingRe  = regexp.MustCompile(`(?s)<h4 class="[^"]*titleBlockF[^"]*">(.*?)</h4>`)
+	gridTagStripRe = regexp.MustCompile(`<[^>]*>`)
 	// Source sub-site — `<a href="{slug}/"><img … alt="{slug} minilogo" …></a>`.
 	// The href is relative (`scoutboys/`), the alt has the slug. We use alt
 	// because it's a deterministic single field.
@@ -350,6 +354,9 @@ func parseGridListing(body []byte) []sceneItem {
 		if m := gridTitleRe.FindStringSubmatch(block); m != nil {
 			item.title = html.UnescapeString(strings.TrimSpace(m[1]))
 		}
+		if item.title == "" {
+			item.title = gridHeadingTitle(block)
+		}
 		if m := gridSeriesRe.FindStringSubmatch(block); m != nil {
 			item.series = html.UnescapeString(strings.TrimSpace(m[1]))
 		}
@@ -373,6 +380,18 @@ func parseGridListing(body []byte) []sceneItem {
 		items = append(items, item)
 	}
 	return items
+}
+
+// gridHeadingTitle reads the card heading as plain text. Scene cards split it
+// into `update-series | update-title` spans, but full-movie cards write the
+// name directly into the heading, and those arrived with no Title at all.
+func gridHeadingTitle(block string) string {
+	m := gridHeadingRe.FindStringSubmatch(block)
+	if m == nil {
+		return ""
+	}
+	text := html.UnescapeString(gridTagStripRe.ReplaceAllString(m[1], " "))
+	return strings.Join(strings.Fields(text), " ")
 }
 
 // ---- WordPress parser ----

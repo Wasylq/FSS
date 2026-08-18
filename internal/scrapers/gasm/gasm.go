@@ -248,9 +248,19 @@ func (s *Scraper) bootstrap(ctx context.Context, slug string) (userID, videoCoun
 	return parseProfile(body, slug)
 }
 
+// sfwGateRe recognises the SFW preview the network serves in place of the whole
+// site to visitors in jurisdictions with age-verification laws. It is not a
+// parse failure, and saying "data-ajax-params not found" sends the reader
+// looking for a broken regex instead of a geo block.
+var sfwGateRe = regexp.MustCompile(`(?i)sfw\.gasm\.com|Age Verification laws`)
+
 func parseProfile(body []byte, slug string) (userID, videoCount int, err error) {
 	m := ajaxParamsRe.FindSubmatch(body)
 	if m == nil {
+		if sfwGateRe.Match(body) {
+			return 0, 0, fmt.Errorf("the network served its SFW preview instead of %s: "+
+				"this jurisdiction is age-verification blocked, not a parser problem", slug)
+		}
 		return 0, 0, fmt.Errorf("data-ajax-params not found on profile page for %s", slug)
 	}
 	decoded := html.UnescapeString(string(m[1]))

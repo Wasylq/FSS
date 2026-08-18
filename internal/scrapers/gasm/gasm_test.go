@@ -1,6 +1,7 @@
 package gasm
 
 import (
+	"strings"
 	"testing"
 	"time"
 )
@@ -287,5 +288,29 @@ func TestSplitCards(t *testing.T) {
 	cards := splitCards([]byte(listingHTML))
 	if len(cards) != 2 {
 		t.Errorf("splitCards returned %d cards, want 2", len(cards))
+	}
+}
+
+// The network answers with an SFW preview page, not an error, when the request
+// comes from an age-verification jurisdiction. Reporting that as a missing
+// regex sends the reader after a parser bug that is not there.
+func TestParseProfileReportsSFWGate(t *testing.T) {
+	const sfw = `<html><head><title>SFW | GASM</title></head><body>
+	<p>ATTENTION: You are seeing a preview page for our official adult website.
+	Due to your State or Country Age Verification laws, we are not able to show you the goods.</p>
+	</body></html>`
+
+	_, _, err := parseProfile([]byte(sfw), "cosplaybabes")
+	if err == nil {
+		t.Fatal("expected an error")
+	}
+	if !strings.Contains(err.Error(), "age-verification blocked") {
+		t.Errorf("error = %q, want it to name the geo block", err)
+	}
+
+	// A genuinely broken profile page still reports the missing marker.
+	_, _, err = parseProfile([]byte("<html><body>redesigned</body></html>"), "cosplaybabes")
+	if err == nil || !strings.Contains(err.Error(), "data-ajax-params") {
+		t.Errorf("error = %v, want the parse message", err)
 	}
 }

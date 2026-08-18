@@ -513,3 +513,39 @@ func TestGoldenVideosPageHasBothPosterAndDateVariants(t *testing.T) {
 		t.Error(`fixture lost the outer {"ok":true,…} envelope`)
 	}
 }
+
+// The platform's WAF answers 403 to navigation-shaped headers on the API
+// endpoint — all three sites broke at once — so the listing fetch must present
+// itself as the XHR it is.
+func TestFetchPageSendsXHRHeaders(t *testing.T) {
+	var got http.Header
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		got = r.Header.Clone()
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = fmt.Fprint(w, `{"ok":true,"status":200,"data":{"current_page":1,"last_page":1,"data":[]}}`)
+	}))
+	defer srv.Close()
+
+	s := New(SiteConfig{SiteID: "test", Domain: "example.test", StudioName: "Test"})
+	s.Client = srv.Client()
+	s.SiteBase = srv.URL
+
+	if _, err := s.FetchPage(context.Background(), 1); err != nil {
+		t.Fatalf("FetchPage: %v", err)
+	}
+
+	want := map[string]string{
+		"Sec-Fetch-Dest": "empty",
+		"Sec-Fetch-Mode": "cors",
+		"Sec-Fetch-Site": "same-origin",
+		"Accept":         "application/json, text/plain, */*",
+	}
+	for k, v := range want {
+		if got.Get(k) != v {
+			t.Errorf("%s = %q, want %q", k, got.Get(k), v)
+		}
+	}
+	if got.Get("Upgrade-Insecure-Requests") != "" {
+		t.Error("navigation headers must not be sent on the API call")
+	}
+}

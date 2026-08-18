@@ -194,6 +194,16 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 	items, total := parseListingPage(body)
 	scraper.Debugf(1, "%s: total %d items", siteID, total)
 	if total == 0 || len(items) == 0 {
+		// The catalogue is never legitimately empty, so a page that parses to
+		// nothing is a redesign or an outage — hmp.jp serves a whole-site
+		// maintenance notice from every path — and returning silently makes
+		// that indistinguishable from success. Reporting it is what marks the
+		// traversal incomplete.
+		select {
+		case out <- scraper.Error(scraper.ParseError(s.siteBase+"/portal/catalog/?scd=10&p=1",
+			fmt.Errorf("no catalogue items on the first page"))):
+		case <-ctx.Done():
+		}
 		return
 	}
 

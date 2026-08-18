@@ -419,3 +419,37 @@ func TestListScenes_WordPressEndToEnd(t *testing.T) {
 		t.Errorf("got %d scenes, want 2", scenes)
 	}
 }
+
+// The portal mixes scene cards, which split the heading into
+// `update-series | update-title` spans, with full-movie cards that write the
+// name straight into the heading. The latter used to arrive with no Title.
+func TestParseGridListingFullMovieCard(t *testing.T) {
+	const fullMovieHTML = `<html><body>
+<div class="grid-item-eight ">
+  <a title="Watch the-big-boss-vol-1-full-movie" href="https://carnalplus.com/videos/the-big-boss-vol-1-full-movie.html" class="control_thumb">
+    <picture data-iesrc="https://imagecdn.carnalplus.com/imgsize//members/content/contentthumbs/30/05/73005-1x.jpg">
+      <img loading="lazy" class="img-fluid" data-video-src="https://cdn.example/clip.mp4" src="https://imagecdn.carnalplus.com/imgsize//members/content/contentthumbs/30/05/73005-1x.jpg" alt="">
+    </picture>
+  </a>
+  <div class="updateInfos">
+    <div class="updateSite"><a href="carnaloriginals/"><img src="x" alt="carnaloriginals minilogo"></a></div>
+    <div class="updateDetails"><div class="titleTruncate interested-list">
+      <a href="https://carnalplus.com/videos/the-big-boss-vol-1-full-movie.html" class="control_thumb">
+        <h4 class="capitalize titleBlockF">The Big Boss Vol. 1 Full Movie</h4>
+      </a>
+    </div></div>
+  </div>
+</div>
+</body></html>`
+
+	items := parseGridListing([]byte(fullMovieHTML))
+	if len(items) != 1 {
+		t.Fatalf("got %d items, want 1", len(items))
+	}
+	if items[0].title != "The Big Boss Vol. 1 Full Movie" {
+		t.Errorf("title = %q", items[0].title)
+	}
+	if items[0].id != "73005" {
+		t.Errorf("id = %q", items[0].id)
+	}
+}
