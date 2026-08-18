@@ -203,7 +203,10 @@ func TestListScenes(t *testing.T) {
 	}
 }
 
-func TestListScenesKnownIDs(t *testing.T) {
+// The profile API exposes no sort parameter and returns items roughly
+// oldest-first, so stopping at a known ID would hide everything newer behind it.
+// The whole listing must be walked regardless of what is already stored.
+func TestListScenesIgnoresKnownIDs(t *testing.T) {
 	items := []mdhItem{
 		{UID: 1, UVID: 201, Nick: "U", Title: "New", Price: "100", Duration: "1:00", LatestPictureChange: "2025-06-01T00:00:00Z"},
 		{UID: 1, UVID: 202, Nick: "U", Title: "Known", Price: "100", Duration: "1:00", LatestPictureChange: "2025-05-01T00:00:00Z"},
@@ -236,7 +239,6 @@ func TestListScenesKnownIDs(t *testing.T) {
 		results = append(results, r)
 	}
 
-	// Only Total hint + scene 201 should appear; 202 triggers early stop.
 	scenesOnly := make([]scraper.SceneResult, 0)
 	sawStoppedEarly := false
 	for _, r := range results {
@@ -248,14 +250,11 @@ func TestListScenesKnownIDs(t *testing.T) {
 			scenesOnly = append(scenesOnly, r)
 		}
 	}
-	if len(scenesOnly) != 1 {
-		t.Errorf("got %d scenes, want 1 (early stop at known ID)", len(scenesOnly))
+	if len(scenesOnly) != 3 {
+		t.Errorf("got %d scenes, want all 3 (the listing is not date-sorted)", len(scenesOnly))
 	}
-	if !sawStoppedEarly {
-		t.Error("expected StoppedEarly signal, got none")
-	}
-	if len(scenesOnly) > 0 && scenesOnly[0].Scene.ID != "201" {
-		t.Errorf("scene ID = %q, want %q", scenesOnly[0].Scene.ID, "201")
+	if sawStoppedEarly {
+		t.Error("must not stop early: a known ID says nothing about what follows it")
 	}
 }
 

@@ -70,7 +70,14 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 
 	var baseURL string
 	if m := modelRe.FindStringSubmatch(studioURL); m != nil {
+		scraper.Debugf(1, "puremature: scraping model page %s", m[1])
 		baseURL = fmt.Sprintf("%s/api/actors/%s/releases", s.base, m[1])
+		// The actor endpoint returns releases in no date order and ignores
+		// `sort=latest` (live-verified). A KnownIDs early-stop there would halt
+		// on the first stored scene and never reach the newer ones behind it,
+		// so the hint is dropped for this mode. The main listing below is
+		// genuinely newest-first and keeps it.
+		opts.KnownIDs = nil
 	} else {
 		baseURL = s.base + "/api/releases?sort=latest"
 	}

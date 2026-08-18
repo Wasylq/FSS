@@ -82,6 +82,13 @@ func (s *Scraper) ListScenes(ctx context.Context, studioURL string, opts scraper
 func (s *Scraper) run(ctx context.Context, studioURL string, uid int, nick string, opts scraper.ListOpts, out chan<- scraper.SceneResult) {
 	defer close(out)
 
+	// The profile video API exposes no sort parameter and returns items roughly
+	// oldest-first (live-verified against Dirty-Tina: the first page runs
+	// 2023-07 → 2023-10 ascending). A KnownIDs early-stop would therefore halt
+	// on the first stored scene and never reach anything newer, so the hint is
+	// dropped — there is only one listing mode here.
+	opts.KnownIDs = nil
+
 	now := time.Now().UTC()
 	scraper.Paginate(ctx, opts, "mydirtyhobby", out, func(ctx context.Context, page int) (scraper.PageResult, error) {
 		items, total, totalPages, err := s.fetchPage(ctx, uid, page)

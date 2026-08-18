@@ -343,3 +343,40 @@ func TestGoldenReleasesCarriesNoCredential(t *testing.T) {
 		t.Error(`fixture lost the snake_case "cached_slug" key — it looks re-encoded`)
 	}
 }
+
+// The actor endpoint returns releases in no date order and ignores
+// `sort=latest`, so a KnownIDs stop there would halt on the first stored scene
+// and never reach the newer ones behind it. A model URL must therefore walk the
+// whole list.
+func TestModelPageIgnoresKnownIDs(t *testing.T) {
+	apiScenes := []apiScene{
+		makeTestScene(100, "a", "A"),
+		makeTestScene(101, "b", "B"),
+		makeTestScene(102, "c", "C"),
+	}
+	page := fakeAPIResponse(apiScenes, 3, false)
+
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write(page)
+	}))
+	defer ts.Close()
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	s := &Scraper{client: ts.Client(), base: ts.URL}
+	out := make(chan scraper.SceneResult)
+	go func() {
+		// run() closes out itself.
+		s.run(ctx, ts.URL+"/models/somebody", scraper.ListOpts{KnownIDs: map[string]bool{"101": true}}, out)
+	}()
+
+	scenes, stoppedEarly := testutil.CollectScenesWithStop(t, out)
+	if len(scenes) != 3 {
+		t.Errorf("got %d scenes, want all 3 (the model listing is unordered)", len(scenes))
+	}
+	if stoppedEarly {
+		t.Error("model page must not stop early on a known ID")
+	}
+}
