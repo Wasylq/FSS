@@ -124,19 +124,27 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 	go func() {
 		defer wg.Done()
 		defer close(work)
+		// The entry list comes from one already-fetched homepage, so stopping
+		// at a known entry saves no listing request and hides every entry after
+		// it. Skip the stored ones; the detail fetch each would have cost is
+		// still saved.
+		skipped := 0
 		for _, entry := range entries {
 			if opts.KnownIDs[entry.id] {
-				scraper.Debugf(1, "%s: hit known ID %s, stopping early", siteID, entry.id)
-				select {
-				case out <- scraper.StoppedEarly():
-				case <-ctx.Done():
-				}
-				return
+				skipped++
+				continue
 			}
 			select {
 			case work <- entry:
 			case <-ctx.Done():
 				return
+			}
+		}
+		if skipped > 0 {
+			scraper.Debugf(1, "%s: skipped %d already-stored entr(ies)", siteID, skipped)
+			select {
+			case out <- scraper.StoppedEarly():
+			case <-ctx.Done():
 			}
 		}
 	}()

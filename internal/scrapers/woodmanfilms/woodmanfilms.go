@@ -231,13 +231,15 @@ func (s *Scraper) runPornstar(ctx context.Context, studioURL string, opts scrape
 			return
 		}
 
+		// The page is already fetched and parsed, so a known scene mid-page is
+		// no reason to discard the rest of it. Emit what is left, then stop
+		// requesting further pages — that is where the early stop actually
+		// saves something.
+		hitKnown := false
 		for _, ls := range scenes {
 			if opts.KnownIDs != nil && opts.KnownIDs[ls.id] {
-				select {
-				case out <- scraper.StoppedEarly():
-				case <-ctx.Done():
-				}
-				return
+				hitKnown = true
+				continue
 			}
 
 			scene := models.Scene{
@@ -257,6 +259,15 @@ func (s *Scraper) runPornstar(ctx context.Context, studioURL string, opts scrape
 			case <-ctx.Done():
 				return
 			}
+		}
+
+		if hitKnown {
+			scraper.Debugf(1, "%s: page %d held a stored scene, stopping after it", siteID, page)
+			select {
+			case out <- scraper.StoppedEarly():
+			case <-ctx.Done():
+			}
+			return
 		}
 
 		if len(scenes) < pageSize {

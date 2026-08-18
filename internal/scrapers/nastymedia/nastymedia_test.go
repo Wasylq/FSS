@@ -1,10 +1,17 @@
 package nastymedia
 
 import (
+	"context"
+	"fmt"
+	"net/http"
+	"net/http/httptest"
+	"regexp"
+	"strings"
 	"testing"
 	"time"
 
 	"github.com/Anastylosis/FSS/internal/scrapers/testutil"
+	"github.com/Anastylosis/FSS/scraper"
 )
 
 const fixtureHOME = `<!doctype html>
@@ -235,4 +242,45 @@ func TestSiteTableIntegrity(t *testing.T) {
 		})
 	}
 	testutil.CheckSiteTable(t, rows)
+}
+
+// The whole catalogue is one already-parsed page, so a stored card in the
+// middle of it must be skipped rather than hiding every card behind it.
+func TestRunKnownIDsSkipsAndContinues(t *testing.T) {
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if !strings.HasSuffix(r.URL.Path, "/HOME.html") {
+			http.NotFound(w, r)
+			return
+		}
+		w.Header().Set("Content-Type", "text/html")
+		_, _ = fmt.Fprint(w, fixtureHOME)
+	}))
+	defer ts.Close()
+
+	s := New(SiteConfig{
+		ID:       "test",
+		BaseURL:  ts.URL,
+		SiteName: "Test",
+		MatchRe:  regexp.MustCompile(`.`),
+	})
+	s.client = ts.Client()
+
+	ch, err := s.ListScenes(context.Background(), ts.URL+"/", scraper.ListOpts{
+		KnownIDs: map[string]bool{"DIAMOND_STARR": true},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	scenes, stopped := testutil.CollectScenesWithStop(t, ch)
+	if !stopped {
+		t.Error("expected StoppedEarly to report that something was skipped")
+	}
+	got := map[string]bool{}
+	for _, sc := range scenes {
+		got[sc.ID] = true
+	}
+	if len(got) != 2 || !got["GET_ROAST"] || !got["RELLIE"] {
+		t.Fatalf("got %v, want the two cards either side of the stored one", got)
+	}
 }

@@ -463,3 +463,45 @@ func TestRunGirl(t *testing.T) {
 		t.Fatalf("got %d scenes, want 2: %v", len(scenes), scenes)
 	}
 }
+
+// The performer page is one already-parsed fetch, so a stored scene in the
+// middle of it must be skipped rather than truncating the rest of her
+// catalogue.
+func TestRunGirlKnownIDsSkipsAndContinues(t *testing.T) {
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/girl/scarlett-spark_10518" {
+			w.Header().Set("Content-Type", "text/html")
+			_, _ = fmt.Fprint(w, testGirlHTML)
+			return
+		}
+		http.NotFound(w, r)
+	}))
+	defer ts.Close()
+
+	s := &Scraper{Client: ts.Client(), base: ts.URL}
+	out := make(chan scraper.SceneResult, 20)
+
+	go func() {
+		s.runGirl(context.Background(), ts.URL+"/girl/scarlett-spark_10518",
+			scraper.ListOpts{KnownIDs: map[string]bool{"41270": true}}, out)
+		close(out)
+	}()
+
+	var ids []string
+	stopped := false
+	for r := range out {
+		switch r.Kind {
+		case scraper.KindScene:
+			ids = append(ids, r.Scene.ID)
+		case scraper.KindStoppedEarly:
+			stopped = true
+		}
+	}
+
+	if len(ids) != 1 || ids[0] != "41485" {
+		t.Fatalf("got %v, want the one scene behind the stored 41270", ids)
+	}
+	if !stopped {
+		t.Error("expected StoppedEarly to report that something was skipped")
+	}
+}

@@ -177,7 +177,10 @@ func TestRun(t *testing.T) {
 	}
 }
 
-func TestRunKnownIDs(t *testing.T) {
+// The entry list comes from one already-fetched homepage, so a stored scene in
+// the middle of it is no reason to drop the entries behind it. The stored one is
+// skipped — saving its detail fetch — and the rest are still collected.
+func TestRunKnownIDsSkipsAndContinues(t *testing.T) {
 	ts := newTestServer([]string{"SceneA", "SceneB", "SceneC"})
 	defer ts.Close()
 
@@ -191,13 +194,17 @@ func TestRunKnownIDs(t *testing.T) {
 
 	results, stoppedEarly := testutil.CollectScenesWithStop(t, ch)
 	if !stoppedEarly {
-		t.Error("expected StoppedEarly signal")
+		t.Error("expected StoppedEarly to report that something was skipped")
 	}
-	if len(results) != 1 {
-		t.Fatalf("got %d scenes, want 1", len(results))
+	if len(results) != 2 {
+		t.Fatalf("got %d scenes, want 2 (SceneB skipped, SceneC still collected)", len(results))
 	}
-	if results[0].ID != "SceneA" {
-		t.Errorf("expected SceneA, got %s", results[0].ID)
+	got := map[string]bool{}
+	for _, r := range results {
+		got[r.ID] = true
+	}
+	if !got["SceneA"] || !got["SceneC"] {
+		t.Errorf("scenes = %v, want SceneA and SceneC", got)
 	}
 }
 

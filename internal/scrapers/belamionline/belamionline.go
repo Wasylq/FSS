@@ -35,12 +35,23 @@ var sections = []section{
 
 type Scraper struct {
 	Client *http.Client
+	// base is the tour origin, overridable so the listing and model paths can
+	// be exercised offline.
+	base string
 }
 
 func New() *Scraper {
 	return &Scraper{
 		Client: httpx.NewClient(30 * time.Second),
+		base:   tourBase,
 	}
+}
+
+func (s *Scraper) origin() string {
+	if s.base == "" {
+		return tourBase
+	}
+	return s.base
 }
 
 var _ scraper.StudioScraper = (*Scraper)(nil)
@@ -113,7 +124,7 @@ func (s *Scraper) runSection(ctx context.Context, studioURL string, opts scraper
 	now := time.Now().UTC()
 	maxPage := 0
 	scraper.Paginate(ctx, opts, siteID, out, func(ctx context.Context, page int) (scraper.PageResult, error) {
-		pageURL := tourBase + "/" + sec.page
+		pageURL := s.origin() + "/" + sec.page
 		if page > 1 {
 			pageURL += "?page=" + strconv.Itoa(page)
 		}
@@ -147,7 +158,7 @@ func (s *Scraper) runModel(ctx context.Context, studioURL string, opts scraper.L
 	if m == nil {
 		return
 	}
-	pageURL := tourBase + "/modelsindex.aspx?ModelID=" + m[1]
+	pageURL := s.origin() + "/modelsindex.aspx?ModelID=" + m[1]
 	body, err := s.fetchPage(ctx, pageURL)
 	if err != nil {
 		select {
@@ -167,21 +178,29 @@ func (s *Scraper) runModel(ctx context.Context, studioURL string, opts scraper.L
 		return
 	}
 
+	// The model page is a single fetch that is already fully parsed, so
+	// stopping at a known scene saves no request and drops the rest of the
+	// model's catalogue. Skip and continue.
 	now := time.Now().UTC()
+	skipped := 0
 	for _, item := range items {
 		scene := toScene(studioURL, item, now)
 		if opts.KnownIDs[scene.ID] {
-			scraper.Debugf(1, "belamionline: hit known ID, stopping early")
-			select {
-			case out <- scraper.StoppedEarly():
-			case <-ctx.Done():
-			}
-			return
+			skipped++
+			continue
 		}
 		select {
 		case out <- scraper.Scene(scene):
 		case <-ctx.Done():
 			return
+		}
+	}
+
+	if skipped > 0 {
+		scraper.Debugf(1, "belamionline: skipped %d already-stored scene(s)", skipped)
+		select {
+		case out <- scraper.StoppedEarly():
+		case <-ctx.Done():
 		}
 	}
 }

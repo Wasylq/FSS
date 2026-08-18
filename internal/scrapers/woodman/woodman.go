@@ -209,13 +209,14 @@ func (s *Scraper) runGirl(ctx context.Context, studioURL string, opts scraper.Li
 		}
 	}
 
+	// The performer page is a single fetch that is already fully parsed, so
+	// stopping at a known scene saves no request and simply drops every scene
+	// after it. Skip the stored ones and keep going.
+	skipped := 0
 	for _, ls := range scenes {
 		if opts.KnownIDs != nil && opts.KnownIDs[ls.id] {
-			select {
-			case out <- scraper.StoppedEarly():
-			case <-ctx.Done():
-			}
-			return
+			skipped++
+			continue
 		}
 
 		scene := models.Scene{
@@ -234,6 +235,14 @@ func (s *Scraper) runGirl(ctx context.Context, studioURL string, opts scraper.Li
 		case out <- scraper.Scene(scene):
 		case <-ctx.Done():
 			return
+		}
+	}
+
+	if skipped > 0 {
+		scraper.Debugf(1, "%s: skipped %d already-stored scene(s)", siteID, skipped)
+		select {
+		case out <- scraper.StoppedEarly():
+		case <-ctx.Done():
 		}
 	}
 }

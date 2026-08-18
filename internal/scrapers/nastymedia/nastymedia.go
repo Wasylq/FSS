@@ -234,20 +234,27 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 		}
 	}
 
+	// The whole catalogue is one already-parsed page, so stopping at a known
+	// card saves no request and drops every card after it. Skip and continue.
 	now := time.Now().UTC()
+	skipped := 0
 	for _, c := range cards {
 		if opts.KnownIDs[c.slug] {
-			scraper.Debugf(1, "nastymedia/%s: known ID %q, stopping early", s.cfg.ID, c.slug)
-			select {
-			case out <- scraper.StoppedEarly():
-			case <-ctx.Done():
-			}
-			return
+			skipped++
+			continue
 		}
 		select {
 		case out <- scraper.Scene(s.toScene(c, studioURL, now)):
 		case <-ctx.Done():
 			return
+		}
+	}
+
+	if skipped > 0 {
+		scraper.Debugf(1, "nastymedia/%s: skipped %d already-stored card(s)", s.cfg.ID, skipped)
+		select {
+		case out <- scraper.StoppedEarly():
+		case <-ctx.Done():
 		}
 	}
 }

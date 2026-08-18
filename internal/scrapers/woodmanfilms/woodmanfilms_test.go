@@ -230,3 +230,52 @@ func TestRunListing(t *testing.T) {
 		t.Fatalf("got %d scenes, want 2: %v", len(scenes), scenes)
 	}
 }
+
+// A stored scene mid-page is no reason to discard the rest of a page that has
+// already been fetched and parsed. Everything else on it is still emitted; only
+// the *next* page request is skipped, which is where the early stop saves
+// anything.
+func TestRunPornstarKnownIDsFinishesThePage(t *testing.T) {
+	var pages int
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/pornstar/storm_900" {
+			pages++
+			w.Header().Set("Content-Type", "text/html")
+			_, _ = fmt.Fprint(w, "<html><body><h1>STORM</h1>"+testListingHTML+"</body></html>")
+			return
+		}
+		http.NotFound(w, r)
+	}))
+	defer ts.Close()
+
+	s := &Scraper{Client: ts.Client(), base: ts.URL}
+	out := make(chan scraper.SceneResult, 20)
+	go func() {
+		s.runPornstar(context.Background(), ts.URL+"/pornstar/storm_900",
+			scraper.ListOpts{KnownIDs: map[string]bool{"8144": true}}, out)
+		close(out)
+	}()
+
+	var ids []string
+	stopped := false
+	for r := range out {
+		switch r.Kind {
+		case scraper.KindScene:
+			ids = append(ids, r.Scene.ID)
+		case scraper.KindStoppedEarly:
+			stopped = true
+		case scraper.KindError:
+			t.Errorf("error: %v", r.Err)
+		}
+	}
+
+	if len(ids) != 1 || ids[0] != "8100" {
+		t.Fatalf("got %v, want the scene behind the stored 8144", ids)
+	}
+	if !stopped {
+		t.Error("expected StoppedEarly")
+	}
+	if pages != 1 {
+		t.Errorf("fetched %d pages, want 1 — the stop must skip the next request", pages)
+	}
+}

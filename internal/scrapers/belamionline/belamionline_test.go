@@ -1,8 +1,16 @@
 package belamionline
 
 import (
+	"context"
+	"fmt"
+	"net/http"
+	"net/http/httptest"
+	"strings"
 	"testing"
 	"time"
+
+	"github.com/Anastylosis/FSS/internal/scrapers/testutil"
+	"github.com/Anastylosis/FSS/scraper"
 )
 
 const listingHTML = `<!DOCTYPE html>
@@ -326,5 +334,50 @@ func TestPerPageIsAFallbackNotTheOnlyGuard(t *testing.T) {
 	// terminate on.
 	if got := parseMaxPage([]byte(listingHTML)); got <= 1 {
 		t.Errorf("parseMaxPage(listing) = %d, want a real page count to terminate on", got)
+	}
+}
+
+// The model page is one already-parsed fetch, so a stored scene in the middle
+// of it must be skipped rather than truncating the rest of the model's
+// catalogue.
+func TestRunModelKnownIDsSkipsAndContinues(t *testing.T) {
+	const modelHTML = `<html><body><div class="content_list">
+	<div class="content"><div class="wrap"><div class="img">
+		<a href="playvideo.aspx?VideoID=19531"><img data-src="https://freeassets.belamionline.com/a.jpg" alt="First."></a>
+	</div><div class="more_top"><span class="label">Stored Scene</span></div></div>
+	<div class="more_bottom"><div class="tags"><a>Solos</a></div><div class="date">5/27/2026</div></div></div>
+	<div class="content"><div class="wrap"><div class="img">
+		<a href="playvideo.aspx?VideoID=17496"><img data-src="https://freeassets.belamionline.com/b.jpg" alt="Second."></a>
+	</div><div class="more_top"><span class="label">Behind It</span></div></div>
+	<div class="more_bottom"><div class="tags"><a>Sex Scenes</a></div><div class="date">2/28/2026</div></div></div>
+	</div></body></html>`
+
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if !strings.HasPrefix(r.URL.Path, "/modelsindex.aspx") {
+			http.NotFound(w, r)
+			return
+		}
+		w.Header().Set("Content-Type", "text/html")
+		_, _ = fmt.Fprint(w, modelHTML)
+	}))
+	defer ts.Close()
+
+	s := New()
+	s.Client = ts.Client()
+	s.base = ts.URL
+
+	out := make(chan scraper.SceneResult, 20)
+	go func() {
+		s.runModel(context.Background(), "https://newtour.belamionline.com/modelsindex.aspx?ModelID=1234",
+			scraper.ListOpts{KnownIDs: map[string]bool{"19531": true}}, out)
+		close(out)
+	}()
+
+	scenes, stopped := testutil.CollectScenesWithStop(t, out)
+	if !stopped {
+		t.Error("expected StoppedEarly to report that something was skipped")
+	}
+	if len(scenes) != 1 || scenes[0].ID != "17496" {
+		t.Fatalf("got %+v, want only the scene behind the stored one", scenes)
 	}
 }
