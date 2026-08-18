@@ -87,6 +87,14 @@ func (s *Scraper) run(ctx context.Context, studioURL, slug string, opts scraper.
 		return
 	}
 
+	// The cursor listing is not date-ordered: bettie_bondage's 113 videos come
+	// back with 60 descending violations (2023-10, 2023-09, 2023-11, 2024-02,
+	// 2024-01, …), and the API exposes no sort to ask for. A KnownIDs stop would
+	// therefore halt on whichever stored scene happened to surface first and
+	// hide everything behind it, so every run re-walks. That is cheap here —
+	// the pages carry the whole scene and there is no detail fetch behind them.
+	opts.KnownIDs = nil
+
 	var pageToken string
 
 	// The cursor API can hand back a video already returned on an earlier page —
@@ -115,11 +123,6 @@ func (s *Scraper) run(ctx context.Context, studioURL, slug string, opts scraper.
 				continue
 			}
 			seen[scene.ID] = true
-			if opts.KnownIDs[scene.ID] {
-				scraper.Debugf(1, "loyalfans: hit known ID, stopping early")
-				send(ctx, out, scraper.StoppedEarly())
-				return
-			}
 			if !send(ctx, out, scraper.Scene(scene)) {
 				return
 			}

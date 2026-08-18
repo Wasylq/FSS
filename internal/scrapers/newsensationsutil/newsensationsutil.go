@@ -152,7 +152,19 @@ func (s *Scraper) produceListing(ctx context.Context, studioURL string, opts scr
 	s.paginateCategory(ctx, "movies", "d", opts, out, work, delay)
 }
 
+// dateSort is the ElevatedX listing suffix for newest-first. The template also
+// offers `_n` (alphabetical) and `_p` (popularity), and an operator who pastes
+// one of those URLs gets it honoured — but a KnownIDs early-stop only means
+// anything under a date sort, so it is dropped for the others rather than
+// truncating the catalogue at whichever stored scene happens to sort first.
+const dateSort = "d"
+
 func (s *Scraper) paginateCategory(ctx context.Context, category, sort string, opts scraper.ListOpts, out chan<- scraper.SceneResult, work chan<- workItem, delay time.Duration) {
+	if sort != dateSort {
+		scraper.Debugf(1, "%s: %q sort is not date-ordered, walking the whole listing", s.cfg.SiteID, sort)
+		opts.KnownIDs = nil
+	}
+
 	totalSent := false
 	for page := 1; ; page++ {
 		if ctx.Err() != nil {

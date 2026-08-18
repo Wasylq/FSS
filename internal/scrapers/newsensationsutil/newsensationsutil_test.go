@@ -453,6 +453,77 @@ func TestKnownIDs(t *testing.T) {
 	}
 }
 
+// A category listing under the date sort keeps its early-stop; under the
+// alphabetical or popularity sorts a known ID says nothing about what follows,
+// so the whole listing is walked instead of being truncated.
+func TestCategorySortGatesKnownIDs(t *testing.T) {
+	cases := []struct {
+		sort        string
+		wantScenes  int
+		wantStopped bool
+	}{
+		{"d", 1, true},
+		{"n", 3, false},
+		{"p", 3, false},
+	}
+	for _, c := range cases {
+		t.Run(c.sort, func(t *testing.T) {
+			var base string
+			ts := newCategoryServer(&base, []int{100, 200, 300})
+			defer ts.Close()
+
+			cfg := testCfg
+			cfg.SiteBase = ts.URL
+			s := New(cfg)
+			s.client = ts.Client()
+
+			ch, err := s.ListScenes(context.Background(),
+				fmt.Sprintf("%s/tour_ts/categories/movies_1_%s.html", ts.URL, c.sort),
+				scraper.ListOpts{
+					KnownIDs: map[string]bool{"200": true},
+					Delay:    time.Millisecond,
+					Workers:  1,
+				})
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			got, stopped := testutil.CollectScenesWithStop(t, ch)
+			if len(got) != c.wantScenes {
+				t.Errorf("got %d scenes, want %d", len(got), c.wantScenes)
+			}
+			if stopped != c.wantStopped {
+				t.Errorf("stoppedEarly = %v, want %v", stopped, c.wantStopped)
+			}
+		})
+	}
+}
+
+// newCategoryServer serves one page of the category listing and then an empty
+// page, so pagination terminates.
+func newCategoryServer(base *string, sceneIDs []int) *httptest.Server {
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/html")
+
+		switch {
+		case strings.Contains(r.URL.Path, "/categories/movies_1_"):
+			_, _ = fmt.Fprint(w, buildVideoBlocks(*base, sceneIDs))
+		case strings.Contains(r.URL.Path, "/categories/"):
+			_, _ = fmt.Fprint(w, "<html><body>No videos here</body></html>")
+		default:
+			for _, id := range sceneIDs {
+				if r.URL.Path == fmt.Sprintf("/tour_ts/updates/scene-%d.html", id) {
+					_, _ = fmt.Fprintf(w, detailPageTpl, id)
+					return
+				}
+			}
+			http.NotFound(w, r)
+		}
+	}))
+	*base = ts.URL
+	return ts
+}
+
 func TestRunEmptyPage(t *testing.T) {
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/html")

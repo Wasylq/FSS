@@ -210,7 +210,10 @@ func TestListScenesPagination(t *testing.T) {
 	}
 }
 
-func TestListScenesKnownIDs(t *testing.T) {
+// The cursor listing is not date-ordered and the API exposes no sort, so a
+// known ID says nothing about what follows it. Every run must walk the whole
+// listing.
+func TestListScenesIgnoresKnownIDs(t *testing.T) {
 	slug := "test_creator"
 	page1 := makeVideos(slug, 5)
 
@@ -226,14 +229,11 @@ func TestListScenesKnownIDs(t *testing.T) {
 	}
 
 	scenes, stoppedEarly := testutil.CollectScenesWithStop(t, ch)
-	if !stoppedEarly {
-		t.Error("expected StoppedEarly signal")
+	if stoppedEarly {
+		t.Error("must not stop early on an unordered listing")
 	}
-	if len(scenes) != 2 {
-		t.Fatalf("got %d scenes, want 2 (early stop at known ID)", len(scenes))
-	}
-	if scenes[0].ID != "scene-1" || scenes[1].ID != "scene-2" {
-		t.Errorf("scenes = %v", scenes)
+	if len(scenes) != 5 {
+		t.Fatalf("got %d scenes, want all 5", len(scenes))
 	}
 }
 
