@@ -200,10 +200,16 @@ type sceneItem struct {
 func (s *Scraper) listingURL(page int) string {
 	switch s.cfg.Variant {
 	case VariantNATS:
-		// Page 1 is the bare homepage; pages > 1 use the categories form.
-		if page <= 1 {
-			return s.cfg.SiteBase + "/"
-		}
+		// Page 1 used to be the bare homepage, which cost half of it. The
+		// homepage shows twelve cards, but only its first six are movies_1's
+		// first six: positions 7-12 are *featured* scenes, years old
+		// (boyforsale ids 146 and 7591 sitting behind 8513…8473). So the walk
+		// took six of movies_1's twelve and then jumped to movies_2 — the
+		// other six were never collected on any page — while incremental runs
+		// hit one of those old featured cards at position 7 and stopped there,
+		// capping pickup at six new scenes. Live-verified identical on
+		// boyforsale, scoutboys, masonicboys, twinktop, gaycest and
+		// funsizeboys. The categories listing is the real page 1.
 		return fmt.Sprintf("%s/categories/movies_%d_d.html", s.cfg.SiteBase, page)
 	case VariantGrid:
 		base := s.cfg.SiteBase + s.cfg.SubPath
@@ -220,6 +226,15 @@ func (s *Scraper) listingURL(page int) string {
 	return s.cfg.SiteBase + "/"
 }
 
+const (
+	// gridDryPages is how many consecutive pages may add nothing new before the
+	// grid walk stops. One is too few: the portal's page 7 added nothing and
+	// page 8 still had two new scenes.
+	gridDryPages = 3
+	// gridMaxPages bounds a rotating feed that might never settle.
+	gridMaxPages = 60
+)
+
 // ---- run loop ----
 
 func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOpts, out chan<- scraper.SceneResult) {
@@ -228,6 +243,17 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 
 	now := time.Now().UTC()
 	wpTotalPages := 0
+
+	// The portal's grid listing answers `?page=N` but advertises no page links
+	// and no last page: every page returns a full card set drawn from a
+	// rotating pool, so pages overlap heavily and `len(items)` never falls.
+	// Walked live, carnalplus.com contributed 40/10/6/6/5/2/0/2 new scenes
+	// over eight pages — it never empties, so without a bound `--full` runs
+	// forever. Ids are therefore tracked across pages and the walk stops once
+	// gridDryPages consecutive pages add nothing new, with gridMaxPages as a
+	// backstop for a feed whose rotation never settles.
+	gridSeen := make(map[string]bool)
+	gridDry := 0
 
 	siteLabel := "carnalplus/" + s.cfg.ID
 	scraper.Paginate(ctx, opts, siteLabel, out, func(ctx context.Context, page int) (scraper.PageResult, error) {
@@ -260,14 +286,41 @@ func (s *Scraper) run(ctx context.Context, studioURL string, opts scraper.ListOp
 			return scraper.PageResult{}, nil
 		}
 
+		gridExhausted := false
+		if s.cfg.Variant == VariantGrid {
+			fresh := items[:0:0]
+			for _, item := range items {
+				if gridSeen[item.id] {
+					continue
+				}
+				gridSeen[item.id] = true
+				fresh = append(fresh, item)
+			}
+			if len(fresh) == 0 {
+				gridDry++
+			} else {
+				gridDry = 0
+			}
+			items = fresh
+			gridExhausted = gridDry >= gridDryPages || page >= gridMaxPages
+			if gridExhausted {
+				scraper.Debugf(1, "%s: grid listing exhausted at page %d (%d ids seen)", siteLabel, page, len(gridSeen))
+			}
+		}
+
 		scenes := make([]models.Scene, len(items))
 		for i, item := range items {
 			scenes[i] = s.toScene(item, studioURL, now)
 		}
 
 		// WordPress pagination: stop once total_pages reached.
-		done := s.cfg.Variant == VariantWordPress && wpTotalPages > 0 && page >= wpTotalPages
-		return scraper.PageResult{Scenes: scenes, Total: total, Done: done}, nil
+		done := gridExhausted ||
+			(s.cfg.Variant == VariantWordPress && wpTotalPages > 0 && page >= wpTotalPages)
+		// A grid page that filtered to nothing is not the end of the listing —
+		// the rotation can still surface new scenes further in — so ask
+		// Paginate to keep going until the dry counter says otherwise.
+		keepGoing := len(scenes) == 0 && !done
+		return scraper.PageResult{Scenes: scenes, Total: total, Done: done, Continue: keepGoing}, nil
 	})
 }
 

@@ -7,6 +7,7 @@ import (
 	"net/http/httptest"
 	"regexp"
 	"testing"
+	"time"
 
 	"github.com/Anastylosis/FSS/scraper"
 )
@@ -261,9 +262,10 @@ func TestSplitPerformers(t *testing.T) {
 }
 
 func TestListingURL(t *testing.T) {
-	// NATS: page 1 → "/" ; page N → /categories/movies_N_d.html.
+	// NATS: every page is /categories/movies_N_d.html — including page 1,
+	// which used to be the homepage and lost half of movies_1 to featured cards.
 	nats := New(SiteConfig{ID: "x", SiteBase: "https://x.example", Variant: VariantNATS})
-	if got := nats.listingURL(1); got != "https://x.example/" {
+	if got := nats.listingURL(1); got != "https://x.example/categories/movies_1_d.html" {
 		t.Errorf("NATS page 1 → %q", got)
 	}
 	if got := nats.listingURL(3); got != "https://x.example/categories/movies_3_d.html" {
@@ -352,7 +354,7 @@ func TestListScenes_NATSendToEnd(t *testing.T) {
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/html")
 		switch r.URL.Path {
-		case "/":
+		case "/categories/movies_1_d.html":
 			_, _ = fmt.Fprint(w, natsListingHTML)
 		default:
 			_, _ = fmt.Fprint(w, "<html></html>")
@@ -451,5 +453,61 @@ func TestParseGridListingFullMovieCard(t *testing.T) {
 	}
 	if items[0].id != "73005" {
 		t.Errorf("id = %q", items[0].id)
+	}
+}
+
+// Page 1 must be the categories listing, not the homepage: the homepage's
+// second half is years-old featured scenes, so using it lost half of movies_1
+// permanently and stopped incremental runs after six new scenes.
+func TestNATSListingURLStartsAtMoviesPage1(t *testing.T) {
+	s := New(SiteConfig{ID: "test", SiteBase: "https://example.test", Variant: VariantNATS})
+	cases := map[int]string{
+		1: "https://example.test/categories/movies_1_d.html",
+		2: "https://example.test/categories/movies_2_d.html",
+	}
+	for page, want := range cases {
+		if got := s.listingURL(page); got != want {
+			t.Errorf("listingURL(%d) = %q, want %q", page, got, want)
+		}
+	}
+}
+
+// The grid listing answers ?page=N from a rotating pool and never returns an
+// empty page, so the walk has to bound itself or --full runs forever.
+func TestGridWalkTerminatesOnRepeats(t *testing.T) {
+	var pages int
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		pages++
+		// Page 1 is fresh; every page after it repeats those same cards.
+		_, _ = fmt.Fprint(w, gridListingHTML)
+	}))
+	defer srv.Close()
+
+	s := New(SiteConfig{ID: "test", SiteBase: srv.URL, Variant: VariantGrid})
+	s.client = srv.Client()
+
+	out := make(chan scraper.SceneResult, 64)
+	done := make(chan struct{})
+	var scenes []string
+	go func() {
+		defer close(done)
+		for r := range out {
+			if r.Kind == scraper.KindScene {
+				scenes = append(scenes, r.Scene.ID)
+			}
+		}
+	}()
+
+	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
+	defer cancel()
+	s.run(ctx, srv.URL+"/", scraper.ListOpts{}, out)
+	<-done
+
+	if len(scenes) != 2 {
+		t.Fatalf("got %d scenes, want the 2 distinct cards emitted once each: %v", len(scenes), scenes)
+	}
+	// One fresh page plus gridDryPages repeats, and no more.
+	if want := 1 + gridDryPages; pages != want {
+		t.Errorf("fetched %d pages, want %d (stop after %d dry pages)", pages, want, gridDryPages)
 	}
 }
