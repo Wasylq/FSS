@@ -37,6 +37,10 @@ func TestSetLanguage(t *testing.T) {
 		{"empty", "", SourceLanguage},
 		{"english", "en", SourceLanguage},
 		{"unknown tag", "xx", SourceLanguage},
+		{"exact catalog", "ko", "ko"},
+		{"base-language fallback", "ko_KR", "ko"},
+		{"ambient locale", "ko_KR.UTF-8", "ko"},
+		{"underscore-prefixed catalog reachable by raw name", "_pseudo", "_pseudo"},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -78,8 +82,22 @@ func TestT(t *testing.T) {
 	}
 }
 
-// Exact/base-language fallback tests (SetLanguage("ko_KR") etc.) need a real
-// ko.json — covered once ko.json ships.
+// TestSetLanguageInstallsCatalog checks the installed catalog is actually
+// consulted, not merely that the tag resolved.
+func TestSetLanguageInstallsCatalog(t *testing.T) {
+	t.Cleanup(func() { active.Store(nil) })
+
+	if got := SetLanguage("ko_KR.UTF-8"); got != "ko" {
+		t.Fatalf("SetLanguage = %q, want %q", got, "ko")
+	}
+	const key = "Usage:"
+	if got := T(key); got == key {
+		t.Errorf("T(%q) returned the English source; ko.json was not consulted", key)
+	}
+	if got := T("no such key"); got != "no such key" {
+		t.Errorf("T on a missing key = %q, want passthrough", got)
+	}
+}
 
 func TestAvailable(t *testing.T) {
 	got := Available()
