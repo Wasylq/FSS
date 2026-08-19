@@ -33,13 +33,6 @@ const (
 	keyHelpLong       = "Help provides help for any command in the application.\nSimply type %s help [path to command] for full details."
 )
 
-// translateUseLine stays false. Name() is Use up to the first space and
-// Find() matches against it, so any edit is one bug from renaming the
-// command; UseLine() does strings.Replace(c.Use, c.Name(), …) and garbles if
-// they diverge; and <studio-url>/[command] are shell-level metavariables
-// every major CLI leaves in ASCII.
-const translateUseLine = false
-
 // visit calls fn on root and every descendant.
 func visit(c *cobra.Command, fn func(*cobra.Command)) {
 	fn(c)
@@ -156,6 +149,12 @@ func Localize(root *cobra.Command) (restore func()) {
 		undo = append(undo, func() { f.Usage = old })
 	}
 
+	// Use is deliberately never translated. Name() is Use up to the first
+	// space and Find() matches against it, so any edit is one bug from
+	// renaming the command; UseLine() does strings.Replace(c.Use, c.Name(), …)
+	// and garbles if they diverge; and <studio-url>/[command] are shell-level
+	// metavariables every major CLI leaves in ASCII. Same for Aliases,
+	// Example, Deprecated and annotations: nothing here touches them.
 	visit(root, func(c *cobra.Command) {
 		if c.Name() == "help" {
 			oldShort, oldLong := c.Short, c.Long

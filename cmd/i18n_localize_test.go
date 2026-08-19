@@ -180,7 +180,8 @@ func TestUnknownExplicitLanguageWarns(t *testing.T) {
 		t.Fatalf("resolveLanguage() = %q, %v; want \"xx\", true", tag, explicit)
 	}
 	resolved := i18n.SetLanguage(tag)
-	if !(explicit && resolved == i18n.SourceLanguage && i18n.Normalize(tag) != i18n.SourceLanguage) {
+	warns := explicit && resolved == i18n.SourceLanguage && i18n.Normalize(tag) != i18n.SourceLanguage
+	if !warns {
 		t.Errorf("warning condition did not hold for %q (resolved %q)", tag, resolved)
 	}
 }
