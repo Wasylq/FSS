@@ -308,7 +308,7 @@ CLI flags always override config values. See [docs/usage.md](docs/usage.md#confi
 |----------|----------|
 | [CONTRIBUTING.md](CONTRIBUTING.md) | How to add a new scraper, reference implementations |
 | [docs/architecture.md](docs/architecture.md) | System design, plugin registry, streaming model, store abstraction |
-| [docs/library.md](docs/library.md) | Using FSS as a Go library — the nine public packages |
+| [docs/library.md](docs/library.md) | Using FSS as a Go library — the eight public packages |
 | [docs/platform-detection.md](docs/platform-detection.md) | Per-platform detection signals and which `*util` package a site belongs to |
 | [docs/enhancements.md](docs/enhancements.md) | Known gaps and ideas not yet built |
 | [SECURITY.md](SECURITY.md) | Credential handling, network policy, vulnerability reporting |

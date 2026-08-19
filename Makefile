@@ -49,8 +49,17 @@ i18n-extract: ## Regenerate the i18n locale template and pseudo catalogs from th
 smoke: ## Run integration smoke tests against live sites + Stash. Manual only — never in CI.
 	@echo "==> Integration smoke tests (live HTTP, not for CI)"
 	@echo "==> Tests with placeholder URLs will SKIP. Stash tests skip if not reachable."
-	@$(GO) test -tags=integration -timeout=$(SMOKE_TIMEOUT) -v ./internal/scrapers/... ./stash/... 2>&1 | tee /tmp/fss-smoke.log; \
-	rc=$${PIPESTATUS[0]}; \
+	@# Two invocations, not one package list: the Stash tests live in ./cmd
+	@# alongside that package's unit tests, so they need -run TestLive to
+	@# select them. The scrapers must NOT carry that filter — a few name their
+	@# entry point TestIntegration, and a global -run would drop them silently.
+	@rm -f /tmp/fss-smoke.fail; \
+	{ $(GO) test -tags=integration -timeout=$(SMOKE_TIMEOUT) -v ./internal/scrapers/... \
+	    || echo x >> /tmp/fss-smoke.fail; \
+	  $(GO) test -tags=integration -timeout=$(SMOKE_TIMEOUT) -run TestLive -v ./cmd/... \
+	    || echo x >> /tmp/fss-smoke.fail; \
+	} 2>&1 | tee /tmp/fss-smoke.log; \
+	rc=0; [ -s /tmp/fss-smoke.fail ] && rc=1; \
 	echo ""; \
 	echo "========================================"; \
 	echo "  SMOKE TEST SUMMARY"; \
@@ -69,7 +78,7 @@ smoke: ## Run integration smoke tests against live sites + Stash. Manual only �
 		echo ""; \
 	fi; \
 	echo "========================================"; \
-	rm -f /tmp/fss-smoke.log; \
+	rm -f /tmp/fss-smoke.log /tmp/fss-smoke.fail; \
 	exit $$rc
 
 .PHONY: cover
