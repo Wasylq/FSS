@@ -31,7 +31,7 @@ SHELL := /bin/bash
 
 .PHONY: help
 help: ## Show this help.
-	@awk 'BEGIN {FS = ":.*##"} /^[a-zA-Z_-]+:.*##/ {printf "  \033[36m%-12s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
+	@awk 'BEGIN {FS = ":.*##"} /^[a-zA-Z0-9_-]+:.*##/ {printf "  \033[36m%-12s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
 
 .PHONY: build
 build: ## Build the fss binary into ./fss.
@@ -40,6 +40,10 @@ build: ## Build the fss binary into ./fss.
 .PHONY: test
 test: ## Run unit tests with race detector (no integration tag).
 	$(GO) test -race -count=1 $(PKGS)
+
+.PHONY: i18n-extract
+i18n-extract: ## Regenerate the i18n locale template and pseudo catalogs from the command tree.
+	$(GO) test -count=1 -run TestI18nTemplateInSync ./cmd/
 
 .PHONY: smoke
 smoke: ## Run integration smoke tests against live sites + Stash. Manual only — never in CI.

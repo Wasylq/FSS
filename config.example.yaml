@@ -57,6 +57,12 @@ site_delays:
 # Bootstrap yours with `fss creators suggest --write`. See docs/creators.md.
 creators_dir: ""
 
+# Language for the CLI's help text. Empty (or absent) means English, as does
+# any language with no catalog shipped. Overridden by FSS_LANG and --lang.
+# Only help text is translated — runtime output and errors stay English.
+# Run `fss --lang xx --help` to see the available codes. See docs/translations.md.
+# language: ko
+
 # Stashbox instances for the stashbox scraper.
 # Each entry maps a GraphQL endpoint to an API key. The scraper matches
 # incoming URLs against these endpoints to find the right key.

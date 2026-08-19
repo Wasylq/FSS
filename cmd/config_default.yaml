@@ -26,6 +26,12 @@ out_dir: "."
 # The CLI equivalent is `--db` (no value = default) or `--db /path`.
 db: ""
 
+# Language for the CLI's help text. Empty (or absent) means English, as does
+# any language with no catalog shipped. Overridden by FSS_LANG and --lang.
+# Only help text is translated — runtime output and errors stay English.
+# Run `fss --lang xx --help` to see the available codes. See docs/translations.md.
+# language: ko
+
 # Default delay between page requests, in milliseconds.
 # Set to 0 to disable. Prevents rate-limiting by sites with WAFs.
 delay: 500
