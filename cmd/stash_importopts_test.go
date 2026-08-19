@@ -36,6 +36,10 @@ func newImportTestCmd(t *testing.T) *cobra.Command {
 			c.Flags().Int(f.Name, 0, f.Usage)
 		case "stringSlice":
 			c.Flags().StringSlice(f.Name, nil, f.Usage)
+		case "count":
+			// --debug: merged in from root's persistent flags once anything
+			// (e.g. cobrai18n.Keys) forces mergePersistentFlags on this command.
+			c.Flags().CountP(f.Name, f.Shorthand, f.Usage)
 		default:
 			t.Fatalf("flag --%s has unhandled type %q; add it here", f.Name, f.Value.Type())
 		}

@@ -69,6 +69,15 @@ func TestWarnUnknownConfigKeysQuietOnMalformedYAML(t *testing.T) {
 	}
 }
 
+func TestLanguageKeyIsKnown(t *testing.T) {
+	out := captureLog(t, func() {
+		warnUnknownConfigKeys([]byte("language: ko\n"), "/tmp/config.yaml")
+	})
+	if out != "" {
+		t.Errorf("language key produced a warning: %q", out)
+	}
+}
+
 // An unknown key must be a warning, not a hard failure: a config that has
 // worked for months should keep working, and may carry settings from a newer
 // version.

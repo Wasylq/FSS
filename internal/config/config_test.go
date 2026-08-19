@@ -429,3 +429,40 @@ func TestDBSettingDistinguishesAbsentFromEmpty(t *testing.T) {
 		})
 	}
 }
+
+func TestLanguagePref(t *testing.T) {
+	t.Run("no config file", func(t *testing.T) {
+		isolateXDG(t)
+		if got := LanguagePref(); got != "" {
+			t.Errorf("LanguagePref() = %q, want \"\"", got)
+		}
+	})
+
+	t.Run("language set", func(t *testing.T) {
+		dir := isolateXDG(t)
+		cfgDir := filepath.Join(dir, "fss")
+		if err := os.MkdirAll(cfgDir, 0o755); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(filepath.Join(cfgDir, "config.yaml"), []byte("language: ko\n"), 0o600); err != nil {
+			t.Fatal(err)
+		}
+		if got := LanguagePref(); got != "ko" {
+			t.Errorf("LanguagePref() = %q, want ko", got)
+		}
+	})
+
+	t.Run("malformed YAML", func(t *testing.T) {
+		dir := isolateXDG(t)
+		cfgDir := filepath.Join(dir, "fss")
+		if err := os.MkdirAll(cfgDir, 0o755); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(filepath.Join(cfgDir, "config.yaml"), []byte("language: [unclosed\n"), 0o600); err != nil {
+			t.Fatal(err)
+		}
+		if got := LanguagePref(); got != "" {
+			t.Errorf("LanguagePref() = %q, want \"\"", got)
+		}
+	})
+}

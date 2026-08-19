@@ -40,6 +40,11 @@ type Config struct {
 	CreatorsDir string           `yaml:"creators_dir"`
 	Stash       StashConfig      `yaml:"stash"`
 	Stashbox    []StashboxConfig `yaml:"stashbox"`
+	// Language selects the help-text language, e.g. "ko". Empty means English.
+	// Overridden by FSS_LANG and --lang. An unrecognised value falls back to
+	// English rather than failing, so a config written for a newer fss still
+	// works on an older binary.
+	Language string `yaml:"language"`
 }
 
 type StashboxConfig struct {
@@ -145,6 +150,8 @@ func sanitizeWindowsPaths(data []byte) []byte {
 	})
 }
 
+const maxConfigBytes = 1 << 20 // 1 MB
+
 // Load reads the config file from the XDG config directory.
 // If no file exists, defaults are returned without error.
 func Load() (*Config, error) {
@@ -168,7 +175,6 @@ func Load() (*Config, error) {
 		}
 	}
 
-	const maxConfigBytes = 1 << 20 // 1 MB
 	raw, err := io.ReadAll(io.LimitReader(f, maxConfigBytes+1))
 	if err != nil {
 		return nil, fmt.Errorf("reading config %s: %w", path, err)
@@ -189,6 +195,37 @@ func Load() (*Config, error) {
 	}
 
 	return cfg, nil
+}
+
+// LanguagePref returns the `language:` setting, or "" if there is no config
+// file, it cannot be read, or it does not parse. Best-effort by design: a
+// broken config must still let `fss --help` work.
+func LanguagePref() string {
+	path, err := xdg.SearchConfigFile("fss/config.yaml")
+	if err != nil {
+		return ""
+	}
+
+	f, err := os.Open(path)
+	if err != nil {
+		return ""
+	}
+	defer func() { _ = f.Close() }()
+
+	raw, err := io.ReadAll(io.LimitReader(f, maxConfigBytes+1))
+	if err != nil || len(raw) > maxConfigBytes {
+		return ""
+	}
+
+	raw = sanitizeWindowsPaths(raw)
+
+	var probe struct {
+		Language string `yaml:"language"`
+	}
+	if err := yaml.Unmarshal(raw, &probe); err != nil {
+		return ""
+	}
+	return probe.Language
 }
 
 // warnUnknownConfigKeys reports keys the Config struct does not recognise.

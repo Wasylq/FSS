@@ -19,6 +19,9 @@ FSS
 !**/testdata/
 !**/testdata/**
 
+# ...and the embedded translation catalogs
+!internal/i18n/locales/*.json
+
 # Test binary, built with `go test -c`
 *.test
 
