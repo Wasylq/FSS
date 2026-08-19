@@ -1035,11 +1035,11 @@ func TestApplyScene_keepsPerformersAlreadyOnTheStashScene(t *testing.T) {
 	f := newFakeStash(t)
 	f.existingPerf = map[string]string{"Jodi West": "p-jodi"}
 
-	ss := stash.StashScene{
+	ss := stash.Scene{
 		ID:    "1",
-		Files: []stash.StashFile{{Path: "/v/a.mp4"}},
+		Files: []stash.File{{Path: "/v/a.mp4"}},
 		// Already attached in Stash, and deliberately absent from merged.
-		Performers: []stash.StashPerf{{ID: "p-costar", Name: "Marcello Bravo"}},
+		Performers: []stash.Performer{{ID: "p-costar", Name: "Marcello Bravo"}},
 	}
 	merged := match.MergedScene{Title: "T", Performers: []string{"Jodi West"}}
 
