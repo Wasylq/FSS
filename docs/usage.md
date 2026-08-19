@@ -26,6 +26,7 @@ For choosing a store, inspecting a database, and moving between the two, see [st
 | Flag | Type | Default | Description |
 |------|------|---------|-------------|
 | `--debug`, `-d` | count | 0 | Increase debug verbosity. Stackable: `-d` = high-level ops, `-dd` = HTTP requests, `-ddd` = parsing details |
+| `--lang` | string | _(ambient locale)_ | Language for the help text, e.g. `ko`. Also `FSS_LANG` or the config `language:` key. Only help text is translated — see [translations.md](translations.md) |
 
 ### `fss scrape <studio-url>`
 
@@ -320,6 +321,9 @@ db: ""            # str   — "" = flat store (explicit, survives the coming def
 delay: 500        # int   — ms between page requests; 0 disables
 user_agent: ""    # str   — "firefox" (default), "chrome", or a custom UA string
 notices: true     # bool  — advisory messages (e.g. an upcoming default change); false silences them
+language: ""      # str   — help-text language, e.g. "ko". "" (or a language with no
+                  #         catalog) = English. Overridden by FSS_LANG and --lang.
+                  #         Only help text is translated — see translations.md
 
 creators_dir: ""  # str   — directory of one-YAML-per-creator definitions.
                   #         "" = ~/.config/fss/creators.d. Point at a clone to use a

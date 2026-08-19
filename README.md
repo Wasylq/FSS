@@ -289,6 +289,7 @@ CLI flags always override config values. See [docs/usage.md](docs/usage.md#confi
 | [docs/scrapers.md](docs/scrapers.md) | Supported sites, URL patterns, shared packages |
 | [docs/sites.md](docs/sites.md) | Searchable A-Z list of every covered domain |
 | [docs/docker.md](docs/docker.md) | Running FSS in Docker — image tags, volumes, compose examples |
+| [docs/translations.md](docs/translations.md) | Help text in other languages — using one, and adding one |
 
 **Working with the data you scrape**
 

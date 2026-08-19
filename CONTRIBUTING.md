@@ -441,6 +441,21 @@ network catch-all, pasting a sub-studio URL scraped the entire network.
 
 ---
 
+## Translations
+
+The CLI's help text is translatable. A language is one flat JSON file under
+`internal/i18n/locales/`, keyed on the English source string, and no Go is
+involved: copy `_template.json`, fill in what you're sure of, leave the rest
+as `""` (empty falls back to English), run `make test`, open a PR.
+
+Reword an English help string and you change a key, orphaning its
+translations — `make i18n-extract` regenerates the template and the test
+suite names every catalog that went stale.
+
+Full rules and the resolution order in [docs/translations.md](docs/translations.md).
+
+---
+
 ## Cutting a release
 
 Releases are tagged with `vMAJOR.MINOR.PATCH`. Pushing the tag triggers `.github/workflows/release.yml`, which builds the cross-platform binaries and `.deb`/`.rpm` packages automatically and then **pauses for manual approval** before publishing.

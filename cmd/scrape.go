@@ -834,6 +834,8 @@ func proceedAfterCollapse(cov coverage, studioURL, siteID string, destructive, f
 		fmt.Fprintln(os.Stderr, "       no answer — skipping the save")
 		return false
 	}
+	// English-only, deliberately: translating the prompt without also
+	// translating this parser is a bug. See docs/translations.md.
 	switch strings.ToLower(strings.TrimSpace(line)) {
 	case "y", "yes":
 		return true

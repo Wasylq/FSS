@@ -1,0 +1,49 @@
+name: Translation
+description: Offer a new help-text language, or request one
+labels: ["translation"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Only the CLI **help text** is translatable — runtime output, error
+        messages and `docs/` stay English. See
+        [docs/translations.md](https://github.com/Anastylosis/FSS/blob/master/docs/translations.md).
+
+  - type: input
+    id: language
+    attributes:
+      label: Language
+      description: Name and code.
+      placeholder: "e.g. Japanese (ja), Brazilian Portuguese (pt_BR)"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: kind
+    attributes:
+      label: Are you offering a translation, or requesting one?
+      options:
+        - Offering — I can translate (or fix) this language
+        - Requesting — I'd like this language, but can't write it
+    validations:
+      required: true
+
+  - type: textarea
+    id: notes
+    attributes:
+      label: Notes
+      description: >
+        For a fix, which strings read wrong and what they should say. For a
+        new language, anything worth knowing — a regional variant to prefer,
+        terms that shouldn't be translated, and so on.
+
+  - type: checkboxes
+    id: understood
+    attributes:
+      label: Before you start
+      options:
+        - label: >
+            I understand a partial translation is fine — every untranslated
+            string falls back to English, so there's no need to finish the
+            file before opening a PR.
+          required: true

@@ -1,22 +1,23 @@
 # Translatable help text for fss — implementation plan
 
-> ## STATUS (2026-08-12) — paused mid-implementation, branch `i18n-help`
+> ## STATUS — implemented, kept for reference
 >
-> **Done (task-order steps 1–6), four commits on `i18n-help`:**
-> - `d9b8519` — step 3: config `language:` field, hoisted `maxConfigBytes`, `LanguagePref()` + tests.
-> - `ee820ac` — steps 1–2: `internal/i18n` (T/SetLanguage/Normalize/Available) and `internal/i18n/cobrai18n` (Localize+restore, Keys, usage template, safe) + synthetic-tree tests.
-> - `d2361d2` — `.gitignore` exception: the repo-wide `*.json` ignore was silently swallowing `internal/i18n/locales/` (would have broken fresh-clone builds via `//go:embed`); locale catalogs now tracked (92 keys in `_template.json`/`_pseudo.json`).
-> - `1d384a2` — steps 4–6: `cmd/i18n.go` (langFromArgs/resolveLanguage), `--lang` flag + `Execute()` rewire in `cmd/root.go`, `TestI18nTemplateInSync` extractor, generated catalogs.
+> All ten steps below shipped. The user-facing documentation is
+> [translations.md](translations.md); the load-bearing conventions are in
+> `CLAUDE.md`. This file is retained for the cobra-internals research in
+> "Verified against cobra v1.10.2" — the line references are to v1.10.2 and
+> will drift on upgrade, but `TestUsageTemplateMatchesCobra` and
+> `TestCobraDefaultsUnchanged` turn any such drift into a red test.
 >
-> **Verified:** full `go test ./... -race` green; `go vet` clean (golangci-lint not installed locally — CI must cover it); acceptance gate run against master — all help/error/completion output byte-identical except the intentional new `--lang` flag line.
->
-> **Remaining: steps 7–10** (see Task order): step 7 real-tree tests (`internal/i18n/catalog_test.go` + `cmd/i18n_localize_test.go`), step 8 `locales/ko.json`, step 9 Makefile `i18n-extract` target **and the awk class fix at Makefile:34**, step 10 docs (docs/translations.md, CONTRIBUTING.md section, README bullet, issue template).
->
-> **Notes for pickup:**
-> - `--lang ko` currently warns "unknown language" — correct until `ko.json` ships (step 8).
-> - `cobrai18n.Keys` calls `prepare()`, which forces `mergePersistentFlags` on every command; in the `cmd` test binary this merged root's `--debug` (type `count`) into subcommand FlagSets, requiring a `case "count":` in `cmd/stash_importopts_test.go` (already fixed, `1d384a2`). Step 7's tests may surface similar cross-test-order effects — the Localize restore-func hygiene pattern in the plan below is mandatory.
-> - `Keys` and `Localize` exclude the help command's Short/Long from generic harvesting (covered by `keyHelpShort`/`keyHelpLong` consts) — keep the extractor and any new tests consistent with that.
-> - `_template.json` keys are HTML-escaped by `json.MarshalIndent` (`<` → `<`); catalogs must match keys byte-exactly *after* JSON decoding, so this is cosmetic only.
+> Deviations from the plan as written, all in step 7:
+> - `catalog_test.go` reads every catalog through the embed FS rather than
+>   `_template.json` from disk. Same bytes, one less path to get wrong.
+> - `TestLocalizeRestoreRoundTrip` snapshots the tree *after* forcing cobra's
+>   lazy help command and help/version flags. `Localize` deliberately does not
+>   un-materialise those, so a bare-tree baseline compares against a tree that
+>   legitimately grew an entry.
+> - `TestLocalizeSyntheticTree` stayed as the plan resolved it: mechanics only,
+>   with catalog-driven rendering covered on the real tree in `cmd/`.
 
 ## Context
 
