@@ -89,8 +89,8 @@ func TestParseListingPage(t *testing.T) {
 	}
 
 	s := scenes[0]
-	if s.ID != "12345" {
-		t.Errorf("ID = %q, want 12345", s.ID)
+	if s.ID != "12345/ABC123" {
+		t.Errorf("ID = %q, want 12345/ABC123", s.ID)
 	}
 	if s.Title != "Morning Light" {
 		t.Errorf("Title = %q, want %q", s.Title, "Morning Light")
@@ -158,7 +158,7 @@ func TestKnownIDsEarlyStop(t *testing.T) {
 	})
 
 	scenes := parseListingPage([]byte(html), "https://ifeelmyself.com")
-	known := map[string]bool{"99": true}
+	known := map[string]bool{"99/B": true}
 	var collected []string
 	for _, sc := range scenes {
 		if known[sc.ID] {
@@ -166,8 +166,39 @@ func TestKnownIDsEarlyStop(t *testing.T) {
 		}
 		collected = append(collected, sc.ID)
 	}
-	if len(collected) != 1 || collected[0] != "100" {
-		t.Errorf("collected = %v, want [100]", collected)
+	if len(collected) != 1 || collected[0] != "100/A" {
+		t.Errorf("collected = %v, want [100/A]", collected)
+	}
+}
+
+// The live listing runs one card per artist appearing in a film, so several
+// cards carry the same data-scene-id while being different scenes — three
+// cards shared 24195 on the front page, two of them different titles. Keyed
+// on the film id alone they collided on (ID, SiteID) and overwrote each other
+// in the store.
+func TestSceneIDIsUniquePerArtistOnAFilm(t *testing.T) {
+	html := buildIFMPage([]struct {
+		sceneID, price, artistID, performer, title, duration, date, thumb string
+		categories, tags                                                  []string
+	}{
+		{sceneID: "24195", price: "1.95", artistID: "F16959", performer: "Natalia_J", title: "pleasure land 1", date: "19 Aug 2026"},
+		{sceneID: "24195", price: "1.95", artistID: "F16642", performer: "Melanie_J", title: "pleasure land 1", date: "19 Aug 2026"},
+		{sceneID: "24195", price: "1.95", artistID: "F15003", performer: "Skye_C", title: "orgasm express", date: "18 Aug 2026"},
+	})
+
+	scenes := parseListingPage([]byte(html), "https://ifeelmyself.com")
+	if len(scenes) != 3 {
+		t.Fatalf("got %d scenes, want 3", len(scenes))
+	}
+	seen := map[string]string{}
+	for _, sc := range scenes {
+		if prev, dup := seen[sc.ID]; dup {
+			t.Errorf("ID %q reused by %q and %q", sc.ID, prev, sc.Title)
+		}
+		seen[sc.ID] = sc.Title
+	}
+	if _, ok := seen["24195/F16959"]; !ok {
+		t.Errorf("IDs = %v, want one keyed 24195/F16959", seen)
 	}
 }
 

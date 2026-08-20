@@ -299,7 +299,7 @@ func parseListingPage(body []byte, studioURL string) []models.Scene {
 		if idMatch == nil {
 			continue
 		}
-		sceneID := string(idMatch[1])
+		filmID := string(idMatch[1])
 		price := string(idMatch[2])
 
 		var performer, performerID string
@@ -318,7 +318,7 @@ func parseListingPage(body []byte, studioURL string) []models.Scene {
 			title = string(tm[1])
 		}
 		if title == "" {
-			title = "Scene #" + sceneID
+			title = "Scene #" + filmID
 		}
 
 		var duration int
@@ -364,6 +364,17 @@ func parseListingPage(body []byte, studioURL string) []models.Scene {
 		sceneURL := siteBase + "/public/main.php?page=artist_bio&artist_id=" + performerID
 		if performerID == "" {
 			sceneURL = siteBase + "/public/main.php?page=view&mode=all"
+		}
+
+		// data-scene-id is a film id, not a scene id: the listing runs the
+		// same film once per artist who appears in it, so three cards with
+		// different titles and different artists all carry 24195. Keying on it
+		// alone made those scenes collide on (ID, SiteID) and overwrite each
+		// other in the store. Qualify it with the artist, the way ishotmyself
+		// keys on artist + folio.
+		sceneID := filmID
+		if performerID != "" {
+			sceneID = filmID + "/" + performerID
 		}
 
 		scene := models.Scene{
