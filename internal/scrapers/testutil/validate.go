@@ -276,6 +276,13 @@ func drain(ch <-chan scraper.SceneResult) (scenes []models.Scene, stoppedEarly b
 	return scenes, stoppedEarly, errs
 }
 
+// cancelDrainTimeout is how long AssertCancellable waits for a cancelled
+// scraper to close its channel. Generous because it is spent only by a scraper
+// that is genuinely broken; a working one returns immediately. The one test
+// that exercises the timeout path shortens it, rather than costing the suite
+// ten idle seconds.
+var cancelDrainTimeout = 10 * time.Second
+
 // AssertCancellable checks that a scraper stops when its context is cancelled.
 //
 // Every scraper must select on ctx.Done() in the sends to its output channel,
@@ -318,9 +325,10 @@ func AssertCancellable(t *testing.T, s scraper.StudioScraper, studioURL string, 
 
 	select {
 	case <-drained:
-	case <-time.After(10 * time.Second):
-		t.Fatalf("%s: channel still open 10s after cancellation — the scraper is "+
-			"not selecting on ctx.Done() and leaks a goroutine per cancelled scrape", s.ID())
+	case <-time.After(cancelDrainTimeout):
+		t.Fatalf("%s: channel still open %s after cancellation — the scraper is "+
+			"not selecting on ctx.Done() and leaks a goroutine per cancelled scrape",
+			s.ID(), cancelDrainTimeout)
 	}
 }
 

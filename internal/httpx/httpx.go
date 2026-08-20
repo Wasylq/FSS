@@ -16,6 +16,7 @@ import (
 	"net/url"
 	"strings"
 	"sync/atomic"
+	"testing"
 	"time"
 
 	"github.com/Anastylosis/FSS/scraper"
@@ -290,6 +291,23 @@ func redactURL(rawURL string) string {
 	return u.String()
 }
 
+// backoffBase is the unit of the retry ladder: attempt N waits N*backoffBase,
+// so the default gives the documented 0s/2s/4s.
+//
+// Under `go test` it collapses to ~nothing. Scraper error-path tests assert
+// that a failed fetch surfaces as a KindError result, not how long the retries
+// took, yet each one sat through the full ladder: ~5s per test across 28
+// packages, and 24s in scissorgoddess alone, which was 60% of the suite's
+// wall-clock. httpx's own retry tests inject BackoffSleep directly and none of
+// them assert a duration, so nothing loses coverage here. Importing testing
+// costs 88 bytes in the shipped binary — the linker keeps only the bool.
+var backoffBase = func() time.Duration {
+	if testing.Testing() {
+		return time.Millisecond
+	}
+	return 2 * time.Second
+}()
+
 // jitter applies ±25% randomness to a duration to prevent retry lockstep.
 func jitter(d time.Duration) time.Duration {
 	factor := 0.75 + rand.Float64()*0.5 // [0.75, 1.25)
@@ -333,7 +351,7 @@ func doInner(ctx context.Context, client *http.Client, r Request, classifyStatus
 	var attemptErrs []error
 	for attempt := 0; attempt < maxAttempts; attempt++ {
 		if attempt > 0 {
-			if err := sleep(ctx, jitter(time.Duration(attempt)*2*time.Second)); err != nil {
+			if err := sleep(ctx, jitter(time.Duration(attempt)*backoffBase)); err != nil {
 				attemptErrs = append(attemptErrs, err)
 				return nil, errors.Join(attemptErrs...)
 			}

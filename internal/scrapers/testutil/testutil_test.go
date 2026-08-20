@@ -299,6 +299,11 @@ func TestAssertCancellableCatchesALeak(t *testing.T) {
 	l := &leakyScraper{block: make(chan struct{})}
 	defer close(l.block)
 
+	// The point here is that the timeout fires at all, not how long it is.
+	orig := cancelDrainTimeout
+	cancelDrainTimeout = 50 * time.Millisecond
+	defer func() { cancelDrainTimeout = orig }()
+
 	fake := &testing.T{}
 	done := make(chan struct{})
 	go func() {

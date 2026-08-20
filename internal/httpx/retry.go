@@ -44,7 +44,7 @@ func (t *retryTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 	var attemptErrs []error
 	for attempt := 0; attempt < t.attempts; attempt++ {
 		if attempt > 0 {
-			if err := sleep(req.Context(), jitter(time.Duration(attempt)*2*time.Second)); err != nil {
+			if err := sleep(req.Context(), jitter(time.Duration(attempt)*backoffBase)); err != nil {
 				return nil, errors.Join(append(attemptErrs, err)...)
 			}
 		}
