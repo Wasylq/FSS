@@ -20,10 +20,14 @@ func TestI18nTemplateInSync(t *testing.T) {
 
 	keys := cobrai18n.Keys(rootCmd)
 
+	// The template's values are the English source strings, not "". It is
+	// never loaded as a catalog (the "_" prefix keeps it out of Available),
+	// so this is purely for the humans and the translation platforms reading
+	// it: both want a source file that shows the string being translated.
 	template := map[string]string{}
 	pseudo := map[string]string{}
 	for _, k := range keys {
-		template[k] = ""
+		template[k] = k
 		pseudo[k] = "«" + k + "»"
 	}
 
