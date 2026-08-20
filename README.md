@@ -5,6 +5,7 @@
 [![Go Reference](https://pkg.go.dev/badge/github.com/Anastylosis/FSS.svg)](https://pkg.go.dev/github.com/Anastylosis/FSS)
 [![Release](https://img.shields.io/github/v/release/Anastylosis/FSS)](https://github.com/Anastylosis/FSS/releases/latest)
 [![License](https://img.shields.io/github/license/Anastylosis/FSS)](LICENSE)
+[![Translation status](https://hosted.weblate.org/widget/fss/language-badge.svg?threshold=0)](https://hosted.weblate.org/engage/fss/)
 
 Scrapes all scenes and metadata from a studio URL. Designed to be easily extended to new sites. Can push scraped metadata into a local [Stash](https://stashapp.cc/) instance.
 
