@@ -1,8 +1,10 @@
 package httpx
 
 import (
+	"context"
 	"crypto/x509"
 	"errors"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -53,5 +55,51 @@ func TestBrowserTLSVerifiesCertificates(t *testing.T) {
 	var unknown x509.UnknownAuthorityError
 	if !errors.As(err, &unknown) {
 		t.Errorf("error was %v, want a certificate-verification failure", err)
+	}
+}
+
+// The success path: a real handshake with a browser ClientHello, and the
+// request completing over HTTP/2. This is what the transport exists to do, so
+// it is worth proving offline rather than only against a live site.
+func TestBrowserTLSCompletesRequestOverHTTP2(t *testing.T) {
+	srv := httptest.NewUnstartedServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		_, _ = w.Write([]byte(r.Proto))
+	}))
+	srv.EnableHTTP2 = true
+	srv.StartTLS()
+	defer srv.Close()
+
+	pool := x509.NewCertPool()
+	pool.AddCert(srv.Certificate())
+	prev := browserRootCAs
+	browserRootCAs = pool
+	t.Cleanup(func() { browserRootCAs = prev })
+
+	resp, err := NewBrowserTLSClient(15 * time.Second).Get(srv.URL)
+	if err != nil {
+		t.Fatalf("request failed: %v", err)
+	}
+	defer func() { _ = resp.Body.Close() }()
+
+	if resp.StatusCode != http.StatusOK {
+		t.Errorf("status = %d, want 200", resp.StatusCode)
+	}
+	body, _ := io.ReadAll(resp.Body)
+	if got := string(body); got != "HTTP/2.0" {
+		t.Errorf("server saw %q, want HTTP/2.0 — the transport must not fall back", got)
+	}
+}
+
+// A dial that cannot connect must surface as an error rather than a nil conn.
+func TestDialBrowserTLSReportsDialFailure(t *testing.T) {
+	// Port 1 on the loopback interface: nothing listens, connection refused.
+	if _, err := dialBrowserTLS(context.Background(), "tcp", "127.0.0.1:1"); err == nil {
+		t.Error("dial to a closed port succeeded")
+	}
+}
+
+func TestDialBrowserTLSRejectsAnAddressWithNoPort(t *testing.T) {
+	if _, err := dialBrowserTLS(context.Background(), "tcp", "127.0.0.1"); err == nil {
+		t.Error("dial with a portless address succeeded")
 	}
 }

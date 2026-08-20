@@ -3,6 +3,7 @@ package httpx
 import (
 	"context"
 	"crypto/tls"
+	"crypto/x509"
 	"net"
 	"net/http"
 	"sync"
@@ -37,15 +38,21 @@ import (
 // utls before suspecting the scraper.
 var browserHello = utls.HelloChrome_Auto
 
+// browserRootCAs overrides the trust store. nil means the system pool, which
+// is what production always uses; the tests set it so a handshake against an
+// httptest server can succeed and exercise the real HTTP/2 path.
+var browserRootCAs *x509.CertPool
+
 // dialBrowserTLS completes a handshake presenting a browser ClientHello.
 func dialBrowserTLS(ctx context.Context, network, addr string) (net.Conn, error) {
-	raw, err := (&net.Dialer{Timeout: 15 * time.Second, KeepAlive: 30 * time.Second}).DialContext(ctx, network, addr)
+	// Split before dialing: the host drives SNI and verification, and a
+	// malformed addr should fail without opening a connection first.
+	host, _, err := net.SplitHostPort(addr)
 	if err != nil {
 		return nil, err
 	}
-	host, _, err := net.SplitHostPort(addr)
+	raw, err := (&net.Dialer{Timeout: 15 * time.Second, KeepAlive: 30 * time.Second}).DialContext(ctx, network, addr)
 	if err != nil {
-		_ = raw.Close()
 		return nil, err
 	}
 	// ServerName drives both SNI and verification; MinVersion guards against a
@@ -53,6 +60,7 @@ func dialBrowserTLS(ctx context.Context, network, addr string) (net.Conn, error)
 	conn := utls.UClient(raw, &utls.Config{
 		ServerName: host,
 		MinVersion: tls.VersionTLS12,
+		RootCAs:    browserRootCAs,
 	}, browserHello)
 	if err := conn.HandshakeContext(ctx); err != nil {
 		_ = raw.Close()

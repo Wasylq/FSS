@@ -8,6 +8,7 @@ import (
 	"regexp"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/Anastylosis/FSS/models"
 	"github.com/Anastylosis/FSS/scraper"
@@ -289,5 +290,180 @@ func TestBaseURLsAreApexHosts(t *testing.T) {
 		if strings.Contains(cfg.BaseURL, "//www.") {
 			t.Errorf("%s: BaseURL = %q, want the apex host (the cert has no www SAN)", cfg.ID, cfg.BaseURL)
 		}
+	}
+}
+
+func TestIDAndPatterns(t *testing.T) {
+	s := New(sites[0])
+	if s.ID() != "goddessfootdomination" {
+		t.Errorf("ID() = %q", s.ID())
+	}
+	if len(s.Patterns()) == 0 {
+		t.Error("Patterns() is empty; fss list-scrapers would show nothing")
+	}
+}
+
+// A listing page that fails to load must be reported. A silent return would
+// be indistinguishable from a site with nothing on it, and under --full the
+// authoritative Save would then delete the catalogue.
+func TestListingFetchErrorIsReported(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusInternalServerError)
+	}))
+	defer srv.Close()
+
+	s := New(testCfg(srv.URL))
+	s.Client = srv.Client()
+
+	scenes, errs := collect(t, s, srv.URL+"/", scraper.ListOpts{})
+	if len(errs) == 0 {
+		t.Error("a failing listing page produced no error result")
+	}
+	if len(scenes) != 0 {
+		t.Errorf("got %d scenes from a failing listing", len(scenes))
+	}
+}
+
+// One bad detail page costs that scene, not the run.
+func TestDetailFetchErrorIsReportedPerScene(t *testing.T) {
+	mux := http.NewServeMux()
+	mux.HandleFunc("/all/video", func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Query().Get("page") != "" {
+			_, _ = fmt.Fprint(w, "<html><body>empty</body></html>")
+			return
+		}
+		_, _ = fmt.Fprint(w, "<html><body>"+
+			card("1", "good", "Good", "00:01:00")+
+			card("2", "bad", "Bad", "00:01:00")+"</body></html>")
+	})
+	mux.HandleFunc("/v/", func(w http.ResponseWriter, r *http.Request) {
+		if strings.Contains(r.URL.Path, "-bad") {
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		_, _ = fmt.Fprint(w, detailPage("Good", "d", "2026-08-18T12:00:00+00:00",
+			[]string{"A"}, []string{"C"}, "00:01:00"))
+	})
+	srv := httptest.NewServer(mux)
+	defer srv.Close()
+
+	s := New(testCfg(srv.URL))
+	s.Client = srv.Client()
+
+	scenes, errs := collect(t, s, srv.URL+"/", scraper.ListOpts{})
+	if len(errs) != 1 {
+		t.Errorf("got %d errors, want 1", len(errs))
+	}
+	if len(scenes) != 1 || scenes[0].ID != "1" {
+		t.Errorf("scenes = %+v, want just the good one", scenes)
+	}
+}
+
+// A page whose Movie block carries no name is a parse failure, not a scene
+// with an empty title.
+func TestMovieWithoutANameIsAnError(t *testing.T) {
+	s := New(testCfg("https://example.test"))
+	body := `<script type="application/ld+json">{"@context":"https://schema.org","@type":"Movie","description":"d"}</script>`
+	if _, err := s.toScene([]byte(body), sceneRef{id: "1", url: "u"}, "https://example.test/"); err == nil {
+		t.Error("want an error when the Movie block has no name")
+	}
+}
+
+// A malformed ld+json block must not stop the search: the real pages carry
+// several, and only one of them is the Movie.
+func TestFindMovieSkipsMalformedBlocks(t *testing.T) {
+	body := []byte(`
+<script type="application/ld+json">{ this is not json </script>
+<script type="application/ld+json">{"@type":"WebPage","name":"x"}</script>
+<script type="application/ld+json">{"@type":"Movie","name":"Real"}</script>`)
+	ld := findMovie(body)
+	if ld == nil || ld.Name != "Real" {
+		t.Errorf("findMovie = %+v, want the Movie block", ld)
+	}
+	if findMovie([]byte("<html>nothing</html>")) != nil {
+		t.Error("findMovie found a Movie in a page with none")
+	}
+}
+
+// schema.org allows image to be a single URL or a list; both appear in the
+// wild, and a strict decode would drop the thumbnail entirely.
+func TestFirstImageAcceptsBothShapes(t *testing.T) {
+	cases := []struct{ in, want string }{
+		{``, ""},
+		{`"https://a/x.webp"`, "https://a/x.webp"},
+		{`["https://a/1.webp","https://a/2.webp"]`, "https://a/1.webp"},
+		{`[]`, ""},
+		{`{"@type":"ImageObject"}`, ""},
+	}
+	for _, c := range cases {
+		if got := firstImage([]byte(c.in)); got != c.want {
+			t.Errorf("firstImage(%s) = %q, want %q", c.in, got, c.want)
+		}
+	}
+}
+
+// Cancellation must stop the walk and close the channel rather than leak the
+// goroutine — the scraper sends on an unbuffered channel throughout.
+func TestCancellationStopsTheScrape(t *testing.T) {
+	release := make(chan struct{})
+	defer close(release)
+
+	mux := http.NewServeMux()
+	mux.HandleFunc("/all/video", func(w http.ResponseWriter, _ *http.Request) {
+		_, _ = fmt.Fprint(w, "<html><body>"+card("1", "a", "A", "00:01:00")+"</body></html>")
+	})
+	mux.HandleFunc("/v/", func(w http.ResponseWriter, r *http.Request) {
+		select {
+		case <-release:
+		case <-r.Context().Done():
+		}
+	})
+	srv := httptest.NewServer(mux)
+	defer srv.Close()
+
+	s := New(testCfg(srv.URL))
+	s.Client = srv.Client()
+
+	ctx, cancel := context.WithCancel(context.Background())
+	ch, err := s.ListScenes(ctx, srv.URL+"/", scraper.ListOpts{})
+	if err != nil {
+		t.Fatalf("ListScenes: %v", err)
+	}
+	cancel()
+
+	done := make(chan struct{})
+	go func() {
+		defer close(done)
+		for range ch {
+		}
+	}()
+	select {
+	case <-done:
+	case <-time.After(10 * time.Second):
+		t.Fatal("channel still open after cancellation — the scraper leaks a goroutine")
+	}
+}
+
+// The per-request delay is honoured on both the listing walk and the detail
+// pool, so an operator's rate limit actually applies.
+func TestDelayIsHonoured(t *testing.T) {
+	srv, _ := server(t, [][]string{
+		{card("1", "a", "A", "00:01:00")},
+		{card("2", "b", "B", "00:01:00")},
+	})
+	s := New(testCfg(srv.URL))
+	s.Client = srv.Client()
+
+	start := time.Now()
+	scenes, errs := collect(t, s, srv.URL+"/", scraper.ListOpts{Delay: 40 * time.Millisecond, Workers: 1})
+	if len(errs) != 0 {
+		t.Fatalf("errors: %v", errs)
+	}
+	if len(scenes) != 2 {
+		t.Fatalf("got %d scenes, want 2", len(scenes))
+	}
+	// Two extra listing pages plus two details, all delayed.
+	if elapsed := time.Since(start); elapsed < 100*time.Millisecond {
+		t.Errorf("scrape took %v, too fast for a 40ms delay — it is being skipped", elapsed)
 	}
 }
