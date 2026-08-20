@@ -1,6 +1,6 @@
 # Covered Sites — All Domains
 
-1678 scrapers covering 1753 distinct domains. Auto-generated from the scraper registry by `TestSitesMdInSync` — do not hand-edit; instead update the scraper's `Patterns()` and re-run `go test ./internal/scrapers/all/...`. The `stashbox` scraper is omitted here because its covered hosts are config-driven; see [`scrapers.md`](scrapers.md).
+1675 scrapers covering 1749 distinct domains. Auto-generated from the scraper registry by `TestSitesMdInSync` — do not hand-edit; instead update the scraper's `Patterns()` and re-run `go test ./internal/scrapers/all/...`. The `stashbox` scraper is omitted here because its covered hosts are config-driven; see [`scrapers.md`](scrapers.md).
 
 Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scraper ID(s)** column lists every scraper that claims URLs on that domain — most domains have one entry, but table-driven networks (`adultprime`, `tmw`, `nextdoorstudios`, etc.) host many sub-studios on a single root domain. See [`scrapers.md`](scrapers.md) for what each ID covers.
 
@@ -567,7 +567,6 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | flatandfuckedmilfs.com | `flatandfuckedmilfs` |
 | flexidolls.com | `flexidolls` |
 | flourishuniv.com | `flourishuniv` |
-| footfetishaffiliates.com | `footfetishaffiliates` |
 | footfetishdaily.com | `footfetishdaily` |
 | footsiebabes.com | `footsiebabes` |
 | forbiddenhookups.puba.com | `pubaforbiddenhookups` |
@@ -648,6 +647,7 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | glosstightsglamour.com | `glosstightsglamour` |
 | glowingdesire.com | `nubiles` |
 | goddessdiane.com | `goddessdiane` |
+| goddessfootdomination.com | `goddessfootdomination` |
 | goddesssnow.com | `alexandrasnow` |
 | gogobarauditions.com | `gogobarauditions` |
 | goldenslut.com | `porngutter` |
@@ -1689,13 +1689,9 @@ Use your editor's find-in-file (Ctrl+F / Cmd+F) to look up a domain. The **Scrap
 | www.coozhound.com | `coozhound` |
 | www.daddyontwink.com | `daddyontwink` |
 | www.flexidolls.com | `flexidolls` |
-| www.footfetishaffiliates.com | `footfetishaffiliates` |
-| www.footfetishcardates.com | `footfetishcardates` |
 | www.freakmobmedia.com | `freakmob` |
 | www.fuckthosemoms.com | `fuckthosemoms` |
 | www.girlasylum.com | `girlasylum` |
-| www.goddessbrianna.net | `goddessbrianna` |
-| www.goddessfootdomination.com | `goddessfootdomination` |
 | www.grannyguide.com | `grannyguide` |
 | www.hairyandraw.com | `hairyandraw` |
 | www.hardbritlads.com | `hardbritlads` |
