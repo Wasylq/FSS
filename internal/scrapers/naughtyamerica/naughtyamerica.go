@@ -24,7 +24,11 @@ type Scraper struct {
 
 func New() *Scraper {
 	return &Scraper{
-		client: httpx.NewClient(30 * time.Second),
+		// Browser fingerprint, not Go's: the site's AWS load balancer
+		// classifies on the TLS ClientHello and returns a bare 403 to every
+		// Go request, including the homepage, whatever headers it carries.
+		// See httpx.NewBrowserTLSClient.
+		client: httpx.NewBrowserTLSClient(30 * time.Second),
 		apiURL: apiBase,
 	}
 }
