@@ -5,9 +5,11 @@ package hmp
 import (
 	"bytes"
 	"context"
+	"errors"
 	"testing"
 	"time"
 
+	"github.com/Anastylosis/FSS/internal/httpx"
 	"github.com/Anastylosis/FSS/internal/scrapers/testutil"
 )
 
@@ -35,6 +37,18 @@ func skipIfUnderMaintenance(t *testing.T) {
 	s := New()
 	body, err := s.fetchPage(ctx, s.siteBase+"/portal/catalog/?scd=10&p=1")
 	if err != nil {
+		// No HTTP response at all means the origin is unreachable, not that
+		// the scraper is wrong. hmp.jp went from serving the maintenance
+		// notice to refusing connections outright — DNS still resolves, the
+		// TCP connect just never completes — so the marker probe below can no
+		// longer see anything, and the test used to spend ~198s discovering
+		// that. A StatusError means the server did answer, so that still falls
+		// through and the real test reports it.
+		var status *httpx.StatusError
+		if !errors.As(err, &status) {
+			t.Skipf("h.m.p online is unreachable (%v) — no catalogue to scrape, "+
+				"and this is not a scraper failure", err)
+		}
 		// Not the maintenance page — let the real test report whatever this is.
 		return
 	}
