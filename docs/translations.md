@@ -64,6 +64,10 @@ language setting. That's a feature, not a bug.
 You need no Go knowledge: the keys *are* the English strings, and the file is
 flat JSON.
 
+Or skip the copying: *Start new translation* on
+<https://hosted.weblate.org/projects/fss/help-text/> creates the file from
+`en.json` and opens the pull request for you. Same result, same CI.
+
 `en.json` ships with each value set to its own key, so the file reads as
 English out of the box and every entry shows the string you are translating.
 If you would rather track what is left to do, setting a value to `""` also
@@ -87,17 +91,17 @@ so breakage surfaces at PR time rather than on a user's `--help`.
 
 ## Translation platform (Weblate)
 
-Not enabled yet — the PR path above is the whole workflow today. This section
-is the runbook for turning it on, and `.weblate` in the repo root is its
-companion, a `wlc` client config naming a component that does not exist yet.
+Live at <https://hosted.weblate.org/projects/fss/help-text/>, which `.weblate`
+in the repo root points at as its `wlc` client config. The PR path above is
+unchanged and still supported — Weblate is a second door onto the same files,
+for translators who will not touch git.
 
 **Why Weblate**: it is GPL like fss, self-hostable, and hosted.weblate.org
 offers free hosting to libre projects. It contributes back as GitHub pull
 requests, so CI gates every translation exactly as it gates a hand-written one.
 
-**Why it is not on yet**: at ~113 strings and one language, the setup costs more
-than it saves. The point at which it pays off is the third language, or the
-first translator who will not touch git.
+The project sits in hosted.weblate.org's trial period until the libre request
+is approved, so its setup can still change under the values recorded below.
 
 Weblate's UI changes between releases, so treat the step names below as
 landmarks and the **values** in the settings table as the part that matters.
@@ -111,14 +115,22 @@ Check <https://docs.weblate.org/> for current specifics.
    ships an official Docker Compose stack, which is not much more work than
    what is already in [docker.md](docker.md).
 
-2. **Give Weblate push access to the repo.** Weblate authenticates *to* GitHub,
-   never the reverse — see Credentials below. On hosted Weblate this means
-   granting their bot account access to `Anastylosis/FSS`; self-hosted, it means
-   giving your instance a deploy key or a token. Nothing is added to the repo.
+2. **Leave the push URL empty.** Weblate authenticates *to* GitHub, never the
+   reverse — see Credentials below — and hosted Weblate pushes as its own bot,
+   which forks the repo and raises the pull request from that fork. It needs no
+   access to `Anastylosis/FSS`. Naming this repo as *Repository push URL* is
+   rejected outright, since master to master cannot be a pull request:
+   *Push branch cannot be empty when using pull/merge requests and not pushing
+   to a fork.* Pushing a branch into this repo instead means setting
+   *Push branch* and granting the bot write access, which buys nothing here.
+   Self-hosted, the instance needs a deploy key or token of its own. Nothing is
+   added to the repo either way.
 
-3. **Create a project** (`FSS`) and inside it a **component** (`Help text`)
-   pointing at `https://github.com/Anastylosis/FSS.git`, branch `master`, with
-   the settings in the table below.
+3. **Create a project** (`FullStudioScraper`, slug `fss`) and inside it a
+   **component** (`Help text`, slug `help-text`) pointing at
+   `https://github.com/Anastylosis/FSS.git`, branch `master`, with the settings
+   in the table below. Both slugs are load-bearing: `.weblate` addresses the
+   component as `fss/help-text`.
 
 4. **Add the webhook** so Weblate notices when master's English strings move,
    rather than waiting for its polling interval. GitHub → Settings → Webhooks →
@@ -136,17 +148,19 @@ Check <https://docs.weblate.org/> for current specifics.
 
 | Setting | Value |
 |---|---|
-| File format | JSON file (flat, monolingual) |
+| File format | JSON file — the flat one, **not** JSON nested structure file |
 | File mask | `internal/i18n/locales/*.json` |
 | Monolingual base language file | `internal/i18n/locales/en.json` |
 | Template for new translations | `internal/i18n/locales/en.json` |
+| Adding new translation | Create new language file |
 | Edit base file | off |
 | Source language | English |
-| Language filter | `^[a-z]{2}(_[A-Z]{2})?$` |
+| Language filter | `^[a-z]{2,3}(_[A-Za-z0-9]{2,4})?$` |
+| Repository push URL | empty |
 | Push method | GitHub pull request |
 | Merge style | rebase |
 
-Four of those are load-bearing:
+Five of those are load-bearing:
 
 - **The base file has to be `en.json`.** Weblate reads a language code off the
   base file by matching its path against the file mask, so a `_template.json`
@@ -155,10 +169,23 @@ Four of those are load-bearing:
   filter does not rescue it — `clean_template()` runs that check before the
   filter applies. Naming the file for the source language is the fix, and it
   is what every other Weblate JSON project does.
+- **Pick the flat JSON format, not the nested one.** Both are called "JSON"
+  in the dropdown. The nested reader treats `.` in a key as a level separator,
+  and every key here is an English sentence. Choosing it produces a component
+  that clones the repo, reads `en.json`, and extracts *nothing* — zero strings,
+  and no `ko` either, because a monolingual component whose base file yields no
+  keys has nothing to build a translation from. The symptom is an empty
+  component rather than an error message.
 - **The language filter is not optional.** The file mask treats `*` as the
   language code, so it would otherwise match `_pseudo.json` and present it as
   a language called `_pseudo`. That is a generated test fixture; a translator
   editing it breaks `TestI18nTemplateInSync` and gets a baffling CI failure.
+  Any filter anchored on a lowercase letter excludes it, so the one above is
+  written to admit real codes rather than to name the fixture: `^[a-z]{2}...`
+  would have blocked `zh_Hans`, `sr_Latn`, `es_419` and every three-letter
+  language, and the filter gates the *Start new translation* button as well as
+  the file scan — a blocked code fails there with "The given language is
+  filtered by the language filter".
 - **`en.json` is the base file, and Weblate must not edit it.** It is
   generated by `make i18n-extract` from the command tree, so any edit there is
   overwritten by the next regeneration. Leave *Edit base file* off. This is

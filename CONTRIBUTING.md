@@ -448,6 +448,10 @@ The CLI's help text is translatable. A language is one flat JSON file under
 involved: copy `en.json`, fill in what you're sure of, leave the rest
 as `""` (empty falls back to English), run `make test`, open a PR.
 
+Translating in the browser works too:
+<https://hosted.weblate.org/projects/fss/help-text/> writes the catalog and
+opens the pull request for you.
+
 Reword an English help string and you change a key, orphaning its
 translations — `make i18n-extract` regenerates the template and the test
 suite names every catalog that went stale.
