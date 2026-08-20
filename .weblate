@@ -1,17 +1,3 @@
-# Configuration for wlc, the Weblate command-line client.
-#
-# DRAFT — inert until the component below actually exists on the server. It is
-# committed so that setting Weblate up later is a matter of registering the
-# project, not rediscovering the settings. Nothing in fss reads this file, and
-# no build or test depends on it.
-#
-# The component settings that matter (file mask, monolingual base, language
-# filter) live in docs/translations.md, because Weblate stores them server-side
-# rather than in the repository.
-#
-# Your API key does NOT go here — wlc reads it from ~/.config/weblate, which is
-# outside the repo for a reason. Never commit a key to this file.
-
 [weblate]
 url = https://hosted.weblate.org/api/
 translation = fss/help-text
