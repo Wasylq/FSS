@@ -11,8 +11,8 @@ import (
 )
 
 // TestI18nTemplateInSync is the extractor: it regenerates
-// internal/i18n/locales/_template.json and _pseudo.json from the live
-// command tree and fails (after writing) if they're out of date. Run it via
+// internal/i18n/locales/en.json and _pseudo.json from the live command tree
+// and fails (after writing) if they're out of date. Run it via
 // `make i18n-extract` and commit the result.
 func TestI18nTemplateInSync(t *testing.T) {
 	i18n.SetLanguage(i18n.SourceLanguage)
@@ -20,10 +20,13 @@ func TestI18nTemplateInSync(t *testing.T) {
 
 	keys := cobrai18n.Keys(rootCmd)
 
-	// The template's values are the English source strings, not "". It is
-	// never loaded as a catalog (the "_" prefix keeps it out of Available),
-	// so this is purely for the humans and the translation platforms reading
-	// it: both want a source file that shows the string being translated.
+	// The base file's values are the English source strings, not "". It is
+	// never loaded as a catalog (SetLanguage short-circuits on the source
+	// language), so this is purely for the humans and the translation
+	// platforms reading it: both want a file that shows the string being
+	// translated. Weblate additionally requires a monolingual base file to be
+	// named for the source language, which is why it is not "_"-prefixed like
+	// the pseudo catalog next to it.
 	template := map[string]string{}
 	pseudo := map[string]string{}
 	for _, k := range keys {
@@ -31,7 +34,7 @@ func TestI18nTemplateInSync(t *testing.T) {
 		pseudo[k] = "«" + k + "»"
 	}
 
-	writeIfChanged(t, "../internal/i18n/locales/_template.json", marshal(t, template))
+	writeIfChanged(t, "../internal/i18n/locales/en.json", marshal(t, template))
 	writeIfChanged(t, "../internal/i18n/locales/_pseudo.json", marshal(t, pseudo))
 }
 

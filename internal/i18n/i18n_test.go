@@ -55,9 +55,9 @@ func TestSetLanguage(t *testing.T) {
 }
 
 // T's fallback paths need a catalog with a missing key and one with a
-// present-but-empty value. There's no shipped locale to exercise the latter
-// (the _template placeholder is an empty map), so this reaches into the
-// package's own state directly rather than going through SetLanguage.
+// present-but-empty value. No shipped locale exercises the latter, so this
+// reaches into the package's own state directly rather than going through
+// SetLanguage.
 func TestT(t *testing.T) {
 	t.Cleanup(func() { active.Store(nil) })
 
@@ -107,6 +107,10 @@ func TestAvailable(t *testing.T) {
 	for _, tag := range got[1:] {
 		if len(tag) > 0 && tag[0] == '_' {
 			t.Errorf("Available() = %v, contains _-prefixed entry %q", got, tag)
+		}
+		// en.json is the base file: listing it would print "en, en, ko".
+		if tag == SourceLanguage {
+			t.Errorf("Available() = %v, lists the source language twice", got)
 		}
 	}
 }

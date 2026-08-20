@@ -14,7 +14,10 @@ import (
 //go:embed locales/*.json
 var localeFS embed.FS
 
-const SourceLanguage = "en" // no catalog file; T is the identity function for it
+// SourceLanguage is the language the source strings are written in. Its
+// catalog, locales/en.json, is the monolingual base file the translation
+// platform reads; it is never installed, so T is the identity for English.
+const SourceLanguage = "en"
 
 // state pairs a tag with its catalog so both swap atomically. A nil m means
 // English (no lookups performed).
@@ -71,6 +74,11 @@ func SetLanguage(tag string) string {
 	}
 
 	for _, c := range candidates {
+		// locales/en.json exists as the base file, but English needs no
+		// catalog: stop rather than install a map of every key onto itself.
+		if c == SourceLanguage {
+			break
+		}
 		data, err := localeFS.ReadFile("locales/" + c + ".json")
 		if err != nil {
 			continue
@@ -96,8 +104,9 @@ func Language() string {
 	return st.tag
 }
 
-// Available returns "en" followed by the sorted, non-"_"-prefixed catalog
-// names shipped under locales/.
+// Available returns "en" followed by the sorted translation catalogs shipped
+// under locales/. The "_"-prefixed generated files are skipped, as is
+// en.json: it is the base file, not a translation of it.
 func Available() []string {
 	entries, err := localeFS.ReadDir("locales")
 	if err != nil {
@@ -106,7 +115,7 @@ func Available() []string {
 	var tags []string
 	for _, e := range entries {
 		name := strings.TrimSuffix(e.Name(), ".json")
-		if strings.HasPrefix(name, "_") {
+		if strings.HasPrefix(name, "_") || name == SourceLanguage {
 			continue
 		}
 		tags = append(tags, name)

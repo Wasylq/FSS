@@ -8,7 +8,7 @@ import (
 	"testing"
 )
 
-const templateFile = "locales/_template.json"
+const templateFile = "locales/en.json"
 
 // catalogFiles returns every shipped catalog, "_"-prefixed ones included.
 func catalogFiles(t *testing.T) []string {
@@ -51,7 +51,8 @@ func TestCatalogsParse(t *testing.T) {
 func TestCatalogKeysAreSubsetOfTemplate(t *testing.T) {
 	template := readCatalog(t, templateFile)
 	for _, path := range catalogFiles(t) {
-		if strings.HasPrefix(strings.TrimPrefix(path, "locales/"), "_") {
+		name := strings.TrimPrefix(path, "locales/")
+		if path == templateFile || strings.HasPrefix(name, "_") {
 			continue
 		}
 		for key := range readCatalog(t, path) {

@@ -445,7 +445,7 @@ network catch-all, pasting a sub-studio URL scraped the entire network.
 
 The CLI's help text is translatable. A language is one flat JSON file under
 `internal/i18n/locales/`, keyed on the English source string, and no Go is
-involved: copy `_template.json`, fill in what you're sure of, leave the rest
+involved: copy `en.json`, fill in what you're sure of, leave the rest
 as `""` (empty falls back to English), run `make test`, open a PR.
 
 Reword an English help string and you change a key, orphaning its
